@@ -69,7 +69,7 @@ async fn prices_with_the_bundled_table_scans_through_a_refresh_cycle_and_release
         .store()
         .lock()
         .unwrap()
-        .export_data(&QueryOptions::default())
+        .events(&QueryOptions::default())
         .unwrap();
     assert_eq!(events.len(), 1);
     assert!(events[0].cost_microusd.is_some());
@@ -116,7 +116,7 @@ fn prices_codex_fast_turns_at_the_priority_rates_of_the_bundled_table() {
         .store()
         .lock()
         .unwrap()
-        .export_data(&QueryOptions::default())
+        .events(&QueryOptions::default())
         .unwrap();
     // gpt-5 per million: $1.25 in, $10 out, $0.125 cached, doubled on the Fast tier. In event-id order: the turn after
     // the reset to default (50 in, 10 out, 10 cached: 163.75 µUSD), the Fast turn (100, 30, 100) and the turn before

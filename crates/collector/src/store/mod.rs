@@ -1533,15 +1533,6 @@ impl UsageStore {
             })
             .collect())
     }
-    /// Local candidate buckets, per tool. Contains no private identifiers.
-    pub fn public_buckets(&mut self) -> Result<Vec<PublicBucket>> {
-        self.project_public_buckets(&PublicationOptions {
-            history_start: None,
-            share_tools: true,
-            share_cost: true,
-            share_models: false,
-        })
-    }
     /// Explicit consent projection: only day, tool, model, tokens, their kinds, cost and revision leave the store.
     /// Revision state (and the zero tombstones that replace an uploaded total after a correction or deletion) is kept
     /// per scope.
@@ -1700,9 +1691,6 @@ impl UsageStore {
         };
         buckets.sort_by(|a, b| locale_cmp(&order(a), &order(b)));
         Ok((buckets, hours))
-    }
-    pub fn export_data(&self, options: &QueryOptions) -> Result<Vec<UsageEvent>> {
-        self.events(options)
     }
     /// CSV with CRLF line ends and every cell quoted; text that a spreadsheet would run as a formula is prefixed
     /// with an apostrophe.

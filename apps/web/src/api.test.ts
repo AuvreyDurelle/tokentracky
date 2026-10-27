@@ -57,10 +57,6 @@ describe('web HTTP boundary', () => {
     expect(JSON.parse(init.body as string)).toEqual({ name: 'Studio Mac' });
     expect(new Headers(init.headers).get('authorization')).toBe('Bearer account-access-token');
   });
-  it('preserves RELINK_REQUIRED so sync never silently expands local approval', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ error: { code: 'RELINK_REQUIRED', message: 'Relink required' } }), { status: 409 })));
-    await expect(new ApiClient().sync()).rejects.toMatchObject({ status: 409, code: 'RELINK_REQUIRED' });
-  });
   it('stops account requests when a session has ended', async () => {
     const fetchMock = vi.fn(); vi.stubGlobal('fetch', fetchMock);
     await expect(new ApiClient().account()).rejects.toMatchObject({ status: 401, code: 'SIGN_IN_REQUIRED' });

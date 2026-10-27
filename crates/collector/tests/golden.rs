@@ -74,7 +74,7 @@ fn queried(store: &UsageStore, options: &QueryOptions) -> Result<Value, StoreErr
         "sessions": store.sessions(options)?,
         "projects": store.projects(options)?,
         "breakdown": store.breakdown(options)?,
-        "events": store.export_data(options)?,
+        "events": store.events(options)?,
         "csv": store.export_csv(options)?,
     }))
 }
@@ -92,7 +92,7 @@ fn collect(
     let all = QueryOptions::default();
     let mut files = BTreeMap::new();
     let mut json = |name: &str, value: Value| files.insert(format!("{name}.json"), stringify(&value));
-    json("events", json!(store.export_data(&all).unwrap()));
+    json("events", json!(store.events(&all).unwrap()));
     let at = QueryOptions {
         now: Some(now),
         ..Default::default()

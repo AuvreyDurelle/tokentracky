@@ -75,7 +75,7 @@ impl Collector {
         assert_eq!(events.iter().map(|e| total_tokens(&e.tokens)).sum::<u64>(), tokens);
         let summary = store.summary(&options).unwrap();
         assert_eq!((summary.tokens, summary.cost_microusd), (tokens, Some(cost)));
-        assert_eq!(store.export_data(&options).unwrap(), events);
+        assert_eq!(store.events(&options).unwrap(), events);
         let csv = store.export_csv(&options).unwrap();
         assert_eq!(csv.lines().count(), count + 1);
         let csv_counts: Vec<Vec<_>> = csv

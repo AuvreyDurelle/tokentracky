@@ -171,7 +171,6 @@ export class ApiClient {
   connectStart() { return this.request<ConnectStart>('/api/local/connect', { method: 'POST' }); }
   connectPoll() { return this.request<ConnectStatus>('/api/local/connect/poll', { method: 'POST' }); }
   unlinkCloud() { return this.request<void>('/api/local/cloud', { method: 'DELETE' }); }
-  sync() { return this.request<{ syncedAt: string }>('/api/local/sync', { method: 'POST' }); }
   /** The menu bar's totals and rank from the last refresh cycle. */
   localOverview() { return this.request<MenuOverview>('/api/local/overview'); }
   /** Likes go through the linked device's credential, never an account token. */

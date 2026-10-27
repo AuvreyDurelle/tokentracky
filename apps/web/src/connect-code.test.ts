@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { forgetConnectCode, normalizeConnectCode, takeConnectCode } from './connect-code';
-import { fillDays, formatShare, niceTicks } from './format';
+import { formatShare, niceTicks } from './format';
 
 function memoryStorage(): Storage {
   const values = new Map<string, string>();
@@ -34,11 +34,6 @@ describe('chart and ranking helpers', () => {
     expect(niceTicks(0)).toEqual([0]);
     expect(niceTicks(950)).toEqual([0, 500, 1000]);
     expect(niceTicks(1_240_000)).toEqual([0, 500_000, 1_000_000, 1_500_000]);
-  });
-  it('fills quiet UTC days with zero and keeps early data inside the rolling window', () => {
-    const now = new Date('2026-10-23T09:00:00Z');
-    expect(fillDays([{ day: '2026-10-21', tokens: 5 }], 3, now)).toEqual([{ day: '2026-10-21', tokens: 5 }, { day: '2026-10-22', tokens: 0 }, { day: '2026-10-23', tokens: 0 }]);
-    expect(fillDays([{ day: '2026-10-20', tokens: 7 }], 3, now).map((point) => point.day)).toEqual(['2026-10-20', '2026-10-21', '2026-10-22', '2026-10-23']);
   });
   it('formats community share without claiming a zero for tiny contributions', () => {
     expect(formatShare(0, 100)).toBe('0%');

@@ -7,7 +7,7 @@ use std::fs::{self, OpenOptions};
 use std::io::{BufWriter, Write};
 use std::sync::{Arc, Mutex};
 use time::OffsetDateTime;
-use tokentracky_collector::store::{SourceConfiguration, UsageStore};
+use tokentracky_collector::store::{PublicationOptions, SourceConfiguration, UsageStore};
 use tokentracky_collector::{IngestionOptions, IngestionService};
 use tokentracky_core::ToolId;
 
@@ -109,7 +109,14 @@ fn cycle_budget() {
             .period_totals(OffsetDateTime::now_utc(), Some(&TimeZone::system()))
             .unwrap();
         if changed {
-            store.public_buckets().unwrap();
+            store
+                .project_public_buckets(&PublicationOptions {
+                    history_start: None,
+                    share_tools: true,
+                    share_cost: true,
+                    share_models: false,
+                })
+                .unwrap();
         }
     };
     println!("{sessions} sessions × {requests} requests");

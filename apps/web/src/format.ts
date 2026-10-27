@@ -65,16 +65,3 @@ export function niceTicks(maximum: number): number[] {
   const step = [1, 2, 5, 10].map((factor) => factor * magnitude).find((candidate) => candidate >= rough)!;
   return Array.from({ length: Math.ceil(maximum / step) + 1 }, (_, index) => index * step);
 }
-
-/** Every UTC day in the window, so quiet days show as gaps rather than disappearing. */
-export function fillDays(daily: Array<{ day: string; tokens: number }>, days: number, now = new Date()): Array<{ day: string; tokens: number }> {
-  const byDay = new Map(daily.map((point) => [point.day, point.tokens]));
-  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-  const first = daily[0]?.day ? Math.min(Date.parse(`${daily[0].day}T00:00:00Z`), today - (days - 1) * 86_400_000) : today - (days - 1) * 86_400_000;
-  const result: Array<{ day: string; tokens: number }> = [];
-  for (let time = first; time <= today; time += 86_400_000) {
-    const day = new Date(time).toISOString().slice(0, 10);
-    result.push({ day, tokens: byDay.get(day) ?? 0 });
-  }
-  return result;
-}

@@ -338,10 +338,7 @@ mod appended_logs {
         std::io::Write::write_all(&mut log, request("c", 5, 6).as_bytes()).unwrap();
         collector.scan();
         assert_eq!(collector.tokens(), 21);
-        assert_eq!(
-            collector.store().export_data(&QueryOptions::default()).unwrap().len(),
-            3
-        );
+        assert_eq!(collector.store().events(&QueryOptions::default()).unwrap().len(), 3);
     }
 }
 
@@ -376,19 +373,19 @@ mod stored_metadata_boundary {
         collector.scan();
         let mut store = collector.store();
         let mut checkpoint = store.checkpoint(&text(&file), None).unwrap().unwrap();
-        let event = store.export_data(&QueryOptions::default()).unwrap()[0].clone();
+        let event = store.events(&QueryOptions::default()).unwrap()[0].clone();
         checkpoint.state["prompt"] = json!("PRIVATE_NEW_MARKER");
         store
             .commit_file(&checkpoint, std::slice::from_ref(&event), true)
             .unwrap();
         let saved = store.checkpoint(&text(&file), None).unwrap();
         assert!(!serde_json::to_string(&saved).unwrap().contains("PRIVATE_NEW_MARKER"));
-        let prior = store.export_data(&QueryOptions::default()).unwrap();
+        let prior = store.events(&QueryOptions::default()).unwrap();
         let mut invalid = event;
         invalid.tokens.input = MAX_SAFE_INTEGER + 1;
         let error = store.commit_file(&checkpoint, &[invalid], true).unwrap_err();
         assert_eq!(error.to_string(), "invalid_usage_event");
-        assert_eq!(store.export_data(&QueryOptions::default()).unwrap(), prior);
+        assert_eq!(store.events(&QueryOptions::default()).unwrap(), prior);
     }
 }
 

@@ -64,6 +64,14 @@ fn all() -> QueryOptions {
 fn private() -> PublicationOptions {
     PublicationOptions::default()
 }
+/// Tool split and cost over all history, without models.
+fn tools_and_cost() -> PublicationOptions {
+    PublicationOptions {
+        share_tools: true,
+        share_cost: true,
+        ..private()
+    }
+}
 /// The error code, as the TypeScript store throws it.
 fn code<T>(result: Result<T, StoreError>) -> String {
     result.err().expect("expected an error").to_string()
@@ -406,7 +414,7 @@ mod commit_file_metadata_boundary {
         .to_vec()
     }
     fn unchanged(store: &UsageStore, saved: &FileCheckpoint, events: &[UsageEvent]) {
-        assert_eq!(store.export_data(&all()).unwrap(), events);
+        assert_eq!(store.events(&all()).unwrap(), events);
         assert_eq!(store.checkpoint(&saved.path, None).unwrap().as_ref(), Some(saved));
     }
 
@@ -665,7 +673,7 @@ mod commit_file_metadata_boundary {
         };
         let mut store = store();
         store.commit_file(&saved, std::slice::from_ref(&valid), true).unwrap();
-        assert_eq!(store.export_data(&all()).unwrap(), [valid]);
+        assert_eq!(store.events(&all()).unwrap(), [valid]);
         assert_eq!(store.checkpoint(&saved.path, None).unwrap().unwrap().state, state);
     }
     #[test]
@@ -685,7 +693,7 @@ mod commit_file_metadata_boundary {
             store.checkpoint(&saved.path, None).unwrap(),
             Some(FileCheckpoint { state, ..checkpoint() })
         );
-        assert_eq!(store.export_data(&all()).unwrap(), [event()]);
+        assert_eq!(store.events(&all()).unwrap(), [event()]);
     }
     #[test]
     fn keeps_only_the_bounded_figures_of_a_codex_rate_limit_snapshot() {
@@ -792,7 +800,7 @@ mod commit_boundary {
             .unwrap();
         store.commit_file(&checkpoint(), &[event()], false).unwrap();
         assert_eq!(
-            store.export_data(&all()).unwrap().len(),
+            store.events(&all()).unwrap().len(),
             2,
             "a merge keeps what it does not mention"
         );
@@ -800,12 +808,12 @@ mod commit_boundary {
             .commit_file(&checkpoint(), std::slice::from_ref(&second), true)
             .unwrap();
         assert_eq!(
-            store.export_data(&all()).unwrap(),
+            store.events(&all()).unwrap(),
             [second],
             "a replacement drops what it lost"
         );
         store.forget_file(&checkpoint().path, ToolId::Claude).unwrap();
-        assert_eq!(store.export_data(&all()).unwrap(), []);
+        assert_eq!(store.events(&all()).unwrap(), []);
         assert_eq!(store.checkpoint(&checkpoint().path, None).unwrap(), None);
     }
     #[test]
@@ -832,7 +840,7 @@ mod commit_boundary {
         store
             .commit_file(&at("/c.jsonl"), std::slice::from_ref(&original), true)
             .unwrap();
-        assert_eq!(store.export_data(&all()).unwrap(), [corrected]);
+        assert_eq!(store.events(&all()).unwrap(), [corrected]);
         assert_eq!(store.publication_state().unwrap().checkpoint, 2);
     }
     #[test]
@@ -843,7 +851,7 @@ mod commit_boundary {
         store
             .commit_file(&checkpoint(), &[event(), later.clone()], true)
             .unwrap();
-        assert_eq!(store.export_data(&all()).unwrap(), [later]);
+        assert_eq!(store.events(&all()).unwrap(), [later]);
     }
 }
 
@@ -1320,7 +1328,7 @@ mod usage_limits {
         let mut store = store();
         store.commit_file(&checkpoint(), &[event()], true).unwrap();
         let epoch = store.usage_epoch();
-        let buckets = store.public_buckets().unwrap();
+        let buckets = store.project_public_buckets(&tools_and_cost()).unwrap();
         store
             .update_limits(&reading(ToolId::Codex, 1, vec![window("primary", 50.0)]))
             .unwrap();
@@ -1331,8 +1339,8 @@ mod usage_limits {
             )
             .unwrap();
         assert_eq!(store.usage_epoch(), epoch);
-        assert_eq!(store.public_buckets().unwrap(), buckets);
-        assert_eq!(store.export_data(&all()).unwrap(), [event()]);
+        assert_eq!(store.project_public_buckets(&tools_and_cost()).unwrap(), buckets);
+        assert_eq!(store.events(&all()).unwrap(), [event()]);
     }
     #[test]
     fn rejects_readings_outside_the_allowlist_and_keeps_the_last() {

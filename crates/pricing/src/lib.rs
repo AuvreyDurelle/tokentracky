@@ -9,7 +9,6 @@ pub use refresher::{
     TransportError, bundled_table, pricing_refresh_enabled,
 };
 pub use table::{PricedCost, PricingTable, trim_litellm};
-use tokentracky_core::{TokenCounts, ToolId};
 
 #[derive(Debug, thiserror::Error)]
 pub enum PricingError {
@@ -23,9 +22,4 @@ pub enum PricingError {
     Json(#[from] serde_json::Error),
     #[error("pricing cache write failed: {0}")]
     Cache(#[from] std::io::Error),
-}
-
-/// Estimated cost of one usage event with the bundled table, or `None` when the model has no known price.
-pub fn price_event(tokens: &TokenCounts, model: &str, tool: ToolId) -> Option<PricedCost> {
-    bundled_table().price(tokens, model, tool)
 }
