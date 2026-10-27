@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { ToolId } from '@tokentracky/core';
 import type { ApiClient } from './api';
-import { TOOLS, formatShare } from './format';
 
 export function Notice({ children, tone = 'plain' }: { children: ReactNode; tone?: 'plain' | 'error' | 'success' }) {
   return <div className={`notice ${tone}`} role={tone === 'error' ? 'alert' : tone === 'success' ? 'status' : undefined}>{children}</div>;
@@ -68,24 +67,6 @@ export function Modal({ title, children, onClose }: { title: string; children: R
 export const JUMP_KEYS = /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘K' : 'Ctrl K';
 export function SearchIcon() {
   return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.6" /><path d="m11 11 3.5 3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>;
-}
-
-/** Token split by tool, largest first. Colours follow the tool, never its position. Past eight tools, the smallest share one "Other tools" entry. */
-export function ToolMix({ totals }: { totals: Partial<Record<ToolId, number>> }) {
-  const all = TOOLS.map((tool) => ({ ...tool, tokens: totals[tool.id] ?? 0 })).filter((part) => part.tokens > 0).sort((a, b) => b.tokens - a.tokens);
-  const sum = all.reduce((total, part) => total + part.tokens, 0);
-  if (!sum) return <span className="none">No tool splits yet</span>;
-  const share = (part: { label: string; tokens: number }) => `${part.label} ${formatShare(part.tokens, sum)}`;
-  const folded = all.length > 8 ? all.slice(7) : [];
-  const parts: Array<{ id: ToolId | 'other'; label: string; tokens: number }> = folded.length
-    ? [...all.slice(0, 7), { id: 'other', label: 'Other tools', tokens: folded.reduce((total, part) => total + part.tokens, 0) }] : all;
-  return <div className="mix">
-    <div className="mix-bar" role="img" aria-label={all.map(share).join(', ')}>
-      {parts.map((part) => <i key={part.id} className={`tool-${part.id}`} style={{ width: `${(part.tokens / sum) * 100}%` }} />)}
-    </div>
-    <ul className="legend" aria-hidden="true">{parts.map((part) => <li key={part.id} title={part.id === 'other' ? folded.map(share).join(', ') : undefined}>
-      {part.id === 'other' ? <i className="key tool-other" /> : <ToolIcon id={part.id} />}{part.label}<strong className="num">{formatShare(part.tokens, sum)}</strong></li>)}</ul>
-  </div>;
 }
 
 export function AppleIcon() {

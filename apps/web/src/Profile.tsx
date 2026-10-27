@@ -1,12 +1,17 @@
-import { useEffect, useRef, useState } from 'react';
-import { rankingWindow, totalTokens, type Period, type ProfileStats, type TokenCounts } from '@tokentracky/core';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { rankingWindow, totalTokens, type BadgeProgress, type Period, type ProfileStats, type TokenCounts } from '@tokentracky/core';
 import { ApiError, type ApiClient } from './api';
 import { INSTALL_COMMAND, MAC_DOWNLOAD } from './download-config';
-import { KINDS, errorText, formatCompact, formatCost, formatExact, formatShare, shortDay, topPercent } from './format';
+import { KINDS, TOOLS, errorText, formatCompact, formatCost, formatCostCompact, formatExact, formatShare, shortDay, topPercent } from './format';
 import { Heatmap } from './Heatmap';
 import { rangeLabel } from './ranges';
 import { TrendChart } from './TrendChart';
-import { AppleIcon, Avatar, CopyCommand, Empty, Loading, Notice, Segmented, ToolMix } from './ui';
+import { AppleIcon, Avatar, CopyCommand, Empty, Loading, Notice, Segmented, ToolIcon } from './ui';
+import { ACHIEVEMENT_COPY, TIER_NAMES } from './mac/achievement-copy';
+import { nextRatio, tierProgress } from './mac/achievements';
+import { Emblem } from './mac/Emblem';
+import { ICONS } from './mac/icons';
+import { CROWN, GITHUB, Heart, ZAP, modelBars, toggleLike } from './mac/ProfileModal';
 
 /** README markdown for a profile badge that links back to the profile. */
 export function badgeMarkdown(origin: string, alias: string): string {
@@ -22,55 +27,95 @@ export function xShareUrl(stats: ProfileStats, origin: string, period: Period): 
   return `https://x.com/intent/post?${new URLSearchParams({ text, url: `${origin}/u/${stats.alias}?ref=share` }).toString()}`;
 }
 
-/** A shareable `/u/:alias` page with everything the builder publishes. */
-export function ProfilePage({ api, alias, me, origin, join, onLeaderboard }: { api: ApiClient; alias: string; me: string | null; origin: string | null; join: JoinAction | null; onLeaderboard: () => void }) {
+/** A shareable `/u/:alias` page with everything the builder publishes. A signed-in visitor can like it. */
+export function ProfilePage({ api, alias, me, signedIn, origin, join, onLeaderboard }: { api: ApiClient; alias: string; me: string | null; signedIn: boolean; origin: string | null; join: JoinAction | null; onLeaderboard: () => void }) {
   const [stats, setStats] = useState<ProfileStats | null>(null);
   const [error, setError] = useState<unknown>(null);
+  // Null: no like button, signed out, on your own profile or while the state loads.
+  const [liked, setLiked] = useState<boolean | null>(null);
+  const [likes, setLikes] = useState<number | null>(null);
+  const [pending, setPending] = useState(false);
   useEffect(() => {
     let live = true;
     api.profileStats(alias).then((value) => { if (live) setStats(value); }).catch((value: unknown) => { if (live) setError(value); });
     return () => { live = false; };
   }, [api, alias]);
+  useEffect(() => {
+    setLiked(null); setLikes(null);
+    if (!signedIn || alias === me) return;
+    let live = true;
+    api.profileLikeStatus(alias).then((status) => { if (live) setLiked(status.liked); }, () => {});
+    return () => { live = false; };
+  }, [api, alias, me, signedIn]);
+  const toggle = () => {
+    if (liked === null || !stats || pending) return;
+    const before = { liked, likes: likes ?? stats.likes };
+    const after = toggleLike(before);
+    setLiked(after.liked); setLikes(after.likes); setPending(true);
+    (after.liked ? api.likeProfile(alias) : api.unlikeProfile(alias))
+      .catch(() => { setLiked(before.liked); setLikes(before.likes); })
+      .finally(() => setPending(false));
+  };
   if (error instanceof ApiError && error.status === 404) return <div className="page-stack"><Empty title={`${alias} isn’t on the leaderboard`} action={<button type="button" className="btn" onClick={onLeaderboard}>See the leaderboard</button>}>They may have deleted their account, or the name is mistyped.</Empty></div>;
   if (error) return <div className="page-stack"><Notice tone="error">Could not load this profile: {errorText(error)}</Notice></div>;
   if (!stats) return <Loading>Loading profile…</Loading>;
-  return <ProfileView stats={stats} me={me} origin={origin} join={join} onLeaderboard={onLeaderboard} />;
+  return <ProfileView stats={stats} me={me} origin={origin} join={join} onLeaderboard={onLeaderboard} likes={likes ?? stats.likes} like={liked === null ? null : { liked, pending }} onLike={toggle} />;
 }
 
 type JoinAction = { label: string; onClick: () => void };
 const plural = (count: number, word: string) => `${formatExact(count)} ${word}${count === 1 ? '' : 's'}`;
 
-/** Identity, stats, a usage chart and highlights, the year of activity, tool mix and top models; the aside holds the join card (only for a viewer who can still join) and the share card. */
-export function ProfileView({ stats, me, origin, join, onLeaderboard }: { stats: ProfileStats; me: string | null; origin: string | null; join: JoinAction | null; onLeaderboard: () => void }) {
+const MEMBER_SINCE = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeZone: 'UTC' });
+/** Models listed before "Show all". */
+const SHOWN_MODELS = 6;
+
+/** Identity with likes, stats, highlights and the usage chart; the year of activity, tool mix, top models and badges. The aside holds the join card (only for a viewer who can still join) and the share card.
+ *  `like` is null where you can't like (signed out, or your own profile); the count still shows. */
+export function ProfileView({ stats, me, origin, join, onLeaderboard, likes = stats.likes, like = null, onLike = () => {} }: {
+  stats: ProfileStats; me: string | null; origin: string | null; join: JoinAction | null; onLeaderboard: () => void;
+  likes?: number; like?: { liked: boolean; pending: boolean } | null; onLike?: () => void;
+}) {
   const { all, week } = stats.periods;
   const { activity } = stats;
   const favourite = stats.models?.[0] ?? null;
-  const modelTotal = stats.models?.reduce((sum, model) => sum + model.tokens, 0) ?? 0;
   const showCost = stats.costMicrousd !== undefined;
   const top = topPercent(all.rank, all.builders);
+  const share = () => document.getElementById('share')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   return <div className="page-stack">
-    <nav className="crumbs" aria-label="Breadcrumb"><button type="button" className="link" onClick={onLeaderboard}>Leaderboard</button><span aria-hidden="true">/</span><strong>{stats.alias}</strong></nav>
+    <nav className="crumbs" aria-label="Breadcrumb"><button type="button" className="link" onClick={onLeaderboard}>Leaderboard</button><span aria-hidden="true">/</span><strong>{stats.alias}</strong><span className="push">Client-reported usage · UTC days</span></nav>
     <div className="profile-layout">
       <section className="panel profile-card" aria-label="Profile">
+        <div className="profile-cover" aria-hidden="true" />
         <div className="profile-id">
-          <Avatar alias={stats.alias} size="lg" />
-          <div>
-            <h1>{stats.alias}{stats.alias === me && <span className="badge">You</span>}</h1>
-            <p className="profile-ranks"><span className="badge plain">#{all.rank} All time</span>{top && <span className="badge">{top}</span>}<span className="badge plain">#{week.rank} This week</span></p>
+          <span className="profile-avatar"><Avatar alias={stats.alias} /></span>
+          <div className="profile-who">
+            <h1>{stats.alias}{stats.alias === me && <span className="badge">You</span>}
+              {all.rank > 0 && <span className={`badge${all.rank <= 3 ? ' gold' : ' plain'}`}>{CROWN}#{formatExact(all.rank)} All time</span>}
+              {week.rank > 0 && <span className="badge plain">#{formatExact(week.rank)} This week</span>}</h1>
+            <p className="profile-meta">
+              {stats.githubLogin && <><a href={`https://github.com/${encodeURIComponent(stats.githubLogin)}`} target="_blank" rel="noreferrer">{GITHUB}@{stats.githubLogin}</a><i className="profile-sep" aria-hidden="true" /></>}
+              <span>Member since {MEMBER_SINCE.format(new Date(`${stats.memberSince}T00:00:00Z`))}</span>
+            </p>
+          </div>
+          <div className="profile-btns">
+            {like
+              ? <button type="button" className="btn profile-like" aria-pressed={like.liked} disabled={like.pending} onClick={onLike}><Heart /><span className="sr-only">Like {stats.alias}, </span><b className="num">{formatExact(likes)}</b></button>
+              : <span className="btn profile-like" title={`${formatExact(likes)} ${likes === 1 ? 'like' : 'likes'}${me === stats.alias ? '' : ' · sign in to like'}`}><Heart /><b className="num">{formatExact(likes)}</b></span>}
+            <button type="button" className="btn" onClick={share}>Share</button>
           </div>
         </div>
-        <dl className="stats">
-          <div><dt>Total tokens</dt><dd title={`${formatExact(all.tokens)} tokens`}>{formatCompact(all.tokens)}</dd><small>All time</small></div>
-          <div><dt>Est. cost</dt><dd>{showCost ? formatCost(stats.costMicrousd ?? null) : '—'}</dd><small>API list prices</small></div>
+        <dl className="stats profile-stats">
+          <div><dt>Total tokens</dt><dd title={`${formatExact(all.tokens)} tokens`}>{formatCompact(all.tokens)}</dd><small>{top ?? 'All time'}</small></div>
+          <div><dt>Est. cost</dt><dd title={stats.costMicrousd == null ? undefined : formatCost(stats.costMicrousd)}>{stats.costMicrousd == null ? '—' : formatCostCompact(stats.costMicrousd)}</dd><small>{!showCost ? 'Not shared' : stats.costMicrousd === null ? 'Pricing unknown' : 'API list prices'}</small></div>
           <div><dt>Active days</dt><dd>{formatExact(activity.activeDays)}</dd><small>Last 12 months</small></div>
           <div><dt>Avg / day</dt><dd>{activity.activeDays ? formatCompact(activity.averagePerActiveDay) : '—'}</dd><small>Per active day</small></div>
         </dl>
+        <div className="profile-high">
+          <Highlight icon={ICONS.flame} tone="flame" label="Current streak">{plural(activity.currentStreak, 'day')}{activity.longestStreak > 0 && <small>{activity.currentStreak === activity.longestStreak ? ' · best ever' : ` · best ${plural(activity.longestStreak, 'day')}`}</small>}</Highlight>
+          <Highlight icon={ZAP} tone="zap" label="Best day">{activity.bestDay ? <>{formatCompact(activity.bestDay.tokens)}<small> · {shortDay(activity.bestDay.day)}</small></> : '—'}</Highlight>
+          <Highlight icon={ICONS.star} tone="star" label={`Favourite${stats.models && stats.models.length > 1 ? ` · ${stats.models.length} models used` : ''}`}><span className="mono" title={favourite?.model}>{favourite?.model ?? '—'}</span></Highlight>
+        </div>
         <ProfileUsage daily={stats.daily} />
-        <dl className="highlights">
-          <div><dt>Current streak</dt><dd>{plural(activity.currentStreak, 'day')}{activity.longestStreak > 0 && <small>{activity.currentStreak === activity.longestStreak ? ' · best ever' : ` · best ${plural(activity.longestStreak, 'day')}`}</small>}</dd></div>
-          <div><dt>Best day</dt><dd>{activity.bestDay ? <>{formatCompact(activity.bestDay.tokens)}<small> · {shortDay(activity.bestDay.day)}</small></> : '—'}</dd></div>
-          <div><dt>Favourite{stats.models && stats.models.length > 1 ? ` · ${stats.models.length} models used` : ''}</dt><dd className="mono" title={favourite?.model}>{favourite?.model ?? '—'}</dd></div>
-        </dl>
       </section>
       <aside className="profile-aside">
         {join && <JoinCard alias={stats.alias} join={join} />}
@@ -82,25 +127,66 @@ export function ProfileView({ stats, me, origin, join, onLeaderboard }: { stats:
           <header className="panel-head"><h2>Activity</h2><span className="push faint">Last 52 weeks · UTC</span></header>
           <div className="panel-body"><Heatmap days={stats.daily} label="Tokens per UTC day, last 12 months" /></div>
         </section>
-        <section className="panel" aria-label="Tool mix">
-          <header className="panel-head"><h2>Tool mix</h2></header>
-          <div className="panel-body">{stats.toolTokens ? <ToolMix totals={stats.toolTokens} /> : <p className="muted">No tool split synced yet.</p>}</div>
-        </section>
-        <section className="panel" aria-label="Top models">
-          <header className="panel-head"><h2>Top models</h2></header>
-          {stats.models?.length ? <div className="table-wrap"><table className="table">
-            <thead><tr><th scope="col">Model</th>{showCost && <th scope="col" className="c-num">Est. cost</th>}<th scope="col" className="c-num">Tokens</th><th scope="col" className="c-num c-share">Share</th></tr></thead>
-            <tbody>{stats.models.map((model) => <tr key={model.model}>
-              <td className="c-name mono" title={model.model}>{model.model}</td>
-              {showCost && <td className="c-num">{formatCost(model.costMicrousd)}</td>}
-              <td className="c-num c-total" title={`${formatExact(model.tokens)} tokens`}>{formatCompact(model.tokens)}</td>
-              <td className="c-num c-share">{formatShare(model.tokens, modelTotal)}</td>
-            </tr>)}</tbody>
-          </table></div> : <p className="panel-empty">No model usage synced yet.</p>}
-        </section>
+        <ProfileMix toolTokens={stats.toolTokens} />
+        <ProfileModels models={stats.models} showCost={showCost} />
+        {stats.badges.length > 0 && <section className="panel" aria-label="Achievements">
+          <header className="panel-head"><h2>Achievements</h2><span className="push faint">{stats.badges.filter((badge) => badge.tier > 0).length} of {stats.badges.length} earned</span></header>
+          <div className="panel-body profile-badges">{stats.badges.map((badge) => <ProfileBadge key={badge.id} badge={badge} />)}</div>
+        </section>}
       </div>
     </div>
     <p className="privacy-line">Profiles show each builder’s daily token totals, tool split, model mix and estimated cost; deleting the account removes them. Prompts, code and project names never leave their computer.</p>
+  </div>;
+}
+
+function Highlight({ icon, tone, label, children }: { icon: ReactNode; tone: string; label: string; children: ReactNode }) {
+  return <div className="profile-hl"><span className={`profile-hl-ic ${tone}`}>{icon}</span><div><div className="profile-hl-label">{label}</div><div className="profile-hl-value">{children}</div></div></div>;
+}
+
+/** The tool split: one bar, and each tool's tokens and share, largest first. */
+function ProfileMix({ toolTokens }: { toolTokens: ProfileStats['toolTokens'] }) {
+  const tools = TOOLS.map((tool) => ({ ...tool, tokens: toolTokens?.[tool.id] ?? 0 })).filter((tool) => tool.tokens > 0).sort((a, b) => b.tokens - a.tokens);
+  const sum = tools.reduce((total, tool) => total + tool.tokens, 0);
+  return <section className="panel" aria-label="Tool mix">
+    <header className="panel-head"><h2>Tool mix</h2>{tools.length > 0 && <span className="push faint">{plural(tools.length, 'tool')}</span>}</header>
+    <div className="panel-body">{!toolTokens ? <p className="muted">No tool split synced yet.</p> : !sum ? <p className="muted">No tool usage yet.</p> : <>
+      <div className="mix-bar" role="img" aria-label={tools.map((tool) => `${tool.label} ${formatShare(tool.tokens, sum)}`).join(', ')}>
+        {tools.map((tool) => <i key={tool.id} className={`tool-${tool.id}`} style={{ width: `${(tool.tokens / sum) * 100}%` }} />)}
+      </div>
+      <ul className="profile-legend" aria-hidden="true">{tools.map((tool) => <li key={tool.id}><ToolIcon id={tool.id} />{tool.label}<em><b>{formatCompact(tool.tokens)}</b> · {formatShare(tool.tokens, sum)}</em></li>)}</ul>
+    </>}</div>
+  </section>;
+}
+
+/** Models by tokens, each with a bar against the largest; the first six until "Show all". */
+function ProfileModels({ models, showCost }: { models: ProfileStats['models']; showCost: boolean }) {
+  const [all, setAll] = useState(false);
+  const rows = modelBars(models ?? []);
+  return <section className="panel" aria-label="Top models">
+    <header className="panel-head"><h2>Top models</h2>{rows.length > 0 && <span className="push faint">Tokens{showCost && ' · Est. cost'}</span>}</header>
+    {rows.length ? <div className="profile-models">
+      {rows.slice(0, all ? undefined : SHOWN_MODELS).map((model, index) => <div key={model.model} className="profile-model">
+        <span className="profile-idx num">{index + 1}</span>
+        <span className="profile-model-name mono" title={model.model}>{model.model}</span>
+        <div className="profile-track" aria-hidden="true"><span style={{ width: `${model.width}%` }} /></div>
+        <span className="profile-tok num" title={`${formatExact(model.tokens)} tokens`}>{formatCompact(model.tokens)}</span>
+        {showCost && <span className="profile-cost num" title={model.costMicrousd == null ? undefined : formatCost(model.costMicrousd)}>{model.costMicrousd == null ? '—' : formatCostCompact(model.costMicrousd)}</span>}
+      </div>)}
+      {rows.length > SHOWN_MODELS && <button type="button" className="profile-more" aria-expanded={all} onClick={() => setAll((value) => !value)}>{all ? 'Show fewer' : `Show all ${formatExact(rows.length)} models`}</button>}
+    </div> : <p className="panel-empty">No model usage synced yet.</p>}
+  </section>;
+}
+
+/** One badge: its emblem in the tier's colour, and how far it is to the next tier. */
+function ProfileBadge({ badge }: { badge: BadgeProgress }) {
+  const progress = tierProgress(badge);
+  return <div className={`profile-badge${badge.tier ? '' : ' profile-locked'}`} title={ACHIEVEMENT_COPY[badge.id].description}>
+    <Emblem id={badge.id} tier={badge.tier} />
+    <div className="profile-badge-body">
+      <div className="profile-badge-name"><b>{ACHIEVEMENT_COPY[badge.id].name}</b>{badge.tier > 0 && <span className={`profile-tier t${badge.tier}`}>{TIER_NAMES[badge.tier]}</span>}</div>
+      <div className="profile-badge-meta" title={progress}>{progress}</div>
+      <div className="profile-badge-bar" aria-hidden="true"><span style={{ width: `${(nextRatio(badge) ?? 1) * 100}%` }} /></div>
+    </div>
   </div>;
 }
 
@@ -157,8 +243,11 @@ function JoinCard({ alias, join }: { alias: string; join: JoinAction }) {
     <h2>Think you can catch {alias}?</h2>
     <p className="muted">Join in about a minute. Tokentracky counts the tokens your AI coding tools already log. Prompts, code and project names never leave your computer.</p>
     {INSTALL_COMMAND && <CopyCommand text={INSTALL_COMMAND} />}
-    {MAC_DOWNLOAD && <a className="btn primary" href={MAC_DOWNLOAD} aria-label="Download Tokentracky for Apple Silicon"><AppleIcon />Download for Mac</a>}
+    {INSTALL_COMMAND && MAC_DOWNLOAD && <p className="join-or">or</p>}
+    {MAC_DOWNLOAD && <><a className="btn primary" href={MAC_DOWNLOAD} aria-label="Download Tokentracky for Apple Silicon"><AppleIcon />Download for Mac</a>
+      <small className="profile-fine">Free · Apple Silicon · macOS 13 or later</small></>}
     <button type="button" className="btn" onClick={join.onClick}>{join.label}</button>
+    <p className="profile-tools"><span aria-hidden="true">{TOOLS.slice(0, 7).map((tool) => <ToolIcon key={tool.id} id={tool.id} />)}</span>Works with {TOOLS.length} tools</p>
   </section>;
 }
 
@@ -185,7 +274,7 @@ function ShareCard({ stats, origin }: { stats: ProfileStats; origin: string | nu
   };
   // The badge image is served by the hosted site, so the preview shows only there.
   const hosted = typeof window !== 'undefined' && origin === window.location.origin;
-  return <section className="panel" aria-label="Share this profile">
+  return <section className="panel" id="share" aria-label="Share this profile">
     <header className="panel-head"><h2>Share this profile</h2></header>
     <div className="panel-body form">
       <Segmented label="Card shows" value={period} options={[{ value: 'week', label: 'This week' }, { value: 'month', label: 'This month' }, { value: 'all', label: 'All time' }]} onChange={setPeriod} />

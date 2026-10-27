@@ -168,7 +168,7 @@ function App() {
       {local && route.page === 'profile' && <ProfileModal key={route.alias} api={api} alias={route.alias} me={me} onClose={() => navigate({ page: 'leaderboard' })} />}
       {local && page === 'achievements' && <AchievementsView api={api} me={me} revision={`${usageRevision(localStatus)}|${localStatus?.lastSyncAt ?? ''}`} />}
       {!local && page === 'leaderboard' && <Leaderboard api={api} me={me} join={join} onProfile={(alias) => navigate({ page: 'profile', alias })} />}
-      {!local && page === 'profile' && route.page === 'profile' && <ProfilePage key={route.alias} api={api} alias={route.alias} me={me} origin={window.location.origin} join={join} onLeaderboard={go('leaderboard')} />}
+      {!local && page === 'profile' && route.page === 'profile' && <ProfilePage key={route.alias} api={api} alias={route.alias} me={me} signedIn={authState === 'signed_in'} origin={window.location.origin} join={join} onLeaderboard={go('leaderboard')} />}
       {page === 'missing' && <div className="empty page-missing"><strong>This page does not exist</strong><button type="button" className="btn" onClick={go('leaderboard')}>Go to the leaderboard</button></div>}
       {(page === 'you' || page === 'tokens') && (local
         ? <TokensView api={api} status={localStatus} />

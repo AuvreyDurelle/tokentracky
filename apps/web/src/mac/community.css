@@ -1,5 +1,5 @@
 /* The Mac app's community pages: the leaderboard, profiles and achievements, with shared ranking and badge components.
-   Every rule starts at an m- class of these pages (.m-lb, .m-pf, .m-ach, .m-emb), which no website markup carries. */
+   Every rule starts at an m- class of these pages (.m-lb, .m-pf, .m-ach), which no website markup carries. */
 
 /* ---------- leaderboard ---------- */
 .mac .m-lb .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
@@ -122,23 +122,6 @@
 .mac .m-lb .lb-pager svg { width: 14px; height: 14px; }
 .mac .m-lb .lb-pager .ell { padding: 0 4px; color: var(--text-4); }
 .mac .m-lb .lb-empty { margin-top: 24px; }
-
-/* ---------- emblem (achievements.html): a hexagon in the tier's hue, --h ---------- */
-.mac .m-emb { --h: var(--text-2); display: block; width: 52px; height: 52px; overflow: visible; filter: drop-shadow(0 4px 14px color-mix(in srgb, var(--h) 26%, transparent)); }
-.mac .m-emb.t1 { --h: var(--bronze); }
-.mac .m-emb.t2 { --h: var(--silver); }
-.mac .m-emb.t3 { --h: var(--gold); }
-.mac .m-emb.t4 { --h: #8fd8ff; }
-.mac .m-emb .hx-base { fill: var(--surface); }
-.mac .m-emb .hx { stroke: color-mix(in srgb, var(--h) 78%, transparent); stroke-width: 1.3; }
-.mac .m-emb .hx-in { fill: none; stroke: color-mix(in srgb, var(--h) 28%, transparent); stroke-width: 0.8; }
-.mac .m-emb .gl { fill: none; stroke: color-mix(in srgb, var(--h) 32%, white); stroke-linecap: round; stroke-linejoin: round; }
-.mac .m-emb text { fill: color-mix(in srgb, var(--h) 26%, white); font-family: var(--font); font-weight: 700; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
-.mac .m-emb.t0 { filter: none; }
-.mac .m-emb.t0 .hx { fill: var(--surface-2); stroke: rgba(255, 255, 255, 0.1); stroke-width: 1; }
-.mac .m-emb.t0 .hx-in { stroke: rgba(255, 255, 255, 0.035); }
-.mac .m-emb.t0 .gl { stroke: var(--text-4); }
-.mac .m-emb.t0 text { fill: var(--text-4); }
 
 /* ---------- profile modal (leaderboard.html#profile): a full-window dialog whose panel scrolls ---------- */
 .mac .m-pf { width: 100%; max-width: none; height: 100%; max-height: none; margin: 0; padding: 40px; overflow: hidden; border: 0; background: transparent; color: var(--text); font-size: 13px; letter-spacing: -0.005em; }

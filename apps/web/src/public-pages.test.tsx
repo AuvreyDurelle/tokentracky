@@ -118,8 +118,29 @@ describe('public profile', () => {
     expect(joined).not.toContain('Think you can catch');
     expect(joined).toContain('Share this profile');
   });
-  it('leaves out what has no backend yet: real name, likes, achievements, member since and last active', () => {
-    expect(view(null)).not.toMatch(/Member since|Active \d|Like|Achievements/);
+  it('shows member since, the GitHub login, likes and every badge with its tier, but no real name or last active', () => {
+    const html = renderToStaticMarkup(<ProfileView stats={{ ...stats, likes: 14, githubLogin: 'maren-h', badges: [{ id: 'token-titan', tier: 2, value: 1_100_000, next: 10_000_000 }, { id: 'podium', tier: 0, value: 0, next: 10 }] }}
+      me={null} origin={null} join={null} onLeaderboard={() => {}} />);
+    expect(html).toContain('Member since');
+    expect(html).toContain('href="https://github.com/maren-h"');
+    expect(html).toContain('>14</b>');
+    expect(html).toContain('1 of 2 earned');
+    expect(html).toContain('Token Titan');
+    expect(html).toContain('Silver');
+    expect(html).not.toMatch(/Active \d/);
+  });
+  it('offers a like button only when the viewer can like, with its state', () => {
+    const likeable = renderToStaticMarkup(<ProfileView stats={stats} me={null} origin={null} join={null} onLeaderboard={() => {}} likes={3} like={{ liked: true, pending: false }} />);
+    expect(likeable).toMatch(/<button[^>]*aria-pressed="true"[^>]*>.*Like marenh/);
+    expect(view(null)).not.toContain('Like marenh');
+  });
+  it('lists six models until Show all', () => {
+    const models = Array.from({ length: 8 }, (_, index) => ({ model: `model-${index}`, tokens: 1_000 - index }));
+    const html = renderToStaticMarkup(<ProfileView stats={{ ...stats, models }} me={null} origin={null} join={null} onLeaderboard={() => {}} />);
+    expect(html).toContain('model-5');
+    expect(html).not.toContain('model-6');
+    expect(html).toContain('Show all 8 models');
+    expect(view(null)).not.toContain('Show all');
   });
   it('counts the share card window’s own active days and longest run, not the year’s', () => {
     const daily = [{ day: '2026-10-19', tokens: 5 }, { day: '2026-10-20', tokens: 0 }, { day: '2026-10-21', tokens: 3 }, { day: '2026-10-22', tokens: 4 }, { day: '2026-10-23', tokens: 0 }, { day: '2026-10-24', tokens: 1 }];

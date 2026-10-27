@@ -1,5 +1,6 @@
 import { useId, type ReactNode } from 'react';
 import type { BadgeId } from '@tokentracky/core';
+import './emblem.css';
 
 // The mockup's rounded hexagon (achievements.html), its inner ring, and one glyph per badge on a 24px grid.
 const HEX = 'M26.80 6.00Q32.00 3.00 37.20 6.00L51.92 14.50Q57.11 17.50 57.11 23.50L57.11 40.50Q57.11 46.50 51.92 49.50L37.20 58.00Q32.00 61.00 26.80 58.00L12.08 49.50Q6.89 46.50 6.89 40.50L6.89 23.50Q6.89 17.50 12.08 14.50Z';

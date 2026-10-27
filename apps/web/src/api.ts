@@ -144,6 +144,10 @@ export class ApiClient {
   community() { return this.request<CommunityStats>('/api/community'); }
   leaderboardAround(alias: string, period: Period) { return this.request<LeaderboardNeighbours>(`/api/leaderboard/around/${encodeURIComponent(alias)}?${query({ period })}`); }
   achievementRarity() { return this.request<AchievementRarity>('/api/achievements/rarity'); }
+  /** Likes on the website go through the signed-in account. */
+  profileLikeStatus(alias: string) { return this.request<{ liked: boolean }>(`/api/profiles/${encodeURIComponent(alias)}/like`, {}, true); }
+  likeProfile(alias: string) { return this.request<void>(`/api/profiles/${encodeURIComponent(alias)}/like`, { method: 'PUT' }, true); }
+  unlikeProfile(alias: string) { return this.request<void>(`/api/profiles/${encodeURIComponent(alias)}/like`, { method: 'DELETE' }, true); }
   /** Counts one arrival from a tagged link; nothing about the visitor is sent. */
   visit(tag: LinkTag) { return this.request<void>('/api/visits', { method: 'POST', body: JSON.stringify({ tag }) }); }
 

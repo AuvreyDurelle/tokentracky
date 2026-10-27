@@ -1,0 +1,17 @@
+/* A badge's emblem (achievements.html): a hexagon in the tier's hue, --h. Shared by the Mac pages and the website profile;
+   each page sizes it under its own class. */
+.m-emb { --h: var(--text-2); display: block; width: 52px; height: 52px; overflow: visible; filter: drop-shadow(0 4px 14px color-mix(in srgb, var(--h) 26%, transparent)); }
+.m-emb.t1 { --h: var(--bronze); }
+.m-emb.t2 { --h: var(--silver); }
+.m-emb.t3 { --h: var(--gold); }
+.m-emb.t4 { --h: #8fd8ff; }
+.m-emb .hx-base { fill: var(--surface); }
+.m-emb .hx { stroke: color-mix(in srgb, var(--h) 78%, transparent); stroke-width: 1.3; }
+.m-emb .hx-in { fill: none; stroke: color-mix(in srgb, var(--h) 28%, transparent); stroke-width: 0.8; }
+.m-emb .gl { fill: none; stroke: color-mix(in srgb, var(--h) 32%, white); stroke-linecap: round; stroke-linejoin: round; }
+.m-emb text { fill: color-mix(in srgb, var(--h) 26%, white); font-family: var(--font); font-weight: 700; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+.m-emb.t0 { filter: none; }
+.m-emb.t0 .hx { fill: var(--surface-2); stroke: rgba(255, 255, 255, 0.1); stroke-width: 1; }
+.m-emb.t0 .hx-in { stroke: rgba(255, 255, 255, 0.035); }
+.m-emb.t0 .gl { stroke: var(--text-4); }
+.m-emb.t0 text { fill: var(--text-4); }
