@@ -128,7 +128,7 @@ verify_signature() {
 }
 verify_signature "$APP"
 verify_signature "$CLI"
-[[ "$("$CLI" --version)" == "tokentracky $VERSION" ]] || { echo 'CLI version mismatch' >&2; exit 1; }
+[[ "$("$CLI" --version)" == "$VERSION" ]] || { echo 'CLI version mismatch' >&2; exit 1; }
 # Reject accidental Intel or universal outputs instead of advertising them as arm64-only.
 [[ "$(lipo -archs "$CLI")" == arm64 ]] && [[ "$(lipo -archs "$APP/Contents/MacOS/tokentracky-mac")" == arm64 ]]
 python3 "$ROOT/scripts/check-standalone-cli.py" --binary "$CLI" --web-dist "$ROOT/apps/web/dist"
