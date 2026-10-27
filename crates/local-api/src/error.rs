@@ -1,4 +1,4 @@
-//! The uniform error body and the error and not-found handlers of `apps/server/src/app.ts`.
+//! The uniform error body and the error and not-found handlers.
 use axum::extract::Request;
 use axum::http::{HeaderValue, StatusCode, header};
 use axum::middleware::Next;

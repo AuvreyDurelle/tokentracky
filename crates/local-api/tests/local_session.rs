@@ -1,4 +1,4 @@
-//! `apps/server/src/local-session.test.ts`, case for case: loopback workspace authentication, on a bare router.
+//! Loopback workspace authentication, on a bare router.
 use axum::body::{Body, to_bytes};
 use axum::extract::Request;
 use axum::routing::{get, post};
@@ -25,7 +25,7 @@ fn fixture() -> (Router, LocalSession) {
     let app = Router::new()
         .route("/", get(|| async { "workspace" }))
         .route("/api/local/status", get(|| async { Json(json!({"private": true})) }))
-        .route("/api/local/scan", post(|| async { Json(json!({"ok": true})) }));
+        .route("/api/local/refresh", post(|| async { Json(json!({"ok": true})) }));
     (session.protect(app), session)
 }
 
@@ -90,14 +90,14 @@ async fn rejects_dns_rebinding_cross_site_reads_and_cross_origin_mutations_even_
         ),
         (
             "POST",
-            "/api/local/scan",
+            "/api/local/refresh",
             vec![HOST, ("origin", "https://evil.example")],
             403,
         ),
-        ("POST", "/api/local/scan", vec![HOST], 403),
+        ("POST", "/api/local/refresh", vec![HOST], 403),
         (
             "POST",
-            "/api/local/scan",
+            "/api/local/refresh",
             vec![HOST, ("origin", "http://127.0.0.1:4771")],
             200,
         ),

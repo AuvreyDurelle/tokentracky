@@ -1,12 +1,12 @@
 //! Roo Code and Kilo Code version 5 tasks.
 use super::adapters::{Sidecars, sidecar};
 use super::parser::{
-    PENDING, TEXT_LIMIT, embedded, epoch, field, is, is_js_space, is_metadata_text, keep, note, only, optional,
-    parent_name, safe_integer, sibling, text, usage_event,
+    PENDING, TEXT_LIMIT, embedded, epoch, field, is, is_metadata_text, keep, note, only, optional, parent_name,
+    safe_integer, sibling, text, usage_event,
 };
 use serde_json::Value;
 use std::path::Path;
-use tokentracky_core::{ParseResult, TokenCounts, ToolId};
+use tokentracky_core::{ParseResult, TokenCounts, ToolId, is_js_space};
 
 /// The model named by the last `<model>` tag the extension writes into `<environment_details>` (the last match of
 /// `/<model>([^<\\"]{1,256})<\/model>/g` in the raw conversation text, trimmed).

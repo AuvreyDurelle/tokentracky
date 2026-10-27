@@ -19,7 +19,6 @@ fn line(
 }
 
 static EVERY_CODE: Adapter = Adapter {
-    passive: true,
     capabilities: SourceCapabilities {
         tokens: true,
         models: true,

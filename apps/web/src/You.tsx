@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import type { SourceStatus, ToolId, UsageSummary } from '@tokentracky/core';
+import type { SourceStatus, ToolId } from '@tokentracky/core';
 import { ApiError, type ApiClient, type ConnectStart, type DetectedTool, type LocalStatus } from './api';
-import { KINDS, errorText, formatCompact } from './format';
-import { fillRange, type DayRange, type HourWindow } from './ranges';
+import { errorText, formatCompact } from './format';
+import type { DayRange, HourWindow } from './ranges';
 import { Modal, Notice } from './ui';
 
 /** Saves the range's usage as a CSV, named for its UTC days (or as the last 24 hours) unless given a name. */
@@ -67,9 +67,6 @@ export function useConnectFlow(api: ApiClient, refresh: () => Promise<void>) {
   return { flow, setFlow, error, setError, start };
 }
 
-/** One series per token kind over every day of the range; stacked, they add up to each day's tokens. */
-export const kindStacks = (daily: UsageSummary['daily'], range: DayRange) =>
-  KINDS.map((kind) => ({ label: kind.label, className: `kind-${kind.key}`, values: fillRange(daily, range, (point) => point.breakdown[kind.key]).map((point) => point.tokens) }));
 const supported = (status: LocalStatus | null) => status?.sources.filter((source) => source.state !== 'unsupported') ?? [];
 
 const names = (items: SourceStatus[]) => items.length > 1 ? `${items.slice(0, -1).map((item) => item.name).join(', ')} and ${items.at(-1)!.name}` : items[0]?.name ?? '';

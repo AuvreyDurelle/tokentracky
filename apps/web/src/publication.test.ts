@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Publication } from '@tokentracky/core';
-import { aliasFromHandle, draftFromPublication, publicationRequest, weekStart } from './publication';
+import { aliasFromHandle, draftFromPublication, publicationRequest } from './publication';
 
 describe('publication request', () => {
   it('sends only the alias, with no consent, history or sharing fields', () => {
@@ -16,14 +16,6 @@ describe('publication request', () => {
 
   it.each(['', 'ab', '-lead', 'has space', 'x'.repeat(31)])('rejects the alias %j before sending', (alias) => {
     expect(() => publicationRequest({ alias })).toThrow('Alias must contain');
-  });
-
-  it.each([
-    ['2026-10-26T00:15:00+02:00', '2026-10-19'],
-    ['2026-10-25T23:15:00-02:00', '2026-10-26'],
-    ['2026-01-01T10:00:00Z', '2025-12-29'],
-  ])('uses UTC week boundaries for %s', (time, expected) => {
-    expect(weekStart(new Date(time))).toBe(expected);
   });
 });
 

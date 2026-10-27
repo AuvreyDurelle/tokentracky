@@ -1,6 +1,5 @@
 //! DeepSeek Harness `session[.vN].jsonl.zstd` logs: one independent zstd frame for the header, then one per append.
-//! The TypeScript collector cannot read them, and fixtures hold no binary files, so archives are made here with
-//! ruzstd's encoder, as `codex_archives.rs` does.
+//! Fixtures hold no binary files, so archives are made here with ruzstd's encoder, as `codex_archives.rs` does.
 mod support;
 
 use ruzstd::encoding::{CompressionLevel, compress_to_vec};

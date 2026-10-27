@@ -57,7 +57,11 @@ describe.skipIf(!databaseUrl)('public counters with isolated PostgreSQL', () => 
 
   async function member(alias: string) {
     const publication = await repository.putPublication(identity(alias), {alias});
-    const device = await repository.createDevice(identity(alias), 'Counter test computer');
+    const started = await repository.startDeviceAuthorization({deviceName: 'Counter test computer'});
+    await repository.approveDeviceAuthorization(identity(alias), started.userCode);
+    const approved = await repository.pollDeviceAuthorization(started.pollToken);
+    if (approved.status !== 'approved') throw new Error('Computer not approved');
+    const device = {id: (await repository.account(identity(alias))).devices[0]!.id, token: approved.deviceToken};
     return {alias, publication, device, collectorId: randomUUID()};
   }
   async function upload(m: Member, buckets: ReturnType<typeof bucket>[]) {

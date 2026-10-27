@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PublicProfile } from '@tokentracky/core';
-import { MAIN_TOOLS, gapToNext, lastSeven, otherTokens, pagerItems, topPercent, weeklyGrowth } from './leaderboard';
+import { MAIN_TOOLS, gapToNext, lastSeven, otherTokens, pagerItems } from './leaderboard';
 
 const row = (alias: string, rank: number, tokens: number) => ({ alias, rank, tokens, previousRank: null, daily: [] }) as PublicProfile;
 
@@ -21,20 +21,9 @@ describe('leaderboard helpers', () => {
     expect(gapToNext(rows, 'nobody')).toBeNull();
     expect(gapToNext([row('me', 1, 5)], 'me')).toBeNull();
   });
-  it('adds up the last seven days of the community trend', () => {
-    expect(weeklyGrowth(Array.from({ length: 30 }, (_, i) => ({ day: `d${i}`, tokens: i < 23 ? 1 : 10 })))).toBe(70);
-    expect(weeklyGrowth([{ tokens: 4 }])).toBe(4);
-    expect(weeklyGrowth([])).toBe(0);
-  });
   it('keeps the last seven of the fourteen daily totals', () => {
     expect(lastSeven(Array.from({ length: 14 }, (_, i) => i))).toEqual([7, 8, 9, 10, 11, 12, 13]);
     expect(lastSeven([1, 2])).toEqual([1, 2]);
-  });
-  it('rounds a rank up to a whole top percentage', () => {
-    expect(topPercent(42, 3003)).toBe(2);
-    expect(topPercent(1, 3003)).toBe(1);
-    expect(topPercent(3003, 3003)).toBe(100);
-    expect(topPercent(5, 0)).toBeNull();
   });
   it('lists pages with ellipses around the current one', () => {
     expect(pagerItems(1, 1)).toEqual([1]);

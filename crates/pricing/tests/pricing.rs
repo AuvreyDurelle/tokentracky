@@ -13,7 +13,7 @@ use time::{OffsetDateTime, format_description::well_known::Rfc3339};
 use tokentracky_core::{CostParts, TokenCounts, ToolId};
 use tokentracky_pricing::{
     Json, LITELLM_URL, MAX_DOWNLOAD_BYTES, PricedCost, PricingError, PricingRefresher, PricingTable, RefresherOptions,
-    Transport, TransportError, bundled_table, price_event, pricing_refresh_enabled, trim_litellm,
+    Transport, TransportError, bundled_table, pricing_refresh_enabled, trim_litellm,
 };
 
 const SNAPSHOT: &str = include_str!("../data/litellm-prices.json");
@@ -162,9 +162,8 @@ fn mode(path: &Path) -> u32 {
 mod bundled_snapshot {
     use super::*;
 
-    /// The version `bundledTable().version` gives in TypeScript for the same snapshot, computed once at the port
-    /// baseline with
-    /// `npx tsx -e "import {bundledTable} from './packages/pricing/src/index.ts'; console.log(bundledTable().version)"`.
+    /// The version of the snapshot's LiteLLM part alone, without the hand-maintained list: `litellm:` and the first
+    /// 12 hex digits of the SHA-256 of the JSON of its `models`, as the test below computes it.
     const TYPESCRIPT_VERSION: &str = "litellm:ebe634462118";
 
     #[test]
@@ -330,12 +329,13 @@ mod bundled_snapshot {
         // claude-sonnet-4-5: $3 in, $15 out, $0.30 cache read, $3.75 cache write per million.
         let table = bundled_table();
         assert_eq!(
-            price_event(
-                &tokens(1_000, 500, 20_000, 4_000),
-                "claude-sonnet-4-5-20250929",
-                ToolId::Claude
-            )
-            .map(plain),
+            table
+                .price(
+                    &tokens(1_000, 500, 20_000, 4_000),
+                    "claude-sonnet-4-5-20250929",
+                    ToolId::Claude
+                )
+                .map(plain),
             cost(&table, 3_000 + 7_500 + 6_000 + 15_000)
         );
     }
@@ -349,7 +349,9 @@ mod bundled_snapshot {
             ..tokens(1_000, 500, 20_000, 4_000)
         };
         assert_eq!(
-            price_event(&event, "claude-sonnet-4-5-20250929", ToolId::Claude).map(plain),
+            table
+                .price(&event, "claude-sonnet-4-5-20250929", ToolId::Claude)
+                .map(plain),
             cost(&table, 3_000 + 7_500 + 6_000 + 11_250 + 6_000)
         );
         // One-hour tokens beyond the writes are clamped to them.
@@ -358,7 +360,7 @@ mod bundled_snapshot {
             ..tokens(0, 0, 0, 4_000)
         };
         assert_eq!(
-            price_event(&all, "claude-sonnet-4-5", ToolId::Claude).map(plain),
+            table.price(&all, "claude-sonnet-4-5", ToolId::Claude).map(plain),
             cost(&table, 24_000)
         );
     }
@@ -371,7 +373,9 @@ mod bundled_snapshot {
             cache_write_1h: Some(1_000),
             ..tokens(1_000, 500, 20_000, 4_000)
         };
-        let priced = price_event(&event, "claude-sonnet-4-5", ToolId::Claude).unwrap();
+        let priced = bundled_table()
+            .price(&event, "claude-sonnet-4-5", ToolId::Claude)
+            .unwrap();
         assert_eq!(
             priced.parts,
             CostParts {
@@ -384,7 +388,9 @@ mod bundled_snapshot {
         );
         // 3 + 15 + 0.3 + 3.75 = 22.05 rounds to 22: each kind rounds down (21) and the largest remainder, cache write's
         // 0.75, takes the difference.
-        let small = price_event(&tokens(1, 1, 1, 1), "claude-sonnet-4-5", ToolId::Claude).unwrap();
+        let small = bundled_table()
+            .price(&tokens(1, 1, 1, 1), "claude-sonnet-4-5", ToolId::Claude)
+            .unwrap();
         assert_eq!(small.cost_microusd, 22);
         let p = small.parts;
         assert_eq!((p.input, p.output, p.cache_read, p.cache_write), (3, 15, 0, 4));
@@ -399,7 +405,7 @@ mod bundled_snapshot {
             ..tokens(2_000, 300, 8_000, 0)
         };
         assert_eq!(
-            price_event(&event, "gpt-5-codex", ToolId::Codex).map(plain),
+            table.price(&event, "gpt-5-codex", ToolId::Codex).map(plain),
             cost(&table, 2_500 + 3_000 + 1_000)
         );
     }
@@ -520,12 +526,14 @@ mod bundled_snapshot {
     fn keeps_unknown_models_unknown_never_zero_but_zero_token_placeholders_cost_nothing() {
         let table = bundled_table();
         assert_eq!(
-            price_event(&tokens(10, 10, 0, 0), "definitely-not-a-model", ToolId::Claude),
+            table.price(&tokens(10, 10, 0, 0), "definitely-not-a-model", ToolId::Claude),
             None
         );
-        assert_eq!(price_event(&tokens(10, 10, 0, 0), "unknown", ToolId::Codex), None);
+        assert_eq!(table.price(&tokens(10, 10, 0, 0), "unknown", ToolId::Codex), None);
         assert_eq!(
-            price_event(&tokens(0, 0, 0, 0), "<synthetic>", ToolId::Claude).map(plain),
+            table
+                .price(&tokens(0, 0, 0, 0), "<synthetic>", ToolId::Claude)
+                .map(plain),
             cost(&table, 0)
         );
     }
@@ -541,16 +549,20 @@ mod bundled_snapshot {
         let used = tokens(1_000, 500, 200, 100);
         // LM Studio runs every model locally, even one LiteLLM prices for its cloud API.
         for model in ["qwen2.5-7b-instruct", "claude-sonnet-4-5", "unknown"] {
-            assert_eq!(price_event(&used, model, ToolId::LmStudio), zero, "{model}");
+            assert_eq!(table.price(&used, model, ToolId::LmStudio), zero, "{model}");
             assert_eq!(table.price_tier(&used, model, ToolId::LmStudio, true), zero, "{model}");
         }
         // Unsloth Studio's local routes, whatever the tool.
-        assert_eq!(price_event(&used, "local/llama-3.2-1b", ToolId::Unsloth), zero);
-        assert_eq!(price_event(&used, "local/claude-sonnet-4-5", ToolId::Claude), zero);
+        assert_eq!(table.price(&used, "local/llama-3.2-1b", ToolId::Unsloth), zero);
+        assert_eq!(table.price(&used, "local/claude-sonnet-4-5", ToolId::Claude), zero);
         // A paid route of the same tool is priced normally, and a cloud model without a price stays unknown.
-        assert!(price_event(&used, "claude-sonnet-4-5", ToolId::Unsloth).is_some_and(|cost| cost.cost_microusd > 0));
-        assert_eq!(price_event(&used, "swe-2", ToolId::Unsloth), None);
-        assert_eq!(price_event(&used, "locally-hosted", ToolId::Claude), None);
+        assert!(
+            table
+                .price(&used, "claude-sonnet-4-5", ToolId::Unsloth)
+                .is_some_and(|cost| cost.cost_microusd > 0)
+        );
+        assert_eq!(table.price(&used, "swe-2", ToolId::Unsloth), None);
+        assert_eq!(table.price(&used, "locally-hosted", ToolId::Claude), None);
     }
 
     /// Free tiers end their id in `-free` (OpenCode's `glm-5.3-flash-free`, Muse's `*-contributor-free`) and cost a
@@ -746,7 +758,7 @@ mod pricing_table {
         assert_ne!(PricingTable::new(&changed).unwrap().version(), table.version());
     }
 
-    // The cases below are outside pricing.test.ts: the expected values come from running the TypeScript package.
+    // The expected values of the cases below were computed with the earlier TypeScript pricing package.
 
     #[test]
     fn matches_the_alias_rules_of_the_typescript_candidates() {

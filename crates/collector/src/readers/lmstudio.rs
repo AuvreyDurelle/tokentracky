@@ -15,7 +15,6 @@ use time::{Date, Month, OffsetDateTime, PrimitiveDateTime, Time, UtcOffset};
 use tokentracky_core::{ParseResult, SourceCapabilities, TokenCounts, ToolId, UsageEvent};
 
 static LMSTUDIO: Adapter = Adapter {
-    passive: true,
     capabilities: SourceCapabilities {
         tokens: true,
         models: true,

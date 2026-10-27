@@ -22,7 +22,6 @@ use std::time::Duration;
 use tokentracky_core::{ParseResult, SourceCapabilities, TokenCounts, ToolId, UsageEvent};
 
 static COPILOT: Adapter = Adapter {
-    passive: true,
     capabilities: SourceCapabilities {
         tokens: true,
         models: true,

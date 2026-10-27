@@ -3,7 +3,7 @@
 use super::adapters::Sidecars;
 use super::parser::{
     Counted, EventMap, Invalid, TEXT_LIMIT, counter, digest, epoch, field, file_name, keep, note, object, optional,
-    parent_name, parse_json, safe_sum, text, tool_id, usage_record,
+    parent_name, parse_json, safe_sum, text, usage_record,
 };
 use super::{dumate, mimo};
 use crate::store::{UsageOrigin, reconcile};
@@ -293,7 +293,7 @@ impl Reading {
                         .then_some(suffix)
                 });
                 if let (Some(session), Some(seq)) = (message.session.as_str(), column(row, "seq")?.as_u64()) {
-                    let node = |session: &str| digest(format!("{}|v2|{session}|{seq}", tool_id(tool)));
+                    let node = |session: &str| digest(format!("{}|v2|{session}|{seq}", tool.id()));
                     let fork = column(row, "fork_session")?;
                     // Pinned projector: `${Message.ID.fromEvent(forkEvent.id)}_${parentRow.seq}`.
                     // Ordinary IDs contain no underscore after `msg_`; copies preserve parent sequence numbers.

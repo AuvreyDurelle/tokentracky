@@ -1,12 +1,12 @@
 import { useEffect, useState, type CSSProperties, type MouseEvent } from 'react';
 import type { CommunityStats, Period, ProfileStats, PublicProfile, ToolId } from '@tokentracky/core';
 import { ApiError, type ApiClient } from '../api';
-import { errorText, formatCompact, formatCost, formatCostCompact, formatExact, shortDay, toolLabel } from '../format';
+import { errorText, formatCompact, formatCost, formatCostCompact, formatExact, shortDay, toolLabel, topPercent } from '../format';
 import { Avatar, Empty, Loading, Notice, SearchIcon, ToolIcon } from '../ui';
 import { ACHIEVEMENT_COPY } from './achievement-copy';
 import { monotonePath } from './chart';
 import { Emblem } from './Emblem';
-import { MAIN_TOOLS, gapToNext, lastSeven, otherTokens, pagerItems, topPercent } from './leaderboard';
+import { MAIN_TOOLS, gapToNext, lastSeven, otherTokens, pagerItems } from './leaderboard';
 import { useLoad } from './load';
 import { ToolbarActions } from './Shell';
 import {averageCount, countRatio, countShare, cumulativeMonths, sharedCounts, sumCounts} from '../public-counts';
@@ -156,7 +156,7 @@ export function YouStrip({ mine, gap, periods, builders, onProfile }: { mine: Pu
   const periodRank = (window: 'week' | 'month') => periods && periods[window].rank > 0 && periods[window].tokens > 0 ? `#${formatExact(periods[window].rank)}` : '—';
   return <section className="you-strip" aria-label="Your position">
     <Avatar alias={mine.alias} />
-    <div className="you-id"><div className="lb-you-rank">#{formatExact(mine.rank)} <span className="m-badge accent">You</span></div><div className="you-sub">{mine.alias}{top !== null && ` · Top ${top}%`}</div></div>
+    <div className="you-id"><div className="lb-you-rank">#{formatExact(mine.rank)} <span className="m-badge accent">You</span></div><div className="you-sub">{mine.alias}{top !== null && ` · ${top}`}</div></div>
     <div className="you-vsep" />
     <div className="you-stat"><div className="m-label">Total</div><div className="v" title={tokensTitle(mine.tokens)}>{formatCompact(mine.tokens)}</div></div>
     <div className="you-stat"><div className="m-label">Est. cost</div><div className="v" title={formatCost(mine.costMicrousd)}>{mine.costMicrousd == null ? '—' : formatCostCompact(mine.costMicrousd)}</div></div>

@@ -1,7 +1,8 @@
-//! The assertions of `tests/contract/health.test.ts` (`GET /api/health`), `cloud-unconfigured.test.ts` and
-//! `cloud-stub.test.ts` for the routes this crate owns, against the assembled router and a recording stand-in for the
-//! hosted API. Where the contract scans synthetic logs, these tests commit the same events to the store; status
-//! fields come from `CloudSync` as `/api/local/status` reports them. Each test runs its steps in order on one server.
+//! The hosted-service routes this crate owns, against the assembled router and a recording stand-in for the hosted
+//! API: `GET /api/health`, the proxies, browser approval, link validation against the published scope, the upload wire
+//! format and unlink, with no hosted service, with one that cannot be reached and with the stand-in. Usage is
+//! committed to the store as a scan would commit it; status fields come from `CloudSync` as `/api/local/status`
+//! reports them. Each test runs its steps in order on one server.
 mod support;
 
 use serde_json::{Map, Value, json};
@@ -250,7 +251,7 @@ async fn with_no_hosted_service_configured() {
         409,
         "CLOUD_NOT_LINKED",
     );
-    // Nothing linked records no sync error (the third quirk of tests/contract/README.md).
+    // Nothing linked records no sync error (the crate root's third difference).
     assert_eq!(server.status().await["syncError"], Value::Null);
 }
 
@@ -467,7 +468,7 @@ async fn a_hosted_service_that_cannot_be_reached() {
     let stub = Stub::start().await;
     let url = stub.url.clone();
     stub.close().await;
-    let server = Server::start(Some(&url), true).await;
+    let (server, _app) = Server::local(|options| options.cloud_url = Some(url.clone())).await;
     assert_eq!(server.get("/api/health").await.json()["cloudUrl"], json!(url));
     expect_error(&server.get("/api/leaderboard").await, 502, "CLOUD_UNAVAILABLE");
     expect_error(&server.get("/api/profiles/someone").await, 502, "CLOUD_UNAVAILABLE");
@@ -481,7 +482,10 @@ async fn a_hosted_service_that_cannot_be_reached() {
         502,
         "CONNECT_FAILED",
     );
-    // Linking to it: 502 SYNC_FAILED (the first quirk of tests/contract/README.md; TypeScript answers 500).
+    // Local usage is still served.
+    let summary = server.get("/api/local/summary?days=7").await;
+    assert_eq!((summary.status, &summary.json()["tokens"]), (200, &json!(0)));
+    // Linking to it: 502 SYNC_FAILED (the crate root's first difference; TypeScript answered 500).
     let link = put(
         json!({"url": url, "deviceToken": "t".repeat(32), "historyStart": null, "shareTools": false, "shareCost": false}),
     );
@@ -1055,10 +1059,53 @@ async fn linking_syncing_and_the_hosted_wire_format() {
         json!([bucket(133, &body["buckets"][0]["revision"], json!({}))])
     );
 
-    // A withdrawn publication, a reset local history or a rejected device is 409, a bad confirmation 502.
-    let gone = json!({"error": {"code": "NOT_PUBLISHED", "message": "Gone."}});
-    stub.answer("GET /api/device-policy", Answer::json(gone).with_status(404));
-    expect_error(&sync().await, 409, "RELINK_REQUIRED");
+    // Shares the tool split, the cost and the model mix once the member publishes all three and the device is linked
+    // to that, and still no project, session or text.
+    let everything = json!({"shareTools": true, "shareCost": true, "shareModels": true});
+    set(publication(everything.clone()));
+    assert_eq!(link(everything).await.status, 200);
+    assert_eq!(sync().await.status, 200);
+    let body = last();
+    assert_eq!(body["generation"], generation());
+    let cost = &body["buckets"][0]["costMicrousd"];
+    assert!(cost.is_u64());
+    let shared = json!({"tool": "claude", "model": "claude-sonnet-4-6", "costMicrousd": cost});
+    assert_eq!(
+        body["buckets"],
+        json!([bucket(133, &body["buckets"][0]["revision"], shared)])
+    );
+    let mut keys: Vec<_> = body["buckets"][0].as_object().unwrap().keys().cloned().collect();
+    keys.sort();
+    assert_eq!(
+        keys,
+        [
+            "breakdown",
+            "costMicrousd",
+            "day",
+            "model",
+            "revision",
+            "tokens",
+            "tool"
+        ]
+    );
+    let wire = body.to_string();
+    for marker in [
+        "PRIVATE_PROMPT_MARKER",
+        "/synthetic/private-project",
+        "claude-session",
+        "msg-1",
+        "req-msg-1",
+    ] {
+        assert!(!wire.contains(marker), "{marker}");
+    }
+
+    // A deleted account, a withdrawn publication, a reset local history or a rejected device is 409, a bad
+    // confirmation 502.
+    for (status, code) in [(401, "UNAUTHORIZED"), (404, "NOT_PUBLISHED")] {
+        let gone = json!({"error": {"code": code, "message": "Gone."}});
+        stub.answer("GET /api/device-policy", Answer::json(gone).with_status(status));
+        expect_error(&sync().await, 409, "RELINK_REQUIRED");
+    }
     stub.on("GET /api/device-policy", serve_policy);
     // A change to send, frozen by the first failed upload, so every sync below posts it again.
     log(5, 6);

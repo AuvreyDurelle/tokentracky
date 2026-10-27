@@ -151,7 +151,7 @@ fn queried(store: &UsageStore, options: &QueryOptions) -> Result<Value, StoreErr
         "sessions": store.sessions(options)?,
         "projects": store.projects(options)?,
         "breakdown": store.breakdown(options)?,
-        "events": store.export_data(options)?,
+        "events": store.events(options)?,
         "csv": store.export_csv(options)?,
     }))
 }
@@ -199,7 +199,7 @@ fn every_case_reproduces_its_expected_outputs_from_its_events() {
         };
         let all = QueryOptions::default();
         let mut actual = BTreeMap::from([
-            ("events", json!(store.export_data(&all).unwrap())),
+            ("events", json!(store.events(&all).unwrap())),
             ("summary", json!(store.summary(&at).unwrap())),
             ("sessions", json!(store.sessions(&all).unwrap())),
             ("projects", json!(store.projects(&all).unwrap())),

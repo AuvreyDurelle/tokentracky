@@ -19,7 +19,6 @@ pub(super) fn adapter(_: ToolId) -> Option<&'static Adapter> {
     Some(&GROK)
 }
 static GROK: Adapter = Adapter {
-    passive: true,
     capabilities: SourceCapabilities {
         tokens: true,
         models: true,

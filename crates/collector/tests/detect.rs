@@ -1,4 +1,4 @@
-//! `apps/server/src/detect.test.ts`, case for case.
+//! The default source folders of each tool, and which of them exist.
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;

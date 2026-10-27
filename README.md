@@ -124,6 +124,6 @@ npm run build
 npm audit
 ```
 
-`npm test` builds the Rust contract server and runs the TypeScript UI/hosted tests and HTTP contract suite against it. Run `cargo test --workspace` for the native implementation tests. Without `TEST_DATABASE_URL`, database integration tests are explicitly skipped. Fixtures are synthetic; tests do not inspect personal tool logs. CI supplies PostgreSQL 17 and runs the complete suite, including fresh migrations and the local-to-hosted API workflow.
+`npm test` builds the Rust contract server and runs the TypeScript UI and hosted tests, including the local-to-hosted flow against that server. Run `cargo test --workspace` for the native implementation tests, the local API's included. Without `TEST_DATABASE_URL`, database integration tests are explicitly skipped. Fixtures are synthetic; tests do not inspect personal tool logs. CI supplies PostgreSQL 17 and runs the complete suite, including fresh migrations and the local-to-hosted API workflow.
 
 See [the API contract](docs/IMPLEMENTATION_CONTRACT.md), [accounting limitations](docs/ACCOUNTING_PUBLICATION_SCOPE.md), [distribution](docs/DISTRIBUTION.md), and [release prerequisites](docs/RELEASE_PREREQUISITES.md). Release availability is determined by the published artifacts; local builds and CI do not establish that a public installer is available.

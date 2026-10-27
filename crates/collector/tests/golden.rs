@@ -74,7 +74,7 @@ fn queried(store: &UsageStore, options: &QueryOptions) -> Result<Value, StoreErr
         "sessions": store.sessions(options)?,
         "projects": store.projects(options)?,
         "breakdown": store.breakdown(options)?,
-        "events": store.export_data(options)?,
+        "events": store.events(options)?,
         "csv": store.export_csv(options)?,
     }))
 }
@@ -92,7 +92,7 @@ fn collect(
     let all = QueryOptions::default();
     let mut files = BTreeMap::new();
     let mut json = |name: &str, value: Value| files.insert(format!("{name}.json"), stringify(&value));
-    json("events", json!(store.export_data(&all).unwrap()));
+    json("events", json!(store.events(&all).unwrap()));
     let at = QueryOptions {
         now: Some(now),
         ..Default::default()
@@ -207,9 +207,9 @@ fn close(store: Store, service: IngestionService) {
     store.into_inner().unwrap().close().unwrap();
 }
 
-/// Plays a case in a temporary folder (`play` in runner.ts). Per step: the ops, then the files of the step's `root/`
-/// (a file that exists is rewritten in place, `X.db.sql` runs against its database), then, in the first step, the
-/// case's `sources` are granted, then one scan, then the outputs are collected.
+/// Plays a case in a temporary folder. Per step: the ops, then the files of the step's `root/` (a file that exists is
+/// rewritten in place, `X.db.sql` runs against its database), then, in the first step, the case's `sources` are
+/// granted, then one scan, then the outputs are collected.
 fn play(case: &Case) -> Played {
     let temporary = tempfile::Builder::new()
         .prefix("tokentracky-fixture-")

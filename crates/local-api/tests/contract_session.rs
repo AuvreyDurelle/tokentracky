@@ -1,6 +1,7 @@
-//! The assertions of `tests/contract/session.test.ts`, against the assembled router behind the session. The
-//! collector-backed routes it touches are stand-ins (see `support::stand_ins`). As there, the steps run in order on
-//! one server: the launch link is one-use.
+//! The session protection of the loopback TCP transport, over TCP against the `contract-server` binary
+//! (`support::Process`): the one-use launch link and its pages, the session cookie and its attributes, Host and Origin
+//! refusal, the workspace Origin that changes need, cross-site fetches, the exact security headers of every kind of
+//! answer, and no CORS headers. The steps run in order on one server: the launch link is one-use.
 mod support;
 
 use base64::Engine;
@@ -10,18 +11,6 @@ use support::*;
 
 const HTML_RECOVERY_CSP: &str =
     "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'";
-const HOSTS: [&str; 4] = [
-    "evil.example",
-    "evil.example:4771",
-    "127.0.0.1.evil.example:4771",
-    "127.0.0.1",
-];
-const ORIGINS: [&str; 4] = [
-    "http://evil.example",
-    "http://evil.example:4771",
-    "https://127.0.0.1:4771",
-    "null",
-];
 
 #[track_caller]
 fn security_headers(label: &str, reply: &Reply) {
@@ -32,9 +21,22 @@ fn security_headers(label: &str, reply: &Reply) {
 
 #[tokio::test]
 async fn launch_link_session_protection_and_response_headers() {
-    let mut server = Server::start(None, false).await;
+    let mut server = Process::start(false).await;
     let launch = server.launch_path();
     let token = launch.split("launch=").nth(1).unwrap().to_owned();
+    let port = server.origin.rsplit(':').next().unwrap().to_owned();
+    let hosts = [
+        "evil.example".to_owned(),
+        format!("evil.example:{port}"),
+        format!("127.0.0.1.evil.example:{port}"),
+        "127.0.0.1".to_owned(),
+    ];
+    let origins = [
+        "http://evil.example".to_owned(),
+        format!("http://evil.example:{port}"),
+        format!("https://127.0.0.1:{port}"),
+        "null".to_owned(),
+    ];
 
     // Refuses every route before a session exists, without revealing which routes exist.
     for path in ["/api/local/status", "/api/health", "/api/nope", "/"] {
@@ -76,7 +78,7 @@ async fn launch_link_session_protection_and_response_headers() {
     );
 
     // Rejects a wrong Host before it looks at the launch link, and keeps the link usable.
-    for host in HOSTS {
+    for host in hosts.iter().map(String::as_str) {
         let reply = server
             .request(&launch, Init::default().no_session().header("host", Some(host)))
             .await;
@@ -216,7 +218,7 @@ async fn launch_link_session_protection_and_response_headers() {
     assert_eq!(server.request("/api/local/status", read).await.status, 200);
 
     // Rejects a wrong Host, even with a valid cookie and for the launch route.
-    for host in HOSTS {
+    for host in hosts.iter().map(String::as_str) {
         let read = Init::default().header("host", Some(host));
         expect_error(&server.request("/api/local/status", read).await, 403, "ORIGIN_REJECTED");
         let write = Init::method("POST").header("host", Some(host));
@@ -234,7 +236,7 @@ async fn launch_link_session_protection_and_response_headers() {
     }
 
     // Rejects a wrong Origin on reads and on changes, even with a valid cookie.
-    for origin in ORIGINS {
+    for origin in origins.iter().map(String::as_str) {
         let read = Init::default().header("origin", Some(origin));
         expect_error(&server.request("/api/local/status", read).await, 403, "ORIGIN_REJECTED");
         let write = Init::method("POST").header("origin", Some(origin));
@@ -246,11 +248,7 @@ async fn launch_link_session_protection_and_response_headers() {
     }
 
     // Requires the workspace Origin for every change, and changes nothing without it.
-    for (method, path) in [
-        ("POST", "/api/local/refresh"),
-        ("POST", "/api/local/scan"),
-        ("DELETE", "/api/local/cloud"),
-    ] {
+    for (method, path) in [("POST", "/api/local/refresh"), ("DELETE", "/api/local/cloud")] {
         let write = Init::method(method).header("origin", None);
         expect_error(&server.request(path, write).await, 403, "ORIGIN_REQUIRED");
     }

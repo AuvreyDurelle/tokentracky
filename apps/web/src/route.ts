@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { ALIAS_PATTERN } from '@tokentracky/core';
 
 /** Shareable addresses. `/` and `/leaderboard` both show the leaderboard; `/join` explains how to get on it. */
 export type Route = { page: 'home' } | { page: 'leaderboard' } | { page: 'join' } | { page: 'you' } | { page: (typeof MAC_PAGES)[number] } | { page: 'profile'; alias: string } | { page: 'missing' };
@@ -7,7 +8,6 @@ export type Route = { page: 'home' } | { page: 'leaderboard' } | { page: 'join' 
 const MAC_PAGES = ['tokens', 'achievements', 'settings', 'popover'] as const;
 /** True for a page only the local app has, which the website answers as missing. */
 export const isMacPage = (page: Route['page']) => (MAC_PAGES as readonly string[]).includes(page);
-const ALIAS = /^[a-zA-Z0-9][a-zA-Z0-9_-]{2,29}$/;
 
 export function parseRoute(pathname: string): Route {
   const path = pathname.replace(/\/+$/, '') || '/';
@@ -18,7 +18,7 @@ export function parseRoute(pathname: string): Route {
   const mac = MAC_PAGES.find((name) => path === `/${name}`);
   if (mac) return { page: mac };
   const profile = /^\/u\/([^/]+)$/.exec(path);
-  if (profile && ALIAS.test(profile[1]!)) return { page: 'profile', alias: profile[1]!.toLowerCase() };
+  if (profile && ALIAS_PATTERN.test(profile[1]!)) return { page: 'profile', alias: profile[1]!.toLowerCase() };
   return { page: 'missing' };
 }
 

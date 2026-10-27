@@ -1,22 +1,16 @@
-import { rankingWindow, type Publication } from '@tokentracky/core';
+import { ALIAS_PATTERN, type Publication } from '@tokentracky/core';
 
 export interface PublicationDraft {
   alias: string;
 }
 
-const ALIAS = /^[a-zA-Z0-9][a-zA-Z0-9_-]{2,29}$/;
-export function validAlias(alias: string): boolean { return ALIAS.test(alias); }
+export function validAlias(alias: string): boolean { return ALIAS_PATTERN.test(alias); }
 
 /** A sign-in handle made into a leaderboard name, or null when nothing usable is left. */
 export function aliasFromHandle(handle: unknown): string | null {
   if (typeof handle !== 'string') return null;
   const name = handle.replace(/[^a-zA-Z0-9_-]+/g, '-').replace(/^[^a-zA-Z0-9]+/, '').slice(0, 30);
   return validAlias(name) ? name : null;
-}
-
-/** The current UTC Monday. */
-export function weekStart(now = new Date()): string {
-  return rankingWindow('week', now)!.slice(0, 10);
 }
 
 /** Shown on the connect screen and the join page in place of a consent checkbox. */

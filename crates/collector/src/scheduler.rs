@@ -2,13 +2,14 @@
 //! interval, on a stale wake, after a source is enabled and on demand; cycles never overlap, and there is no timer
 //! between cycles beyond the next one. A failed push is retried by a later cycle, after a backoff. Every method that
 //! starts work must be called inside a tokio runtime.
-use crate::{Clock, iso};
+use crate::Clock;
 use serde::Serialize;
 use std::error::Error;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use time::{Duration, OffsetDateTime};
+use tokentracky_core::{is_js_space, iso_timestamp};
 use tokio::sync::watch;
 use tokio::task::JoinHandle;
 
@@ -44,7 +45,7 @@ pub fn refresh_interval(value: Option<&str>) -> Result<u64, IntervalError> {
     let Some(value) = value.filter(|value| !value.is_empty()) else {
         return Ok(DEFAULT_REFRESH_INTERVAL_MS);
     };
-    let value = value.trim_matches(crate::is_js_space);
+    let value = value.trim_matches(is_js_space);
     let radix = |prefix: [&str; 2], radix| {
         let digits = value
             .strip_prefix(prefix[0])
@@ -153,8 +154,8 @@ impl RefreshScheduler {
     pub fn status(&self) -> RefreshStatus {
         let state = self.inner.lock();
         RefreshStatus {
-            last_refresh_at: state.last_refresh_at.map(iso),
-            next_refresh_at: state.next_refresh_at.map(iso),
+            last_refresh_at: state.last_refresh_at.map(iso_timestamp),
+            next_refresh_at: state.next_refresh_at.map(iso_timestamp),
             refreshing: state.refreshing,
         }
     }

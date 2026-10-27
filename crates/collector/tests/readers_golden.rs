@@ -1,5 +1,5 @@
-//! The pure readers over the golden fixtures: the Rust side of `packages/collector/test/parser.test.ts`, an oracle that
-//! reads the document and database cases through the adapters, and a privacy check over every input.
+//! The pure readers over the golden fixtures: an oracle that reads the document and database cases through the
+//! adapters, and a privacy check over every input.
 mod support;
 
 use serde_json::{Value, json};

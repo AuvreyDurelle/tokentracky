@@ -6,9 +6,9 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::error::Error;
 use std::sync::{Mutex, PoisonError};
-use time::{OffsetDateTime, UtcOffset};
+use time::OffsetDateTime;
 use tokentracky_collector::store::{PublicationOptions, StoreError, UsageStore};
-use tokentracky_core::{BucketTool, PublicBucket, is_utc_day};
+use tokentracky_core::{BucketTool, PublicBucket, is_js_space, is_utc_day, iso_timestamp};
 
 /// A saved link. Field order is the TypeScript object's.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -75,7 +75,8 @@ impl CloudLink {
 
 pub type SecretError = Box<dyn Error + Send + Sync>;
 
-/// Where the link (and so the device credential) is kept: the Keychain in the app and CLI, memory in tests.
+/// Where the link (and so the device credential) is kept: a private file (`cloud-link.json`) in the app and CLI,
+/// memory in tests.
 pub trait SecretStore: Send + Sync {
     fn get(&self) -> BoxFuture<'_, Result<Option<CloudLink>, SecretError>>;
     fn set(&self, link: CloudLink) -> BoxFuture<'_, Result<(), SecretError>>;
@@ -137,17 +138,12 @@ pub fn cutoff(value: Option<&Value>) -> Result<Option<String>, LocalError> {
         Some(Value::String(text)) => text.get(..10).filter(|day| {
             matches!(text.get(10..), Some("" | "T00:00:00Z" | "T00:00:00.000Z"))
                 && is_utc_day(day)
-                && *day <= &iso(OffsetDateTime::now_utc())[..10]
+                && *day <= &iso_timestamp(OffsetDateTime::now_utc())[..10]
         }),
         _ => None,
     };
     day.map(|day| Some(format!("{day}T00:00:00.000Z")))
         .ok_or(INVALID_HISTORY)
-}
-
-/// White space as JavaScript's `\s` and `trim` see it.
-pub(crate) fn is_js_space(c: char) -> bool {
-    c == '\u{feff}' || (c.is_whitespace() && c != '\u{85}')
 }
 
 /// `validateCloudLink`: unknown fields are 400 `INVALID_REQUEST`, then the token and sharing choices, the URL and the
@@ -221,19 +217,4 @@ pub fn upload_buckets(store: &mut UsageStore, link: &CloudLink) -> Result<Vec<Pu
             breakdown: bucket.breakdown,
         })
         .collect())
-}
-
-/// `Date.prototype.toISOString`.
-pub(crate) fn iso(time: OffsetDateTime) -> String {
-    let t = time.to_offset(UtcOffset::UTC);
-    format!(
-        "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}.{:03}Z",
-        t.year(),
-        u8::from(t.month()),
-        t.day(),
-        t.hour(),
-        t.minute(),
-        t.second(),
-        t.millisecond()
-    )
 }

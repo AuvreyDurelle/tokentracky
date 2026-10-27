@@ -2,7 +2,6 @@
 //! storage and network dependencies. Commands support human-readable output and stable `--json` responses.
 mod args;
 mod commands;
-mod compact;
 mod report;
 mod serve;
 

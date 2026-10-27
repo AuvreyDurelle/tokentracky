@@ -1,6 +1,5 @@
-//! Local days (F3, roadmap step 9): queries and period totals in an IANA time zone, a local day's tokens by half
-//! hour, and the cache of period totals. Rust-only: the TypeScript store has no zones, and without one every query
-//! keeps its UTC days (the golden cases).
+//! Local days (F3, roadmap step 9): queries and period totals in an IANA time zone, and the cache of period totals.
+//! Rust-only: the TypeScript store has no zones, and without one every query keeps its UTC days (the golden cases).
 use jiff::tz::TimeZone;
 use serde_json::json;
 use std::path::Path;
@@ -114,41 +113,21 @@ fn a_range_across_a_daylight_saving_change_loses_and_duplicates_no_hours() {
         daily(&autumn, &london),
         pairs(&[("2026-10-24", 3), ("2026-10-25", 25), ("2026-10-26", 4)])
     );
-    let series = autumn.day_series("2026-10-25", &zone("Europe/London")).unwrap();
-    assert_eq!(series.start, "2026-10-24T23:00:00.000Z");
-    assert_eq!(series.half_hours.len(), 50);
-    assert_eq!(series.half_hours.iter().sum::<u64>(), 25);
-    // Each event opens a half hour: every even slot has one, every odd slot none.
-    assert!(series.half_hours.iter().step_by(2).all(|&tokens| tokens == 1));
-    assert!(series.half_hours.iter().skip(1).step_by(2).all(|&tokens| tokens == 0));
 
     // Summer time starts at 01:00 UTC on 29 March 2026: a 23-hour day. One event every UTC hour from midnight on the
     // 28th to 22:00 UTC (23:00 BST) on the 30th.
     let spring = store(&hourly(datetime!(2026-03-28 00:00 UTC), 71));
-    let series = spring.day_series("2026-03-29", &zone("Europe/London")).unwrap();
-    assert_eq!(
-        (series.start.as_str(), series.half_hours.len()),
-        ("2026-03-29T00:00:00.000Z", 46)
-    );
     let london = days("2026-03-28", "2026-03-30", Some("Europe/London"));
     assert_eq!(spring.summary(&london).unwrap().tokens, 71);
     assert_eq!(
         daily(&spring, &london),
         pairs(&[("2026-03-28", 24), ("2026-03-29", 23), ("2026-03-30", 24)])
     );
-    assert_eq!(series.half_hours.iter().sum::<u64>(), 23);
-    // America/Santiago skips midnight: summer time starts at 00:00 on Sunday 6 September 2026, so that day starts at
-    // 01:00 (04:00 UTC) and has 23 hours.
-    let skipped = spring.day_series("2026-09-06", &zone("America/Santiago")).unwrap();
-    assert_eq!(
-        (skipped.start.as_str(), skipped.half_hours.len()),
-        ("2026-09-06T04:00:00.000Z", 46)
-    );
 }
 
 #[test]
-fn a_quarter_hour_zone_starts_its_half_hours_at_its_own_midnight() {
-    // Asia/Kathmandu is +05:45: 21 October starts at 18:15 UTC on the 20th.
+fn a_quarter_hour_zone_starts_its_day_at_its_own_midnight() {
+    // Asia/Kathmandu is +05:45: 21 October runs from 18:15 UTC on the 20th to 18:15 UTC on the 21st.
     let store = store(&[
         event("before", "2026-10-20T18:14:59.999Z", 1),
         event("first", "2026-10-20T18:15:00.000Z", 10),
@@ -156,24 +135,12 @@ fn a_quarter_hour_zone_starts_its_half_hours_at_its_own_midnight() {
         event("second", "2026-10-20T18:45:00.000Z", 1000),
         event("last", "2026-10-21T18:14:59.999Z", 10000),
     ]);
-    let kathmandu = zone("Asia/Kathmandu");
-    let series = store.day_series("2026-10-21", &kathmandu).unwrap();
-    assert_eq!(series.start, "2026-10-20T18:15:00.000Z");
-    assert_eq!(series.half_hours.len(), 48);
-    assert_eq!(
-        (series.half_hours[0], series.half_hours[1], series.half_hours[47]),
-        (110, 1000, 10000)
-    );
     let day = days("2026-10-21", "2026-10-21", Some("Asia/Kathmandu"));
-    assert_eq!(
-        series.half_hours.iter().sum::<u64>(),
-        store.summary(&day).unwrap().tokens
-    );
     assert_eq!(store.summary(&day).unwrap().tokens, 11110);
 }
 
 #[test]
-fn todays_half_hours_sum_to_todays_total() {
+fn today_on_the_day_the_clocks_go_back_starts_at_local_midnight() {
     let now = datetime!(2026-10-25 15:10 UTC);
     let store = store(&[
         event("yesterday", "2026-10-24T22:59:59.000Z", 1),
@@ -182,14 +149,7 @@ fn todays_half_hours_sum_to_todays_total() {
         event("afternoon", "2026-10-25T15:00:00.000Z", 8),
     ]);
     let london = zone("Europe/London");
-    let today = store.period_totals(now, Some(&london)).unwrap().today;
-    let series = store.day_series("2026-10-25", &london).unwrap();
-    assert_eq!((today, series.half_hours.iter().sum::<u64>()), (14, 14));
-    // 01:30 UTC is the second 01:30 of the morning in London, two and a half hours after midnight BST.
-    assert_eq!(
-        (series.half_hours[0], series.half_hours[5], series.half_hours[32]),
-        (2, 4, 8)
-    );
+    assert_eq!(store.period_totals(now, Some(&london)).unwrap().today, 14);
 }
 
 #[test]
@@ -260,20 +220,6 @@ fn summaries_count_streaks_and_today_in_the_zone() {
         store.summary(&options).unwrap().tokens
     };
     assert_eq!((previous(None), previous(Some("Asia/Tokyo"))), (7, 7));
-}
-
-#[test]
-fn a_day_series_refuses_a_day_that_is_not_a_date() {
-    let store = store(&[]);
-    for day in ["2026-02-30", "today", "2026-1-1"] {
-        let error = store.day_series(day, &zone("Europe/London")).err().unwrap();
-        assert_eq!(error.to_string(), "invalid_query_range", "{day}");
-    }
-    let empty = store.day_series("2026-10-21", &zone("Asia/Tokyo")).unwrap();
-    assert_eq!(
-        json!(empty),
-        json!({"start": "2026-10-20T15:00:00.000Z", "halfHours": vec![0; 48]})
-    );
 }
 
 #[test]

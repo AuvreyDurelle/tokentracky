@@ -7,7 +7,7 @@ use crate::readers::{
     SourceKind, adapter, codex_total, digest, is_supported, line_limit, parse_document, parse_usage_line, source_kind,
 };
 use crate::store::{FileCheckpoint, SourceConfiguration, StoreError, UsageStore};
-use crate::{Clock, iso, resolve};
+use crate::{Clock, resolve};
 use ruzstd::decoding::StreamingDecoder;
 use serde::Serialize;
 use serde_json::Value;
@@ -18,7 +18,7 @@ use std::os::unix::fs::{FileExt, MetadataExt, OpenOptionsExt};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Condvar, Mutex, MutexGuard, PoisonError};
 use time::OffsetDateTime;
-use tokentracky_core::{ParseResult, SourceState, SourceStatus, TOOL_IDS, ToolId, UsageEvent};
+use tokentracky_core::{ParseResult, SourceState, SourceStatus, TOOL_IDS, ToolId, UsageEvent, iso_timestamp};
 
 /// Line logs are read in chunks of this size.
 const CHUNK: usize = 64 * 1024;
@@ -635,7 +635,7 @@ impl IngestionService {
                 self.read_claude_limits()?;
             }
             diagnostics.extend(source_diagnostics.iter().cloned());
-            let timestamp = iso((self.now)());
+            let timestamp = iso_timestamp((self.now)());
             let (state, message) = if failed {
                 (SourceState::Error, "Some authorized logs could not be read.".to_owned())
             } else if unresolved_lineage {
@@ -663,7 +663,7 @@ impl IngestionService {
             let imported_at = (!failed).then_some(timestamp.as_str());
             lock(&self.store).set_source_state(tool, state, &message, imported_at)?;
         }
-        let timestamp = iso((self.now)());
+        let timestamp = iso_timestamp((self.now)());
         let mut store = lock(&self.store);
         store.set_last_scan_at(&timestamp)?;
         Ok(ScanResult {

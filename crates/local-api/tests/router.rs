@@ -1,5 +1,6 @@
-//! The router this crate owns: `tests/contract/routes.test.ts` for its routes, the web build, request bodies as
-//! Fastify parses them, the in-process transport, the 30-second receive limit and the per-client rate limit.
+//! The router this crate owns: its routes and the session in front of each, unknown paths and methods, the web build,
+//! request bodies as Fastify parses them, the in-process transport, the 30-second receive limit and the per-client
+//! rate limit.
 mod support;
 
 use axum::Router;
@@ -13,7 +14,7 @@ use support::*;
 use tokentracky_local_api::{HttpClient, LocalState, MemorySecretStore, base_router};
 use tower::ServiceExt;
 
-/// This crate's routes from `routes.json`, each with a well-formed request.
+/// The routes of [`base_router`], each with a well-formed request.
 const ROUTES: [(&str, &str); 19] = [
     ("GET", "/api/health"),
     ("PUT", "/api/local/cloud"),
@@ -35,7 +36,7 @@ const ROUTES: [(&str, &str); 19] = [
     ("GET", "/assets/contract.js"),
     ("HEAD", "/assets/contract.js"),
 ];
-/// Routes only the Rust server has, for the Mac app's pages; not in `routes.json`, as the TypeScript server is frozen.
+/// Routes only the Rust server has, for the Mac app's pages (the TypeScript server is frozen).
 const RUST_ROUTES: [(&str, &str); 6] = [
     ("GET", "/api/community"),
     ("GET", "/api/leaderboard/around/someone"),

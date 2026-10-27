@@ -82,10 +82,10 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
   }
   async function joined(who = 'alice', alias = who) {
     const publication = (await request('PUT', '/api/publication', who, publish(alias))).json().publication;
-    const device = (await request('POST', '/api/devices', who, {name: 'Publishing desktop'})).json();
+    const device = await addComputer(who, 'Publishing desktop');
     return {publication, device};
   }
-  async function upload(join: Awaited<ReturnType<typeof joined>>, buckets: unknown[] = [bucket(100)], hours?: unknown[]) {
+  async function upload(join: {publication: {generation: string}; device: {token: string}}, buckets: unknown[] = [bucket(100)], hours?: unknown[]) {
     return request('POST', '/api/ingest', join.device.token, {generation: join.publication.generation, buckets, ...(hours ? {hours} : {})});
   }
   async function board(query = '') { return (await request('GET', `/api/leaderboard?period=all${query}`)).json(); }
@@ -530,7 +530,7 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
     const retired = await joined();
     await upload(retired);
     await request('DELETE', `/api/devices/${retired.device.id}`, 'alice');
-    const replacement = (await request('POST', '/api/devices', 'alice', {name: 'Replacement'})).json();
+    const replacement = await addComputer('alice', 'Replacement');
     const alice = {...retired, device: replacement};
     const bob = await joined('bob');
     await upload(alice);
@@ -802,7 +802,7 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
 
   it('counts an hour copied between computers once, keeps only the last day and rejects malformed hours', async () => {
     const desktop = await joined('alice');
-    const laptop = {...desktop, device: (await request('POST', '/api/devices', 'alice', {name: 'Laptop'})).json()};
+    const laptop = {...desktop, device: await addComputer('alice', 'Laptop')};
     expect((await upload(desktop, [bucket(30, {tool: 'claude'})], [hour('23T10', 30), hour('20T10', 5)])).statusCode).toBe(200);
     expect((await upload(laptop, [bucket(35, {tool: 'claude'})], [hour('23T10', 30), hour('23T09', 5)])).statusCode).toBe(200);
     expect(await last24h()).toEqual([['alice', 35]]);
@@ -904,7 +904,7 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
       await revoke;
       expect(await pendingUpload).toMatchObject({code: 'UNAUTHORIZED'});
       expect((await upload(join)).statusCode).toBe(401);
-      const replacement = (await request('POST', '/api/devices', 'alice', {name: 'Replacement'})).json();
+      const replacement = await addComputer('alice', 'Replacement');
       expect((await board()).totalTokens).toBe(100);
       await upload({...join, device: replacement}, [bucket(100)]);
       expect((await board()).totalTokens).toBe(100);
@@ -997,6 +997,14 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
     if (approved.statusCode !== 204) return {refused: approved.json().error.code as string};
     return {token: (await poll(started.pollToken)).json().deviceToken as string};
   }
+  /** Connects a computer without a machine id; its id is the one the account lists afterwards. */
+  async function addComputer(who: string, deviceName: string) {
+    const known = new Set<string>((await request('GET', '/api/account', who)).json().devices.map((device: {id: string}) => device.id));
+    const connected = await connectComputer(who, deviceName);
+    if (!connected.token) throw new Error(`Computer refused: ${connected.refused}`);
+    const added = (await request('GET', '/api/account', who)).json().devices.find((device: {id: string}) => !known.has(device.id));
+    return {id: added.id as string, token: connected.token};
+  }
 
   it('publishes a cost only when its tokens could cost that much at list prices', async () => {
     const join = await joined();
@@ -1011,7 +1019,7 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
 
   it('deduplicates copied token types consistently across profiles, community and moderation', async () => {
     const desktop = await joined();
-    const laptop = {...desktop, device: (await request('POST', '/api/devices', 'alice', {name: 'Laptop'})).json()};
+    const laptop = {...desktop, device: await addComputer('alice', 'Laptop')};
     const copied = {...bucket(100), tool: 'claude', model: 'claude-sonnet-4-6', costMicrousd: 10, breakdown: kinds(10, 20, 30, 40, 5)};
     expect((await upload(desktop, [copied])).statusCode).toBe(200);
     expect((await upload(laptop, [{...copied, costMicrousd: null}])).statusCode).toBe(200);
@@ -1038,7 +1046,7 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
 
   it('adds every computer to one account and counts a bucket copied between them once', async () => {
     const desktop = await joined('alice', 'alice');
-    const laptop = {...desktop, device: (await request('POST', '/api/devices', 'alice', {name: 'Laptop'})).json()};
+    const laptop = {...desktop, device: await addComputer('alice', 'Laptop')};
     const copied = bucket(100, {day: '2026-10-22', tool: 'claude', model: 'claude-sonnet-4-6', costMicrousd: 10});
     expect((await upload(desktop, [copied, bucket(40, {tool: 'claude', model: 'claude-sonnet-4-6', costMicrousd: 4})])).statusCode).toBe(200);
     expect((await upload(laptop, [copied, bucket(25, {tool: 'codex', model: 'gpt-5-codex', costMicrousd: 2})])).statusCode).toBe(200);
@@ -1067,7 +1075,7 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
     const desktop = await joined();
     await upload(desktop, [bucket(100)]);
     const first = await connectComputer('alice', 'Studio Mac', machine('studio'));
-    await upload({...desktop, device: {token: first.token}}, [bucket(70)]);
+    await upload({...desktop, device: {token: first.token!}}, [bucket(70)]);
     expect((await board()).items[0].tokens).toBe(170);
     const again = await startConnect('Studio Mac 2', machine('studio'));
     expect((await request('GET', `/api/device-auth/${again.userCode}`, 'alice')).json()).toMatchObject({deviceName: 'Studio Mac 2', replaces: 'Studio Mac'});
@@ -1102,12 +1110,12 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
 
   it('caps an account at 10 active computers and frees a slot when one is removed', async () => {
     const desktop = await joined();
-    for (let index = 2; index <= 9; index++) expect((await request('POST', '/api/devices', 'alice', {name: `Mac ${index}`})).statusCode).toBe(200);
+    for (let index = 2; index <= 9; index++) expect((await addComputer('alice', `Mac ${index}`)).token).toMatch(/^ttd_/);
     expect((await connectComputer('alice', 'Mac 10', machine('mac-10'))).token).toMatch(/^ttd_/);
-    const limit = await request('POST', '/api/devices', 'alice', {name: 'Mac 11'});
+    const full = await startConnect('Mac 11', machine('mac-11'));
+    const limit = await request('POST', `/api/device-auth/${full.userCode}/approve`, 'alice');
     expect(limit.statusCode).toBe(409);
     expect(limit.json().error).toEqual({code: 'DEVICE_LIMIT', message: 'Remove a computer first. An account can connect up to 10 computers.'});
-    expect(await connectComputer('alice', 'Mac 11', machine('mac-11'))).toEqual({refused: 'DEVICE_LIMIT'});
     // The same computer connecting again replaces itself, so it fits.
     expect((await connectComputer('alice', 'Mac 10 again', machine('mac-10'))).token).toMatch(/^ttd_/);
     expect((await request('GET', '/api/account', 'alice')).json().devices).toHaveLength(10);
@@ -1133,7 +1141,7 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
     await pool.query(BEFORE_MULTI_COMPUTER);
     await migrateCloud(pool, {schema});
     expect({board: await board(), alice: (await request('GET', '/api/profiles/alice/stats')).json(), bob: (await request('GET', '/api/profiles/bob/stats')).json()}).toEqual(before);
-    expect((await request('POST', '/api/devices', 'alice', {name: 'Second'})).statusCode).toBe(200);
+    expect((await addComputer('alice', 'Second')).token).toMatch(/^ttd_/);
   });
 
   const accountId = (who: string) => createHash('sha256').update(JSON.stringify([identities[who]!.issuer, identities[who]!.subject])).digest('hex');
@@ -1195,7 +1203,6 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
     await refused(await poll(approved.pollToken));
     const next = await startConnect();
     await refused(await request('POST', `/api/device-auth/${next.userCode}/approve`, 'alice'));
-    await refused(await request('POST', '/api/devices', 'alice', {name: 'Another'}));
     await refused(await request('PUT', '/api/publication', 'alice', publish('alice')));
     expect((await board()).items).toEqual([]);
     expect((await request('GET', '/api/account', 'alice')).json().moderation).toEqual({state: 'banned'});
@@ -1292,7 +1299,7 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
   it('does not trigger a lead review when a second computer uploads copied history', async () => {
     await peers(1, 3 * B);
     const desktop = await joined();
-    const laptop = {...desktop, device: (await request('POST', '/api/devices', 'alice', {name: 'Laptop'})).json()};
+    const laptop = {...desktop, device: await addComputer('alice', 'Laptop')};
     const history = Array.from({length: 8}, (_, index) => bucket(0.9 * B + index * 1234, {day: `2026-10-${String(16 + index).padStart(2, '0')}`}));
     expect((await upload(desktop, history)).statusCode).toBe(200);
     expect((await upload(laptop, history)).statusCode).toBe(200);

@@ -1,5 +1,4 @@
 //! `status`: the report both `status --json` and `doctor` are built from, and its text form.
-use crate::compact::compact;
 use crate::{CliError, Context, database_path, other};
 use jiff::tz::TimeZone;
 use serde::Serialize;
@@ -7,7 +6,7 @@ use std::path::Path;
 use std::sync::Arc;
 use time::OffsetDateTime;
 use tokentracky_collector::store::{PeriodTotals, StoreError, UsageStore};
-use tokentracky_core::{PeriodCosts, SourceState, ToolId};
+use tokentracky_core::{PeriodCosts, SourceState, ToolId, compact_count};
 use tokentracky_local_api::{PricingDownload, SecretStore, cloud_origin};
 use tokentracky_pricing::{PricingRefresher, RefresherOptions};
 
@@ -169,10 +168,10 @@ pub fn text(value: &StatusReport) -> String {
         ),
         format!(
             "Today {} · This week {} · This month {} · All time {} tokens",
-            compact(totals.today),
-            compact(totals.week),
-            compact(totals.month),
-            compact(totals.all_time)
+            compact_count(totals.today),
+            compact_count(totals.week),
+            compact_count(totals.month),
+            compact_count(totals.all_time)
         ),
     ];
     if let Some(top) = &totals.top_tool {

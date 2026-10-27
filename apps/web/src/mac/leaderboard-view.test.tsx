@@ -92,6 +92,12 @@ describe('your position', () => {
       periods={{ week: { rank: 17, tokens: 1, builders: 1 }, month: { rank: 29, tokens: 1, builders: 1 }, all: { rank: 42, tokens: 1, builders: 1 } }} />);
     for (const text of ['#42', 'example-builder · Top 2%', '>18.4B<', '>$6.4K<', '<b>1.3B</b> behind #41 yuki', '>93%<', 'Week <b>#17</b>', 'Month <b>#29</b>']) expect(html).toContain(text);
   });
+  it('leaves out Top N% when you are in the bottom half', () => {
+    const mine = profile('example-builder', 2000, 1e6);
+    const html = markup(<YouStrip mine={mine} gap={null} builders={3003} periods={null} onProfile={() => {}} />);
+    expect(html).toContain('example-builder<');
+    expect(html).not.toContain('Top');
+  });
   it('invites you to join before you are on the board', () => {
     expect(markup(<JoinStrip onJoin={() => {}} />)).toContain('Join the leaderboard');
   });

@@ -1,4 +1,4 @@
-//! `apps/server/src/connect.test.ts`, case for case: browser approval from the local app.
+//! Browser approval from the local app.
 mod support;
 
 use serde_json::{Value, json};

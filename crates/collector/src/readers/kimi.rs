@@ -153,7 +153,6 @@ fn seconds(value: Option<&Value>) -> Option<String> {
 }
 
 static KIMI: Adapter = Adapter {
-    passive: true,
     capabilities: SourceCapabilities {
         tokens: true,
         models: true,

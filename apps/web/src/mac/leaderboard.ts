@@ -16,18 +16,8 @@ export function gapToNext(rows: readonly PublicProfile[], me: string): { ahead: 
   return mine && ahead ? { ahead, tokens: ahead.tokens - mine.tokens } : null;
 }
 
-/** Community tokens over the last seven days of the trend. */
-export function weeklyGrowth(trend: ReadonlyArray<{ tokens: number }>): number {
-  return trend.slice(-7).reduce((sum, point) => sum + point.tokens, 0);
-}
-
 /** The last seven of a row's fourteen daily totals. */
 export function lastSeven(daily: readonly number[]): number[] { return daily.slice(-7); }
-
-/** "Top N%" for a rank, rounded up so #1 is the top 1%; null before the builder count is known. */
-export function topPercent(rank: number, builders: number): number | null {
-  return builders > 0 ? Math.max(1, Math.ceil((rank / builders) * 100)) : null;
-}
 
 /** Page numbers for the pager: all of them up to seven, otherwise the ends and the current page's neighbours. */
 export function pagerItems(page: number, pages: number): Array<number | '…'> {

@@ -135,7 +135,7 @@ impl Step {
     pub fn root(&self) -> PathBuf {
         self.dir.join("root")
     }
-    /// Intentional Rust accounting fixes live beside the frozen TypeScript goldens, one override per changed file.
+    /// Intentional accounting fixes live in `rust-expected/` beside the `expected/` goldens, one override per changed file.
     pub fn expected_path(&self, name: &str) -> PathBuf {
         let rust = self.dir.join("rust-expected").join(name);
         if rust.exists() {

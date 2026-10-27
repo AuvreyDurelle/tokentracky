@@ -1,7 +1,6 @@
-//! The router shared by both transports (`baseApp` and the collector-independent routes of `startLocalServer` in
-//! `apps/server/src/app.ts`): security headers, the uniform errors, body limits, the per-client rate limit, the web
-//! build, health, the leaderboard and profile proxies (and, for the Mac app, the community, neighbour and rarity
-//! proxies and likes), device connect, and the cloud link and sync routes.
+//! The router shared by both transports, apart from the collector-backed routes: security headers, the uniform errors,
+//! body limits, the per-client rate limit, the web build, health, the leaderboard and profile proxies (and, for the Mac
+//! app, the community, neighbour and rarity proxies and likes), device connect, and the cloud link and sync routes.
 use crate::body::JsonBody;
 use crate::connect::{DeviceConnect, default_device_name, machine_id};
 use crate::error::{JSON, LocalError, Relayed, json, shape_errors};
@@ -163,7 +162,7 @@ pub fn base_router(
         .route("/api/leaderboard", get(leaderboard))
         .route("/api/profiles/{alias}", get(profile))
         .route("/api/profiles/{alias}/stats", get(profile_stats))
-        // For the Mac app's pages; the TypeScript server has none of these.
+        // For the Mac app's pages.
         .route("/api/community", get(community))
         .route("/api/leaderboard/around/{alias}", get(neighbours))
         .route("/api/achievements/rarity", get(rarity))
@@ -397,7 +396,7 @@ fn forwarded(query: Option<&str>) -> String {
     params.finish()
 }
 
-/// The web app for `/u/:alias` when the alias matches `PROFILE_ALIAS`, `^[a-zA-Z0-9][a-zA-Z0-9_-]{2,29}$`; else the JSON
+/// The web app for `/u/:alias` when the alias matches `ALIAS_PATTERN`, `^[a-zA-Z0-9][a-zA-Z0-9_-]{2,29}$`; else the JSON
 /// 404.
 async fn public_profile(root: Arc<PathBuf>, alias: String, request: Request) -> Response {
     let mut chars = alias.chars();

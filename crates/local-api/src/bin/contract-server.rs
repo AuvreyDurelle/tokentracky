@@ -1,5 +1,5 @@
-//! The Rust local server for `CONTRACT_SERVER_CMD` (`tests/contract/README.md`): `apps/server/src/main.ts` in local
-//! mode, with the device credential kept in memory. Runs until SIGINT or SIGTERM, then closes gracefully.
+//! The Rust local server for `CONTRACT_SERVER_CMD` (`tests/contract/README.md`): [`serve_from_env`] with the device
+//! credential kept in memory. Runs until SIGINT or SIGTERM, then closes gracefully.
 use std::io::IsTerminal;
 use std::process::ExitCode;
 use std::sync::Arc;

@@ -1,11 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import type { TokenCounts, UsageBreakdownRow } from '@tokentracky/core';
+import type { UsageBreakdownRow } from '@tokentracky/core';
 import { dayRange, fillRange, previousLabel, previousRange, rangeLabel, rangeLength } from './ranges';
 import { Heatmap, heatLevels } from './Heatmap';
 import { costGroups } from './Insights';
-import { TrendChart, stackTops } from './TrendChart';
-import { kindStacks } from './You';
+import { TrendChart } from './TrendChart';
 import { formatCostCompact, timeUntil } from './format';
 
 const now = new Date('2026-10-23T15:00:00.000Z');
@@ -69,28 +68,7 @@ describe('cost analysis', () => {
   });
 });
 
-describe('token types', () => {
-  const total = (counts: TokenCounts) => counts.input + counts.output + counts.cacheRead + counts.cacheWrite;
-  // Reasoning (30) is inside output (50); counting it again would make 1,030.
-  const counts: TokenCounts = { input: 100, output: 50, cacheRead: 800, cacheWrite: 50, reasoning: 30 };
-
-  it('stacks each day by kind so the layers add up to the day, leaving reasoning out', () => {
-    const day = (date: string, breakdown: TokenCounts) => ({ day: date, tokens: total(breakdown), breakdown, costMicrousd: null, costParts: null });
-    const daily = [day('2026-10-21', counts), day('2026-10-23', { input: 7, output: 3, cacheRead: 0, cacheWrite: 1, reasoning: 3 })];
-    const range = { from: '2026-10-21', to: '2026-10-23' };
-    const stacks = kindStacks(daily, range);
-    expect(stacks.map((layer) => layer.label)).toEqual(['Input', 'Output', 'Cache read', 'Cache write']);
-    expect(stacks.map((layer) => layer.values)).toEqual([[100, 0, 7], [50, 0, 3], [800, 0, 0], [50, 0, 1]]);
-    const tops = stackTops(stacks.map((layer) => layer.values));
-    expect(tops.at(-1)).toEqual(fillRange(daily, range).map((point) => point.tokens));
-    expect(tops.at(-1)).toEqual([1_000, 0, 11]);
-    const points = fillRange(daily, range);
-    const stacked = renderToStaticMarkup(<TrendChart points={points} stacks={stacks} label="Tokens by type" />);
-    expect(stacked.match(/class="trend-layer /g)).toHaveLength(4);
-    expect(stacked).not.toContain('trend-line');
-    expect(stacked).toContain('<th>Day</th><th>Input</th><th>Output</th><th>Cache read</th><th>Cache write</th><th>Total</th>');
-    expect(stacked).toContain('<td>2026-10-21</td><td>100</td><td>50</td><td>800</td><td>50</td><td>1,000</td>');
-  });
+describe('trend chart', () => {
   it('keeps the total chart as it was when no stacks are given', () => {
     const html = renderToStaticMarkup(<TrendChart points={[{ day: '2026-10-22', tokens: 4 }, { day: '2026-10-23', tokens: 6 }]} label="Tokens" />);
     expect(html).toContain('trend-area');

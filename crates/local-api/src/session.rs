@@ -1,6 +1,6 @@
-//! Protection of the loopback TCP transport (`apps/server/src/local-session.ts`): Host and Origin checks against DNS
-//! rebinding and cross-origin writes, one-use launch links exchanged for an HttpOnly SameSite=Strict session cookie,
-//! and that cookie on every request. The Mac app's in-process transport has no port and does not use it.
+//! Protection of the loopback TCP transport: Host and Origin checks against DNS rebinding and cross-origin writes,
+//! one-use launch links exchanged for an HttpOnly SameSite=Strict session cookie, and that cookie on every request. The
+//! Mac app's in-process transport has no port and does not use it.
 use crate::app::{content_security_policy, secure};
 use crate::error::LocalError;
 use axum::Router;

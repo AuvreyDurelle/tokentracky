@@ -1,8 +1,10 @@
 //! Shared types, validation and UTC day maths. Ported from `packages/core`.
 //! JSON field names, optionality and unions match the TypeScript types generated from them (see README).
 mod activity;
+mod js;
 mod ranking;
 pub use activity::{ActivityStats, DayTokens, activity_stats};
+pub use js::{compact_count, is_js_space, iso_timestamp};
 pub use ranking::{CounterOverflow, MAX_SAFE_INTEGER, checked_sum, is_safe_count, is_utc_day, ranking_window};
 
 use serde::{Deserialize, Deserializer, Serialize};
@@ -110,6 +112,41 @@ impl ToolId {
             Self::Hermes => "Hermes Agent",
             Self::Goose => "Goose",
             Self::Grok => "Grok Build",
+        }
+    }
+    /// Its JSON id.
+    pub const fn id(self) -> &'static str {
+        match self {
+            Self::Claude => "claude",
+            Self::Codex => "codex",
+            Self::Cursor => "cursor",
+            Self::Gemini => "gemini",
+            Self::Cline => "cline",
+            Self::Roo => "roo",
+            Self::Kilo => "kilo",
+            Self::OpenCode => "opencode",
+            Self::EveryCode => "everycode",
+            Self::Mimo => "mimo",
+            Self::DuMate => "dumate",
+            Self::Pi => "pi",
+            Self::Omp => "omp",
+            Self::Omo => "omo",
+            Self::PrimeAgent => "primeagent",
+            Self::MiniMax => "minimax",
+            Self::CodeBuddy => "codebuddy",
+            Self::Kimi => "kimi",
+            Self::CommandCode => "commandcode",
+            Self::DeepSeek => "deepseek",
+            Self::LmStudio => "lmstudio",
+            Self::Copilot => "copilot",
+            Self::Unsloth => "unsloth",
+            Self::ZCode => "zcode",
+            Self::Zed => "zed",
+            Self::OpenClaw => "openclaw",
+            Self::Reasonix => "reasonix",
+            Self::Hermes => "hermes",
+            Self::Goose => "goose",
+            Self::Grok => "grok",
         }
     }
 }
@@ -853,6 +890,12 @@ mod tests {
             cache_write_1h: Some(15),
         };
         assert_eq!(total_tokens(&tokens), 220);
+    }
+    #[test]
+    fn gives_each_tool_its_json_id() {
+        for &tool in TOOL_IDS {
+            assert_eq!(serde_json::to_value(tool).unwrap(), tool.id(), "{tool:?}");
+        }
     }
     #[test]
     fn serialises_unions_and_keeps_null_apart_from_absent() {

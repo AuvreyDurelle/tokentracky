@@ -230,7 +230,6 @@ fn read(path: &Path, _known: &[UsageEvent]) -> rusqlite::Result<ParseResult> {
 }
 
 static UNSLOTH: Adapter = Adapter {
-    passive: true,
     capabilities: SourceCapabilities {
         tokens: true,
         models: true,

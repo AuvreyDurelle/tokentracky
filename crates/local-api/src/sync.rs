@@ -1,13 +1,13 @@
-//! Cloud sync (`CloudSync` in `cloud-link.ts`): link changes, the hosted consent policy, and uploads of the frozen
-//! pending batch with its receipts.
+//! Cloud sync (`CloudSync`): link changes, the hosted consent policy, and uploads of the frozen pending batch with its
+//! receipts.
 //!
-//! The TypeScript promise chain becomes a fair async mutex: link changes (`set_link`, `unlink`, `stop`) run one at a
-//! time in call order, each first cancelling and awaiting the sync in flight. While any change is queued or running,
-//! `sync` answers 409 `LINK_CHANGING`. Concurrent `sync` calls share one upload. Work runs on spawned tasks, so a
-//! caller that goes away (a closed HTTP connection) does not cut a change or an upload short, as with promises.
+//! Link changes (`set_link`, `unlink`, `stop`) run one at a time in call order behind a fair async mutex, each first
+//! cancelling and awaiting the sync in flight. While any change is queued or running, `sync` answers 409
+//! `LINK_CHANGING`. Concurrent `sync` calls share one upload. Work runs on spawned tasks, so a caller that goes away (a
+//! closed HTTP connection) does not cut a change or an upload short.
 use crate::error::LocalError;
 use crate::http::{HttpClient, HttpRequest, HttpResponse};
-use crate::link::{CloudLink, LinkInput, Scope, SecretStore, broader, cutoff, iso, validate_cloud_link};
+use crate::link::{CloudLink, LinkInput, Scope, SecretStore, broader, cutoff, validate_cloud_link};
 use axum::http::{Method, StatusCode, header};
 use serde::Serialize;
 use serde_json::Value;
@@ -17,7 +17,7 @@ use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use std::time::Duration;
 use time::OffsetDateTime;
 use tokentracky_collector::store::{StoreError, UsageStore};
-use tokentracky_core::{PublicBucket, PublicHour, is_public_model, is_safe_count};
+use tokentracky_core::{PublicBucket, PublicHour, is_public_model, is_safe_count, iso_timestamp};
 use tokio::sync::watch;
 use tokio_util::sync::CancellationToken;
 
@@ -278,7 +278,7 @@ impl CloudSync {
     pub async fn set_link(self: &Arc<Self>, input: LinkInput) -> Result<(), LocalError> {
         self.mutate(move |this| async move {
             // TypeScript answers 500 when the service cannot be reached or answers nonsense; 502 is the sensible
-            // reading of the same failure (tests/contract/README.md, first quirk).
+            // reading of the same failure (the crate root's first difference).
             let policy = this
                 .policy(&input.url, &input.device_token, None)
                 .await
@@ -384,14 +384,14 @@ impl CloudSync {
         let mut state = self.state();
         match result {
             Ok(()) => {
-                let synced_at = iso(OffsetDateTime::now_utc());
+                let synced_at = iso_timestamp(OffsetDateTime::now_utc());
                 state.status.last_sync_at = Some(synced_at.clone());
                 state.status.sync_error = None;
                 Ok(Synced { synced_at })
             }
             Err(Failure::Local(error)) => {
                 // Nothing linked is not a sync failure, so it leaves no error in the status. TypeScript records
-                // CLOUD_NOT_LINKED until a link or unlink (tests/contract/README.md, third quirk).
+                // CLOUD_NOT_LINKED until a link or unlink (the crate root's third difference).
                 state.status.sync_error = (error != NOT_LINKED).then_some(error.code);
                 Err(error)
             }

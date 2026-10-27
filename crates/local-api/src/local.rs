@@ -1,13 +1,11 @@
-//! The collector-backed routes (`apps/server/src/local-routes.ts`, and `PUT /api/local/collection`, the pause switch
-//! and the weekly rank of `startLocalServer` in `app.ts`): status, detection, source authorisation, refresh, pause,
-//! the usage queries and the CSV export, the Rust-only local days (F3): a `tz` on the usage queries and
-//! `GET /api/local/day`, the Rust-only usage limits (F6): `GET /api/local/limits`, and, for the Mac app's pages, the
+//! The collector-backed routes: status, detection, source authorisation, refresh, pause (`PUT /api/local/collection`),
+//! the weekly rank, the usage queries and the CSV export, the Rust-only local days (F3): a `tz` on the usage queries,
+//! the Rust-only usage limits (F6): `GET /api/local/limits`, and, for the Mac app's pages, the
 //! cached overview and the Rust-only last 24 hours: `since`/`until` on the usage queries and `GET /api/local/hours`.
 //! Collector and store calls are synchronous, so they run on the blocking pool, and only there is the store held.
 use crate::app::{LocalState, encode_uri_component, hosted};
 use crate::body::JsonBody;
 use crate::error::{LocalError, json, object};
-use crate::link::is_js_space;
 use crate::server::{LocalOptions, LocalOverview, OpenError, PricingDownload};
 use crate::sync::{CloudSync, SyncStatus};
 use axum::Router;
@@ -32,7 +30,7 @@ use tokentracky_collector::store::{QueryOptions, SourceConfiguration, StoreError
 use tokentracky_collector::{LocalCollector, RefreshError, RefreshScheduler, RefreshStatus, ServiceError};
 use tokentracky_core::{
     LocalSettings, MAX_SAFE_INTEGER, MenuOverview, ProjectSummary, SourceState, SourceStatus, ToolId, TopTool,
-    is_utc_day,
+    is_js_space, is_utc_day,
 };
 use tokio::sync::watch;
 
@@ -194,8 +192,8 @@ impl LocalState {
     }
 }
 
-/// The first run (`setupCompleted`): while no source has ever been configured, turns on each detected tool whose
-/// reader is passive, at the folders found, and records that setup is done, so a tool turned off later stays off. An
+/// The first run (`setupCompleted`): while no source has ever been configured, turns on each detected tool that has a
+/// reader, at the folders found, and records that setup is done, so a tool turned off later stays off. An
 /// install with a configured source is recorded as set up and keeps its choices. With nothing turned on nothing is
 /// recorded, and a later launch looks again. True when it turned tools on.
 fn set_up(collector: &LocalCollector<PricingDownload>, detected: &[DetectedTool]) -> Result<bool, ServiceError> {
@@ -207,10 +205,10 @@ fn set_up(collector: &LocalCollector<PricingDownload>, detected: &[DetectedTool]
         .source_statuses()?
         .iter()
         .any(|source| !matches!(source.state, SourceState::PermissionRequired | SourceState::Unsupported));
-    let passive = |tool: &&DetectedTool| adapter(tool.id).is_some_and(|adapter| adapter.passive);
+    let readable = |tool: &&DetectedTool| adapter(tool.id).is_some();
     let mut enabled = false;
     if !configured {
-        for tool in detected.iter().filter(passive) {
+        for tool in detected.iter().filter(readable) {
             let configuration = SourceConfiguration {
                 enabled: true,
                 paths: tool.paths.clone(),
@@ -359,9 +357,7 @@ pub(crate) fn local_routes() -> Router<LocalState> {
             "/api/local/sources/{id}",
             put(source).layer(DefaultBodyLimit::max(16_384)),
         )
-        // `scan` predates the refresh cycle; both run one full cycle.
         .route("/api/local/refresh", post(refresh))
-        .route("/api/local/scan", post(refresh))
         .route("/api/local/collection", put(collection))
         .route("/api/local/settings", get(get_settings).put(put_settings))
         .route("/api/local/summary", get(summary))
@@ -370,7 +366,6 @@ pub(crate) fn local_routes() -> Router<LocalState> {
         .route("/api/local/projects", get(projects))
         .route("/api/local/export", get(export))
         .route("/api/local/overview", get(overview))
-        .route("/api/local/day", get(day))
         .route("/api/local/hours", get(hours))
         .route("/api/local/limits", get(limits))
 }
@@ -807,21 +802,6 @@ fn current(cached: &Option<(Date, LocalOverview)>, today: Date) -> Option<LocalO
         .map(|(_, overview)| overview.clone())
 }
 
-/// `GET /api/local/day?date=YYYY-MM-DD&tz=Area/City`: that local day's tokens by half hour (F3's chart of today).
-async fn day(State(state): State<LocalState>, uri: Uri) -> Result<Response, LocalError> {
-    let params = params(uri.query());
-    let query = object(Some(&params), &["date", "tz"])?;
-    let date = query.get("date").and_then(Value::as_str).filter(|day| is_utc_day(day));
-    let (Some(date), Some(tz)) = (date.map(str::to_owned), query.get("tz").and_then(time_zone)) else {
-        return Err(INVALID_FILTER);
-    };
-    let store = state.store.clone();
-    let series = blocking(move || lock(&store).day_series(&date, &tz))
-        .await?
-        .map_err(|_| LocalError::internal())?;
-    Ok(json(StatusCode::OK, &series))
-}
-
 /// `GET /api/local/hours?since=&until=`, with the usage queries' `tool` and `q`: the window's tokens by hour, tool and
 /// model, hours counted from `since` (the Tokens page's bars of the last 24 hours). The window is whole hours, at most
 /// a day. Rust only.
@@ -853,7 +833,7 @@ async fn limits(State(state): State<LocalState>, uri: Uri) -> Result<Response, L
     Ok(json(StatusCode::OK, &crate::limits::limits(&readings, now)))
 }
 
-/// The CSV download. Its headers are set on success only (the crate root's second quirk).
+/// The CSV download. Its headers are set on success only (the crate root's second difference).
 async fn export(State(state): State<LocalState>, uri: Uri) -> Result<Response, LocalError> {
     let csv = query(&state, &uri, UsageStore::export_csv).await?;
     let headers = [

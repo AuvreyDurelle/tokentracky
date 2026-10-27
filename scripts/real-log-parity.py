@@ -25,12 +25,9 @@ import sys
 from multiprocessing import Pool
 
 HOME = os.path.expanduser('~')
-T3 = os.path.join(HOME, 't3-routing', '.runtime', 'profiles')
 ROOTS = {
-    'claude': [os.path.join(HOME, '.claude', 'projects'), os.path.join(HOME, '.config', 'claude', 'projects'),
-               os.path.join(T3, 'claude', 'projects')],
-    'codex': [os.path.join(HOME, '.codex', 'sessions'), os.path.join(HOME, '.codex', 'archived_sessions'),
-              os.path.join(T3, 'codex', 'sessions'), os.path.join(T3, 'codex', 'archived_sessions')],
+    'claude': [os.path.join(HOME, '.claude', 'projects'), os.path.join(HOME, '.config', 'claude', 'projects')],
+    'codex': [os.path.join(HOME, '.codex', 'sessions'), os.path.join(HOME, '.codex', 'archived_sessions')],
 }
 
 

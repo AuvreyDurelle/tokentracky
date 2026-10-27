@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
-import { TOOL_IDS, type Period, type ToolId } from '@tokentracky/core';
+import { ALIAS_PATTERN, TOOL_IDS, type Period, type ToolId } from '@tokentracky/core';
 import { bearer, createAccountVerifier, type AccountIdentity, type AccountVerifier, type ManagedAuthConfig } from './auth.ts';
 import { CloudError, invalid } from './errors.ts';
 import { PostgresCloudRepository, type Liker } from './repository.ts';
@@ -23,7 +23,6 @@ function period(value: unknown): Period {
 declare module 'fastify' {
   interface FastifyContextConfig {cacheSeconds?: number}
 }
-const ALIAS = /^[a-zA-Z0-9][a-zA-Z0-9_-]{2,29}$/;
 const notFound = () => new CloudError(404, 'NOT_FOUND', 'Published profile not found');
 /** Public, anonymous routes may be cached by browsers and the CDN for this long; everything else is no-store. */
 const cached = (seconds: number) => ({config: {cacheSeconds: seconds}});
@@ -84,7 +83,7 @@ export async function registerCloudRoutes(app: FastifyInstance, options: CloudRo
     });
     cloud.get<{Params: {alias: string}}>('/api/leaderboard/around/:alias', async request => {
       const q = object(request.query, ['period']);
-      if (!ALIAS.test(request.params.alias)) throw notFound();
+      if (!ALIAS_PATTERN.test(request.params.alias)) throw notFound();
       return repository.around(request.params.alias, period(q.period));
     });
     // One shared snapshot per minute for the landing page, however many visitors load it.
@@ -100,14 +99,14 @@ export async function registerCloudRoutes(app: FastifyInstance, options: CloudRo
     });
     cloud.get<{Params: {alias: string}}>('/api/profiles/:alias/stats', cached(60), async request => {
       object(request.query, []);
-      if (!ALIAS.test(request.params.alias)) throw notFound();
+      if (!ALIAS_PATTERN.test(request.params.alias)) throw notFound();
       return repository.profileStats(request.params.alias);
     });
     // Likes: a signed-in account, or a computer's credential for the Mac app. Never cached.
     const like = async (request: FastifyRequest<{Params: {alias: string}}>, liked?: boolean) => {
       const token = bearer(request.headers.authorization);
       const liker: Liker = token.startsWith('ttd_') ? {deviceToken: token} : {identity: await account(request)};
-      if (!ALIAS.test(request.params.alias)) throw notFound();
+      if (!ALIAS_PATTERN.test(request.params.alias)) throw notFound();
       return repository.like(liker, request.params.alias, liked);
     };
     const likeLimit = {rateLimit: {max: 30, timeWindow: '1 minute'}};
@@ -131,7 +130,7 @@ export async function registerCloudRoutes(app: FastifyInstance, options: CloudRo
       const window = period(q.period ?? 'all');
       const options = badgeOptions(q);
       const alias = request.params.file.endsWith('.svg') ? request.params.file.slice(0, -4) : '';
-      if (!ALIAS.test(alias)) throw notFound();
+      if (!ALIAS_PATTERN.test(alias)) throw notFound();
       let value = 'private';
       try {
         const profile = await repository.profile(alias, window);
@@ -149,14 +148,14 @@ export async function registerCloudRoutes(app: FastifyInstance, options: CloudRo
       if (theme !== 'dark' && theme !== 'light') invalid('Card theme must be dark or light');
       const window = period(q.period ?? 'all');
       const alias = request.params.file.endsWith('.svg') ? request.params.file.slice(0, -4) : '';
-      if (!ALIAS.test(alias)) throw notFound();
+      if (!ALIAS_PATTERN.test(alias)) throw notFound();
       let data = null;
       try { data = await repository.profile(alias, window); } catch (error) { if (!(error instanceof CloudError && error.statusCode === 404)) throw error; }
       return reply.type('image/svg+xml; charset=utf-8').send(cardSvg(data && {alias: data.alias, rank: data.rank, tokens: data.tokens, costMicrousd: data.costMicrousd, tools: data.toolTokens}, theme, window));
     });
     cloud.get<{Params: {alias: string}}>('/api/profiles/:alias', async request => {
       const q = object(request.query, ['period']);
-      if (!ALIAS.test(request.params.alias)) throw notFound();
+      if (!ALIAS_PATTERN.test(request.params.alias)) throw notFound();
       return repository.profile(request.params.alias, period(q.period));
     });
     cloud.get('/api/account', async request => repository.account(await account(request)));
@@ -168,12 +167,6 @@ export async function registerCloudRoutes(app: FastifyInstance, options: CloudRo
     cloud.put('/api/publication', {bodyLimit: 4096}, async request => {
       const identity = await account(request);
       return {publication: await repository.putPublication(identity, request.body, await githubLogin(identity))};
-    });
-    cloud.post('/api/devices', {bodyLimit: 4096}, async request => {
-      const identity = await account(request);
-      const body = object(request.body, ['name']);
-      if (typeof body.name !== 'string') invalid('Device name is required');
-      return repository.createDevice(identity, body.name);
     });
     cloud.put<{Params: {id: string}}>('/api/devices/:id', {bodyLimit: 4096}, async (request, reply) => {
       const identity = await account(request);
