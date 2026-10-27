@@ -164,17 +164,6 @@ export class PostgresCloudRepository {
     });
   }
 
-  async createDevice(identity: AccountIdentity, name: string): Promise<{id: string; token: string}> {
-    const validName = deviceName(name);
-    const accountId = accountKey(identity);
-    return this.transaction(accountId, async client => {
-      await client.query('INSERT INTO cloud_accounts(id) VALUES ($1) ON CONFLICT DO NOTHING', [accountId]);
-      await this.refuseBanned(client, accountId);
-      await this.refuseFull(client, accountId, null);
-      return this.mintDevice(client, accountId, validName, null);
-    });
-  }
-
   /** Callers hold the account lock and have checked the cap. A new computer adds to the account's totals. */
   private async mintDevice(client: PoolClient, accountId: string, name: string, machine: string | null): Promise<{id: string; token: string}> {
     const id = randomUUID();

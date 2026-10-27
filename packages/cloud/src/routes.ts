@@ -168,12 +168,6 @@ export async function registerCloudRoutes(app: FastifyInstance, options: CloudRo
       const identity = await account(request);
       return {publication: await repository.putPublication(identity, request.body, await githubLogin(identity))};
     });
-    cloud.post('/api/devices', {bodyLimit: 4096}, async request => {
-      const identity = await account(request);
-      const body = object(request.body, ['name']);
-      if (typeof body.name !== 'string') invalid('Device name is required');
-      return repository.createDevice(identity, body.name);
-    });
     cloud.put<{Params: {id: string}}>('/api/devices/:id', {bodyLimit: 4096}, async (request, reply) => {
       const identity = await account(request);
       await repository.renameDevice(identity, request.params.id, object(request.body, ['name']).name);

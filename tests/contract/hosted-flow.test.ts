@@ -48,13 +48,20 @@ async function hostedService() {
   const origin = await app.listen({host: '127.0.0.1', port: 0});
   cleanup.push(() => app.close());
   const account = (path: string, method: 'GET' | 'PUT' | 'POST' | 'DELETE', body?: Record<string, unknown>) => app.inject({url: path, method, headers: {authorization: 'Bearer synthetic-account'}, payload: body});
+  // A computer linked the way the apps do it: start, browser approval, pickup.
+  const device = async () => {
+    const started = (await app.inject({url: '/api/device-auth', method: 'POST', payload: {deviceName: 'contract machine'}})).json();
+    expect((await account(`/api/device-auth/${started.userCode}/approve`, 'POST')).statusCode).toBe(204);
+    const picked = await app.inject({url: '/api/device-auth/poll', method: 'POST', headers: {authorization: `Bearer ${started.pollToken}`}});
+    return {token: picked.json().deviceToken as string};
+  };
   // A publication as saved before sharing was fixed (daily totals only), and the fixed-sharing migration run again over it.
   const totalsOnly = () => pool.query(`UPDATE ${schema}.cloud_publications SET share_tools = false, share_cost = false, share_models = false`);
   const fixSharing = async () => {
     await pool.query(`DELETE FROM ${schema}.cloud_migrations WHERE version = $1`, [FIXED_SHARING]);
     await migrateCloud(pool, {schema});
   };
-  return {origin, uploads, failures, account, totalsOnly, fixSharing};
+  return {origin, uploads, failures, account, device, totalsOnly, fixSharing};
 }
 type Hosted = Awaited<ReturnType<typeof hostedService>>;
 const publish = (hosted: Hosted, alias = 'contract-builder') => hosted.account('/api/publication', 'PUT', {alias});
@@ -79,9 +86,9 @@ const row = (alias: string, tokens: number) => ({alias, rank: 1, previousRank: 1
 describe.skipIf(SKIP !== null)(`local-to-hosted flow${SKIP ? ` (skipped: ${SKIP})` : ''}`, () => {
   it('imports, uploads, retries, corrects downwards and leaves by deleting the account, without private payloads', async () => {
     const hosted = await hostedService();
-    // Joining happens on the hosted site: the member publishes an alias, then creates a device credential.
+    // Joining happens on the hosted site: the member publishes an alias, then links a computer through browser approval.
     expect((await publish(hosted)).statusCode).toBe(200);
-    const device = (await hosted.account('/api/devices', 'POST', {name: 'contract machine'})).json();
+    const device = await hosted.device();
     const {server, file} = await localServer(hosted);
     expect((await getJson(server, `/api/local/summary?${DAY}`)).tokens).toBe(161);
     expect(await getJson(server, '/api/health')).toMatchObject({mode: 'local', cloudUrl: hosted.origin});
@@ -166,7 +173,7 @@ describe.skipIf(SKIP !== null)(`local-to-hosted flow${SKIP ? ` (skipped: ${SKIP}
     const hosted = await hostedService();
     expect((await publish(hosted)).statusCode).toBe(200);
     await hosted.totalsOnly();
-    const device = (await hosted.account('/api/devices', 'POST', {name: 'contract machine'})).json();
+    const device = await hosted.device();
     const {server} = await localServer(hosted);
     expect((await link(server, hosted, device.token, TOTALS_ONLY)).status).toBe(200);
     expect((await server.request('/api/local/sync', {method: 'POST'})).status).toBe(200);
