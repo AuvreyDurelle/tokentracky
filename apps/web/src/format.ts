@@ -50,6 +50,10 @@ export function timeUntil(value: string | null | undefined, now = Date.now()) {
 export function shortDay(day: string) {
   return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(new Date(`${day}T00:00:00Z`));
 }
+/** An hour's first instant (`toISOString`) as its UTC day, start and end: "27 Oct, 14:00–15:00". */
+export function utcHourSpan(hour: string) {
+  return `${shortDay(hour.slice(0, 10))}, ${hour.slice(11, 16)}–${new Date(Date.parse(hour) + 3_600_000).toISOString().slice(11, 16)}`;
+}
 /** "Top N%" for a rank among `builders`, shown only in the top half: N = ceil(rank ÷ builders × 100). */
 export function topPercent(rank: number, builders: number): string | null {
   if (builders <= 0 || rank < 1 || rank * 2 > builders) return null;

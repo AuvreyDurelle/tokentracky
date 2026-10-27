@@ -788,6 +788,11 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
     // An app from before hours sends none: its member shows no figure rather than zero.
     await upload(b, [bucket(50)]);
     expect(await last24h()).toEqual([['alice', 6], ['bob', undefined]]);
+    // The profile shows the same 24 hours one by one, oldest first, every tool together; nothing for a member who sends none.
+    const hours = (await request('GET', '/api/profiles/alice/stats')).json().hours as Array<{hour: string; tokens: number}>;
+    expect(hours.map(h => h.hour)).toEqual(Array.from({length: 24}, (_, index) => new Date(Date.parse('2026-10-22T12:00:00.000Z') + index * 3_600_000).toISOString()));
+    expect(hours.filter(h => h.tokens)).toEqual([{hour: '2026-10-22T12:00:00.000Z', tokens: 2}, {hour: '2026-10-23T11:00:00.000Z', tokens: 4}]);
+    expect((await request('GET', '/api/profiles/bob/stats')).json()).not.toHaveProperty('hours');
     // Ranked by one tool, the figure still covers every tool, as the lifetime does.
     expect(await last24h('period=all&tool=codex')).toEqual([['alice', 6], ['bob', undefined]]);
     expect((await request('GET', '/api/profiles/alice?period=week')).json().last24hTokens).toBe(6);
@@ -806,6 +811,8 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
     expect((await upload(desktop, [bucket(30, {tool: 'claude'})], [hour('23T10', 30), hour('20T10', 5)])).statusCode).toBe(200);
     expect((await upload(laptop, [bucket(35, {tool: 'claude'})], [hour('23T10', 30), hour('23T09', 5)])).statusCode).toBe(200);
     expect(await last24h()).toEqual([['alice', 35]]);
+    const sentHours = async () => (await request('GET', '/api/profiles/alice/stats')).json().hours?.filter((h: {tokens: number}) => h.tokens);
+    expect(await sentHours()).toEqual([{hour: '2026-10-23T09:00:00.000Z', tokens: 5}, {hour: '2026-10-23T10:00:00.000Z', tokens: 30}]);
     // A batch retried late may carry hours from before the window: accepted, never stored.
     expect((await pool.query('SELECT hour FROM cloud_hours ORDER BY hour')).rows.map(row => row.hour.toISOString()))
       .toEqual(['2026-10-23T09:00:00.000Z', '2026-10-23T10:00:00.000Z', '2026-10-23T10:00:00.000Z']);
@@ -820,6 +827,7 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
     // Hours beyond a safe total leave the figure out instead of failing the board.
     await upload(desktop, [bucket(30, {tool: 'claude', revision: 3})], [hour('23T10', Number.MAX_SAFE_INTEGER), hour('23T10', Number.MAX_SAFE_INTEGER, 'codex')]);
     expect(await last24h()).toEqual([['alice', undefined]]);
+    expect(await sentHours()).toBeUndefined();
   });
 
   async function lockAlice(): Promise<PoolClient> {

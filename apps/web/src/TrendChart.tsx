@@ -1,5 +1,5 @@
 import { useState, type KeyboardEvent, type PointerEvent } from 'react';
-import { formatCompact, formatExact, niceTicks, shortDay } from './format';
+import { formatCompact, formatExact, niceTicks, shortDay, utcHourSpan } from './format';
 
 const W = 1000;
 const H = 100;
@@ -10,8 +10,9 @@ export function stackTops(layers: number[][]): number[][] {
   return layers.map((values) => values.map((value, day) => { sums[day] = (sums[day] ?? 0) + value; return sums[day]; }));
 }
 
-/** One daily series as an area (tokens by default; pass `value`/`tick` for cost), optionally over a dashed previous period aligned day by day. `stacks` splits each day into layers that add up to its value, drawn bottom first. Pointer or arrow keys move a crosshair; a hidden table carries every value. */
-export function TrendChart({ points, previous, stacks, label, value = formatExact, tick = formatCompact }: { points: Array<{ day: string; tokens: number }>; previous?: number[]; stacks?: Array<{ label: string; className: string; values: number[] }>; label: string; value?: (n: number) => string; tick?: (n: number) => string }) {
+/** One daily series as an area (tokens by default; pass `value`/`tick` for cost), optionally over a dashed previous period aligned day by day. `stacks` splits each day into layers that add up to its value, drawn bottom first. Pointer or arrow keys move a crosshair; a hidden table carries every value.
+ *  With `hours`, each point's `day` is an hour's first instant, read on the UTC clock. */
+export function TrendChart({ points, previous, stacks, label, value = formatExact, tick = formatCompact, hours = false }: { points: Array<{ day: string; tokens: number }>; previous?: number[]; stacks?: Array<{ label: string; className: string; values: number[] }>; label: string; value?: (n: number) => string; tick?: (n: number) => string; hours?: boolean }) {
   const [active, setActive] = useState<number | null>(null);
   const ticks = niceTicks(Math.max(0, ...points.map((point) => point.tokens), ...(previous ?? [])));
   const top = ticks.at(-1) || 1;
@@ -38,8 +39,11 @@ export function TrendChart({ points, previous, stacks, label, value = formatExac
   // The tooltip sits beside the crosshair, flipping left near the right edge.
   const edge = active !== null && x(active) > 70 ? ' end' : '';
   if (points.length === 0) return null;
+  const name = hours ? utcHourSpan : shortDay;
+  // The axis reads an hour's start, or a day ("Today" for the last when it is today).
+  const axis = (index: number) => hours ? points[index]!.day.slice(11, 16) : index === last && points[last]!.day === new Date().toISOString().slice(0, 10) ? 'Today' : shortDay(points[index]!.day);
   return <figure className="trend" aria-label={label}>
-    <div className="trend-plot" tabIndex={0} aria-label={`${label}. Use arrow keys to read each day.`}
+    <div className="trend-plot" tabIndex={0} aria-label={`${label}. Use arrow keys to read each ${hours ? 'hour' : 'day'}.`}
       onPointerMove={pick} onPointerLeave={() => setActive(null)} onKeyDown={step} onFocus={() => setActive((value) => value ?? last)} onBlur={() => setActive(null)}>
       {ticks.map((mark) => <div key={mark} className="gridline" style={{ bottom: `${(mark / top) * 100}%` }} aria-hidden="true"><span>{tick(mark)}</span></div>)}
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden="true">
@@ -53,12 +57,12 @@ export function TrendChart({ points, previous, stacks, label, value = formatExac
       {point && active !== null && <>
         <div className="crosshair" style={{ left: `${x(active)}%` }} aria-hidden="true" />
         <div className="trend-dot" style={{ left: `${x(active)}%`, top: `${y(point.tokens)}%` }} aria-hidden="true" />
-        <div className={`tooltip${edge}`} style={{ left: `${x(active)}%` }} role="status"><strong>{value(point.tokens)}</strong>{stacks?.map((layer) => <span key={layer.label}>{layer.label} {value(layer.values[active] ?? 0)}</span>)}<span>{shortDay(point.day)} · UTC</span>{previous && <span>Previous period {value(previous[active] ?? 0)}</span>}</div>
+        <div className={`tooltip${edge}`} style={{ left: `${x(active)}%` }} role="status"><strong>{value(point.tokens)}</strong>{stacks?.map((layer) => <span key={layer.label}>{layer.label} {value(layer.values[active] ?? 0)}</span>)}<span>{name(point.day)} · UTC</span>{previous && <span>Previous period {value(previous[active] ?? 0)}</span>}</div>
       </>}
     </div>
-    <div className="chart-x" aria-hidden="true"><span>{shortDay(points[0]!.day)}</span><span>{shortDay(points[Math.floor(last / 2)]!.day)}</span><span>{points[last]!.day === new Date().toISOString().slice(0, 10) ? 'Today' : shortDay(points[last]!.day)}</span></div>
-    <table className="sr-only"><caption>{label}</caption><thead><tr><th>Day</th>{stacks?.map((layer) => <th key={layer.label}>{layer.label}</th>)}<th>{stacks ? 'Total' : 'Value'}</th>{previous && <th>Previous period</th>}</tr></thead>
-      <tbody>{points.map((item, index) => <tr key={item.day}><td>{item.day}</td>{stacks?.map((layer) => <td key={layer.label}>{value(layer.values[index] ?? 0)}</td>)}<td>{value(item.tokens)}</td>{previous && <td>{value(previous[index] ?? 0)}</td>}</tr>)}</tbody></table>
+    <div className="chart-x" aria-hidden="true"><span>{axis(0)}</span><span>{axis(Math.floor(last / 2))}</span><span>{axis(last)}</span></div>
+    <table className="sr-only"><caption>{label}</caption><thead><tr><th>{hours ? 'Hour (UTC)' : 'Day'}</th>{stacks?.map((layer) => <th key={layer.label}>{layer.label}</th>)}<th>{stacks ? 'Total' : 'Value'}</th>{previous && <th>Previous period</th>}</tr></thead>
+      <tbody>{points.map((item, index) => <tr key={item.day}><td>{hours ? utcHourSpan(item.day) : item.day}</td>{stacks?.map((layer) => <td key={layer.label}>{value(layer.values[index] ?? 0)}</td>)}<td>{value(item.tokens)}</td>{previous && <td>{value(previous[index] ?? 0)}</td>}</tr>)}</tbody></table>
   </figure>;
 }
 

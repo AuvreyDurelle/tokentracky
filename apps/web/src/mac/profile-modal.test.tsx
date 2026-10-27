@@ -50,9 +50,9 @@ describe('ProfileCard', () => {
     expect(fixed).not.toMatch(/<button[^>]*class="pf-like/);
     expect(fixed).toContain('>14<');
   });
-  it('charts the daily usage like the website, as daily, cumulative or calendar over 30 days, 90 days or 12 months', () => {
+  it('charts the usage like the website, as daily, cumulative or calendar over 30 days, 90 days or 12 months, or the last 24 hours', () => {
     const html = card();
-    for (const label of ['Daily', 'Cumulative', 'Calendar', '30d', '90d', '12m']) expect(html).toMatch(new RegExp(`<button[^>]*>${label}</button>`));
+    for (const label of ['Daily', 'Cumulative', 'Calendar', '24h', '30d', '90d', '12m']) expect(html).toMatch(new RegExp(`<button[^>]*>${label}</button>`));
     expect(html).toContain('aria-label="Tokens per UTC day, last 90 days"');
   });
   it('splits all-time tokens by type with shares, reasoning inside output, only when every day carries types', () => {

@@ -133,7 +133,7 @@ export function ProfileCard({ stats, likes, like, onLike, onClose, headingId }: 
         {favourite ? <span className="fav-model">{favourite.model}</span> : <small>{stats.models ? 'None yet' : 'Not shared'}</small>}</Highlight>
     </div>
 
-    <div className="pf-sec"><ProfileUsage daily={stats.daily} /></div>
+    <div className="pf-sec"><ProfileUsage daily={stats.daily} hours={stats.hours} /></div>
 
     {stats.breakdown && <TokenTypes breakdown={stats.breakdown} />}
 

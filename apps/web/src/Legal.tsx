@@ -3,7 +3,7 @@ import './legal.css';
 
 export type LegalPageId = 'privacy' | 'terms' | 'support';
 
-const UPDATED = '26 October 2026';
+const UPDATED = '28 October 2026';
 const CONTACT = 'contact@tokentracky.com';
 const OPERATOR = 'XPO8 Limited';
 const ADDRESS = '1603, L. Plaza, 367–375 Queen’s Road Central, Sheung Wan, Hong Kong';
@@ -59,7 +59,7 @@ const privacy: Doc = {
       </ul>
     </> },
     { id: 'public', title: 'What is public', body: <>
-      <p>For every published profile, anyone can see your leaderboard name, your rank, your token totals for the last 24 hours, the week, month and all time, and your daily activity for the last 12 months with your active days and streaks. Your profile page, README badge and share card show the same details. Your all-time tokens by type, tokens per tool, tokens per model (including your most-used model) and estimated cost are shown too. Your totals also count towards the community totals on the home page.</p>
+      <p>For every published profile, anyone can see your leaderboard name, your rank, your token totals for the last 24 hours (also hour by hour, in UTC), the week, month and all time, and your daily activity for the last 12 months with your active days and streaks. Your profile page, README badge and share card show the same details. Your all-time tokens by type, tokens per tool, tokens per model (including your most-used model) and estimated cost are shown too. Your totals also count towards the community totals on the home page.</p>
       <p>Your profile also shows the day you joined, how many likes it has received, and achievements we work out from your published totals, such as your active days, streaks and best rank. If you signed in with GitHub, it shows your GitHub username, taken from GitHub’s sign-in record. Your projects, prompts and code never leave your computer, so none of this is based on them.</p>
       <p>Nothing is public until you join the leaderboard. Creating an account alone publishes nothing. Others may copy public information while it is visible, and we cannot recall copies they have made.</p>
     </> },
@@ -92,7 +92,7 @@ const privacy: Doc = {
     { id: 'transfers', title: 'International transfers', body: <p>{OPERATOR} is based in Hong Kong, our database is in the United Kingdom, and some providers process information in other countries, including the United States. Where the law restricts a transfer, we rely on an appropriate safeguard such as an adequacy decision or standard contractual clauses. Ask us for details of the safeguard that applies to your information.</p> },
     { id: 'retention', title: 'Retention and deletion', body: <ul>
       <li><strong>On your computer:</strong> kept until you delete it. <Page id="support">Support</Page> explains how.</li>
-      <li><strong>Hourly totals:</strong> kept only for the last day; older hours are deleted. Only their sum for the last 24 hours is shown.</li>
+      <li><strong>Hourly totals:</strong> kept only for the last day; older hours are deleted. Your profile shows each of the last 24 hours across every tool, and the leaderboard their sum.</li>
       <li><strong>Published totals:</strong> kept while your account exists. Disconnecting a computer stops its uploads but keeps what it already published; deleting your account data removes your public profile and totals.</li>
       <li><strong>Account data:</strong> kept until you choose <em>Delete Tokentracky data</em>, which removes your profile, totals and connected computers. Your sign-in identity with our authentication provider is separate; email us to delete it as well.</li>
       <li><strong>Bans:</strong> if we ban an account for cheating, we keep a one-way identifier of its sign-in and the reason, even after its account data is deleted, so the same sign-in cannot rejoin the leaderboard.</li>

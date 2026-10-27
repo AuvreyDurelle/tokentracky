@@ -724,6 +724,8 @@ span.profile-like { cursor: default; }
 .profile-hl-value small { color: var(--text-3); font-size: 12px; font-weight: 400; }
 .profile-usage { display: grid; gap: 16px; padding: 18px 24px 20px; border-top: 1px solid var(--border); }
 .usage-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+/* The range stays on the right when the 24 hours hide the chart choice. */
+.usage-head .segmented:last-child { margin-left: auto; }
 .profile-usage .trend { margin: 8px 0 0; }
 /* Short ranges have few weeks: larger cells, centred, about as tall as the charts. */
 .profile-usage .heat-body { max-width: calc(27px + var(--weeks) * 30px); margin: 0 auto; }

@@ -731,6 +731,20 @@ export class PostgresCloudRepository {
           return {id, tier, value, next: BADGE_TIERS[id][tier] ?? null};
         })};
       if (extra.github_login !== null) stats.githubLogin = extra.github_login;
+      // The leaderboard's 24-hour figure hour by hour, for a member with a computer that sends hours; left out, as that
+      // figure is, when its total is beyond the safe range.
+      const sends = await client.query(`SELECT 1 FROM ${this.schema}.cloud_publications p JOIN ${this.schema}.cloud_devices d ON d.account_id = p.account_id
+        WHERE p.alias = $1 AND d.hours_at IS NOT NULL LIMIT 1`, [name]);
+      if (sends.rowCount) {
+        const {since, until} = lastDay(now);
+        const sent = await client.query<{hour: Date; tokens: string}>(`
+          SELECT h.hour, sum(h.tokens) AS tokens
+          FROM ${this.schema}.cloud_publications p JOIN ${this.schema}.cloud_account_hours h ON h.account_id = p.account_id
+          WHERE p.alias = $1 AND h.hour >= $2 AND h.hour < $3 GROUP BY h.hour`, [name, since, until]);
+        const byHour = new Map(sent.rows.map(row => [row.hour.toISOString(), wide(row.tokens)]));
+        const hours = Array.from({length: 24}, (_, index) => new Date(since.getTime() + index * HOUR_MS).toISOString()).map(hour => ({hour, tokens: byHour.get(hour) ?? 0n}));
+        if (hours.reduce((sum, {tokens}) => sum + tokens, 0n) <= BigInt(Number.MAX_SAFE_INTEGER)) stats.hours = hours.map(({hour, tokens}) => ({hour, tokens: Number(tokens)}));
+      }
       if (all!.toolTokens) stats.toolTokens = all!.toolTokens;
       if ('costMicrousd' in all!) stats.costMicrousd = all!.costMicrousd;
       if (extra.share_models) {

@@ -21,6 +21,7 @@ Privacy refinement: when tool breakdown is off, the collector aggregates across 
   {alias: string,                                   // lowercase
    periods: {week|month|all: {rank: number, tokens: number}},
    daily: Array<{day: 'YYYY-MM-DD', tokens: number}>,  // 365 UTC days ending today, oldest first, zeros included
+   hours?: Array<{hour: string, tokens: number}>,    // every tool's tokens in the 24 whole UTC hours before the current one, oldest first, zeros included; hour is its first instant (toISOString); absent when last24hTokens would be
    activity: {activeDays, currentStreak, longestStreak, averagePerActiveDay: number, bestDay: {day, tokens} | null},
    toolTokens?: Partial<Record<ToolId, number>>,     // all time; present only when shareTools
    costMicrousd?: number | null,                    // all time; present only when shareCost; null when any day is unpriced

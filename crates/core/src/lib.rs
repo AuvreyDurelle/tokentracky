@@ -595,6 +595,11 @@ pub struct ProfileStats {
     /// Tokens per UTC day for the 365 days ending today, oldest first.
     #[ts(inline)]
     pub daily: Vec<DayTokens>,
+    /// Tokens per UTC hour across every tool for the 24 whole hours before the hour under way, oldest first: the
+    /// leaderboard's `last24h_tokens` hour by hour, and absent likewise.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional, inline)]
+    pub hours: Option<Vec<HourTokens>>,
     pub activity: ActivityStats,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional, type = "Partial<Record<ToolId, number>>")]
@@ -640,6 +645,14 @@ pub struct PeriodRank {
     // Ranked builders in the window: what "Top N%" divides by. A plain comment, since the type is inlined.
     #[serde(default)]
     pub builders: u32,
+}
+/// One UTC hour's tokens on a profile (`ProfileStats.hours`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+pub struct HourTokens {
+    // The hour's first instant (`toISOString`). A plain comment, since the type is inlined.
+    pub hour: String,
+    #[ts(type = "number")]
+    pub tokens: u64,
 }
 /// One model's all-time tokens on a profile (`ProfileStats.models`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]

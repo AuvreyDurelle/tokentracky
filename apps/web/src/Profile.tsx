@@ -114,7 +114,7 @@ export function ProfileView({ stats, me, origin, join, onLeaderboard, likes = st
           <Highlight icon={ZAP} tone="zap" label="Best day">{activity.bestDay ? <>{formatCompact(activity.bestDay.tokens)}<small> · {shortDay(activity.bestDay.day)}</small></> : '—'}</Highlight>
           <Highlight icon={ICONS.star} tone="star" label={`Favourite${stats.models && stats.models.length > 1 ? ` · ${stats.models.length} models used` : ''}`}><span className="mono" title={favourite?.model}>{favourite?.model ?? '—'}</span></Highlight>
         </div>
-        <ProfileUsage daily={stats.daily} />
+        <ProfileUsage daily={stats.daily} hours={stats.hours} />
       </section>
       <aside className="profile-aside">
         {join && <JoinCard alias={stats.alias} join={join} />}
@@ -134,7 +134,7 @@ export function ProfileView({ stats, me, origin, join, onLeaderboard, likes = st
         </section>}
       </div>
     </div>
-    <p className="privacy-line">Profiles show each builder’s daily token totals, tool split, model mix and estimated cost; deleting the account removes them. Prompts, code and project names never leave their computer.</p>
+    <p className="privacy-line">Profiles show each builder’s hourly and daily token totals, tool split, model mix and estimated cost; deleting the account removes them. Prompts, code and project names never leave their computer.</p>
   </div>;
 }
 
