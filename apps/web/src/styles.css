@@ -779,6 +779,11 @@ span.profile-like { cursor: default; }
 .profile-join .eyebrow { color: var(--gold); }
 .profile-join h2 { font-size: 19px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.25; }
 .profile-join > .btn { width: 100%; }
+.profile-join .join-or { margin: 0; }
+.profile-fine { margin-top: -6px; color: var(--text-4); font-size: 11.5px; text-align: center; }
+.profile-tools { display: flex; align-items: center; gap: 10px; padding-top: 14px; border-top: 1px solid var(--border); color: var(--text-3); font-size: 12px; }
+.profile-tools span { display: flex; gap: 7px; }
+.profile-tools .tool-ic { width: 13px; height: 13px; }
 .hero-sub strong { color: var(--text); font-weight: 500; }
 .mono { font-family: var(--mono); font-size: 12px; }
 .modal .profile { grid-template-columns: minmax(0, 1fr); }
@@ -801,11 +806,6 @@ span.profile-like { cursor: default; }
 .snav a[aria-current] { background: var(--surface-2); color: var(--text); box-shadow: inset 2px 0 0 var(--accent); }
 .snav a.danger { color: var(--red); }
 .snav p { display: flex; gap: 8px; margin-top: 14px; padding: 14px 10px 0; border-top: 1px solid var(--border); font-size: 12px; line-height: 1.5; }
-.profile-join .join-or { margin: 0; }
-.profile-fine { margin-top: -6px; color: var(--text-4); font-size: 11.5px; text-align: center; }
-.profile-tools { display: flex; align-items: center; gap: 10px; padding-top: 14px; border-top: 1px solid var(--border); color: var(--text-3); font-size: 12px; }
-.profile-tools span { display: flex; gap: 7px; }
-.profile-tools .tool-ic { width: 13px; height: 13px; }
 .snav p svg { flex: none; margin-top: 2px; }
 .setting { scroll-margin-top: 72px; }
 .account-id { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 20px 24px; }
@@ -1047,11 +1047,11 @@ span.profile-like { cursor: default; }
   .search .input { width: 100%; }
   .profile-bar { padding: 16px; }
   .profile-usage { padding: 14px 16px 16px; }
+  .profile-legend, .profile-badges { grid-template-columns: minmax(0, 1fr); }
+  .profile-model { grid-template-columns: 14px minmax(0, 1fr) 56px 64px; gap: 8px; }
   .auth-page { padding: 28px 0; }
   .auth-card { padding: 22px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; }
 }
-  .profile-legend, .profile-badges { grid-template-columns: minmax(0, 1fr); }
-  .profile-model { grid-template-columns: 14px minmax(0, 1fr) 56px 64px; gap: 8px; }
