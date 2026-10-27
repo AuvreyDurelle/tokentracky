@@ -24,11 +24,6 @@ export function weeklyGrowth(trend: ReadonlyArray<{ tokens: number }>): number {
 /** The last seven of a row's fourteen daily totals. */
 export function lastSeven(daily: readonly number[]): number[] { return daily.slice(-7); }
 
-/** "Top N%" for a rank, rounded up so #1 is the top 1%; null before the builder count is known. */
-export function topPercent(rank: number, builders: number): number | null {
-  return builders > 0 ? Math.max(1, Math.ceil((rank / builders) * 100)) : null;
-}
-
 /** Page numbers for the pager: all of them up to seven, otherwise the ends and the current page's neighbours. */
 export function pagerItems(page: number, pages: number): Array<number | '…'> {
   const range = (from: number, to: number) => Array.from({ length: to - from + 1 }, (_, index) => from + index);

@@ -83,6 +83,9 @@ describe('top N%', () => {
     expect(topPercent(1, 2)).toBe('Top 50%');
     expect(topPercent(51, 100)).toBeNull();
     expect(topPercent(1, 0)).toBeNull();
+    expect(topPercent(5, 0)).toBeNull();
+    expect(topPercent(150, 300)).toBe('Top 50%');
+    expect(topPercent(151, 300)).toBeNull();
   });
 });
 

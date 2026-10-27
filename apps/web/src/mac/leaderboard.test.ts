@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PublicProfile } from '@tokentracky/core';
-import { MAIN_TOOLS, gapToNext, lastSeven, otherTokens, pagerItems, topPercent, weeklyGrowth } from './leaderboard';
+import { MAIN_TOOLS, gapToNext, lastSeven, otherTokens, pagerItems, weeklyGrowth } from './leaderboard';
 
 const row = (alias: string, rank: number, tokens: number) => ({ alias, rank, tokens, previousRank: null, daily: [] }) as PublicProfile;
 
@@ -28,12 +28,6 @@ describe('leaderboard helpers', () => {
   it('keeps the last seven of the fourteen daily totals', () => {
     expect(lastSeven(Array.from({ length: 14 }, (_, i) => i))).toEqual([7, 8, 9, 10, 11, 12, 13]);
     expect(lastSeven([1, 2])).toEqual([1, 2]);
-  });
-  it('rounds a rank up to a whole top percentage', () => {
-    expect(topPercent(42, 3003)).toBe(2);
-    expect(topPercent(1, 3003)).toBe(1);
-    expect(topPercent(3003, 3003)).toBe(100);
-    expect(topPercent(5, 0)).toBeNull();
   });
   it('lists pages with ellipses around the current one', () => {
     expect(pagerItems(1, 1)).toEqual([1]);
