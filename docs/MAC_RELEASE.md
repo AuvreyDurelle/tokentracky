@@ -35,8 +35,15 @@ Configure a protected GitHub environment named `macos-release`, with required re
 | `TOKENTRACKY_UPDATER_CHANNEL` | variable | `stable` or `beta`. |
 | `TOKENTRACKY_RELEASE_BASE_URL` | set by the workflow | `https://github.com/AuvreyDurelle/tokentracky/releases/download/<tag>`, from the `ref` input; the updater filename is appended directly. |
 | `GH_TOKEN` | workflow token | Read CI workflow runs for the exact tagged commit; the workflow grants `actions: read`. |
-| `NPM_TOKEN` | secret | npm automation token for the `tokentracky` package. Without it, publishing warns and skips npm. |
 | `HOMEBREW_TAP_TOKEN` | secret | Fine-grained token with contents write on `AuvreyDurelle/homebrew-tokentracky` only. Without it, publishing warns and skips the tap. |
+
+npm needs no stored token. The `publish-npm` job runs after the release is published, in the same environment, so each publishing run asks for approval twice. npm accepts that job's GitHub identity token (trusted publishing, with provenance) only if the package has a matching trusted publisher, which must already exist on npm, so the first version is published by hand from `packaging/` with that release's `verified-candidate-manifest.json` as `release-manifest.json`. Within two days before the first release that publishes from the workflow, an owner with npm 2FA runs this with npm 11.15 or later; npm expires a configuration that no publish has used within two days:
+
+```sh
+npm trust github tokentracky --repo AuvreyDurelle/tokentracky --file release-macos.yml --env macos-release --allow-publish
+```
+
+`--allow-publish` is required: without it, new configurations accept only `npm stage publish`. `npm trust list tokentracky` shows the configuration, and npm allows one per package. If it expired or changed, run `npm trust revoke tokentracky --id <id>` and create it again. `packaging/package.json` `repository.url` must keep naming this repository. If the job fails, the GitHub release is already public: create the configuration, then rerun only the failed job.
 
 The script requires a clean checkout at the exact version tag and a successful **entire** `ci.yml` workflow on that commit (including hosted contracts and native/distribution gates). Missing/failed/pending CI, absent values, malformed public key envelopes, non-HTTPS URLs, credentials/nondefault ports and mismatched source versions fail closed. Public-key validation checks the Tauri minisign envelope/packet structure only; the final archive is also cryptographically verified with `minisign` against that key.
 

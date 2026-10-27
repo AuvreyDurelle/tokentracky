@@ -3,6 +3,7 @@ import type { Pool, PoolClient } from 'pg';
 import { activityStats, BADGE_IDS, BADGE_TIERS, checkedSum, rankingWindow, type AchievementRarity, type BadgeId, type CommunityStats, type LeaderboardResponse, type Period, type ProfileStats, type Publication, type PublicBucket, type PublicProfile, type TokenCounts, type ToolId } from '@tokentracky/core';
 import type { AccountIdentity } from './auth.ts';
 import { CloudError, invalid, safe } from './errors.ts';
+import { checkedCost } from './cost-ceiling.ts';
 import { ingestionInput, object, publicationInput } from './validation.ts';
 import { cloudSchema } from './schema.ts';
 import { createModerationRules, parseModerationPolicy, type ModerationPolicy, type DaySignals, type Finding, type FlagStatus, type ModerationEvent, type Reason, type StoredFlag } from './moderation.ts';
@@ -330,8 +331,12 @@ export class PostgresCloudRepository {
       // A restored invalid account may correct its totals. The prior total is only used for moderation lead crossings.
       const before = Number(previous > BigInt(Number.MAX_SAFE_INTEGER) ? BigInt(Number.MAX_SAFE_INTEGER) : previous);
       let accepted = 0;
+      let capped = 0;
       for (const b of v.buckets) {
         this.validateScope(b, p);
+        // A cost its tokens could not reach at list prices is published as unknown; the tokens still count.
+        const cost = checkedCost(b);
+        if (cost !== b.costMicrousd) capped++;
         // Token kinds are always published with the bucket (no sharing flag); a bucket from an older app has none.
         const k = b.breakdown;
         const result = await client.query(`
@@ -342,10 +347,11 @@ export class PostgresCloudRepository {
             revision = EXCLUDED.revision, input_tokens = EXCLUDED.input_tokens, output_tokens = EXCLUDED.output_tokens,
             cache_read_tokens = EXCLUDED.cache_read_tokens, cache_write_tokens = EXCLUDED.cache_write_tokens, reasoning_tokens = EXCLUDED.reasoning_tokens
           WHERE cloud_buckets.revision < EXCLUDED.revision`,
-        [device.account_id, device.id, b.day ?? 'unknown', b.tool, b.model ?? '', b.tokens, b.costMicrousd, b.revision,
+        [device.account_id, device.id, b.day ?? 'unknown', b.tool, b.model ?? '', b.tokens, cost, b.revision,
           k?.input ?? null, k?.output ?? null, k?.cacheRead ?? null, k?.cacheWrite ?? null, k?.reasoning ?? null]);
         accepted += result.rowCount ?? 0;
       }
+      if (capped) this.log({event: 'cost_capped', count: capped});
       // Per computer: another computer on an older app may split the same day differently without double counting.
       const mixed = await client.query(`SELECT 1 FROM cloud_buckets WHERE account_id = $1 AND device_id = $2 GROUP BY day_key
         HAVING (bool_or(tool = 'all') AND bool_or(tool <> 'all')) OR (bool_or(model = '') AND bool_or(model <> '')) LIMIT 1`, [device.account_id, device.id]);

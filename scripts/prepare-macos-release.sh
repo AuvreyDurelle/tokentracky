@@ -39,7 +39,10 @@ need TOKENTRACKY_SIGNING
 # confirm the first launch with Open Anyway. A missing mode never falls back to ad-hoc.
 case "$TOKENTRACKY_SIGNING" in
   developer-id) APPLE=1 ;;
-  adhoc) APPLE=0 ;;
+  # The workflow passes these as empty strings here. Tauri signs with APPLE_SIGNING_IDENTITY whenever
+  # it is set, even empty, which would override the "-" identity in the release config.
+  adhoc) APPLE=0; unset APPLE_CERTIFICATE_BASE64 APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY \
+    APPLE_API_KEY_ID APPLE_API_ISSUER APPLE_API_PRIVATE_KEY_BASE64 ;;
   *) echo 'TOKENTRACKY_SIGNING must be adhoc or developer-id' >&2; exit 1 ;;
 esac
 if [[ "$APPLE" == 1 ]]; then

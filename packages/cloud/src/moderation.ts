@@ -52,7 +52,7 @@ export interface StoredFlag {day: string; tokens: number; status: FlagStatus; re
 /** `detected` resets when the flag is first raised, escalated or raised again; it is when the flag reached its status. */
 export interface FlagWrite extends Finding {detected: boolean}
 export type ModerationEvent = {event: 'moderation_flag'; status: 'review' | 'hidden'; reasons: Reason[]} | {event: 'moderation_breaker'}
-  | {event: 'public_counter_overflow'; count: number};
+  | {event: 'public_counter_overflow'; count: number} | {event: 'cost_capped'; count: number};
 
 export function createModerationRules(policy: ModerationPolicy) {
   const LIMITS = validatePolicy(policy);

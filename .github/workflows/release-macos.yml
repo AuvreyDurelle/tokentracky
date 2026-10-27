@@ -39,7 +39,6 @@ jobs:
         with:
           node-version: '22'
           cache: npm
-          registry-url: 'https://registry.npmjs.org'
       - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
         with:
           toolchain: '1.99.0'
@@ -126,21 +125,6 @@ jobs:
         run: |
           version=$(node -p "require('./package.json').version")
           gh release edit "v${version}" --draft=false --latest
-      - name: Publish the npm launcher
-        if: ${{ inputs.publish }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          set -euo pipefail
-          if [[ -z "$NODE_AUTH_TOKEN" ]]; then
-            echo '::warning::NPM_TOKEN is not set, so npm was not published; npx tokentracky stays on the previous version.'
-            exit 0
-          fi
-          # The package carries this release's manifest. prepublishOnly downloads both public files
-          # again and refuses to publish unless their checksums match it.
-          cp dist/macos-release/verified-candidate-manifest.json packaging/release-manifest.json
-          cd packaging
-          npm publish
       - name: Update the Homebrew tap
         if: ${{ inputs.publish }}
         env:
@@ -172,3 +156,35 @@ jobs:
           brew install --formula auvreydurelle/tokentracky/tokentracky
           brew test auvreydurelle/tokentracky/tokentracky
           git -C "$tap" push origin HEAD
+
+  # npm trusts this job's GitHub identity token instead of a stored token (trusted publishing). It is a
+  # separate job so the build's third-party code (npm ci, cargo) never runs with id-token: write.
+  publish-npm:
+    needs: release-macos
+    if: ${{ inputs.publish }}
+    runs-on: ubuntu-latest
+    environment: macos-release
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          ref: ${{ inputs.ref }}
+      # Trusted publishing needs npm 11.5.1 or later; Node 24 bundles it.
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+      - name: Publish the npm launcher
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          version=$(node -p "require('./package.json').version")
+          # The package carries this release's manifest. prepublishOnly downloads both public files
+          # again and refuses to publish unless their checksums match it.
+          gh release download "v${version}" --pattern verified-candidate-manifest.json \
+            --output packaging/release-manifest.json --clobber
+          cd packaging
+          npm publish

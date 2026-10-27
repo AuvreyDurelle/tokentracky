@@ -12,7 +12,8 @@ import zipfile
 name = Path(sys.argv[0]).name
 args = sys.argv[1:]
 with open(os.environ['STUB_LOG'], 'a') as log:
-    log.write(json.dumps({'tool': name, 'args': args, 'cwd': os.getcwd(), 'updater': os.getenv('TOKENTRACKY_RELEASE_UPDATER')}) + '\n')
+    log.write(json.dumps({'tool': name, 'args': args, 'cwd': os.getcwd(), 'updater': os.getenv('TOKENTRACKY_RELEASE_UPDATER'),
+                          'apple': sorted(key for key in os.environ if key.startswith('APPLE_'))}) + '\n')
 
 
 def copy(source, destination):

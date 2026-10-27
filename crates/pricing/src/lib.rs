@@ -8,7 +8,7 @@ pub use refresher::{
     Clock, LITELLM_URL, MAX_DOWNLOAD_BYTES, PricingRefresher, REFRESH_AFTER_MS, RefresherOptions, Transport,
     TransportError, bundled_table, pricing_refresh_enabled,
 };
-pub use table::{PricedCost, PricingTable, trim_litellm};
+pub use table::{Ceiling, PricedCost, PricingTable, trim_litellm};
 
 #[derive(Debug, thiserror::Error)]
 pub enum PricingError {

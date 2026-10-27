@@ -334,8 +334,8 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
   });
 
   it('serves cached community totals, a cost sort and SVG badges', async () => {
-    await upload(await joined('alice'), [bucket(100, {costMicrousd: 5_000})]);
-    await upload(await joined('bob'), [bucket(300, {costMicrousd: 1_000})]);
+    await upload(await joined('alice'), [bucket(100, {model: 'claude-sonnet-4-6', costMicrousd: 5_000})]);
+    await upload(await joined('bob'), [bucket(300, {model: 'claude-sonnet-4-6', costMicrousd: 1_000})]);
     const community = await request('GET', '/api/community');
     expect(community.headers['cache-control']).toBe('public, max-age=60');
     expect(community.json()).toMatchObject({builders: 2, totalTokens: 400, totalCostMicrousd: 6_000, toolTotals: {}});
@@ -643,10 +643,12 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
 
   it('preserves unknown costs and rejects cost overflow atomically', async () => {
     const join = await joined();
-    await upload(join, [bucket(10, {costMicrousd: Number.MAX_SAFE_INTEGER})]);
+    // Enough Claude Opus 4.1 tokens, at most $75 per million, for a cost at the safe-integer limit.
+    const lots = 200_000_000_000_000, opus = 'claude-opus-4-1';
+    await upload(join, [bucket(lots, {model: opus, costMicrousd: Number.MAX_SAFE_INTEGER})]);
     expect((await board()).items[0].costMicrousd).toBe(Number.MAX_SAFE_INTEGER);
-    expect((await upload(join, [bucket(10, {day: '2026-10-22', costMicrousd: 1})])).statusCode).toBe(422);
-    expect((await board()).totalTokens).toBe(10);
+    expect((await upload(join, [bucket(10, {day: '2026-10-22', model: opus, costMicrousd: 1})])).statusCode).toBe(422);
+    expect((await board()).totalTokens).toBe(lots);
     await upload(join, [bucket(10, {day: null})]);
     expect((await board()).items[0].costMicrousd).toBeNull();
     expect((await request('GET', '/api/leaderboard?period=week')).json().items[0].costMicrousd).toBe(Number.MAX_SAFE_INTEGER);
@@ -694,8 +696,8 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
     const b = await joined('bob', 'alpha');
     // Totals without a tool split still rank by tokens, and with zero in each tool's cohort.
     const c = await joined('carol', 'totals-only');
-    await upload(a, [bucket(100, {tool: 'codex', costMicrousd: 30}), bucket(400, {tool: 'claude', costMicrousd: null, day: '2026-09-01'})]);
-    await upload(b, [bucket(100, {tool: 'codex', costMicrousd: 20}), bucket(200, {tool: 'claude', costMicrousd: 10})]);
+    await upload(a, [bucket(100, {tool: 'codex', model: 'gpt-5-codex', costMicrousd: 30}), bucket(400, {tool: 'claude', costMicrousd: null, day: '2026-09-01'})]);
+    await upload(b, [bucket(100, {tool: 'codex', model: 'gpt-5-codex', costMicrousd: 20}), bucket(200, {tool: 'claude', model: 'claude-sonnet-4-6', costMicrousd: 10})]);
     await upload(c, [bucket(1000)]);
     expect((await board('&q=zebra')).items[0].rank).toBe(2);
     const tool = await board('&tool=codex&q=zebra&pageSize=1');
@@ -714,7 +716,8 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
   it('reports a 30-day community trend, 14-day activity, and tool/cost totals', async () => {
     const a = await joined('alice');
     const b = await joined('bob');
-    await upload(a, [bucket(40, {tool: 'claude', costMicrousd: 10}), bucket(60, {tool: 'codex', day: '2026-10-20', costMicrousd: 5}), bucket(7, {tool: 'claude', day: '2026-09-01', costMicrousd: 2})]);
+    await upload(a, [bucket(40, {tool: 'claude', model: 'claude-sonnet-4-6', costMicrousd: 10}), bucket(60, {tool: 'codex', model: 'gpt-5-codex', day: '2026-10-20', costMicrousd: 5}),
+      bucket(7, {tool: 'claude', model: 'claude-sonnet-4-6', day: '2026-09-01', costMicrousd: 2})]);
     await upload(b, [bucket(100, {day: '2026-10-09'}), bucket(5, {day: null})]);
     const all = await board();
     expect(all.trend).toHaveLength(30);
@@ -985,6 +988,17 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
     return {id: added.id as string, token: connected.token};
   }
 
+  it('publishes a cost only when its tokens could cost that much at list prices', async () => {
+    const join = await joined();
+    // 1,000 Sonnet output tokens cost 1.5 cents at $15 per million.
+    const honest = bucket(1_000, {tool: 'claude', model: 'claude-sonnet-4-6', costMicrousd: 15_000, breakdown: kinds(0, 1_000, 0, 0, 0)});
+    const inflated = {...honest, day: '2026-10-22', costMicrousd: 50_000_000_000};
+    expect((await upload(join, [honest, inflated])).json().accepted).toBe(2);
+    expect((await pool.query('SELECT day_key, cost_microusd FROM cloud_buckets ORDER BY day_key')).rows).toEqual([{day_key: '2026-10-22', cost_microusd: null}, {day_key: '2026-10-23', cost_microusd: '15000'}]);
+    expect((await request('GET', '/api/profiles/alice/stats')).json()).toMatchObject({periods: {all: {tokens: 2_000}}, costMicrousd: null});
+    expect(events).toEqual([{event: 'cost_capped', count: 1}]);
+  });
+
   it('deduplicates copied token types consistently across profiles, community and moderation', async () => {
     const desktop = await joined();
     const laptop = {...desktop, device: await addComputer('alice', 'Laptop')};
@@ -1031,7 +1045,8 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
     expect((await upload(desktop, [bucket(7, {day: '2026-10-21', tool: 'claude', model: 'claude-sonnet-4-6', costMicrousd: 1, revision: 2})])).statusCode).toBe(200);
     expect((await upload(laptop, [bucket(3, {day: '2026-10-21', tool: 'claude', costMicrousd: 1, revision: 3})])).statusCode).toBe(200);
     expect((await upload(laptop, [bucket(3, {day: '2026-10-21', tool: 'claude', model: 'gpt-5-codex', costMicrousd: 1, revision: 4})])).json().error.message).toBe('A day cannot combine aggregated and split buckets');
-    expect((await board()).items[0]).toMatchObject({tokens: 276, costMicrousd: 28});
+    // The older app's bucket has no model, so its cost cannot be checked and is published as unknown.
+    expect((await board()).items[0]).toMatchObject({tokens: 276, costMicrousd: null});
     // A removed computer stops uploading; what it published stays.
     await request('DELETE', `/api/devices/${laptop.device.id}`, 'alice');
     expect((await upload(laptop, [{...copied, tokens: 500, revision: 5}])).statusCode).toBe(401);

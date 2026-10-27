@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { totalTokens, type Period, type ProfileStats, type TokenCounts } from '@tokentracky/core';
+import { rankingWindow, totalTokens, type Period, type ProfileStats, type TokenCounts } from '@tokentracky/core';
 import { ApiError, type ApiClient } from './api';
 import { INSTALL_COMMAND, MAC_DOWNLOAD } from './download-config';
 import { KINDS, errorText, formatCompact, formatCost, formatExact, formatShare, shortDay, topPercent } from './format';
 import { Heatmap } from './Heatmap';
+import { rangeLabel } from './ranges';
+import { TrendChart } from './TrendChart';
 import { AppleIcon, Avatar, CopyCommand, Empty, Loading, Notice, Segmented, ToolMix } from './ui';
 
 /** README markdown for a profile badge that links back to the profile. */
@@ -38,7 +40,7 @@ export function ProfilePage({ api, alias, me, origin, join, onLeaderboard }: { a
 type JoinAction = { label: string; onClick: () => void };
 const plural = (count: number, word: string) => `${formatExact(count)} ${word}${count === 1 ? '' : 's'}`;
 
-/** Identity, stats and highlights, the year of activity, tool mix and top models; the aside holds the join card (only for a viewer who can still join) and the share card. */
+/** Identity, stats, a usage chart and highlights, the year of activity, tool mix and top models; the aside holds the join card (only for a viewer who can still join) and the share card. */
 export function ProfileView({ stats, me, origin, join, onLeaderboard }: { stats: ProfileStats; me: string | null; origin: string | null; join: JoinAction | null; onLeaderboard: () => void }) {
   const { all, week } = stats.periods;
   const { activity } = stats;
@@ -63,6 +65,7 @@ export function ProfileView({ stats, me, origin, join, onLeaderboard }: { stats:
           <div><dt>Active days</dt><dd>{formatExact(activity.activeDays)}</dd><small>Last 12 months</small></div>
           <div><dt>Avg / day</dt><dd>{activity.activeDays ? formatCompact(activity.averagePerActiveDay) : '—'}</dd><small>Per active day</small></div>
         </dl>
+        <ProfileUsage daily={stats.daily} />
         <dl className="highlights">
           <div><dt>Current streak</dt><dd>{plural(activity.currentStreak, 'day')}{activity.longestStreak > 0 && <small>{activity.currentStreak === activity.longestStreak ? ' · best ever' : ` · best ${plural(activity.longestStreak, 'day')}`}</small>}</dd></div>
           <div><dt>Best day</dt><dd>{activity.bestDay ? <>{formatCompact(activity.bestDay.tokens)}<small> · {shortDay(activity.bestDay.day)}</small></> : '—'}</dd></div>
@@ -98,6 +101,36 @@ export function ProfileView({ stats, me, origin, join, onLeaderboard }: { stats:
       </div>
     </div>
     <p className="privacy-line">Profiles show each builder’s daily token totals, tool split, model mix and estimated cost; deleting the account removes them. Prompts, code and project names never leave their computer.</p>
+  </div>;
+}
+
+type UsageView = 'daily' | 'cumulative' | 'calendar';
+type UsageSpan = 30 | 90 | 365;
+const VIEWS: Array<{ value: UsageView; label: string }> = [{ value: 'daily', label: 'Daily' }, { value: 'cumulative', label: 'Cumulative' }, { value: 'calendar', label: 'Calendar' }];
+const SPANS: Array<{ value: UsageSpan; label: string }> = [{ value: 30, label: '30d' }, { value: 90, label: '90d' }, { value: 365, label: '12m' }];
+
+/** Running totals of a daily series, so each point is everything up to and including its day. */
+export function runningTotals(points: Array<{ day: string; tokens: number }>): Array<{ day: string; tokens: number }> {
+  let sum = 0;
+  return points.map(({ day, tokens }) => ({ day, tokens: (sum += tokens) }));
+}
+
+/** The recent daily tokens as an area chart, a running total or a calendar, over the last 30 days, 90 days or 12 months. */
+function ProfileUsage({ daily }: { daily: ProfileStats['daily'] }) {
+  const [view, setView] = useState<UsageView>('daily');
+  const [span, setSpan] = useState<UsageSpan>(90);
+  const days = daily.slice(-span);
+  const name = rangeLabel({ preset: span });
+  return <div className="profile-usage">
+    <div className="usage-head">
+      <Segmented label="Chart" value={view} options={VIEWS} onChange={setView} />
+      <Segmented label="Range" value={span} options={SPANS} onChange={setSpan} />
+    </div>
+    {view === 'calendar'
+      ? <Heatmap days={days} label={`Tokens per UTC day, ${name}`} />
+      : view === 'daily'
+        ? <TrendChart points={days} label={`Tokens per UTC day, ${name}`} />
+        : <TrendChart points={runningTotals(days)} label={`Running total of tokens, ${name}`} />}
   </div>;
 }
 
@@ -173,6 +206,23 @@ function ShareCard({ stats, origin }: { stats: ProfileStats; origin: string | nu
   </section>;
 }
 
+/** Active days and the longest run of consecutive active days in `daily` from the UTC day `from` on. */
+export function windowActivity(daily: ProfileStats['daily'], from: string): { activeDays: number; longestStreak: number } {
+  let activeDays = 0, run = 0, longestStreak = 0;
+  for (const { day, tokens } of daily) {
+    if (day < from) continue;
+    if (tokens > 0) { activeDays += 1; run += 1; longestStreak = Math.max(longestStreak, run); } else run = 0;
+  }
+  return { activeDays, longestStreak };
+}
+
+/** The facts joined by middots, dropping trailing ones until the line fits. */
+export function fitFacts(facts: string[], fits: (text: string) => boolean): string {
+  let shown = facts;
+  while (shown.length > 1 && !fits(shown.join(' · '))) shown = shown.slice(0, -1);
+  return shown.join(' · ');
+}
+
 /** 1200×630 Open Graph-sized card in the graphite theme: name, rank and tokens in the chosen window, and a year of activity. */
 async function drawShareCard(canvas: HTMLCanvasElement, stats: ProfileStats, origin: string | null, period: Period) {
   await document.fonts?.ready;
@@ -186,8 +236,11 @@ async function drawShareCard(canvas: HTMLCanvasElement, stats: ProfileStats, ori
   context.fillStyle = '#ededef'; context.font = font(600, 56); context.fillText(stats.alias, 88, 205);
   context.font = font(600, 120); context.fillText(formatCompact(stats.periods[period].tokens), 82, 340);
   context.fillStyle = '#a1a1a8'; context.font = font(500, 26);
-  const facts = [`tokens ${WINDOWS[period]}`, `${stats.activity.activeDays} active days`, `longest streak ${stats.activity.longestStreak} days`, ...(stats.models?.[0] ? [`favourite ${stats.models[0].model}`] : [])];
-  context.fillText(facts.join(' · '), 88, 390);
+  // Week and month count their own days; all time matches the profile's last 12 months.
+  const from = rankingWindow(period)?.slice(0, 10);
+  const { activeDays, longestStreak } = from ? windowActivity(stats.daily, from) : stats.activity;
+  const facts = [`tokens ${WINDOWS[period]}`, plural(activeDays, 'active day'), `longest streak ${plural(longestStreak, 'day')}`, ...(stats.models?.[0] ? [`favourite ${stats.models[0].model}`] : [])];
+  context.fillText(fitFacts(facts, (text) => context.measureText(text).width <= 1024), 88, 390);
   // A year of daily activity as thin columns, brightness by volume.
   const max = Math.max(1, ...stats.daily.map((day) => day.tokens));
   const width = 1024 / stats.daily.length;
