@@ -47,7 +47,6 @@ mod openclaw;
 mod opencode;
 mod parser;
 mod pi;
-mod reasonix;
 mod roo;
 mod unsloth;
 mod zcode;

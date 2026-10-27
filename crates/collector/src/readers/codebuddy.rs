@@ -92,7 +92,6 @@ fn line(
 }
 
 static CODEBUDDY: Adapter = Adapter {
-    passive: true,
     capabilities: SourceCapabilities {
         tokens: true,
         models: true,

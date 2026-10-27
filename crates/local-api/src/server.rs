@@ -52,7 +52,7 @@ pub struct LocalOptions {
     /// Given the new overview after every cycle, successful or not (the menu bar's title).
     pub on_refresh: Option<Arc<dyn Fn(LocalOverview) + Send + Sync>>,
     /// The supported tools found at their usual folders (`detect_tools`). While no source has ever been configured,
-    /// opening turns on each one with a passive reader, at those folders, for the first cycle to read (the first run).
+    /// opening turns on each one with a reader, at those folders, for the first cycle to read (the first run).
     /// Empty for the CLI's one-off commands, which turn nothing on.
     pub detected: Vec<DetectedTool>,
     /// Claude Code's own settings file (`claude_config_file`), whose cached usage-limit reading each scan takes while

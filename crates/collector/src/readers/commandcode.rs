@@ -79,7 +79,6 @@ fn line(
 }
 
 static COMMAND_CODE: Adapter = Adapter {
-    passive: true,
     capabilities: SourceCapabilities {
         tokens: true,
         models: true,

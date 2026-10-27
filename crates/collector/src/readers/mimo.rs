@@ -15,7 +15,6 @@ pub(crate) const DIALECT: Dialect = Dialect {
 };
 
 static MIMO: Adapter = Adapter {
-    passive: true,
     capabilities: SourceCapabilities {
         tokens: true,
         models: true,

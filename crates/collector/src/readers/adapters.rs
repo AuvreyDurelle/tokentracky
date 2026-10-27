@@ -2,7 +2,7 @@
 use super::parser::{Counted, PENDING, ParserState, file_name, only, parent_name, parse_gemini_session, parse_json};
 use super::{
     cline, codebuddy, commandcode, copilot, deepseek, dumate, everycode, goose, grok, hermes, kimi, lmstudio, mimo,
-    openclaw, opencode, pi, reasonix, roo, unsloth, zcode, zed,
+    openclaw, opencode, pi, roo, unsloth, zcode, zed,
 };
 use serde_json::{Map, Value};
 use std::collections::BTreeMap;
@@ -63,9 +63,6 @@ pub struct Adapter {
     /// Once a database is found, the tool has imported its documents into it: they are no longer read, and their usage
     /// is withdrawn.
     pub database_supersedes_documents: bool,
-    /// Read passively and for usage metadata only (roadmap rule 1), so the first launch may turn the tool on by itself.
-    /// Every current reader is.
-    pub passive: bool,
 }
 
 /// Larger documents are skipped with `record_too_large` rather than parsed in memory.
@@ -125,7 +122,6 @@ const LINE_LOG: Adapter = Adapter {
     line: None,
     text: None,
     database_supersedes_documents: false,
-    passive: true,
 };
 static CLAUDE: Adapter = LINE_LOG;
 /// Rollouts, and the `rollout-*.jsonl.zst` (or `.jsonl.zstd`) archives newer versions compress older ones into.
@@ -231,7 +227,6 @@ static KILO: Adapter = Adapter {
     text: None,
     // The pinned v7 importer writes ZERO usage. Retain the legacy request ledger.
     database_supersedes_documents: false,
-    passive: true,
 };
 
 /// Passive local readers. A tool without an adapter is reported as unsupported.
@@ -263,7 +258,9 @@ pub fn adapter(tool: ToolId) -> Option<&'static Adapter> {
         ToolId::ZCode => zcode::adapter(tool),
         ToolId::Zed => zed::adapter(tool),
         ToolId::OpenClaw => openclaw::adapter(tool),
-        ToolId::Reasonix => reasonix::adapter(tool),
+        // Not read yet: its `<session>.jsonl.telemetry.json` is no session total. One tally per process
+        // (esengine/DeepSeek-Reasonix `goalusage.go`) restarts at zero on resume and carries over into the next `/new`.
+        ToolId::Reasonix => None,
         ToolId::Hermes => hermes::adapter(tool),
         ToolId::Goose => goose::adapter(tool),
         ToolId::Grok => grok::adapter(tool),

@@ -239,7 +239,6 @@ pub(crate) fn read(path: &Path, known: &[UsageEvent], watermark: u64) -> rusqlit
 }
 
 static ZCODE: Adapter = Adapter {
-    passive: true,
     capabilities: SourceCapabilities {
         tokens: true,
         models: true,

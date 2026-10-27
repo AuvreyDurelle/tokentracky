@@ -28,7 +28,6 @@ use std::path::Path;
 use tokentracky_core::{SourceCapabilities, TokenCounts, ToolId, UsageEvent};
 
 const SESSIONS: Adapter = Adapter {
-    passive: true,
     capabilities: SourceCapabilities {
         tokens: true,
         models: true,
@@ -63,7 +62,6 @@ static PRIME_AGENT: Adapter = Adapter {
     ..SESSIONS
 };
 static MINIMAX: Adapter = Adapter {
-    passive: true,
     capabilities: SourceCapabilities {
         projects: false,
         ..SESSIONS.capabilities

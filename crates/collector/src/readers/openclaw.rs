@@ -186,7 +186,6 @@ fn kind(path: &Path) -> Option<SourceKind> {
 }
 
 static OPENCLAW: Adapter = Adapter {
-    passive: true,
     capabilities: SourceCapabilities {
         tokens: true,
         models: true,

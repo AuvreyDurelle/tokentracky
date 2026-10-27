@@ -17,7 +17,6 @@ use std::path::Path;
 use tokentracky_core::{SourceCapabilities, TokenCounts, ToolId, UsageEvent};
 
 static DEEPSEEK: Adapter = Adapter {
-    passive: true,
     capabilities: SourceCapabilities {
         tokens: true,
         models: true,

@@ -17,7 +17,6 @@ pub(crate) const DIALECT: Dialect = Dialect {
 };
 
 static DUMATE: Adapter = Adapter {
-    passive: true,
     capabilities: SourceCapabilities {
         tokens: true,
         models: true,

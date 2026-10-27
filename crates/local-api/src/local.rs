@@ -184,8 +184,8 @@ impl LocalState {
     }
 }
 
-/// The first run (`setupCompleted`): while no source has ever been configured, turns on each detected tool whose
-/// reader is passive, at the folders found, and records that setup is done, so a tool turned off later stays off. An
+/// The first run (`setupCompleted`): while no source has ever been configured, turns on each detected tool that has a
+/// reader, at the folders found, and records that setup is done, so a tool turned off later stays off. An
 /// install with a configured source is recorded as set up and keeps its choices. With nothing turned on nothing is
 /// recorded, and a later launch looks again. True when it turned tools on.
 fn set_up(collector: &LocalCollector<PricingDownload>, detected: &[DetectedTool]) -> Result<bool, ServiceError> {
@@ -197,10 +197,10 @@ fn set_up(collector: &LocalCollector<PricingDownload>, detected: &[DetectedTool]
         .source_statuses()?
         .iter()
         .any(|source| !matches!(source.state, SourceState::PermissionRequired | SourceState::Unsupported));
-    let passive = |tool: &&DetectedTool| adapter(tool.id).is_some_and(|adapter| adapter.passive);
+    let readable = |tool: &&DetectedTool| adapter(tool.id).is_some();
     let mut enabled = false;
     if !configured {
-        for tool in detected.iter().filter(passive) {
+        for tool in detected.iter().filter(readable) {
             let configuration = SourceConfiguration {
                 enabled: true,
                 paths: tool.paths.clone(),

@@ -131,7 +131,6 @@ fn read(path: &Path, known: &[UsageEvent]) -> rusqlite::Result<ParseResult> {
 }
 
 static ZED: Adapter = Adapter {
-    passive: true,
     capabilities: SourceCapabilities {
         tokens: true,
         models: true,

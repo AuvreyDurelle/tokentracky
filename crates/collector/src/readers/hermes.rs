@@ -94,7 +94,6 @@ fn kind(path: &Path) -> Option<SourceKind> {
 }
 
 static HERMES: Adapter = Adapter {
-    passive: true,
     capabilities: SourceCapabilities {
         tokens: true,
         models: true,
