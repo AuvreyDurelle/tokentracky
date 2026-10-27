@@ -33,7 +33,8 @@ test('generates arm64 Homebrew definitions only from verified manifest artifacts
     assert.equal(result.status, 0, result.stderr);
     const formula = await readFile(join(output, 'Formula/tokentracky.rb'), 'utf8');
     const cask = await readFile(join(output, 'Casks/tokentracky.rb'), 'utf8');
-    assert.match(formula, /depends_on macos: ">= :ventura"/);
+    // brew audit refuses the string form ">= :ventura" in a formula; a bare symbol is already a minimum.
+    for (const definition of [formula, cask]) assert.match(definition, /\n {2}depends_on macos: :ventura\n/);
     assert.match(formula, /depends_on arch: :arm64/);
     assert.match(formula, new RegExp(manifest.releases[version].macos.arm64.cli.sha256));
     assert.match(cask, /depends_on arch: :arm64/);
