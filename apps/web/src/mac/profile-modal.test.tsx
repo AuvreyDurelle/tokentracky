@@ -47,8 +47,20 @@ describe('ProfileCard', () => {
   it('shows the like count, as a button only where you can like', () => {
     expect(card()).toMatch(/<button[^>]*aria-pressed="false"[^>]*>.*14<\/button>/);
     const fixed = card({ like: null });
-    expect(fixed).not.toContain('aria-pressed');
+    expect(fixed).not.toMatch(/<button[^>]*class="pf-like/);
     expect(fixed).toContain('>14<');
+  });
+  it('charts the daily usage like the website, as daily, cumulative or calendar over 30 days, 90 days or 12 months', () => {
+    const html = card();
+    for (const label of ['Daily', 'Cumulative', 'Calendar', '30d', '90d', '12m']) expect(html).toMatch(new RegExp(`<button[^>]*>${label}</button>`));
+    expect(html).toContain('aria-label="Tokens per UTC day, last 90 days"');
+  });
+  it('splits all-time tokens by type with shares, reasoning inside output, only when every day carries types', () => {
+    const html = card({ stats: { ...stats, breakdown: { input: 100, output: 50, cacheRead: 800, cacheWrite: 50, reasoning: 30 } } });
+    expect(html).toContain('All time · share of 1,000 tokens');
+    expect(html).toContain('aria-label="Input 10%, Output 5.0%, Cache read 80%, Cache write 5.0%"');
+    expect(html).toContain('Of which reasoning 30');
+    expect(card()).not.toContain('Token types');
   });
   it('says when a builder keeps their tools or models private', () => {
     const html = card({ stats: { ...stats, toolTokens: undefined, models: undefined, costMicrousd: undefined } });
