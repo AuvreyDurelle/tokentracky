@@ -11,6 +11,7 @@ import { ActivityGrid } from './ActivityGrid';
 import { monotonePath } from './chart';
 import { ICONS } from './icons';
 import { biggestSession, busiestWeekdayUtc, changeVsPrevious, dailyByModel, dailyByTool, favouriteModel, mostExpensiveDay, recentTotals, trendingModel } from './insights';
+import { ToolbarActions } from './Shell';
 import { OverviewStrip, StackedAreaChart, type ChartSeries } from './StackedAreaChart';
 import './personal.css';
 
@@ -127,7 +128,7 @@ export function TokensPage({ data: loaded, year, status, range, days, metric, to
   const points = useMemo(() => 'since' in range ? hourList(range) : fillRange([], range).map((point) => point.day), [rangeKey(range)]);
   const period = `${days === '24h' ? 'last 24 hours' : rangeLabel({ preset: days })}${tool === 'all' ? '' : ` · ${toolLabel(tool)}`}`;
   return <div className="m-page tk-page">
-    <div className="tk-bar">
+    <ToolbarActions>
       <Seg label="Metric" value={metric} options={[{ value: 'tokens', label: 'Tokens' }, { value: 'cost', label: 'Cost' }]} onChange={onMetric} />
       <Seg label="Range" value={days} options={RANGES} onChange={onDays} />
       <label className="tk-select m-btn"><span className="sr-only">Tool</span>
@@ -135,7 +136,7 @@ export function TokensPage({ data: loaded, year, status, range, days, metric, to
           <option value="all">All tools</option>{TOOLS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
         </select>{ICONS.chevronDown}</label>
       <button type="button" className="m-btn icon" title="Export CSV" aria-label="Export CSV" onClick={onExport}>{ICONS.download}</button>
-    </div>
+    </ToolbarActions>
     {!tracking && <div className="m-card tk-setup">
       <span className="tk-setup-icon">{ICONS.folder}</span>
       <div><b>Tokentracky isn’t reading any tools yet.</b><span>Choose which tools to read in Settings. Only token counts are kept; prompts and code never are.</span></div>

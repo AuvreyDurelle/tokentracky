@@ -23,6 +23,20 @@ describe('AchievementsBody', () => {
     expect(next).toContain('14 of 15 models');
     expect(next).toContain('93%');
   });
+  it('shows only the earned or the locked badges when filtered, leaving out groups with none', () => {
+    // Trendsetter is locked already; veteran is locked here too.
+    const mixed = badges.map((badge) => badge.id === 'veteran' ? { ...badge, tier: 0 } : badge);
+    const earned = markup(<AchievementsBody badges={mixed} rarity={rarity} joined filter="earned" />);
+    expect(earned.match(/class="ach-card /g)).toHaveLength(9);
+    expect(earned).not.toContain('Veteran');
+    const locked = markup(<AchievementsBody badges={mixed} rarity={rarity} joined filter="locked" />);
+    expect(locked.match(/class="ach-card /g)).toHaveLength(2);
+    expect(locked).toContain('<h2>Consistency</h2>');
+    expect(locked).toContain('<h2>Range</h2>');
+    expect(locked).not.toContain('<h2>Volume</h2>');
+    // The summary stays whole.
+    expect(locked).toContain('<b class="num">9</b><span>of 11</span>');
+  });
   it('shows every badge in its group with an emblem, its tiers, progress and rarity', () => {
     const html = markup(<AchievementsBody badges={badges} rarity={rarity} joined />);
     for (const title of ['Volume', 'Consistency', 'Growth', 'Range', 'Leaderboard']) expect(html).toContain(`<h2>${title}</h2>`);

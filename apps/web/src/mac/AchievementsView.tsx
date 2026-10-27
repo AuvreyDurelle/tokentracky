@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { BADGE_TIERS, type AchievementRarity, type BadgeProgress } from '@tokentracky/core';
 import type { ApiClient } from '../api';
 import { errorText, formatExact } from '../format';
@@ -8,6 +8,9 @@ import { ACHIEVEMENT_COPY, TIER_NAMES, formatBadgeValue, rarityText } from './ac
 import { GROUPS, JOIN_TO_EARN, localBadges, nextRatio, progressOf, shortValue, tierCounts, toGo, upNext } from './achievements';
 import { Emblem } from './Emblem';
 import { useLoad } from './load';
+import { ToolbarActions } from './Shell';
+
+export type Filter = 'all' | 'earned' | 'locked';
 
 /** The Mac app's Achievements page with achievement badges: yours from the board once you've joined, worked out on this Mac before. */
 export function AchievementsView({ api, me, revision }: { api: ApiClient; me: string | null; revision: string }) {
@@ -17,24 +20,33 @@ export function AchievementsView({ api, me, revision }: { api: ApiClient; me: st
   const rarity = useLoad(() => api.achievementRarity(), [api, revision]);
   const source = me ? joined : local;
   const badges = me ? joined.value : local.value && localBadges(local.value, utcToday());
+  const [filter, setFilter] = useState<Filter>('all');
+  const earned = badges?.filter((badge) => badge.tier > 0).length ?? 0;
+  const options: Array<{ value: Filter; label: string; count: number }> = [{ value: 'all', label: 'All', count: badges?.length ?? 0 }, { value: 'earned', label: 'Earned', count: earned }, { value: 'locked', label: 'Locked', count: (badges?.length ?? 0) - earned }];
   return <div className="m-page m-ach">
+    {badges && <ToolbarActions>
+      <div className="m-seg" role="group" aria-label="Show">
+        {options.map((option) => <button key={option.value} type="button" className={option.value === filter ? 'on' : undefined} aria-pressed={option.value === filter} onClick={() => setFilter(option.value)}>{option.label} <span className="m-seg-count">{option.count}</span></button>)}
+      </div>
+    </ToolbarActions>}
     <div className="page-head"><div>
       <h1 className="m-page-title">Achievements</h1>
       <p className="m-page-sub">Badges for how you build with AI, each in bronze, silver, gold and diamond.{rarity.value && rarity.value.builders > 0 && ` Rarity is the share of the ${formatExact(rarity.value.builders)} builders on the leaderboard who hold each one.`}</p>
     </div></div>
-    {badges ? <AchievementsBody badges={badges} rarity={rarity.value} joined={me !== null} />
+    {badges ? <AchievementsBody badges={badges} rarity={rarity.value} joined={me !== null} filter={filter} />
       : source.error ? <Notice tone="error">Could not load your badges: {errorText(source.error)}</Notice> : <Loading>Loading your badges…</Loading>}
   </div>;
 }
 
-/** The summary, "Up next" and every badge by group. `joined` false means the badges were worked out locally and podium and trendsetter can't be earned yet. */
-export function AchievementsBody({ badges, rarity, joined }: { badges: BadgeProgress[]; rarity: AchievementRarity | null; joined: boolean }) {
+/** The summary, "Up next" and every badge by group, or only the earned or locked ones. `joined` false means the badges were worked out locally and podium and trendsetter can't be earned yet. */
+export function AchievementsBody({ badges, rarity, joined, filter = 'all' }: { badges: BadgeProgress[]; rarity: AchievementRarity | null; joined: boolean; filter?: Filter }) {
   const counts = tierCounts(badges);
   const earned = badges.length - counts[0]!;
   const next = upNext(badges, joined ? [] : JOIN_TO_EARN);
   // Highest tiers first; the sort is stable, so ties keep display order.
   const best = badges.filter((badge) => badge.tier > 0).sort((a, b) => b.tier - a.tier).slice(0, 2);
   const byId = new Map(badges.map((badge) => [badge.id, badge]));
+  const shown = (badge: BadgeProgress) => filter === 'all' || (filter === 'earned') === badge.tier > 0;
   const rarityOf = (badge: BadgeProgress) => rarity ? rarityText(rarity.holders[badge.id]?.[Math.max(badge.tier, 1) - 1] ?? 0, rarity.builders) : null;
   return <>
     <section className="m-card ach-hero" aria-label="Summary">
@@ -81,9 +93,9 @@ export function AchievementsBody({ badges, rarity, joined }: { badges: BadgeProg
       })}</div>
     </section>}
 
-    {GROUPS.map((group) => <section key={group.title} className="ach-section">
+    {GROUPS.map((group) => ({ group, ids: group.ids.filter((id) => shown(byId.get(id)!)) })).filter(({ ids }) => ids.length > 0).map(({ group, ids }) => <section key={group.title} className="ach-section">
       <div className="sec-head"><h2>{group.title}</h2><span className="sec-count num">{group.ids.filter((id) => byId.get(id)!.tier > 0).length} of {group.ids.length} earned</span><p>{group.note}</p></div>
-      <div className="grid3">{group.ids.map((id) => <BadgeCard key={id} badge={byId.get(id)!} rarity={rarityOf(byId.get(id)!)} blocked={!joined && JOIN_TO_EARN.includes(id)} />)}</div>
+      <div className="grid3">{ids.map((id) => <BadgeCard key={id} badge={byId.get(id)!} rarity={rarityOf(byId.get(id)!)} blocked={!joined && JOIN_TO_EARN.includes(id)} />)}</div>
     </section>)}
   </>;
 }

@@ -8,6 +8,7 @@ import { monotonePath } from './chart';
 import { Emblem } from './Emblem';
 import { MAIN_TOOLS, gapToNext, lastSeven, otherTokens, pagerItems, topPercent } from './leaderboard';
 import { useLoad } from './load';
+import { ToolbarActions } from './Shell';
 import {averageCount, countRatio, countShare, sharedCounts, sumCounts} from '../public-counts';
 
 const PAGE_SIZE = 12;
@@ -43,13 +44,13 @@ export function LeaderboardView({ api, me, canJoin, syncedAt, onProfile, onJoin 
         <h1 className="m-page-title">Leaderboard</h1>
         <p className="m-page-sub">{PHRASE[period]}{board && <><span className="sep" />Updated {UPDATED.format(new Date(board.updatedAt))}</>}</p>
       </div>
-      <div className="lb-controls">
+      <ToolbarActions>
         <label className="lb-search"><SearchIcon /><span className="sr-only">Search builders</span>
           <input type="search" placeholder="Search builders" value={search} maxLength={30} onChange={(event) => setSearch(event.target.value)} /></label>
         <div className="m-seg" role="group" aria-label="Period">
           {PERIODS.map((option) => <button key={option.value} type="button" className={option.value === period ? 'on' : undefined} aria-pressed={option.value === period} onClick={() => setPeriod(option.value)}>{option.label}</button>)}
         </div>
-      </div>
+      </ToolbarActions>
     </div>
 
     {unavailable ? <section className="m-card lb-empty"><Empty title="Leaderboard not connected">This app has no leaderboard server configured. Your usage is still tracked privately on the Tokens page.</Empty></section> : <>

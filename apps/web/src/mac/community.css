@@ -5,11 +5,10 @@
 .mac .m-lb .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
 .mac .m-lb .m-page-sub { display: flex; align-items: center; gap: 10px; }
 .mac .m-lb .m-page-sub .sep { width: 1px; height: 12px; background: var(--border-2); }
-.mac .m-lb .lb-controls { display: flex; align-items: center; gap: 8px; }
-.mac .m-lb .lb-search { display: flex; align-items: center; gap: 8px; min-width: 220px; height: 30px; padding: 0 10px; border: 1px solid var(--border-2); border-radius: var(--radius-sm); background: var(--surface); color: var(--text-4); }
-.mac .m-lb .lb-search:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
-.mac .m-lb .lb-search input { flex: 1; min-width: 0; padding: 0; border: 0; outline: none; background: none; color: var(--text); font-size: 13px; }
-.mac .m-lb .lb-search input::placeholder { color: var(--text-4); }
+.mac .toolbar .lb-search { display: flex; align-items: center; gap: 8px; min-width: 220px; height: 30px; padding: 0 10px; border: 1px solid var(--border-2); border-radius: var(--radius-sm); background: var(--surface); color: var(--text-4); }
+.mac .toolbar .lb-search:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.mac .toolbar .lb-search input { flex: 1; min-width: 0; padding: 0; border: 0; outline: none; background: none; color: var(--text); font-size: 13px; }
+.mac .toolbar .lb-search input::placeholder { color: var(--text-4); }
 .mac .m-lb .live-dot { display: inline-block; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 3px rgba(76, 183, 130, 0.18); }
 
 .mac .m-lb .lb-hero { position: relative; margin-top: 24px; overflow: hidden; }

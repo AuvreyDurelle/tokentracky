@@ -42,7 +42,6 @@
 
 /* ---------- tokens page (tokens.html) ---------- */
 .mac .tk-page { padding-top: 24px; }
-.mac .tk-bar { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-bottom: 8px; }
 /* Overrides of m- primitives name both classes: this file can load before mac.css. */
 .mac .tk-seg-sm.m-seg button { height: 22px; padding: 0 9px; font-size: 12px; }
 .mac .tk-select.m-btn { position: relative; padding: 0; }

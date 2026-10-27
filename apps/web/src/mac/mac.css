@@ -61,6 +61,9 @@
 }
 .mac .toolbar-title { font-size: 13px; font-weight: 600; }
 .mac .toolbar-right { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.mac .toolbar .toolbar-actions { display: flex; align-items: center; gap: 8px; }
+.mac .toolbar .toolbar-actions:empty { display: none; }
+.mac .m-page-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-bottom: 8px; }
 .mac .kbd { padding: 0 5px; border: 1px solid var(--border-2); border-radius: 4px; font: 11px var(--mono); color: var(--text-4); }
 .mac .content { flex: 1; overflow: auto; }
 
@@ -124,6 +127,7 @@
   color: var(--text-3); font-size: 12.5px; font-weight: 500;
 }
 .mac .m-seg button:hover:not(:disabled) { color: var(--text-2); }
+.mac .m-seg .m-seg-count { margin-left: 2px; color: var(--text-4); font-variant-numeric: tabular-nums; }
 .mac .m-seg .on { background: var(--surface-3); color: var(--text); box-shadow: inset 0 0 0 1px var(--border-2), 0 1px 2px rgba(0, 0, 0, 0.4); }
 
 .mac .m-btn {
