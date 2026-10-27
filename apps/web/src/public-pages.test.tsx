@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { parseRoute, routePath, takeLinkTag } from './route';
 import { toolColumns, TOOL_COLUMNS } from './columns';
 import { TOOL_IDS, TOOL_NAMES, type ToolId, type ProfileStats } from '@tokentracky/core';
-import { badgeMarkdown, fitFacts, ProfileView, ProfileTypes, windowActivity, xShareUrl } from './Profile';
+import { badgeMarkdown, fitFacts, ProfileView, ProfileTypes, runningTotals, windowActivity, xShareUrl } from './Profile';
 import { TOOLS, toolLabel, topPercent } from './format';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { Join } from './Join';
@@ -126,6 +126,11 @@ describe('public profile', () => {
     expect(windowActivity(daily, '2026-10-21')).toEqual({ activeDays: 3, longestStreak: 2 });
     expect(windowActivity(daily, '2026-10-01')).toEqual({ activeDays: 4, longestStreak: 2 });
     expect(windowActivity(daily, '2026-10-25')).toEqual({ activeDays: 0, longestStreak: 0 });
+  });
+  it('turns daily tokens into a running total for the cumulative chart', () => {
+    expect(runningTotals([{ day: '2026-10-24', tokens: 400 }, { day: '2026-10-25', tokens: 0 }, { day: '2026-10-26', tokens: 600 }]))
+      .toEqual([{ day: '2026-10-24', tokens: 400 }, { day: '2026-10-25', tokens: 400 }, { day: '2026-10-26', tokens: 1_000 }]);
+    expect(runningTotals([])).toEqual([]);
   });
   it('drops the share card’s trailing facts until the line fits, keeping at least the first', () => {
     const facts = ['tokens this month', '3 active days', 'favourite claude-opus-5-5'];

@@ -683,6 +683,11 @@ td.c-total { font-weight: 500; }
 .profile-id { display: flex; align-items: center; gap: 14px; padding: 22px 24px; }
 .profile-id h1 { display: flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }
 .profile-ranks { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.profile-usage { display: grid; gap: 16px; padding: 16px 24px 20px; border-top: 1px solid var(--border); }
+.usage-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.profile-usage .trend { margin: 8px 0 0; }
+/* Short ranges have few weeks: larger cells, centred, about as tall as the charts. */
+.profile-usage .heat-body { max-width: calc(27px + var(--weeks) * 30px); margin: 0 auto; }
 .highlights { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 16px 24px 20px; border-top: 1px solid var(--border); }
 .highlights > div { min-width: 0; padding: 12px 14px; border: 1px solid var(--border); border-radius: 9px; background: var(--bg); }
 .highlights dt { color: var(--text-3); font-size: 12px; }
@@ -942,6 +947,7 @@ td.c-total { font-weight: 500; }
   .search { width: 100%; margin-left: 0; }
   .search .input { width: 100%; }
   .profile-bar { padding: 16px; }
+  .profile-usage { padding: 14px 16px 16px; }
   .auth-page { padding: 28px 0; }
   .auth-card { padding: 22px; }
 }
