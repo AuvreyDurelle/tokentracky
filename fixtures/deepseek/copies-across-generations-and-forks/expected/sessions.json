@@ -15,6 +15,7 @@
       "deepseek-v4-flash"
     ],
     "project": "/synthetic/dsh-project",
+    "startedAt": "2026-10-21T09:00:00.000Z",
     "tokens": 640,
     "tool": "deepseek"
   },
@@ -34,6 +35,7 @@
       "deepseek-v4-flash"
     ],
     "project": "/synthetic/dsh-project",
+    "startedAt": "2026-10-21T09:00:00.000Z",
     "tokens": 100,
     "tool": "deepseek"
   }

@@ -100,9 +100,9 @@ describe('totals from synthetic Claude Code and Codex logs', () => {
     const {items} = await getJson(server, `/api/local/sessions?${DAY}`);
     expect(items).toEqual([
       {id: 'codex-session', project: '/synthetic/codex-project', tool: 'codex', model: MODELS.codex, models: [MODELS.codex], tokens: 230,
-        breakdown: KINDS.codex, costMicrousd: 966, lastUsedAt: '2026-10-20T12:00:01.000Z'},
+        breakdown: KINDS.codex, costMicrousd: 966, lastUsedAt: '2026-10-20T12:00:01.000Z', startedAt: '2026-10-20T12:00:00.000Z'},
       {id: 'claude-session', project: '/synthetic/private-project', tool: 'claude', model: MODELS.claude, models: [MODELS.claude], tokens: 302,
-        breakdown: KINDS.claude, costMicrousd: 814, lastUsedAt: '2026-10-20T12:00:00.000Z'},
+        breakdown: KINDS.claude, costMicrousd: 814, lastUsedAt: '2026-10-20T12:00:00.000Z', startedAt: '2026-10-20T12:00:00.000Z'},
     ]);
     for (const item of items) expect(item.breakdown.input + item.breakdown.output + item.breakdown.cacheRead + item.breakdown.cacheWrite).toBe(item.tokens);
   });

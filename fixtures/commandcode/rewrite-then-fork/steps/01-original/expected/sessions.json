@@ -15,6 +15,7 @@
       "deepseek-v4-flash"
     ],
     "project": "/synthetic/command-code",
+    "startedAt": "2026-10-20T10:00:00.000Z",
     "tokens": 1550,
     "tool": "commandcode"
   }

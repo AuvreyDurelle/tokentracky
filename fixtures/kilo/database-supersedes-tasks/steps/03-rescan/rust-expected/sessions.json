@@ -15,6 +15,7 @@
       "unknown"
     ],
     "project": null,
+    "startedAt": "2026-10-23T09:00:00.000Z",
     "tokens": 1700,
     "tool": "kilo"
   },
@@ -34,6 +35,7 @@
       "claude-sonnet-4-6"
     ],
     "project": "/synthetic/kilo-project",
+    "startedAt": "2026-10-23T09:00:00.000Z",
     "tokens": 1700,
     "tool": "kilo"
   }

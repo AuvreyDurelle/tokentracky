@@ -338,6 +338,9 @@ pub struct SessionSummary {
     #[ts(type = "number | null")]
     pub cost_microusd: Option<u64>,
     pub last_used_at: Option<String>,
+    /// The start of the 15-minute slot of its first event in the query, so at most 15 minutes before that event;
+    /// null when undated.
+    pub started_at: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]

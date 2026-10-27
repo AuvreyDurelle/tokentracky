@@ -1463,6 +1463,12 @@ impl UsageStore {
                         breakdown: totals.breakdown(),
                         cost_microusd: totals.cost(),
                         last_used_at: last.last_at.clone(),
+                        started_at: session
+                            .iter()
+                            .filter_map(|slot| slot.key.slot)
+                            .min()
+                            .and_then(|at| Timestamp::from_millisecond(at).ok())
+                            .map(|at| format!("{at:.3}")),
                     },
                 ))
             })

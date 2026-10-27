@@ -100,6 +100,8 @@ export type SessionSummary = {
   breakdown: TokenCounts;
   costMicrousd: number | null;
   lastUsedAt: string | null;
+  /** The start of the 15-minute slot of its first event in the query, so at most 15 minutes before that event; null when undated. */
+  startedAt: string | null;
 };
 export type ProjectSummary = {
   name: string;

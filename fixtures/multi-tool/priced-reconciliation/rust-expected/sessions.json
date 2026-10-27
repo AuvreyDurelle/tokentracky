@@ -1,0 +1,43 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": 181,
+    "id": "claude-session",
+    "lastUsedAt": "2026-10-20T12:00:00.000Z",
+    "model": "claude-sonnet-4-6",
+    "models": [
+      "claude-sonnet-4-6"
+    ],
+    "project": "/synthetic/private-project",
+    "startedAt": "2026-10-20T12:00:00.000Z",
+    "tokens": 161,
+    "tool": "claude"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 0,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": 151,
+    "id": "codex-session",
+    "lastUsedAt": "2026-10-20T12:00:00.000Z",
+    "model": "gpt-5-codex",
+    "models": [
+      "gpt-5-codex"
+    ],
+    "project": "/synthetic/codex-project",
+    "startedAt": "2026-10-20T12:00:00.000Z",
+    "tokens": 131,
+    "tool": "codex"
+  }
+]

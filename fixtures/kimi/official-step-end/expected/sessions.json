@@ -16,6 +16,7 @@
       "kimi-code/kimi-for-coding"
     ],
     "project": "/synthetic/kimi-project",
+    "startedAt": "2026-10-23T09:00:00.000Z",
     "tokens": 19035,
     "tool": "kimi"
   },
@@ -36,6 +37,7 @@
       "kimi-for-coding"
     ],
     "project": "/synthetic/kimi-project",
+    "startedAt": "2026-10-23T09:00:00.000Z",
     "tokens": 10575,
     "tool": "kimi"
   }

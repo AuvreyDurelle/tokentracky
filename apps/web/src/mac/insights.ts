@@ -51,9 +51,19 @@ export function mostExpensiveDay(daily: Day[]): Day & { costMicrousd: number } |
   return best;
 }
 
-/** The session with the most tokens. */
-export function biggestSession(sessions: SessionSummary[]): SessionSummary | null {
-  return sessions.reduce<SessionSummary | null>((best, session) => !best || session.tokens > best.tokens ? session : best, null);
+/** How long a session ran, in milliseconds: from the quarter hour its first event fell in to its last event. Null when undated. */
+export function sessionLength(session: SessionSummary): number | null {
+  if (!session.startedAt || !session.lastUsedAt) return null;
+  return Math.max(0, Date.parse(session.lastUsedAt) - Date.parse(session.startedAt));
+}
+
+/** The session that ran longest, the one with more tokens on a tie; null without a dated session. */
+export function longestSession(sessions: SessionSummary[]): (SessionSummary & { length: number }) | null {
+  return sessions.reduce<(SessionSummary & { length: number }) | null>((best, session) => {
+    const length = sessionLength(session);
+    if (length === null) return best;
+    return !best || length > best.length || (length === best.length && session.tokens > best.tokens) ? { ...session, length } : best;
+  }, null);
 }
 
 /** The model whose share of tokens grew most since the previous period, in share points to one decimal (ties go to the larger share). Null when nothing grew or either period is empty. */

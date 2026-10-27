@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { SessionSummary, UsageBreakdownRow } from '@tokentracky/core';
 import { addDays } from '../ranges';
-import { biggestSession, busiestHour, busiestWeekdayUtc, changeVsPrevious, dailyByModel, dailyByTool, favouriteModel, mostExpensiveDay, recentTotals, trendingModel } from './insights';
+import { busiestHour, busiestWeekdayUtc, changeVsPrevious, dailyByModel, dailyByTool, favouriteModel, longestSession, mostExpensiveDay, recentTotals, trendingModel } from './insights';
 
 const row = (day: string, tool: UsageBreakdownRow['tool'], model: string, tokens: number, costMicrousd: number | null = tokens): UsageBreakdownRow => ({ day, tool, model, tokens, breakdown: NONE.breakdown, costMicrousd });
 const NONE = { breakdown: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, costParts: null, sessions: 0 };
@@ -55,11 +55,14 @@ describe('mostExpensiveDay', () => {
   });
 });
 
-describe('biggestSession', () => {
-  const session = (id: string, tokens: number): SessionSummary => ({ id, project: null, tool: 'claude', model: 'opus', models: ['opus'], tokens, breakdown: { input: tokens, output: 0, cacheRead: 0, cacheWrite: 0 }, costMicrousd: null, lastUsedAt: null });
-  it('picks the session with the most tokens, or null', () => {
-    expect(biggestSession([session('a', 5), session('b', 9), session('c', 2)])?.id).toBe('b');
-    expect(biggestSession([])).toBeNull();
+describe('longestSession', () => {
+  const session = (id: string, tokens: number, startedAt: string | null, lastUsedAt: string | null): SessionSummary => ({ id, project: null, tool: 'claude', model: 'opus', models: ['opus'], tokens, breakdown: { input: tokens, output: 0, cacheRead: 0, cacheWrite: 0 }, costMicrousd: null, lastUsedAt, startedAt });
+  it('picks the session that ran longest, from its first quarter hour to its last event, more tokens first on a tie', () => {
+    const sessions = [session('a', 5, '2026-10-20T09:00:00.000Z', '2026-10-20T15:42:00.000Z'), session('b', 90, '2026-10-20T10:00:00.000Z', '2026-10-20T11:00:00.000Z'),
+      session('c', 2, null, null), session('d', 7, '2026-10-21T09:00:00.000Z', '2026-10-21T15:42:00.000Z')];
+    expect(longestSession(sessions)).toMatchObject({ id: 'd', length: (6 * 60 + 42) * 60_000 });
+    expect(longestSession([session('c', 2, null, null)])).toBeNull();
+    expect(longestSession([])).toBeNull();
   });
 });
 

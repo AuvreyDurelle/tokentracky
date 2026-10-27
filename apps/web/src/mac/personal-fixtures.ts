@@ -93,10 +93,12 @@ export function personalFixtures(now = new Date()) {
   };
   const project = (name: string, tokens: number, sessions: number, repository: string | null): ProjectSummary => ({ name: `/Users/example/Projects/${name}`, repository, tokens, breakdown: kinds(tokens), costMicrousd: Math.round(tokens * 0.35), sessions });
   const projects = [project('usage-dashboard', 2.4e9, 412, 'example/usage-dashboard'), project('api-gateway', 1.6e9, 233, null), project('sample-editor', 1.1e9, 301, 'example/sample-editor'), project('dotfiles', 620e6, 120, null), project('notes', 330e6, 64, null)];
+  // A session ran about a minute per million tokens, starting on a quarter hour.
+  const start = (minutes: number, tokens: number) => new Date(Math.floor((now.getTime() - minutes * 60_000 - tokens / 1e6 * 60_000) / 900_000) * 900_000).toISOString();
   const session = (id: string, name: string, tool: ToolId, model: string, tokens: number, minutes: number): SessionSummary => ({
     id, project: `/Users/example/Projects/${name}`, tool, model, models: [model], tokens,
     breakdown: { input: Math.round(tokens * 0.02), output: Math.round(tokens * 0.01), cacheRead: Math.round(tokens * 0.9), cacheWrite: Math.round(tokens * 0.07) },
-    costMicrousd: Math.round(tokens * 0.35), lastUsedAt: iso(minutes),
+    costMicrousd: Math.round(tokens * 0.35), lastUsedAt: iso(minutes), startedAt: start(minutes, tokens),
   });
   const sessions = [session('s1', 'usage-dashboard', 'claude', 'claude-opus-5-5', 38.2e6, 4), session('s2', 'api-gateway', 'codex', 'gpt-6.1-sol', 21.7e6, 26), session('s3', 'sample-editor', 'claude', 'claude-sonnet-5-5', 9.8e6, 64), session('s4', 'usage-dashboard', 'claude', 'claude-opus-5-5', 184.2e6, 4 * 1440 + 200), session('s5', 'dotfiles', 'gemini', 'gemini-3.8-flash', 3.1e6, 2 * 1440)];
   const overview: MenuOverview = { today: TODAY, week: 2.1e9, month: 6.9e9, allTime: 18.4e9, topTool: { tool: 'claude', tokens: 1.4e9 }, rank: 42, alias: 'example-builder', paused: false, refreshing: false, refreshedAt: iso(2), nextRefreshAt: iso(-58),

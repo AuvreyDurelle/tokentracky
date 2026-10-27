@@ -1,0 +1,22 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 0,
+      "input": 440,
+      "output": 25,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "abcd1234-0000-4000-8000-000000000001",
+    "lastUsedAt": "2026-10-23T09:00:03.000Z",
+    "model": "gemini-3-pro",
+    "models": [
+      "gemini-3-pro"
+    ],
+    "project": null,
+    "startedAt": "2026-10-23T09:00:00.000Z",
+    "tokens": 565,
+    "tool": "gemini"
+  }
+]

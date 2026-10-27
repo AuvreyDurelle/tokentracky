@@ -1,0 +1,22 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 2000,
+      "cacheWrite": 200,
+      "input": 800,
+      "output": 500,
+      "reasoning": 100
+    },
+    "costMicrousd": null,
+    "id": "s_test",
+    "lastUsedAt": "2026-10-23T09:00:05.000Z",
+    "model": "claude-sonnet-4-6",
+    "models": [
+      "claude-sonnet-4-6"
+    ],
+    "project": "/synthetic/cline-project",
+    "startedAt": "2026-10-23T09:00:00.000Z",
+    "tokens": 3500,
+    "tool": "cline"
+  }
+]

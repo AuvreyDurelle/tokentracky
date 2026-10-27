@@ -15,6 +15,7 @@
       "unknown"
     ],
     "project": null,
+    "startedAt": "2026-10-22T11:00:00.000Z",
     "tokens": 7,
     "tool": "zed"
   },
@@ -34,6 +35,7 @@
       "gemini-3-pro"
     ],
     "project": null,
+    "startedAt": "2026-10-22T10:00:00.000Z",
     "tokens": 120,
     "tool": "zed"
   },
@@ -53,6 +55,7 @@
       "claude-sonnet-4-6"
     ],
     "project": null,
+    "startedAt": "2026-10-22T09:00:00.000Z",
     "tokens": 6000,
     "tool": "zed"
   }

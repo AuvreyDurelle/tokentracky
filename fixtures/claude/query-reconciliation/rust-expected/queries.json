@@ -93,6 +93,7 @@
           "claude-sonnet-4-6"
         ],
         "project": "/synthetic/private-project",
+        "startedAt": "2026-10-20T12:00:00.000Z",
         "tokens": 322,
         "tool": "claude"
       }
@@ -290,6 +291,7 @@
           "claude-sonnet-4-6"
         ],
         "project": "/synthetic/private-project",
+        "startedAt": "2026-10-20T12:00:00.000Z",
         "tokens": 322,
         "tool": "claude"
       }

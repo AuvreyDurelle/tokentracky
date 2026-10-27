@@ -16,6 +16,7 @@
       "lmstudio-community/llama-3.2-3b-instruct"
     ],
     "project": null,
+    "startedAt": "2026-10-20T10:00:00.000Z",
     "tokens": 2800,
     "tool": "lmstudio"
   },
@@ -35,6 +36,7 @@
       "google/gemma-3-12b"
     ],
     "project": null,
+    "startedAt": "2026-10-20T10:00:00.000Z",
     "tokens": 1335,
     "tool": "lmstudio"
   }

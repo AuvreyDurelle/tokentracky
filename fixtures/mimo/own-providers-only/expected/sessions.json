@@ -15,6 +15,7 @@
       "mimo-v2.5-pro"
     ],
     "project": "/synthetic/mimo-dev-project",
+    "startedAt": "2026-10-23T09:00:00.000Z",
     "tokens": 15,
     "tool": "mimo"
   },
@@ -36,6 +37,7 @@
       "unknown"
     ],
     "project": "/synthetic/mimo-project",
+    "startedAt": "2026-10-23T09:00:00.000Z",
     "tokens": 2280,
     "tool": "mimo"
   }

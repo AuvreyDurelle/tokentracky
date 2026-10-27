@@ -62,7 +62,8 @@ describe('TokensPage', () => {
     expect(html).toContain('Longest streak 58 days');
     expect(html).toContain('Top project usage-dashboard');
     expect(html).toContain('Local only — never uploaded');
-    expect(html).toContain('Biggest session 184.2M');
+    // The biggest session ran about 3 hours, from the quarter hour of its first event.
+    expect(html).toMatch(/Longest session 3h \d+m 184\.2M tokens · \w{3}, \w{3} \d+ claude-opus-5-5 in Claude Code/);
     expect(html).toContain('Trending model gpt-6.1-sol');
     expect(html).toContain('+6.2 pts');
     expect(html).toContain('Busiest hour 22:00 – 23:00');

@@ -298,3 +298,18 @@ fn a_summary_adds_its_tokens_up_by_hour_of_day_in_utc_or_the_zone() {
         (1, 100, 10, 1000)
     );
 }
+
+#[test]
+fn a_session_starts_at_the_quarter_hour_of_its_first_event_in_the_query() {
+    let store = store(&[
+        event("first", "2026-10-20T09:07:00.000Z", 1),
+        event("middle", "2026-10-20T12:30:00.000Z", 1),
+        event("last", "2026-10-20T15:49:00.000Z", 1),
+    ]);
+    let sessions = store.sessions(&days("2026-10-20", "2026-10-20", None)).unwrap();
+    assert_eq!(sessions.len(), 1);
+    assert_eq!(
+        (sessions[0].started_at.as_deref(), sessions[0].last_used_at.as_deref()),
+        (Some("2026-10-20T09:00:00.000Z"), Some("2026-10-20T15:49:00.000Z"))
+    );
+}

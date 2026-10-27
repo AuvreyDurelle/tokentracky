@@ -10,7 +10,7 @@ import { downloadCsv } from '../You';
 import { ActivityGrid } from './ActivityGrid';
 import { monotonePath } from './chart';
 import { ICONS } from './icons';
-import { biggestSession, busiestHour, busiestWeekdayUtc, changeVsPrevious, dailyByModel, dailyByTool, favouriteModel, mostExpensiveDay, recentTotals, trendingModel } from './insights';
+import { busiestHour, busiestWeekdayUtc, changeVsPrevious, dailyByModel, dailyByTool, favouriteModel, longestSession, mostExpensiveDay, recentTotals, trendingModel } from './insights';
 import { ToolbarActions } from './Shell';
 import { OverviewStrip, StackedAreaChart, type ChartSeries } from './StackedAreaChart';
 import './personal.css';
@@ -33,6 +33,11 @@ const utc = (day: string) => new Date(`${day}T00:00:00Z`);
 const sum = (values: number[]) => values.reduce((total, value) => total + value, 0);
 /** Dollars as the mockups write them: cents below $1,000, whole dollars above. Unknown pricing stays unknown. */
 const money = (micro: number | null) => micro === null ? '—' : micro >= 1e9 ? `$${formatExact(Math.round(micro / 1e6))}` : formatCost(micro);
+/** A length of time as hours and minutes: 6h 42m, 42m, or under a minute. */
+const duration = (ms: number) => {
+  const minutes = Math.floor(ms / 60_000);
+  return minutes < 1 ? '<1m' : minutes < 60 ? `${minutes}m` : `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+};
 /** An hour of the day as a clock reads it: 22 is 22:00, 24 is 00:00. */
 const clock = (hour: number) => `${String(hour % 24).padStart(2, '0')}:00`;
 const projectName = (path: string | null) => path?.split(/[\\/]/).filter(Boolean).at(-1) ?? 'No project';
@@ -359,7 +364,7 @@ function Insights({ data, year, yearDays, range, days }: { data: TokensData; yea
   const expensive = mostExpensiveDay(summary.daily);
   const expensiveTools = expensive ? costGroups(breakdown.filter((row) => row.day === expensive.day), (row) => row.tool) : [];
   const project = [...projects].sort((a, b) => b.tokens - a.tokens)[0];
-  const session = biggestSession(sessions);
+  const session = longestSession(sessions);
   const trending = trendingModel(summary.byModel, before.byModel);
   const streak = year?.activity;
   const span = spanOf(days);
@@ -401,9 +406,8 @@ function Insights({ data, year, yearDays, range, days }: { data: TokensData; yea
         sub={project ? `${formatCompact(project.tokens)} tokens · ${formatShare(project.tokens, summary.tokens)} of period` : 'No projects in this range'}>
         <span className="tk-lock">{ICONS.lock}Local only — never uploaded</span>
       </Insight>
-      {/* Later: Longest session by duration needs session start times (Task 1.4); until then the biggest by tokens. */}
-      <Insight icon={ICONS.stack} label="Biggest session" value={session ? <span title={`${formatExact(session.tokens)} tokens`}>{formatCompact(session.tokens)}</span> : '—'}
-        sub={session ? `${projectName(session.project)} · ${timeAgo(session.lastUsedAt)}` : 'No sessions in this range'}>
+      <Insight icon={ICONS.stack} label="Longest session" value={session ? <span title="From the quarter hour of its first event to its last">{duration(session.length)}</span> : '—'}
+        sub={session ? `${formatCompact(session.tokens)} tokens · ${WEEKDAY_DAY.format(new Date(session.lastUsedAt!))}` : 'No sessions in this range'}>
         {session && <span className="m-pill"><ToolIcon id={session.tool} />{session.model} in {toolLabel(session.tool)}</span>}
       </Insight>
       <Insight icon={ICONS.trending} label="Trending model" mono value={trending ? <span className="tk-model">{glyph(trending.model)}{trending.model}</span> : '—'}

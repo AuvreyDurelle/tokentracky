@@ -1,0 +1,45 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 400,
+      "cacheWrite": 120,
+      "cacheWrite1h": 80,
+      "input": 44,
+      "output": 80,
+      "reasoning": 28
+    },
+    "costMicrousd": 644,
+    "id": "one",
+    "lastUsedAt": "2026-10-23T00:00:00.000Z",
+    "model": "claude-sonnet-4-6",
+    "models": [
+      "claude-sonnet-4-6",
+      "claude-opus-4-7"
+    ],
+    "project": "/synthetic/private-project",
+    "startedAt": "2026-10-21T08:00:00.000Z",
+    "tokens": 644,
+    "tool": "claude"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": 161,
+    "id": "two",
+    "lastUsedAt": "2026-09-01T00:00:00.000Z",
+    "model": "claude-haiku-4-5",
+    "models": [
+      "claude-haiku-4-5"
+    ],
+    "project": "/synthetic/private-project",
+    "startedAt": "2026-09-01T00:00:00.000Z",
+    "tokens": 161,
+    "tool": "claude"
+  }
+]
