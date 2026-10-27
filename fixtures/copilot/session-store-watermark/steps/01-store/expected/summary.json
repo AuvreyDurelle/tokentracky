@@ -1,0 +1,95 @@
+{
+  "activity": {
+    "activeDays": 1,
+    "averagePerActiveDay": 16200,
+    "bestDay": {
+      "day": "2026-10-20",
+      "tokens": 16200
+    },
+    "currentStreak": 0,
+    "longestStreak": 1
+  },
+  "breakdown": {
+    "cacheRead": 12000,
+    "cacheWrite": 1500,
+    "input": 2100,
+    "output": 1250,
+    "reasoning": 350
+  },
+  "byModel": [
+    {
+      "breakdown": {
+        "cacheRead": 2000,
+        "cacheWrite": 0,
+        "input": 1000,
+        "output": 400,
+        "reasoning": 150
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "gpt-5",
+      "tokens": 3400
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 600,
+        "output": 50,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "claude-haiku-4.5",
+      "tokens": 650
+    },
+    {
+      "breakdown": {
+        "cacheRead": 10000,
+        "cacheWrite": 1500,
+        "input": 500,
+        "output": 800,
+        "reasoning": 200
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "claude-sonnet-4.5",
+      "tokens": 12800
+    }
+  ],
+  "byTool": [
+    {
+      "breakdown": {
+        "cacheRead": 12000,
+        "cacheWrite": 1500,
+        "input": 2100,
+        "output": 1250,
+        "reasoning": 350
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "tokens": 16850,
+      "tool": "copilot"
+    }
+  ],
+  "cacheRate": 0.7692307692307693,
+  "costMicrousd": null,
+  "costParts": null,
+  "daily": [
+    {
+      "breakdown": {
+        "cacheRead": 12000,
+        "cacheWrite": 1500,
+        "input": 1500,
+        "output": 1200,
+        "reasoning": 350
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "day": "2026-10-20",
+      "tokens": 16200
+    }
+  ],
+  "sessions": 2,
+  "tokens": 16850
+}

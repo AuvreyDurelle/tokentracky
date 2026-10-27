@@ -1,0 +1,62 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 1,
+      "output": 0,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-09-30",
+    "model": "claude-sonnet-4-6",
+    "tokens": 131,
+    "tool": "claude"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 10,
+      "output": 0,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-02",
+    "model": "claude-sonnet-4-6",
+    "tokens": 140,
+    "tool": "claude"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 100,
+      "output": 0,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-19",
+    "model": "claude-sonnet-4-6",
+    "tokens": 230,
+    "tool": "claude"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 1000,
+      "output": 0,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-21",
+    "model": "claude-sonnet-4-6",
+    "tokens": 1130,
+    "tool": "claude"
+  }
+]

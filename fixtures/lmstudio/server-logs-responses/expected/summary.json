@@ -1,0 +1,108 @@
+{
+  "activity": {
+    "activeDays": 2,
+    "averagePerActiveDay": 2068,
+    "bestDay": {
+      "day": "2026-10-20",
+      "tokens": 3635
+    },
+    "currentStreak": 0,
+    "longestStreak": 2
+  },
+  "breakdown": {
+    "cacheRead": 2776,
+    "cacheWrite": 0,
+    "input": 917,
+    "output": 442,
+    "reasoning": 120
+  },
+  "byModel": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 400,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "lmstudio-community/llama-3.2-3b-instruct",
+      "tokens": 500
+    },
+    {
+      "breakdown": {
+        "cacheRead": 1500,
+        "cacheWrite": 0,
+        "input": 500,
+        "output": 300,
+        "reasoning": 120
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "qwen2.5-7b-instruct",
+      "tokens": 2300
+    },
+    {
+      "breakdown": {
+        "cacheRead": 1276,
+        "cacheWrite": 0,
+        "input": 17,
+        "output": 42,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "google/gemma-3-12b",
+      "tokens": 1335
+    }
+  ],
+  "byTool": [
+    {
+      "breakdown": {
+        "cacheRead": 2776,
+        "cacheWrite": 0,
+        "input": 917,
+        "output": 442,
+        "reasoning": 120
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "tokens": 4135,
+      "tool": "lmstudio"
+    }
+  ],
+  "cacheRate": 0.751692391010019,
+  "costMicrousd": null,
+  "costParts": null,
+  "daily": [
+    {
+      "breakdown": {
+        "cacheRead": 2776,
+        "cacheWrite": 0,
+        "input": 517,
+        "output": 342,
+        "reasoning": 120
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "day": "2026-10-20",
+      "tokens": 3635
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 400,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "day": "2026-10-21",
+      "tokens": 500
+    }
+  ],
+  "sessions": 2,
+  "tokens": 4135
+}

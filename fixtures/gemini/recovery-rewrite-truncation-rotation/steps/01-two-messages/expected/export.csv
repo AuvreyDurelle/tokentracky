@@ -1,0 +1,3 @@
+"tool","model","timestamp","project","session","input","output","cache_read","cache_write","reasoning","total","cost_microusd"
+"gemini","gemini-3-pro","2026-10-23T09:00:03.000Z","","abcd1234-0000-4000-8000-000000000001","200","120","1000","0","40","1320",""
+"gemini","gemini-3-pro","2026-10-23T09:00:03.000Z","","abcd1234-0000-4000-8000-000000000001","100","10","0","0","0","110",""

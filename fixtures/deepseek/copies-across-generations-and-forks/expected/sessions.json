@@ -1,0 +1,40 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 475,
+      "cacheWrite": 0,
+      "input": 120,
+      "output": 45,
+      "reasoning": 10
+    },
+    "costMicrousd": null,
+    "id": "dsh-session-c",
+    "lastUsedAt": "2026-10-21T09:00:35.000Z",
+    "model": "deepseek-v4-flash",
+    "models": [
+      "deepseek-v4-flash"
+    ],
+    "project": "/synthetic/dsh-project",
+    "tokens": 640,
+    "tool": "deepseek"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 60,
+      "input": 30,
+      "output": 10,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "dsh-session-b",
+    "lastUsedAt": "2026-10-21T09:00:03.000Z",
+    "model": "deepseek-v4-flash",
+    "models": [
+      "deepseek-v4-flash"
+    ],
+    "project": "/synthetic/dsh-project",
+    "tokens": 100,
+    "tool": "deepseek"
+  }
+]

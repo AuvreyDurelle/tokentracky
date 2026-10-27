@@ -1,0 +1,8 @@
+{
+  "codex:rollout.jsonl": {
+    "diagnostics": [
+      "cumulative_reset_or_branch"
+    ],
+    "offset": 2397
+  }
+}

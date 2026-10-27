@@ -1,0 +1,506 @@
+{
+  "tools=off,cost=off,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 2200,
+        "cacheWrite": 0,
+        "input": 1640,
+        "output": 195,
+        "reasoning": 60
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "revision": 6,
+      "tokens": 4035,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 2200,
+        "cacheWrite": 0,
+        "input": 1640,
+        "output": 195,
+        "reasoning": 60
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "revision": 7,
+      "tokens": 4035,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 500,
+        "output": 30,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "grok-4.6-build",
+      "revision": 9,
+      "tokens": 530,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 2200,
+        "cacheWrite": 0,
+        "input": 1100,
+        "output": 160,
+        "reasoning": 60
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "grok-4.7-build",
+      "revision": 8,
+      "tokens": 3460,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 40,
+        "output": 5,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "grok-build",
+      "revision": 10,
+      "tokens": 45,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 500,
+        "output": 30,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "grok-4.6-build",
+      "revision": 12,
+      "tokens": 530,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 2200,
+        "cacheWrite": 0,
+        "input": 1100,
+        "output": 160,
+        "reasoning": 60
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "grok-4.7-build",
+      "revision": 11,
+      "tokens": 3460,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 40,
+        "output": 5,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "grok-build",
+      "revision": 13,
+      "tokens": 45,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 2200,
+        "cacheWrite": 0,
+        "input": 1640,
+        "output": 195,
+        "reasoning": 60
+      },
+      "costMicrousd": 4956,
+      "day": "2026-10-22",
+      "revision": 14,
+      "tokens": 4035,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 2200,
+        "cacheWrite": 0,
+        "input": 1640,
+        "output": 195,
+        "reasoning": 60
+      },
+      "costMicrousd": 4956,
+      "day": "2026-10-22",
+      "revision": 15,
+      "tokens": 4035,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 500,
+        "output": 30,
+        "reasoning": 0
+      },
+      "costMicrousd": 160,
+      "day": "2026-10-22",
+      "model": "grok-4.6-build",
+      "revision": 17,
+      "tokens": 530,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 2200,
+        "cacheWrite": 0,
+        "input": 1100,
+        "output": 160,
+        "reasoning": 60
+      },
+      "costMicrousd": 4795,
+      "day": "2026-10-22",
+      "model": "grok-4.7-build",
+      "revision": 16,
+      "tokens": 3460,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 40,
+        "output": 5,
+        "reasoning": 0
+      },
+      "costMicrousd": 1,
+      "day": "2026-10-22",
+      "model": "grok-build",
+      "revision": 18,
+      "tokens": 45,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 500,
+        "output": 30,
+        "reasoning": 0
+      },
+      "costMicrousd": 160,
+      "day": "2026-10-22",
+      "model": "grok-4.6-build",
+      "revision": 20,
+      "tokens": 530,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 2200,
+        "cacheWrite": 0,
+        "input": 1100,
+        "output": 160,
+        "reasoning": 60
+      },
+      "costMicrousd": 4795,
+      "day": "2026-10-22",
+      "model": "grok-4.7-build",
+      "revision": 19,
+      "tokens": 3460,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 40,
+        "output": 5,
+        "reasoning": 0
+      },
+      "costMicrousd": 1,
+      "day": "2026-10-22",
+      "model": "grok-build",
+      "revision": 21,
+      "tokens": 45,
+      "tool": "all"
+    }
+  ],
+  "tools=on,cost=off,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 2200,
+        "cacheWrite": 0,
+        "input": 1640,
+        "output": 195,
+        "reasoning": 60
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "revision": 22,
+      "tokens": 4035,
+      "tool": "grok"
+    }
+  ],
+  "tools=on,cost=off,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 2200,
+        "cacheWrite": 0,
+        "input": 1640,
+        "output": 195,
+        "reasoning": 60
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "revision": 23,
+      "tokens": 4035,
+      "tool": "grok"
+    }
+  ],
+  "tools=on,cost=off,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 500,
+        "output": 30,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "grok-4.6-build",
+      "revision": 25,
+      "tokens": 530,
+      "tool": "grok"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 2200,
+        "cacheWrite": 0,
+        "input": 1100,
+        "output": 160,
+        "reasoning": 60
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "grok-4.7-build",
+      "revision": 24,
+      "tokens": 3460,
+      "tool": "grok"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 40,
+        "output": 5,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "grok-build",
+      "revision": 26,
+      "tokens": 45,
+      "tool": "grok"
+    }
+  ],
+  "tools=on,cost=off,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 500,
+        "output": 30,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "grok-4.6-build",
+      "revision": 28,
+      "tokens": 530,
+      "tool": "grok"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 2200,
+        "cacheWrite": 0,
+        "input": 1100,
+        "output": 160,
+        "reasoning": 60
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "grok-4.7-build",
+      "revision": 27,
+      "tokens": 3460,
+      "tool": "grok"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 40,
+        "output": 5,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "grok-build",
+      "revision": 29,
+      "tokens": 45,
+      "tool": "grok"
+    }
+  ],
+  "tools=on,cost=on,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 2200,
+        "cacheWrite": 0,
+        "input": 1640,
+        "output": 195,
+        "reasoning": 60
+      },
+      "costMicrousd": 4956,
+      "day": "2026-10-22",
+      "revision": 30,
+      "tokens": 4035,
+      "tool": "grok"
+    }
+  ],
+  "tools=on,cost=on,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 2200,
+        "cacheWrite": 0,
+        "input": 1640,
+        "output": 195,
+        "reasoning": 60
+      },
+      "costMicrousd": 4956,
+      "day": "2026-10-22",
+      "revision": 31,
+      "tokens": 4035,
+      "tool": "grok"
+    }
+  ],
+  "tools=on,cost=on,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 500,
+        "output": 30,
+        "reasoning": 0
+      },
+      "costMicrousd": 160,
+      "day": "2026-10-22",
+      "model": "grok-4.6-build",
+      "revision": 33,
+      "tokens": 530,
+      "tool": "grok"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 2200,
+        "cacheWrite": 0,
+        "input": 1100,
+        "output": 160,
+        "reasoning": 60
+      },
+      "costMicrousd": 4795,
+      "day": "2026-10-22",
+      "model": "grok-4.7-build",
+      "revision": 32,
+      "tokens": 3460,
+      "tool": "grok"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 40,
+        "output": 5,
+        "reasoning": 0
+      },
+      "costMicrousd": 1,
+      "day": "2026-10-22",
+      "model": "grok-build",
+      "revision": 34,
+      "tokens": 45,
+      "tool": "grok"
+    }
+  ],
+  "tools=on,cost=on,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 500,
+        "output": 30,
+        "reasoning": 0
+      },
+      "costMicrousd": 160,
+      "day": "2026-10-22",
+      "model": "grok-4.6-build",
+      "revision": 36,
+      "tokens": 530,
+      "tool": "grok"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 2200,
+        "cacheWrite": 0,
+        "input": 1100,
+        "output": 160,
+        "reasoning": 60
+      },
+      "costMicrousd": 4795,
+      "day": "2026-10-22",
+      "model": "grok-4.7-build",
+      "revision": 35,
+      "tokens": 3460,
+      "tool": "grok"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 40,
+        "output": 5,
+        "reasoning": 0
+      },
+      "costMicrousd": 1,
+      "day": "2026-10-22",
+      "model": "grok-build",
+      "revision": 37,
+      "tokens": 45,
+      "tool": "grok"
+    }
+  ]
+}

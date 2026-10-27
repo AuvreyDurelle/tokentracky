@@ -1,0 +1,74 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "omo:53c8d0f9791194b1801d0b5c3bcdfb896c9f5e5fd6d2b4748d605073aee2cb09",
+    "model": "gpt-5.1-codex",
+    "occurredAt": "2026-10-22T07:01:00.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/delta",
+    "sessionId": "0199f020-0000-7000-8000-000000000020",
+    "tokens": {
+      "cacheRead": 8000,
+      "cacheWrite": 0,
+      "input": 1200,
+      "output": 400,
+      "reasoning": 250
+    },
+    "tool": "omo"
+  },
+  {
+    "claudeMirrorId": "claude:e0f0e54e7bff6ab17e5200eeae54bc0540a8de158ac515ed3880ba46273883b4",
+    "costMicrousd": null,
+    "eventId": "omo:5807a0e588012af657b56b7379d9bbd6206a935a0b8e0dedc03caf39600ac457",
+    "model": "claude-opus-4-6",
+    "occurredAt": "2026-10-22T07:00:04.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/delta",
+    "sessionId": "0199f020-0000-7000-8000-000000000020",
+    "tokens": {
+      "cacheRead": 530727,
+      "cacheWrite": 806,
+      "cacheWrite1h": 806,
+      "input": 2,
+      "output": 59,
+      "reasoning": 0
+    },
+    "tool": "omo"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "omo:683ad4024b97dc3a3b89bb9922fe76203536ffc6cf71d674188b658f662c264b",
+    "model": "claude-opus-4-6",
+    "occurredAt": "2026-10-22T07:06:00.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/delta",
+    "sessionId": "0199f020-0000-7000-8000-000000000020",
+    "tokens": {
+      "cacheRead": 600000,
+      "cacheWrite": 0,
+      "input": 1,
+      "output": 1,
+      "reasoning": 0
+    },
+    "tool": "omo"
+  },
+  {
+    "claudeMirrorId": "claude:ce1ad5b334e4beddb6d27fe74d2c9008718513d8038512bd89edf11abfb11e79",
+    "costMicrousd": null,
+    "eventId": "omo:bc735a0e32534eea04bb3a49e32bcdbaa7fe9ece34187b15202e6a92fc227ce6",
+    "model": "claude-opus-4-6",
+    "occurredAt": "2026-10-22T07:02:00.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/delta",
+    "sessionId": "0199f020-0000-7000-8000-000000000020",
+    "tokens": {
+      "cacheRead": 599816,
+      "cacheWrite": 4313,
+      "cacheWrite1h": 4313,
+      "input": 4,
+      "output": 1182,
+      "reasoning": 479
+    },
+    "tool": "omo"
+  }
+]

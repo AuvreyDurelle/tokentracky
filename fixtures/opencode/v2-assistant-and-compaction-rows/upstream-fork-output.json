@@ -1,0 +1,74 @@
+{
+  "commit": "f9f463be78312411618964a171c285c316d4b9fc",
+  "execution": "unmodified extracted projectFork; real SQLite; Effect query adapter; schema/ID/slug/title shims; synthetic sequence reservation; no instruction services invoked",
+  "checks": [
+    "before excludes boundary",
+    "through includes boundary",
+    "incomplete assistant excluded",
+    "running compaction excluded",
+    "sequence gaps preserved",
+    "nested copies preserve parent sequence"
+  ],
+  "projection": [
+    {
+      "id": "msg_forkb_2",
+      "session_id": "ses_before",
+      "type": "assistant",
+      "seq": 2,
+      "tokens": {
+        "input": 100,
+        "output": 10,
+        "reasoning": 2,
+        "cache": {
+          "read": 3,
+          "write": 1
+        }
+      }
+    },
+    {
+      "id": "msg_newb",
+      "session_id": "ses_before",
+      "type": "assistant",
+      "seq": 6,
+      "tokens": {
+        "input": 30,
+        "output": 3,
+        "reasoning": 1,
+        "cache": {
+          "read": 0,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_forkc_2",
+      "session_id": "ses_nested",
+      "type": "assistant",
+      "seq": 2,
+      "tokens": {
+        "input": 100,
+        "output": 10,
+        "reasoning": 2,
+        "cache": {
+          "read": 3,
+          "write": 1
+        }
+      }
+    },
+    {
+      "id": "msg_forkc_6",
+      "session_id": "ses_nested",
+      "type": "assistant",
+      "seq": 6,
+      "tokens": {
+        "input": 30,
+        "output": 3,
+        "reasoning": 1,
+        "cache": {
+          "read": 0,
+          "write": 0
+        }
+      }
+    }
+  ]
+}

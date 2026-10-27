@@ -1,0 +1,4 @@
+-- Usage projection emitted by pinned Kilo parseMessagesFromConversation; see verify-upstream-import.ts.
+CREATE TABLE message(id TEXT PRIMARY KEY, session_id TEXT, time_created INTEGER, data TEXT);
+INSERT INTO message VALUES('msg_migrated_2069a0e6115b3d9c93848b69f5','ses_migrated_f5dbf77874216ac1a5284fb467',1792746000000,'{"role":"user","time":{"created":1792746000000},"agent":"user","model":{"providerID":"legacy","modelID":"legacy"}}');
+INSERT INTO message VALUES('msg_migrated_f758f8d4791834fcff462a083d','ses_migrated_f5dbf77874216ac1a5284fb467',1792746001000,'{"role":"assistant","time":{"created":1792746001000,"completed":1792746001000},"parentID":"msg_migrated_2069a0e6115b3d9c93848b69f5","modelID":"legacy","providerID":"legacy","mode":"code","agent":"main","path":{"cwd":"/synthetic/project","root":"/synthetic/project"},"cost":0,"tokens":{"input":0,"output":0,"reasoning":0,"cache":{"read":0,"write":0}}}');

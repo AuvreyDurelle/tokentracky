@@ -1,0 +1,4 @@
+{
+  "description": "A recursive child session counts on its own and the parent's child_usage_attributed row, which repeats it, adds nothing; when the parent file is later rewritten with the child folded into the parent message (a total below its counts), that copy is skipped with invalid_counters, the parent's own usage stays and a new message counts.",
+  "rustOnly": true
+}

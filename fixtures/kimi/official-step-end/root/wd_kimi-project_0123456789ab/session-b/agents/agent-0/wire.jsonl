@@ -1,0 +1,4 @@
+{"type":"metadata","protocol_version":"1.5","created_at":1792746040000}
+{"type":"profile.bind","agentId":"agent-0","modelAlias":"kimi-code/kimi-for-coding","profileName":"default","thinkingEffort":"high","systemPrompt":"PRIVATE_SYSTEM_PROMPT_MARKER","environmentDisclosure":{"cwd":"/synthetic/kimi-project"},"disallowedTools":[],"time":1792746000000}
+{"type":"llm.request","agentId":"agent-0","kind":"loop","provider":"kimi","model":"kimi-for-coding","modelAlias":"kimi-code/kimi-for-coding","toolSelect":false,"systemPromptHash":"0f0f","toolsHash":"a1a1","messageCount":3,"time":1792746041000}
+{"type":"context.append_loop_event","agentId":"agent-0","event":{"type":"step.end","uuid":"step-sub-0001","turnId":"1","step":1,"usage":{"inputOther":50,"output":25,"inputCacheRead":500,"inputCacheCreation":0}},"time":1792746045000}

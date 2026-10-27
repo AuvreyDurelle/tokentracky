@@ -1,0 +1,23 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 2200,
+      "cacheWrite": 0,
+      "input": 1640,
+      "output": 195,
+      "reasoning": 60
+    },
+    "costMicrousd": 4956,
+    "id": "019a0000-0000-7000-8000-000000000001",
+    "lastUsedAt": "2026-10-22T13:00:00.000Z",
+    "model": "grok-build",
+    "models": [
+      "grok-4.7-build",
+      "grok-4.6-build",
+      "grok-build"
+    ],
+    "project": "/synthetic/grok-project",
+    "tokens": 4035,
+    "tool": "grok"
+  }
+]

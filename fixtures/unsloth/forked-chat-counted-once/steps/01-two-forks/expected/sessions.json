@@ -1,0 +1,59 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 300,
+      "output": 30,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "C",
+    "lastUsedAt": "2026-10-22T09:02:10.000Z",
+    "model": "local/unsloth/Qwen3-8B-GGUF",
+    "models": [
+      "local/unsloth/Qwen3-8B-GGUF"
+    ],
+    "project": null,
+    "tokens": 330,
+    "tool": "unsloth"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 1500,
+      "cacheWrite": 0,
+      "input": 500,
+      "output": 200,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "B",
+    "lastUsedAt": "2026-10-22T09:01:11.000Z",
+    "model": "local/unsloth/Qwen3-8B-GGUF",
+    "models": [
+      "local/unsloth/Qwen3-8B-GGUF"
+    ],
+    "project": null,
+    "tokens": 2200,
+    "tool": "unsloth"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 600,
+      "cacheWrite": 0,
+      "input": 400,
+      "output": 100,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "A",
+    "lastUsedAt": "2026-10-22T09:00:02.000Z",
+    "model": "local/unsloth/Qwen3-8B-GGUF",
+    "models": [
+      "local/unsloth/Qwen3-8B-GGUF"
+    ],
+    "project": null,
+    "tokens": 1100,
+    "tool": "unsloth"
+  }
+]

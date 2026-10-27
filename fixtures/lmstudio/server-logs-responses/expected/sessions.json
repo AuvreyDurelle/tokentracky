@@ -1,0 +1,41 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 1500,
+      "cacheWrite": 0,
+      "input": 900,
+      "output": 400,
+      "reasoning": 120
+    },
+    "costMicrousd": null,
+    "id": "2026-10-21.1",
+    "lastUsedAt": "2026-10-21T09:00:00.000Z",
+    "model": "lmstudio-community/llama-3.2-3b-instruct",
+    "models": [
+      "qwen2.5-7b-instruct",
+      "lmstudio-community/llama-3.2-3b-instruct"
+    ],
+    "project": null,
+    "tokens": 2800,
+    "tool": "lmstudio"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 1276,
+      "cacheWrite": 0,
+      "input": 17,
+      "output": 42,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "2026-10-20.1",
+    "lastUsedAt": "2026-10-20T10:02:00.000Z",
+    "model": "google/gemma-3-12b",
+    "models": [
+      "google/gemma-3-12b"
+    ],
+    "project": null,
+    "tokens": 1335,
+    "tool": "lmstudio"
+  }
+]

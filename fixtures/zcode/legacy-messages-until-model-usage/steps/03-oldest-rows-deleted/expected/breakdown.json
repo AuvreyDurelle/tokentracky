@@ -1,0 +1,72 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 1500,
+      "cacheWrite": 0,
+      "input": 500,
+      "output": 300,
+      "reasoning": 100
+    },
+    "costMicrousd": null,
+    "day": "2026-08-03",
+    "model": "glm-4.5",
+    "tokens": 2300,
+    "tool": "zcode"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 400,
+      "output": 100,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-08-03",
+    "model": "mimo-v2.5-pro",
+    "tokens": 500,
+    "tool": "zcode"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 50,
+      "output": 10,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-09-01",
+    "model": "glm-4.5",
+    "tokens": 60,
+    "tool": "zcode"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 600,
+      "cacheWrite": 0,
+      "input": 400,
+      "output": 200,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-09-01",
+    "model": "glm-4.6",
+    "tokens": 1200,
+    "tool": "zcode"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 500,
+      "output": 100,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-22",
+    "model": "glm-4.6",
+    "tokens": 600,
+    "tool": "zcode"
+  }
+]

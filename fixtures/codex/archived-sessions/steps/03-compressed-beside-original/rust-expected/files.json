@@ -1,0 +1,16 @@
+{
+  "codex:archived_sessions/rollout-2026-10-20T09-00-00-old.jsonl.zst": {
+    "diagnostics": []
+  },
+  "codex:archived_sessions/rollout-2026-10-20T10-00-00-live.jsonl": {
+    "diagnostics": [],
+    "offset": 995
+  },
+  "codex:archived_sessions/rollout-2026-10-20T10-00-00-live.jsonl.zst": {
+    "diagnostics": []
+  },
+  "codex:sessions/2026/10/20/rollout-2026-10-20T10-00-00-live.jsonl": {
+    "diagnostics": [],
+    "offset": 995
+  }
+}

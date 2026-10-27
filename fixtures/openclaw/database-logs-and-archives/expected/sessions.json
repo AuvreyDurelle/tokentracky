@@ -1,0 +1,60 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 500,
+      "output": 100,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "019a0b00-0000-7000-8000-000000000003",
+    "lastUsedAt": "2026-10-22T11:00:00.000Z",
+    "model": "claude-haiku-4-5",
+    "models": [
+      "claude-haiku-4-5"
+    ],
+    "project": null,
+    "tokens": 600,
+    "tool": "openclaw"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 11000,
+      "cacheWrite": 1200,
+      "input": 1060,
+      "output": 610,
+      "reasoning": 100
+    },
+    "costMicrousd": null,
+    "id": "019a0b00-0000-7000-8000-000000000001",
+    "lastUsedAt": "2026-10-22T09:20:00.000Z",
+    "model": "claude-sonnet-4-6",
+    "models": [
+      "claude-sonnet-4-6",
+      "gpt-5.6-terra"
+    ],
+    "project": null,
+    "tokens": 13870,
+    "tool": "openclaw"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 7,
+      "output": 3,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "019a0b00-0000-7000-8000-000000000004",
+    "lastUsedAt": "2026-10-21T08:00:00.000Z",
+    "model": "unknown",
+    "models": [
+      "unknown"
+    ],
+    "project": null,
+    "tokens": 10,
+    "tool": "openclaw"
+  }
+]

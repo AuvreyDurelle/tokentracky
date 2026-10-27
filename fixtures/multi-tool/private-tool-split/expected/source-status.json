@@ -1,0 +1,43 @@
+{
+  "lastScanAt": "2026-10-23T12:00:00.000Z",
+  "sources": [
+    {
+      "capabilities": {
+        "costs": false,
+        "models": true,
+        "projects": true,
+        "quotas": false,
+        "tokens": true
+      },
+      "enabled": true,
+      "eventCount": 1,
+      "id": "claude",
+      "lastImportedAt": "2026-10-23T12:00:00.000Z",
+      "message": "Authorized logs are current.",
+      "name": "Claude Code",
+      "paths": [
+        "claude"
+      ],
+      "state": "current"
+    },
+    {
+      "capabilities": {
+        "costs": false,
+        "models": true,
+        "projects": true,
+        "quotas": false,
+        "tokens": true
+      },
+      "enabled": true,
+      "eventCount": 1,
+      "id": "codex",
+      "lastImportedAt": "2026-10-23T12:00:00.000Z",
+      "message": "Authorized logs are current.",
+      "name": "Codex",
+      "paths": [
+        "codex"
+      ],
+      "state": "current"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "gemini:fd2bbff707af248ca405a922348fd6a37d0b13f496cb725eb10ee1a9fbf76846",
+    "model": "gemini-3-pro",
+    "occurredAt": "2026-10-23T09:00:03.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "abcd1234-0000-4000-8000-000000000001",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 1,
+      "output": 1,
+      "reasoning": 0
+    },
+    "tool": "gemini"
+  }
+]

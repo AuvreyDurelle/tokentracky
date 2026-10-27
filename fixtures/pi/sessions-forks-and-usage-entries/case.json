@@ -1,0 +1,4 @@
+{
+  "description": "Assistant messages and cache-warm usage entries count with disjoint caches and reasoning inside output, a total above the four counts is accepted, a forked session's copied entries count once, a colliding 8-character id at another time counts again, compaction usage and zero usage add nothing, and a message without a model is unknown.",
+  "rustOnly": true
+}

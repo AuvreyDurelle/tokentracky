@@ -1,0 +1,6 @@
+{
+  "description": "Working folders come from the v1 row and the OpenCode 2 session; error messages, titles and parent ids in the rows are not kept.",
+  "forbidden": [
+    "msg_00USER"
+  ]
+}

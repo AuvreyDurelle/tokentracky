@@ -1,0 +1,58 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 7,
+      "output": 3,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-21",
+    "model": "unknown",
+    "tokens": 10,
+    "tool": "openclaw"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 500,
+      "output": 100,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-22",
+    "model": "claude-haiku-4-5",
+    "tokens": 600,
+    "tool": "openclaw"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 8000,
+      "cacheWrite": 1200,
+      "input": 60,
+      "output": 360,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-22",
+    "model": "claude-sonnet-4-6",
+    "tokens": 9620,
+    "tool": "openclaw"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 3000,
+      "cacheWrite": 0,
+      "input": 1000,
+      "output": 250,
+      "reasoning": 100
+    },
+    "costMicrousd": null,
+    "day": "2026-10-22",
+    "model": "gpt-5.6-terra",
+    "tokens": 4250,
+    "tool": "openclaw"
+  }
+]

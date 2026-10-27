@@ -1,0 +1,4 @@
+"tool","model","timestamp","project","session","input","output","cache_read","cache_write","reasoning","total","cost_microusd"
+"cline","claude-sonnet-4-6","2026-10-23T09:00:01.000Z","","t1","400","200","1000","100","0","1700",""
+"cline","claude-sonnet-4-6","2026-10-23T09:00:05.000Z","/synthetic/cline-project","agent_1","20","5","0","0","0","25",""
+"cline","claude-sonnet-4-6","2026-10-23T09:00:05.000Z","/synthetic/cline-project","s_test","400","250","1000","100","50","1750",""

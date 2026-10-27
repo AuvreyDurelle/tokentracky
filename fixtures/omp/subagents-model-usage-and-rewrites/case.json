@@ -1,0 +1,4 @@
+{
+  "description": "After a fixed-width title slot, assistant messages count with reasoningTokens inside output and orchestration tokens only in the total, model_usage records count, a task result's copy of child usage does not, and a nested subagent session counts on its own; then a title rewrite in place and a discarded message keep the usage seen, and a move to a sibling session counts the copied entries once.",
+  "rustOnly": true
+}

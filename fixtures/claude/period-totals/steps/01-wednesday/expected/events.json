@@ -1,0 +1,92 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "claude:27873558b00fcb843b8cceb87f362703c96dcae53798fc4dca18d8dfc5d9c3b8",
+    "model": "claude-sonnet-4-6",
+    "occurredAt": null,
+    "pricingVersion": null,
+    "project": "/synthetic/private-project",
+    "sessionId": "claude-session",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 5,
+      "output": 0,
+      "reasoning": 0
+    },
+    "tool": "claude"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "claude:6df37daaa46ce714fa410768b63f415dfad094df33eb34ac1af332074fd15a1c",
+    "model": "claude-sonnet-4-6",
+    "occurredAt": "2026-10-19T23:00:00.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/private-project",
+    "sessionId": "claude-session",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 100,
+      "output": 0,
+      "reasoning": 0
+    },
+    "tool": "claude"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "claude:a5c7d1719e284f2c9485405d44f62d152cde9e6ede83e1a79a2442b65f6a8735",
+    "model": "claude-sonnet-4-6",
+    "occurredAt": "2026-10-02T00:00:00.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/private-project",
+    "sessionId": "claude-session",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 10,
+      "output": 0,
+      "reasoning": 0
+    },
+    "tool": "claude"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "claude:da925a30e31f7fdaa7044e3e5ba4ae17670de82d677b0e7adf5700428a137a36",
+    "model": "claude-sonnet-4-6",
+    "occurredAt": "2026-09-30T23:59:59.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/private-project",
+    "sessionId": "claude-session",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 1,
+      "output": 0,
+      "reasoning": 0
+    },
+    "tool": "claude"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "claude:e0f4f767ac88a9303e7317843ac20be980665a36f52397e5b26d4cc2bf54011d",
+    "model": "claude-sonnet-4-6",
+    "occurredAt": "2026-10-21T08:00:00.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/private-project",
+    "sessionId": "claude-session",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 1000,
+      "output": 0,
+      "reasoning": 0
+    },
+    "tool": "claude"
+  }
+]

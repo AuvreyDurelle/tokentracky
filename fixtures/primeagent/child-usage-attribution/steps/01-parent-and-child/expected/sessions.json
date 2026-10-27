@@ -1,0 +1,40 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 300,
+      "input": 60,
+      "output": 40,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "0199f031-0000-7000-8000-000000000031",
+    "lastUsedAt": "2026-10-22T09:00:20.000Z",
+    "model": "claude-haiku-4-5",
+    "models": [
+      "claude-haiku-4-5"
+    ],
+    "project": "/synthetic/epsilon",
+    "tokens": 400,
+    "tool": "primeagent"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 900,
+      "cacheWrite": 150,
+      "input": 100,
+      "output": 50,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "0199f030-0000-7000-8000-000000000030",
+    "lastUsedAt": "2026-10-22T09:00:05.000Z",
+    "model": "claude-sonnet-4-6",
+    "models": [
+      "claude-sonnet-4-6"
+    ],
+    "project": "/synthetic/epsilon",
+    "tokens": 1200,
+    "tool": "primeagent"
+  }
+]

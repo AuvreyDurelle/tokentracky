@@ -1,0 +1,105 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "pi:26b2804bf6fb5fc8fe9a926421ec77b180e9523e6ee73ba2dddf0b42817d7c46",
+    "model": "claude-sonnet-4-6",
+    "occurredAt": "2026-10-20T10:04:00.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/alpha",
+    "sessionId": "0199f001-0000-7000-8000-000000000001",
+    "tokens": {
+      "cacheRead": 1320,
+      "cacheWrite": 0,
+      "input": 3,
+      "output": 1,
+      "reasoning": 0
+    },
+    "tool": "pi"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "pi:515d33e0e54c143a555f42af3c77f270ef5637fae83364ecbe6326a757273ea0",
+    "model": "unknown",
+    "occurredAt": "2026-10-21T09:00:20.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/beta",
+    "sessionId": "0199f003-0000-7000-8000-000000000003",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 5,
+      "output": 5,
+      "reasoning": 0
+    },
+    "tool": "pi"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "pi:632810c8be5bc867e6b5f8166d00357055ba35e43a38f57ea3ec3aca4dd42997",
+    "model": "claude-sonnet-4-6",
+    "occurredAt": "2026-10-21T08:00:10.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/alpha",
+    "sessionId": "0199f002-0000-7000-8000-000000000002",
+    "tokens": {
+      "cacheRead": 1400,
+      "cacheWrite": 60,
+      "input": 50,
+      "output": 25,
+      "reasoning": 0
+    },
+    "tool": "pi"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "pi:6bae0f35cc92332669df80598795f7830e081c6c9140b14107b266bf1061cad5",
+    "model": "gemini-2.5-pro",
+    "occurredAt": "2026-10-20T10:00:09.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/alpha",
+    "sessionId": "0199f002-0000-7000-8000-000000000002",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 300,
+      "output": 150,
+      "reasoning": 100
+    },
+    "tool": "pi"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "pi:bd051d3048e32c90f335e8d69357136be4790560f62a31fb7559bbda78b1f101",
+    "model": "glm-4.6",
+    "occurredAt": "2026-10-21T09:00:05.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/beta",
+    "sessionId": "0199f003-0000-7000-8000-000000000003",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 40,
+      "output": 10,
+      "reasoning": 0
+    },
+    "tool": "pi"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "pi:eff241685f130174b1ea2fc304dbfe3b00d1a0e7848adbfe2c040cf81c26b660",
+    "model": "claude-sonnet-4-6",
+    "occurredAt": "2026-10-20T10:00:05.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/alpha",
+    "sessionId": "0199f002-0000-7000-8000-000000000002",
+    "tokens": {
+      "cacheRead": 1000,
+      "cacheWrite": 200,
+      "cacheWrite1h": 200,
+      "input": 120,
+      "output": 80,
+      "reasoning": 30
+    },
+    "tool": "pi"
+  }
+]

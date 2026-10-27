@@ -1,0 +1,322 @@
+{
+  "tools=off,cost=off,models=off,history=2026-10-21": [],
+  "tools=off,cost=off,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 15800,
+        "cacheWrite": 1250,
+        "input": 1150,
+        "output": 575,
+        "reasoning": 120
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "revision": 32,
+      "tokens": 18775,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=on,history=2026-10-21": [],
+  "tools=off,cost=off,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 600,
+        "input": 400,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "claude-haiku-4-5",
+      "revision": 9,
+      "tokens": 1100,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 13800,
+        "cacheWrite": 650,
+        "input": 50,
+        "output": 155,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "claude-opus-4-6",
+      "revision": 33,
+      "tokens": 14655,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 200,
+        "output": 20,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "gpt-5-mini",
+      "revision": 8,
+      "tokens": 220,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 2000,
+        "cacheWrite": 0,
+        "input": 500,
+        "output": 300,
+        "reasoning": 120
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "gpt-5.1-codex",
+      "revision": 7,
+      "tokens": 2800,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=off,history=2026-10-21": [],
+  "tools=off,cost=on,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 15800,
+        "cacheWrite": 1250,
+        "input": 1150,
+        "output": 575,
+        "reasoning": 120
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "revision": 34,
+      "tokens": 18775,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=on,history=2026-10-21": [],
+  "tools=off,cost=on,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 600,
+        "input": 400,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "claude-haiku-4-5",
+      "revision": 14,
+      "tokens": 1100,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 13800,
+        "cacheWrite": 650,
+        "input": 50,
+        "output": 155,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "claude-opus-4-6",
+      "revision": 35,
+      "tokens": 14655,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 200,
+        "output": 20,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "gpt-5-mini",
+      "revision": 13,
+      "tokens": 220,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 2000,
+        "cacheWrite": 0,
+        "input": 500,
+        "output": 300,
+        "reasoning": 120
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "gpt-5.1-codex",
+      "revision": 12,
+      "tokens": 2800,
+      "tool": "all"
+    }
+  ],
+  "tools=on,cost=off,models=off,history=2026-10-21": [],
+  "tools=on,cost=off,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 15800,
+        "cacheWrite": 1250,
+        "input": 1150,
+        "output": 575,
+        "reasoning": 120
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "revision": 36,
+      "tokens": 18775,
+      "tool": "omp"
+    }
+  ],
+  "tools=on,cost=off,models=on,history=2026-10-21": [],
+  "tools=on,cost=off,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 600,
+        "input": 400,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "claude-haiku-4-5",
+      "revision": 19,
+      "tokens": 1100,
+      "tool": "omp"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 13800,
+        "cacheWrite": 650,
+        "input": 50,
+        "output": 155,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "claude-opus-4-6",
+      "revision": 37,
+      "tokens": 14655,
+      "tool": "omp"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 200,
+        "output": 20,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "gpt-5-mini",
+      "revision": 18,
+      "tokens": 220,
+      "tool": "omp"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 2000,
+        "cacheWrite": 0,
+        "input": 500,
+        "output": 300,
+        "reasoning": 120
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "gpt-5.1-codex",
+      "revision": 17,
+      "tokens": 2800,
+      "tool": "omp"
+    }
+  ],
+  "tools=on,cost=on,models=off,history=2026-10-21": [],
+  "tools=on,cost=on,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 15800,
+        "cacheWrite": 1250,
+        "input": 1150,
+        "output": 575,
+        "reasoning": 120
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "revision": 38,
+      "tokens": 18775,
+      "tool": "omp"
+    }
+  ],
+  "tools=on,cost=on,models=on,history=2026-10-21": [],
+  "tools=on,cost=on,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 600,
+        "input": 400,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "claude-haiku-4-5",
+      "revision": 24,
+      "tokens": 1100,
+      "tool": "omp"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 13800,
+        "cacheWrite": 650,
+        "input": 50,
+        "output": 155,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "claude-opus-4-6",
+      "revision": 39,
+      "tokens": 14655,
+      "tool": "omp"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 200,
+        "output": 20,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "gpt-5-mini",
+      "revision": 23,
+      "tokens": 220,
+      "tool": "omp"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 2000,
+        "cacheWrite": 0,
+        "input": 500,
+        "output": 300,
+        "reasoning": 120
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "gpt-5.1-codex",
+      "revision": 22,
+      "tokens": 2800,
+      "tool": "omp"
+    }
+  ]
+}

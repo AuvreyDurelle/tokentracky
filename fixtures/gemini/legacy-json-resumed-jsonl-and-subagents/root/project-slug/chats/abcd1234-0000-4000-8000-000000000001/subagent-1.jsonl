@@ -1,0 +1,2 @@
+{"sessionId":"subagent-1","projectHash":"0000000000000000000000000000000000000000000000000000000000000000","startTime":"2026-10-23T09:00:00.000Z","lastUpdated":"2026-10-23T09:00:00.000Z","directories":["/PRIVATE_PATH_MARKER"]}
+{"id":"s-1","timestamp":"2026-10-23T09:00:03.000Z","type":"gemini","content":"PRIVATE_RESPONSE_MARKER","thoughts":[],"model":"gemini-3-pro","tokens":{"input":7,"output":3,"cached":0,"total":10}}

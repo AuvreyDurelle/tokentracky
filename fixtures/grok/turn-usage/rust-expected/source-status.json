@@ -1,0 +1,24 @@
+{
+  "lastScanAt": "2026-10-23T12:00:00.000Z",
+  "sources": [
+    {
+      "capabilities": {
+        "costs": true,
+        "models": true,
+        "projects": true,
+        "quotas": false,
+        "tokens": true
+      },
+      "enabled": true,
+      "eventCount": 5,
+      "id": "grok",
+      "lastImportedAt": "2026-10-23T12:00:00.000Z",
+      "message": "Authorized logs are current.",
+      "name": "Grok Build",
+      "paths": [
+        "."
+      ],
+      "state": "current"
+    }
+  ]
+}

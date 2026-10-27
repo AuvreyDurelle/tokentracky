@@ -1,0 +1,2 @@
+"tool","model","timestamp","project","session","input","output","cache_read","cache_write","reasoning","total","cost_microusd"
+"codex","gpt-5-codex","2026-10-20T10:01:00.000Z","/synthetic/codex-project","cache-writes","400","50","600","0","10","1050",""

@@ -1,0 +1,7 @@
+{
+  "zcode:db.sqlite": {
+    "diagnostics": [
+      "invalid_counters"
+    ]
+  }
+}

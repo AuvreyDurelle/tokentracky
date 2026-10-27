@@ -1,0 +1,3 @@
+{
+  "description": "Once kilo.db exists the version 5 tasks it imported are withdrawn (their checkpoint disappears) instead of being counted twice."
+}

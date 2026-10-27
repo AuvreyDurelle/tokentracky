@@ -1,0 +1,4 @@
+{
+  "description": "Usage stays counted when a resume or compaction rewrites a log without its older entries, and a fork's copy of entries under a new session header counts once; only new entries add.",
+  "rustOnly": true
+}

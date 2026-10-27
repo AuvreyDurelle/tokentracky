@@ -1,0 +1,3 @@
+{
+  "description": "Rate-limit snapshots on token_count records, one with null info and one of another limit family, add no tokens; their credits, plan and limit names are never kept."
+}

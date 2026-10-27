@@ -1,0 +1,41 @@
+[package]
+name = "tokentracky-cli"
+description = "The tokentracky command line: serve, status, refresh, doctor, login, unlink, uninstall"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[lib]
+name = "tokentracky_cli"
+
+[[bin]]
+name = "tokentracky"
+path = "src/main.rs"
+
+[features]
+# Default debug builds stay Rust-only. Distribution builds require the Vite build first.
+embed-web = ["dep:tempfile"]
+
+[dependencies]
+tokentracky-core = { path = "../core" }
+tokentracky-collector = { path = "../collector" }
+tokentracky-pricing = { path = "../pricing" }
+tokentracky-local-api = { path = "../local-api" }
+tokentracky-secrets = { path = "../secrets" }
+clap = { workspace = true }
+jiff = { workspace = true }
+tokio = { workspace = true, features = ["signal"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+time = { workspace = true, features = ["formatting", "parsing", "local-offset"] }
+libc = { workspace = true }
+tempfile = { workspace = true, optional = true }
+
+[dev-dependencies]
+axum = { workspace = true }
+tempfile = { workspace = true }
+tokio = { workspace = true, features = ["net"] }
+
+[lints]
+workspace = true

@@ -1,0 +1,3 @@
+{
+  "description": "Sessions imported from other tools skip usage up to the import time (epoch or ISO), and are skipped wholly when the import time is unknown."
+}

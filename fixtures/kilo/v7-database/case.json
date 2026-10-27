@@ -1,0 +1,8 @@
+{
+  "description": "A version 7 kilo.db is read under the Kilo Code tool, not OpenCode: model, working folder and disjoint token kinds from the message row.",
+  "sources": {
+    "kilo": [
+      "kilo.db"
+    ]
+  }
+}

@@ -1,0 +1,502 @@
+{
+  "tools=off,cost=off,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 4500,
+        "cacheWrite": 500,
+        "input": 2000,
+        "output": 500,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "revision": 4,
+      "tokens": 7500,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 6000,
+        "cacheWrite": 1000,
+        "input": 3000,
+        "output": 1000,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "revision": 6,
+      "tokens": 11000,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 4500,
+        "cacheWrite": 500,
+        "input": 2000,
+        "output": 500,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "revision": 5,
+      "tokens": 7500,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 1500,
+        "cacheWrite": 0,
+        "input": 500,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-haiku-4-5",
+      "revision": 8,
+      "tokens": 2100,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 3000,
+        "cacheWrite": 500,
+        "input": 1500,
+        "output": 400,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-sonnet-4-6",
+      "revision": 7,
+      "tokens": 5400,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 6000,
+        "cacheWrite": 1000,
+        "input": 3000,
+        "output": 1000,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "gpt-5.6-terra",
+      "revision": 11,
+      "tokens": 11000,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 1500,
+        "cacheWrite": 0,
+        "input": 500,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-haiku-4-5",
+      "revision": 10,
+      "tokens": 2100,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 3000,
+        "cacheWrite": 500,
+        "input": 1500,
+        "output": 400,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-sonnet-4-6",
+      "revision": 9,
+      "tokens": 5400,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 4500,
+        "cacheWrite": 500,
+        "input": 2000,
+        "output": 500,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "revision": 12,
+      "tokens": 7500,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 6000,
+        "cacheWrite": 1000,
+        "input": 3000,
+        "output": 1000,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "revision": 14,
+      "tokens": 11000,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 4500,
+        "cacheWrite": 500,
+        "input": 2000,
+        "output": 500,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "revision": 13,
+      "tokens": 7500,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 1500,
+        "cacheWrite": 0,
+        "input": 500,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-haiku-4-5",
+      "revision": 16,
+      "tokens": 2100,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 3000,
+        "cacheWrite": 500,
+        "input": 1500,
+        "output": 400,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-sonnet-4-6",
+      "revision": 15,
+      "tokens": 5400,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 6000,
+        "cacheWrite": 1000,
+        "input": 3000,
+        "output": 1000,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "gpt-5.6-terra",
+      "revision": 19,
+      "tokens": 11000,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 1500,
+        "cacheWrite": 0,
+        "input": 500,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-haiku-4-5",
+      "revision": 18,
+      "tokens": 2100,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 3000,
+        "cacheWrite": 500,
+        "input": 1500,
+        "output": 400,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-sonnet-4-6",
+      "revision": 17,
+      "tokens": 5400,
+      "tool": "all"
+    }
+  ],
+  "tools=on,cost=off,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 4500,
+        "cacheWrite": 500,
+        "input": 2000,
+        "output": 500,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "revision": 20,
+      "tokens": 7500,
+      "tool": "goose"
+    }
+  ],
+  "tools=on,cost=off,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 6000,
+        "cacheWrite": 1000,
+        "input": 3000,
+        "output": 1000,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "revision": 22,
+      "tokens": 11000,
+      "tool": "goose"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 4500,
+        "cacheWrite": 500,
+        "input": 2000,
+        "output": 500,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "revision": 21,
+      "tokens": 7500,
+      "tool": "goose"
+    }
+  ],
+  "tools=on,cost=off,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 1500,
+        "cacheWrite": 0,
+        "input": 500,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-haiku-4-5",
+      "revision": 24,
+      "tokens": 2100,
+      "tool": "goose"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 3000,
+        "cacheWrite": 500,
+        "input": 1500,
+        "output": 400,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-sonnet-4-6",
+      "revision": 23,
+      "tokens": 5400,
+      "tool": "goose"
+    }
+  ],
+  "tools=on,cost=off,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 6000,
+        "cacheWrite": 1000,
+        "input": 3000,
+        "output": 1000,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "gpt-5.6-terra",
+      "revision": 27,
+      "tokens": 11000,
+      "tool": "goose"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 1500,
+        "cacheWrite": 0,
+        "input": 500,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-haiku-4-5",
+      "revision": 26,
+      "tokens": 2100,
+      "tool": "goose"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 3000,
+        "cacheWrite": 500,
+        "input": 1500,
+        "output": 400,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-sonnet-4-6",
+      "revision": 25,
+      "tokens": 5400,
+      "tool": "goose"
+    }
+  ],
+  "tools=on,cost=on,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 4500,
+        "cacheWrite": 500,
+        "input": 2000,
+        "output": 500,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "revision": 28,
+      "tokens": 7500,
+      "tool": "goose"
+    }
+  ],
+  "tools=on,cost=on,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 6000,
+        "cacheWrite": 1000,
+        "input": 3000,
+        "output": 1000,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "revision": 30,
+      "tokens": 11000,
+      "tool": "goose"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 4500,
+        "cacheWrite": 500,
+        "input": 2000,
+        "output": 500,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "revision": 29,
+      "tokens": 7500,
+      "tool": "goose"
+    }
+  ],
+  "tools=on,cost=on,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 1500,
+        "cacheWrite": 0,
+        "input": 500,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-haiku-4-5",
+      "revision": 32,
+      "tokens": 2100,
+      "tool": "goose"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 3000,
+        "cacheWrite": 500,
+        "input": 1500,
+        "output": 400,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-sonnet-4-6",
+      "revision": 31,
+      "tokens": 5400,
+      "tool": "goose"
+    }
+  ],
+  "tools=on,cost=on,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 6000,
+        "cacheWrite": 1000,
+        "input": 3000,
+        "output": 1000,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "gpt-5.6-terra",
+      "revision": 35,
+      "tokens": 11000,
+      "tool": "goose"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 1500,
+        "cacheWrite": 0,
+        "input": 500,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-haiku-4-5",
+      "revision": 34,
+      "tokens": 2100,
+      "tool": "goose"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 3000,
+        "cacheWrite": 500,
+        "input": 1500,
+        "output": 400,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-sonnet-4-6",
+      "revision": 33,
+      "tokens": 5400,
+      "tool": "goose"
+    }
+  ]
+}

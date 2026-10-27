@@ -1,0 +1,41 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 12000,
+      "cacheWrite": 1500,
+      "input": 1500,
+      "output": 1200,
+      "reasoning": 350
+    },
+    "costMicrousd": null,
+    "id": "copilot-session-1",
+    "lastUsedAt": "2026-10-20T10:05:00.000Z",
+    "model": "gpt-5",
+    "models": [
+      "claude-sonnet-4.5",
+      "gpt-5"
+    ],
+    "project": null,
+    "tokens": 16200,
+    "tool": "copilot"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 600,
+      "output": 50,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "copilot-session-2",
+    "lastUsedAt": null,
+    "model": "claude-haiku-4.5",
+    "models": [
+      "claude-haiku-4.5"
+    ],
+    "project": null,
+    "tokens": 650,
+    "tool": "copilot"
+  }
+]

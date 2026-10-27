@@ -1,0 +1,69 @@
+{
+  "activity": {
+    "activeDays": 1,
+    "averagePerActiveDay": 1200,
+    "bestDay": {
+      "day": "2026-10-23",
+      "tokens": 1200
+    },
+    "currentStreak": 1,
+    "longestStreak": 1
+  },
+  "breakdown": {
+    "cacheRead": 100,
+    "cacheWrite": 0,
+    "input": 700,
+    "output": 400,
+    "reasoning": 100
+  },
+  "byModel": [
+    {
+      "breakdown": {
+        "cacheRead": 100,
+        "cacheWrite": 0,
+        "input": 700,
+        "output": 400,
+        "reasoning": 100
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "mimo-v2.5-pro",
+      "tokens": 1200
+    }
+  ],
+  "byTool": [
+    {
+      "breakdown": {
+        "cacheRead": 100,
+        "cacheWrite": 0,
+        "input": 700,
+        "output": 400,
+        "reasoning": 100
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "tokens": 1200,
+      "tool": "mimo"
+    }
+  ],
+  "cacheRate": 0.125,
+  "costMicrousd": null,
+  "costParts": null,
+  "daily": [
+    {
+      "breakdown": {
+        "cacheRead": 100,
+        "cacheWrite": 0,
+        "input": 700,
+        "output": 400,
+        "reasoning": 100
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "day": "2026-10-23",
+      "tokens": 1200
+    }
+  ],
+  "sessions": 1,
+  "tokens": 1200
+}

@@ -1,0 +1,3 @@
+{
+  "description": "A legacy session-*.json conversation gives the same event identity as its .jsonl form; a .json outside a chats folder is never opened."
+}

@@ -1,0 +1,7 @@
+{
+  "kilo:kilo.db": {
+    "diagnostics": [
+      "kilo_history_local_only"
+    ]
+  }
+}

@@ -1,0 +1,19 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "everycode:9bf61e7be26d7215ff13691770549035e12efeb9c8a33fe35e237533d74e9b31",
+    "model": "unknown",
+    "occurredAt": "2026-10-21T08:00:10.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/every-code",
+    "sessionId": "every-session-2",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 500,
+      "output": 50,
+      "reasoning": 0
+    },
+    "tool": "everycode"
+  }
+]

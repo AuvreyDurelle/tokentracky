@@ -1,0 +1,4 @@
+"tool","model","timestamp","project","session","input","output","cache_read","cache_write","reasoning","total","cost_microusd"
+"commandcode","deepseek-v4-flash","2026-10-20T09:00:05.000Z","/synthetic/command-code","cc-session-1","500","800","10000","1500","0","12800",""
+"commandcode","claude-sonnet-4-6","2026-10-20T09:01:00.000Z","/synthetic/command-code","cc-session-1","200","200","0","2800","0","3200",""
+"commandcode","unknown","2026-10-20T09:02:00.000Z","/synthetic/command-code","cc-session-1","100","10","0","0","0","110",""

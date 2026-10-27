@@ -1,0 +1,108 @@
+{
+  "activity": {
+    "activeDays": 1,
+    "averagePerActiveDay": 18775,
+    "bestDay": {
+      "day": "2026-10-20",
+      "tokens": 18775
+    },
+    "currentStreak": 0,
+    "longestStreak": 1
+  },
+  "breakdown": {
+    "cacheRead": 15800,
+    "cacheWrite": 1250,
+    "input": 1150,
+    "output": 575,
+    "reasoning": 120
+  },
+  "byModel": [
+    {
+      "breakdown": {
+        "cacheRead": 2000,
+        "cacheWrite": 0,
+        "input": 500,
+        "output": 300,
+        "reasoning": 120
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "gpt-5.1-codex",
+      "tokens": 2800
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 200,
+        "output": 20,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "gpt-5-mini",
+      "tokens": 220
+    },
+    {
+      "breakdown": {
+        "cacheRead": 13800,
+        "cacheWrite": 650,
+        "input": 50,
+        "output": 155,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "claude-opus-4-6",
+      "tokens": 14655
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 600,
+        "input": 400,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "claude-haiku-4-5",
+      "tokens": 1100
+    }
+  ],
+  "byTool": [
+    {
+      "breakdown": {
+        "cacheRead": 15800,
+        "cacheWrite": 1250,
+        "input": 1150,
+        "output": 575,
+        "reasoning": 120
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "tokens": 18775,
+      "tool": "omp"
+    }
+  ],
+  "cacheRate": 0.8681318681318682,
+  "costMicrousd": null,
+  "costParts": null,
+  "daily": [
+    {
+      "breakdown": {
+        "cacheRead": 15800,
+        "cacheWrite": 1250,
+        "input": 1150,
+        "output": 575,
+        "reasoning": 120
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "day": "2026-10-20",
+      "tokens": 18775
+    }
+  ],
+  "sessions": 3,
+  "tokens": 18775
+}

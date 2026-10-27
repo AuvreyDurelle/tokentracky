@@ -1,0 +1,73 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 2320,
+      "cacheWrite": 200,
+      "cacheWrite1h": 200,
+      "input": 123,
+      "output": 81,
+      "reasoning": 30
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": "claude-sonnet-4-6",
+    "tokens": 2724,
+    "tool": "pi"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 300,
+      "output": 150,
+      "reasoning": 100
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": "gemini-2.5-pro",
+    "tokens": 450,
+    "tool": "pi"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 1400,
+      "cacheWrite": 60,
+      "input": 50,
+      "output": 25,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-21",
+    "model": "claude-sonnet-4-6",
+    "tokens": 1535,
+    "tool": "pi"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 40,
+      "output": 10,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-21",
+    "model": "glm-4.6",
+    "tokens": 50,
+    "tool": "pi"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 5,
+      "output": 5,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-21",
+    "model": "unknown",
+    "tokens": 10,
+    "tool": "pi"
+  }
+]

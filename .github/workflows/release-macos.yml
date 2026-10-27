@@ -1,0 +1,174 @@
+name: macOS release
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Version tag to package (for example v0.1.0)'
+        required: true
+        type: string
+      signing:
+        description: 'adhoc (no Apple account; users click Open Anyway once) or developer-id (notarized)'
+        required: true
+        type: choice
+        options: [adhoc, developer-id]
+      publish:
+        description: 'Publish after the checks (false keeps the complete release as a draft)'
+        required: false
+        type: boolean
+        default: true
+
+# Builds into a GitHub draft and checks every asset arrived intact. Unless publish is false, it
+# then marks the release live and latest. Drafts are never "latest", so the website download
+# (releases/latest/download/Tokentracky.dmg) and the updater feed keep the previous release
+# until this one is complete.
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  release-macos:
+    runs-on: macos-14
+    environment: macos-release
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+          cache: npm
+          registry-url: 'https://registry.npmjs.org'
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: '1.99.0'
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@bc2d2e71bd35c5549942babaa51a89c586b981d1 # v2.8.1
+      - run: npm ci
+      - run: node --test scripts/macos-release*.test.mjs packaging/test/*.test.mjs
+      - run: npm run test:harness --prefix packaging
+      - run: brew install minisign
+      - run: npm run build --workspace=@tokentracky/web
+      - run: cargo fmt --all --check
+      - run: cargo clippy -p tokentracky-mac --all-targets -- -D warnings
+      - run: cargo test -p tokentracky-mac
+        env:
+          TOKENTRACKY_TS_OUT: ${{ runner.temp }}/generated-types
+      # Pinning the CLI gives deterministic updater artifact/signature behavior for this pipeline.
+      - run: cargo install tauri-cli --version 2.11.5 --locked
+      - name: Build, sign, notarize (Developer ID only), staple and inventory the candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TOKENTRACKY_SIGNING: ${{ inputs.signing }}
+          # Apple material reaches the script only for a Developer ID build.
+          APPLE_CERTIFICATE_BASE64: ${{ inputs.signing == 'developer-id' && secrets.APPLE_CERTIFICATE_BASE64 || '' }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ inputs.signing == 'developer-id' && secrets.APPLE_CERTIFICATE_PASSWORD || '' }}
+          APPLE_SIGNING_IDENTITY: ${{ inputs.signing == 'developer-id' && vars.APPLE_SIGNING_IDENTITY || '' }}
+          APPLE_API_KEY_ID: ${{ inputs.signing == 'developer-id' && secrets.APPLE_API_KEY_ID || '' }}
+          APPLE_API_ISSUER: ${{ inputs.signing == 'developer-id' && secrets.APPLE_API_ISSUER || '' }}
+          APPLE_API_PRIVATE_KEY_BASE64: ${{ inputs.signing == 'developer-id' && secrets.APPLE_API_PRIVATE_KEY_BASE64 || '' }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          TOKENTRACKY_UPDATER_PUBLIC_KEY: ${{ vars.TOKENTRACKY_UPDATER_PUBLIC_KEY }}
+          TOKENTRACKY_UPDATER_ENDPOINT: ${{ vars.TOKENTRACKY_UPDATER_ENDPOINT }}
+          TOKENTRACKY_UPDATER_CHANNEL: ${{ vars.TOKENTRACKY_UPDATER_CHANNEL }}
+          # Every release's assets live under its own tag; the feed points the updater there.
+          TOKENTRACKY_RELEASE_BASE_URL: https://github.com/AuvreyDurelle/tokentracky/releases/download/${{ inputs.ref }}
+          GITHUB_REF_NAME: ${{ inputs.ref }}
+        run: bash scripts/prepare-macos-release.sh
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: macos-release-candidate
+          path: dist/macos-release
+          if-no-files-found: error
+      - name: Create the draft with every public asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SIGNING: ${{ inputs.signing }}
+        run: |
+          set -euo pipefail
+          version=$(node -p "require('./package.json').version")
+          # The candidate folder stays as evidence; the release gets its top-level files, plus a
+          # fixed-name DMG for the website's latest link and checksums of exactly what is uploaded.
+          mkdir dist/public
+          find dist/macos-release -maxdepth 1 -type f ! -name SHA256SUMS -exec cp {} dist/public/ \;
+          cp "dist/public/tokentracky-${version}-macos-arm64.dmg" dist/public/Tokentracky.dmg
+          cd dist/public
+          shasum -a 256 -- * | LC_ALL=C sort -k2 >"$RUNNER_TEMP/SHA256SUMS"
+          mv "$RUNNER_TEMP/SHA256SUMS" SHA256SUMS
+          {
+            if [[ "$SIGNING" == adhoc ]]; then
+              printf '**First launch:** macOS says it cannot check the app. Open System Settings → Privacy & Security and click **Open Anyway**. On macOS 13–14 you can instead right-click the app and choose Open. You only do this once.\n\n'
+            fi
+            cat release-notes.md
+            printf '\n### SHA-256 checksums\n\n```\n'
+            cat SHA256SUMS
+            printf '```\n'
+          } >"$RUNNER_TEMP/notes.md"
+          gh release create "v${version}" ./* --draft --verify-tag --title "Tokentracky v${version}" \
+            --notes-file "$RUNNER_TEMP/notes.md"
+      - name: Check the draft holds exactly these bytes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          version=$(node -p "require('./package.json').version")
+          [[ "$(gh release view "v${version}" --json isDraft --jq .isDraft)" == true ]]
+          diff <(find dist/public -maxdepth 1 -type f -exec basename {} \; | LC_ALL=C sort) \
+            <(gh release view "v${version}" --json assets --jq '.assets[].name' | LC_ALL=C sort)
+          gh release download "v${version}" --dir "$RUNNER_TEMP/downloaded"
+          (cd "$RUNNER_TEMP/downloaded" && shasum -a 256 -c SHA256SUMS)
+      - name: Publish the release as latest
+        if: ${{ inputs.publish }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(node -p "require('./package.json').version")
+          gh release edit "v${version}" --draft=false --latest
+      - name: Publish the npm launcher
+        if: ${{ inputs.publish }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$NODE_AUTH_TOKEN" ]]; then
+            echo '::warning::NPM_TOKEN is not set, so npm was not published; npx tokentracky stays on the previous version.'
+            exit 0
+          fi
+          # The package carries this release's manifest. prepublishOnly downloads both public files
+          # again and refuses to publish unless their checksums match it.
+          cp dist/macos-release/verified-candidate-manifest.json packaging/release-manifest.json
+          cd packaging
+          npm publish
+      - name: Update the Homebrew tap
+        if: ${{ inputs.publish }}
+        env:
+          TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$TAP_TOKEN" ]]; then
+            echo '::warning::HOMEBREW_TAP_TOKEN is not set, so the Homebrew tap was not updated.'
+            exit 0
+          fi
+          version=$(node -p "require('./package.json').version")
+          tap="$RUNNER_TEMP/homebrew-tokentracky"
+          git clone --depth 1 "https://x-access-token:${TAP_TOKEN}@github.com/AuvreyDurelle/homebrew-tokentracky.git" "$tap"
+          mkdir -p "$tap/Casks" "$tap/Formula"
+          cp dist/macos-release/homebrew/Casks/tokentracky.rb "$tap/Casks/"
+          cp dist/macos-release/homebrew/Formula/tokentracky.rb "$tap/Formula/"
+          git -C "$tap" add Casks Formula
+          if git -C "$tap" diff --cached --quiet; then
+            echo "The tap already describes ${version}."
+            exit 0
+          fi
+          git -C "$tap" -c user.name='github-actions[bot]' \
+            -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -qm "tokentracky ${version}"
+          # Audit and install from the local commit before anyone can see it.
+          brew tap auvreydurelle/tokentracky "$tap"
+          brew audit --cask auvreydurelle/tokentracky/tokentracky
+          brew audit --formula auvreydurelle/tokentracky/tokentracky
+          brew install --cask auvreydurelle/tokentracky/tokentracky
+          brew install --formula auvreydurelle/tokentracky/tokentracky
+          brew test auvreydurelle/tokentracky/tokentracky
+          git -C "$tap" push origin HEAD

@@ -1,0 +1,7 @@
+{
+  "zed:threads.db": {
+    "diagnostics": [
+      "invalid_record"
+    ]
+  }
+}

@@ -1,0 +1,15 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 10000,
+      "cacheWrite": 4300,
+      "input": 800,
+      "output": 1010,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "name": "/synthetic/command-code",
+    "sessions": 1,
+    "tokens": 16110
+  }
+]

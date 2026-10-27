@@ -1,0 +1,3 @@
+{
+  "description": "A database a running tool still writes (WAL): new rows and in-place updates are seen, a rescan does not double count, and a deleted row never refunds usage."
+}

@@ -1,0 +1,30 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 8000,
+      "cacheWrite": 0,
+      "input": 1200,
+      "output": 300,
+      "reasoning": 120
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": "deepseek-v4-flash",
+    "tokens": 9500,
+    "tool": "deepseek"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 50,
+      "output": 20,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": "deepseek-v4-pro",
+    "tokens": 70,
+    "tool": "deepseek"
+  }
+]

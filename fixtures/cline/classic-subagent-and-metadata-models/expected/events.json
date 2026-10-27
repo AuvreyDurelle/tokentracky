@@ -1,0 +1,34 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "cline:40a0b8624c04121414dde90983e3c3ea1a20fedf8c23f988522ebc1218aac50d",
+    "model": "claude-opus-4-1",
+    "occurredAt": "2026-10-23T09:00:01.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "t1",
+    "tokens": {
+      "cacheRead": 1000,
+      "cacheWrite": 100,
+      "input": 400,
+      "output": 200
+    },
+    "tool": "cline"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "cline:d64abcda4c2f5b712e86821dab336767a53d99a257f52134aed2a1dd90109161",
+    "model": "claude-opus-4-1",
+    "occurredAt": "2026-10-23T09:00:01.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "t1",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 10,
+      "output": 5
+    },
+    "tool": "cline"
+  }
+]

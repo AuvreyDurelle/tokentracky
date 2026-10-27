@@ -1,0 +1,58 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 2000,
+      "cacheWrite": 500,
+      "input": 500,
+      "output": 100,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-23",
+    "model": "claude-sonnet-4-6",
+    "tokens": 3100,
+    "tool": "codebuddy"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 4000,
+      "cacheWrite": 0,
+      "input": 1400,
+      "output": 640,
+      "reasoning": 250
+    },
+    "costMicrousd": null,
+    "day": "2026-10-23",
+    "model": "deepseek-v4",
+    "tokens": 6040,
+    "tool": "codebuddy"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 600,
+      "cacheWrite": 0,
+      "input": 200,
+      "output": 80,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-23",
+    "model": "glm-5.3",
+    "tokens": 880,
+    "tool": "codebuddy"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 100,
+      "output": 10,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-23",
+    "model": "unknown",
+    "tokens": 110,
+    "tool": "codebuddy"
+  }
+]

@@ -1,0 +1,112 @@
+[2026-10-20 12:00:00][INFO][LM STUDIO SERVER] Running chat completion on conversation with 2 messages.
+[2026-10-20 12:00:00][INFO][LM STUDIO SERVER] Received request: {"model": "qwen2.5-7b-instruct", "messages": [{"role": "user", "content": "PRIVATE_PROMPT_MARKER"}], "stream": false}
+[2026-10-20 12:00:01][INFO][LM STUDIO SERVER] Accumulating tokens ... (stream = false)
+[2026-10-20 12:00:05][INFO][qwen2.5-7b-instruct] Generated prediction:  {
+  "id": "chatcmpl-synthetic0001",
+  "object": "chat.completion",
+  "created": 1792490400,
+  "model": "qwen2.5-7b-instruct",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "PRIVATE_RESPONSE_MARKER quoting \"usage\": {\"prompt_tokens\": 999999} and } braces {",
+        "reasoning_content": "PRIVATE_REASONING_MARKER",
+        "tool_calls": []
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 2000,
+    "completion_tokens": 300,
+    "total_tokens": 2300,
+    "prompt_tokens_details": {
+      "cached_tokens": 1500
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 120
+    }
+  },
+  "stats": {},
+  "system_fingerprint": "qwen2.5-7b-instruct"
+}
+[2026-10-20 12:01:00][INFO][qwen2.5-7b-instruct] Generated prediction:  {
+  "object": "chat.completion",
+  "created": 1792490460,
+  "model": "qwen2.5-7b-instruct",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "PRIVATE_RESPONSE_MARKER"
+      }
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 10,
+    "completion_tokens": 1,
+    "total_tokens": 11
+  }
+}
+2026-10-20 12:02:00  [INFO]
+ [google/gemma-3-12b] Generated prediction:  {
+  "id": "resp_synthetic0002",
+  "object": "response",
+  "created_at": 1792490520,
+  "status": "completed",
+  "model": "google/gemma-3-12b",
+  "previous_response_id": "resp_synthetic0000",
+  "output": [
+    {
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "PRIVATE_RESPONSE_MARKER"
+        }
+      ]
+    }
+  ],
+  "usage": {
+    "input_tokens": 1293,
+    "input_tokens_details": {
+      "cached_tokens": 1276
+    },
+    "output_tokens": 42,
+    "output_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "total_tokens": 1335
+  }
+}
+2026-10-20 12:03:00  [INFO]
+ [google/gemma-3-12b] Generated prediction:  {
+  "id": "chatcmpl-synthetic0003",
+  "object": "chat.completion",
+  "created": 1792490580,
+  "model": "google/gemma-3-12b",
+  "usage": {
+    "prompt_tokens": 10,
+    "completion_tokens": 5,
+    "total_tokens": 99
+  }
+}
+[2026-10-20 12:04:00][INFO][LM STUDIO SERVER] Client disconnected. Stopping generation...
+[2026-10-20 12:04:00][INFO][qwen2.5-7b-instruct] Generated prediction:  {
+  "id": "chatcmpl-synthetic0004",
+  "object": "chat.completion",
+  "created": 1792490640,
+  "model": "qwen2.5-7b-instruct",
+  "choices": [
+    {
+      "message": {
+        "content": "PRIVATE_RESPONSE_MARKER"
+      }
+    }
+  ],
+  

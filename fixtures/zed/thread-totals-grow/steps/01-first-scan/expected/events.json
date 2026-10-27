@@ -1,0 +1,50 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "zed:545218dc8dfa451c22086f304feb8c454fa0b4d2da36d9e6e8a11e8f5dda6540",
+    "model": "gemini-3-pro",
+    "occurredAt": "2026-10-22T10:00:00.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "t2",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 100,
+      "output": 20
+    },
+    "tool": "zed"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "zed:a8f5aea9b15147128d27660b626afd494849c0b9102656b3fb0fd49b1c3c3b0d",
+    "model": "claude-sonnet-4-6",
+    "occurredAt": "2026-10-22T09:00:00.123Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "t1",
+    "tokens": {
+      "cacheRead": 4000,
+      "cacheWrite": 500,
+      "input": 1200,
+      "output": 300
+    },
+    "tool": "zed"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "zed:bc3d02f51ef5ed383904fd317d207c5967a4d60589898459beada1bf0307538c",
+    "model": "unknown",
+    "occurredAt": "2026-10-22T11:00:00.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "t4",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 0,
+      "output": 7
+    },
+    "tool": "zed"
+  }
+]

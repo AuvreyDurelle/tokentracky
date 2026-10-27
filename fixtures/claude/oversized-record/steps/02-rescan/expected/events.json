@@ -1,0 +1,38 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "claude:6c87f68371b28954707ebb92afee7ccffb74c6f71ec8fea8a98cf6104289585b",
+    "model": "claude-sonnet-4-6",
+    "occurredAt": "2026-10-20T12:00:00.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/private-project",
+    "sessionId": "claude-session",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "tool": "claude"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "claude:c6c1c9a9c8543f1e4cd980064cf1625eeb61a90703b2464fff039f21682508b3",
+    "model": "claude-sonnet-4-6",
+    "occurredAt": "2026-10-20T12:00:00.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/private-project",
+    "sessionId": "claude-session",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "tool": "claude"
+  }
+]

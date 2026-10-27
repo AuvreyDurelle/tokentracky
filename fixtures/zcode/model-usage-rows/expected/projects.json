@@ -1,0 +1,15 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 3400,
+      "cacheWrite": 500,
+      "input": 2900,
+      "output": 1170,
+      "reasoning": 300
+    },
+    "costMicrousd": null,
+    "name": "/synthetic/zcode-project",
+    "sessions": 1,
+    "tokens": 7970
+  }
+]

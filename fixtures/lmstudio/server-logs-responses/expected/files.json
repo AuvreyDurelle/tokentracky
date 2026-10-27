@@ -1,0 +1,11 @@
+{
+  "lmstudio:2026-10/2026-10-20.1.log": {
+    "diagnostics": [
+      "missing_stable_identity",
+      "invalid_counters"
+    ]
+  },
+  "lmstudio:2026-10/2026-10-21.1.log": {
+    "diagnostics": []
+  }
+}

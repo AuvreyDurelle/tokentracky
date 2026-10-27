@@ -1,0 +1,4 @@
+"tool","model","timestamp","project","session","input","output","cache_read","cache_write","reasoning","total","cost_microusd"
+"zed","gemini-3-pro","2026-10-22T10:00:00.000Z","","t2","100","20","0","0","0","120",""
+"zed","claude-sonnet-4-6","2026-10-22T09:00:00.123Z","","t1","1200","300","4000","500","0","6000",""
+"zed","unknown","2026-10-22T11:00:00.000Z","","t4","0","7","0","0","0","7",""

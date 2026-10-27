@@ -1,0 +1,8 @@
+{
+  "description": "A forked v1 message stays counted once after its original session is deleted, scan after scan; a new message in the fork still counts.",
+  "sources": {
+    "opencode": [
+      "opencode.db"
+    ]
+  }
+}

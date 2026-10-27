@@ -1,0 +1,6 @@
+"tool","model","timestamp","project","session","input","output","cache_read","cache_write","reasoning","total","cost_microusd"
+"claude","claude-sonnet-4-6","","/synthetic/private-project","claude-session","5","0","100","30","0","135",""
+"claude","claude-sonnet-4-6","2026-10-19T23:00:00.000Z","/synthetic/private-project","claude-session","100","0","100","30","0","230",""
+"claude","claude-sonnet-4-6","2026-10-02T00:00:00.000Z","/synthetic/private-project","claude-session","10","0","100","30","0","140",""
+"claude","claude-sonnet-4-6","2026-09-30T23:59:59.000Z","/synthetic/private-project","claude-session","1","0","100","30","0","131",""
+"claude","claude-sonnet-4-6","2026-10-21T08:00:00.000Z","/synthetic/private-project","claude-session","1000","0","100","30","0","1130",""

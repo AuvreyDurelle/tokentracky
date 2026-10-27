@@ -1,0 +1,4 @@
+{
+  "description": "A session migrated to a new format generation (its old file kept, with renumbered seq) and a fork that copies the session's first message: each assistant message counts once by its message id, the fork's own message counts, and temporary and other files are never read.",
+  "rustOnly": true
+}

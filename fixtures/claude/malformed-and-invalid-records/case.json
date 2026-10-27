@@ -1,0 +1,3 @@
+{
+  "description": "Malformed JSON, null, an empty array and non-assistant records are skipped with diagnostics; the valid record after them still counts; the source stays stale on a rescan."
+}

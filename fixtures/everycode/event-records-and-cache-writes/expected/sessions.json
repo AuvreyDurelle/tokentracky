@@ -1,0 +1,22 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 1300,
+      "cacheWrite": 100,
+      "input": 400,
+      "output": 300,
+      "reasoning": 80
+    },
+    "costMicrousd": null,
+    "id": "every-session-1",
+    "lastUsedAt": "2026-10-20T12:01:00.000Z",
+    "model": "gpt-5.1-codex",
+    "models": [
+      "gpt-5.1-codex-max",
+      "gpt-5.1-codex"
+    ],
+    "project": "/synthetic/every-code",
+    "tokens": 2100,
+    "tool": "everycode"
+  }
+]

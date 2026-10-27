@@ -1,0 +1,266 @@
+{
+  "tools=off,cost=off,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 200,
+        "output": 40,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "revision": 36,
+      "tokens": 240,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 200,
+        "output": 40,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "revision": 37,
+      "tokens": 240,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 200,
+        "output": 40,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-sonnet-4-6",
+      "revision": 38,
+      "tokens": 240,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 200,
+        "output": 40,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-sonnet-4-6",
+      "revision": 39,
+      "tokens": 240,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 200,
+        "output": 40,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "revision": 40,
+      "tokens": 240,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 200,
+        "output": 40,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "revision": 41,
+      "tokens": 240,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 200,
+        "output": 40,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-sonnet-4-6",
+      "revision": 42,
+      "tokens": 240,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 200,
+        "output": 40,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-sonnet-4-6",
+      "revision": 43,
+      "tokens": 240,
+      "tool": "all"
+    }
+  ],
+  "tools=on,cost=off,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 200,
+        "output": 40,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "revision": 44,
+      "tokens": 240,
+      "tool": "zed"
+    }
+  ],
+  "tools=on,cost=off,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 200,
+        "output": 40,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "revision": 45,
+      "tokens": 240,
+      "tool": "zed"
+    }
+  ],
+  "tools=on,cost=off,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 200,
+        "output": 40,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-sonnet-4-6",
+      "revision": 46,
+      "tokens": 240,
+      "tool": "zed"
+    }
+  ],
+  "tools=on,cost=off,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 200,
+        "output": 40,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-sonnet-4-6",
+      "revision": 47,
+      "tokens": 240,
+      "tool": "zed"
+    }
+  ],
+  "tools=on,cost=on,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 200,
+        "output": 40,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "revision": 48,
+      "tokens": 240,
+      "tool": "zed"
+    }
+  ],
+  "tools=on,cost=on,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 200,
+        "output": 40,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "revision": 49,
+      "tokens": 240,
+      "tool": "zed"
+    }
+  ],
+  "tools=on,cost=on,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 200,
+        "output": 40,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-sonnet-4-6",
+      "revision": 50,
+      "tokens": 240,
+      "tool": "zed"
+    }
+  ],
+  "tools=on,cost=on,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 200,
+        "output": 40,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-sonnet-4-6",
+      "revision": 51,
+      "tokens": 240,
+      "tool": "zed"
+    }
+  ]
+}

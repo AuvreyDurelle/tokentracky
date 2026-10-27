@@ -1,0 +1,30 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 1500,
+      "cacheWrite": 0,
+      "input": 500,
+      "output": 300,
+      "reasoning": 100
+    },
+    "costMicrousd": null,
+    "day": "2026-08-03",
+    "model": "glm-4.5",
+    "tokens": 2300,
+    "tool": "zcode"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 400,
+      "output": 100,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-08-03",
+    "model": "mimo-v2.5-pro",
+    "tokens": 500,
+    "tool": "zcode"
+  }
+]

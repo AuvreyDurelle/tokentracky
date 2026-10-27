@@ -1,0 +1,82 @@
+{
+  "activity": {
+    "activeDays": 1,
+    "averagePerActiveDay": 2750,
+    "bestDay": {
+      "day": "2026-10-22",
+      "tokens": 2750
+    },
+    "currentStreak": 1,
+    "longestStreak": 1
+  },
+  "breakdown": {
+    "cacheRead": 2000,
+    "cacheWrite": 450,
+    "input": 190,
+    "output": 110,
+    "reasoning": 0
+  },
+  "byModel": [
+    {
+      "breakdown": {
+        "cacheRead": 2000,
+        "cacheWrite": 150,
+        "input": 130,
+        "output": 70,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "claude-sonnet-4-6",
+      "tokens": 2350
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 300,
+        "input": 60,
+        "output": 40,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "claude-haiku-4-5",
+      "tokens": 400
+    }
+  ],
+  "byTool": [
+    {
+      "breakdown": {
+        "cacheRead": 2000,
+        "cacheWrite": 450,
+        "input": 190,
+        "output": 110,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "tokens": 2750,
+      "tool": "primeagent"
+    }
+  ],
+  "cacheRate": 0.7575757575757576,
+  "costMicrousd": null,
+  "costParts": null,
+  "daily": [
+    {
+      "breakdown": {
+        "cacheRead": 2000,
+        "cacheWrite": 450,
+        "input": 190,
+        "output": 110,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "day": "2026-10-22",
+      "tokens": 2750
+    }
+  ],
+  "sessions": 2,
+  "tokens": 2750
+}

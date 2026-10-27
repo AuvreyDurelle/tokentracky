@@ -1,0 +1,4 @@
+{
+  "description": "OpenTelemetry file exports in otel and .copilot-otel: Copilot Chat inference records sharing one span context (keyed by response id) with caches inside input and reasoning inside output; CLI chat spans, which the session store already holds, tool and agent spans, metrics, a record without an id and caches above input add nothing; session-state logs are never read.",
+  "rustOnly": true
+}

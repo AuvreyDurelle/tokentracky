@@ -1,0 +1,10 @@
+{
+  "kilo:globalStorage/kilocode.kilo-code/tasks/t1/ui_messages.json": {
+    "diagnostics": []
+  },
+  "kilo:kilo.db": {
+    "diagnostics": [
+      "kilo_history_local_only"
+    ]
+  }
+}

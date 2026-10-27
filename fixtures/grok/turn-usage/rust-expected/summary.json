@@ -1,0 +1,131 @@
+{
+  "activity": {
+    "activeDays": 1,
+    "averagePerActiveDay": 4035,
+    "bestDay": {
+      "day": "2026-10-22",
+      "tokens": 4035
+    },
+    "currentStreak": 1,
+    "longestStreak": 1
+  },
+  "breakdown": {
+    "cacheRead": 2200,
+    "cacheWrite": 0,
+    "input": 1640,
+    "output": 195,
+    "reasoning": 60
+  },
+  "byModel": [
+    {
+      "breakdown": {
+        "cacheRead": 2200,
+        "cacheWrite": 0,
+        "input": 1100,
+        "output": 160,
+        "reasoning": 60
+      },
+      "costMicrousd": 4795,
+      "costParts": {
+        "cacheRead": 1988,
+        "cacheSavings": 1986,
+        "cacheWrite": 0,
+        "input": 1950,
+        "output": 857
+      },
+      "model": "grok-4.7-build",
+      "tokens": 3460
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 500,
+        "output": 30,
+        "reasoning": 0
+      },
+      "costMicrousd": 160,
+      "costParts": {
+        "cacheRead": 0,
+        "cacheSavings": 0,
+        "cacheWrite": 0,
+        "input": 136,
+        "output": 24
+      },
+      "model": "grok-4.6-build",
+      "tokens": 530
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 40,
+        "output": 5,
+        "reasoning": 0
+      },
+      "costMicrousd": 1,
+      "costParts": {
+        "cacheRead": 0,
+        "cacheSavings": 0,
+        "cacheWrite": 0,
+        "input": 1,
+        "output": 0
+      },
+      "model": "grok-build",
+      "tokens": 45
+    }
+  ],
+  "byTool": [
+    {
+      "breakdown": {
+        "cacheRead": 2200,
+        "cacheWrite": 0,
+        "input": 1640,
+        "output": 195,
+        "reasoning": 60
+      },
+      "costMicrousd": 4956,
+      "costParts": {
+        "cacheRead": 1988,
+        "cacheSavings": 1986,
+        "cacheWrite": 0,
+        "input": 2087,
+        "output": 881
+      },
+      "tokens": 4035,
+      "tool": "grok"
+    }
+  ],
+  "cacheRate": 0.5729166666666666,
+  "costMicrousd": 4956,
+  "costParts": {
+    "cacheRead": 1988,
+    "cacheSavings": 1986,
+    "cacheWrite": 0,
+    "input": 2087,
+    "output": 881
+  },
+  "daily": [
+    {
+      "breakdown": {
+        "cacheRead": 2200,
+        "cacheWrite": 0,
+        "input": 1640,
+        "output": 195,
+        "reasoning": 60
+      },
+      "costMicrousd": 4956,
+      "costParts": {
+        "cacheRead": 1988,
+        "cacheSavings": 1986,
+        "cacheWrite": 0,
+        "input": 2087,
+        "output": 881
+      },
+      "day": "2026-10-22",
+      "tokens": 4035
+    }
+  ],
+  "sessions": 1,
+  "tokens": 4035
+}

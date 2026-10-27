@@ -1,0 +1,1 @@
+{"id":"fc-s1","type":"function_call","name":"Read","callId":"call-fc-s1","arguments":"{\"file_path\":\"PRIVATE_PATH_MARKER\"}","timestamp":1792746030000,"sessionId":"cb-session-1","providerData":{"messageId":"resp-sub-1","model":"deepseek-v4","agent":"explore","rawUsage":{"prompt_tokens":400,"completion_tokens":40,"total_tokens":440}}}

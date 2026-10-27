@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#202027"/><stop offset="1" stop-color="#0b0b0e"/></linearGradient>
+    <linearGradient id="pink" x1="128" y1="384" x2="384" y2="128" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#9d174d"/><stop offset=".5" stop-color="#ec4899"/><stop offset="1" stop-color="#f9a8d4"/></linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#tile)"/>
+  <rect x="128" y="128" width="52" height="52" rx="14" fill="#ffffff" fill-opacity=".07"/>
+  <rect x="128" y="196" width="52" height="52" rx="14" fill="#ffffff" fill-opacity=".07"/>
+  <rect x="128" y="264" width="52" height="52" rx="14" fill="#ffffff" fill-opacity=".07"/>
+  <rect x="128" y="332" width="52" height="52" rx="14" fill="url(#pink)"/>
+  <rect x="196" y="128" width="52" height="52" rx="14" fill="#ffffff" fill-opacity=".07"/>
+  <rect x="196" y="196" width="52" height="52" rx="14" fill="#ffffff" fill-opacity=".07"/>
+  <rect x="196" y="264" width="52" height="52" rx="14" fill="url(#pink)"/>
+  <rect x="196" y="332" width="52" height="52" rx="14" fill="url(#pink)"/>
+  <rect x="264" y="128" width="52" height="52" rx="14" fill="#ffffff" fill-opacity=".07"/>
+  <rect x="264" y="196" width="52" height="52" rx="14" fill="url(#pink)"/>
+  <rect x="264" y="264" width="52" height="52" rx="14" fill="url(#pink)"/>
+  <rect x="264" y="332" width="52" height="52" rx="14" fill="url(#pink)"/>
+  <rect x="332" y="128" width="52" height="52" rx="14" fill="url(#pink)"/>
+  <rect x="332" y="196" width="52" height="52" rx="14" fill="url(#pink)"/>
+  <rect x="332" y="264" width="52" height="52" rx="14" fill="url(#pink)"/>
+  <rect x="332" y="332" width="52" height="52" rx="14" fill="url(#pink)"/>
+</svg>

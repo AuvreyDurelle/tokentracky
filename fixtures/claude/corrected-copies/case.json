@@ -1,0 +1,3 @@
+{
+  "description": "Correcting one of two identical copies changes the total once; an unchanged copy, or a stale copy found later, cannot undo the correction."
+}

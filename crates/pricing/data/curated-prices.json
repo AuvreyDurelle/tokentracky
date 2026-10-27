@@ -1,0 +1,159 @@
+{
+  "note": "Hand-maintained prices for models LiteLLM has no entry for, and ids LiteLLM files under another name. USD per token, in LiteLLM's field names. A LiteLLM entry with the same id wins; remove an entry once LiteLLM carries it.",
+  "models": {
+    "kimi-k3": {
+      "input_cost_per_token": 3e-6,
+      "output_cost_per_token": 1.5e-5,
+      "cache_read_input_token_cost": 3e-7,
+      "cache_creation_input_token_cost": 3e-6,
+      "source": "LiteLLM's moonshot/kimi-k3 rates, which have no cache write; the write rate from OpenCode's list (https://opencode.ai/docs/zen), as Kimi's own table did not load",
+      "checked": "2026-10-26"
+    },
+    "kimi-k3.1-pro": {
+      "input_cost_per_token": 2e-6,
+      "output_cost_per_token": 1e-5,
+      "cache_read_input_token_cost": 2e-7,
+      "cache_creation_input_token_cost": 2e-6,
+      "cache_creation_input_token_cost_above_1hr": 4e-6,
+      "source": "Kimi's API rates as quoted by https://seedrouter.ai/blog/kimi-k3-1-pro-pricing and https://llmbenchmark.ai/pricing/moonshotai/kimi-k3-1-pro",
+      "checked": "2026-10-26"
+    },
+    "kimi-k3.1-pro-highspeed": {
+      "input_cost_per_token": 4e-06,
+      "output_cost_per_token": 2e-05,
+      "cache_read_input_token_cost": 2e-07,
+      "cache_creation_input_token_cost": 4e-06,
+      "source": "https://github.com/muvon/octolib/blob/064220293e095f3f8ce6bc53981d26996b56468f/src/llm/providers/moonshot.rs (independent provider table and 5-minute/1-hour cache pricing; upstream verification dated 2026-09-22)",
+      "checked": "2026-10-26",
+      "cache_creation_input_token_cost_above_1hr": 8e-06
+    },
+    "mimo-v2.5-pro": {
+      "input_cost_per_token": 4.35e-7,
+      "output_cost_per_token": 8.7e-7,
+      "cache_read_input_token_cost": 3.6e-9,
+      "cache_creation_input_token_cost": 0,
+      "source": "Xiaomi's overseas rates from 2026-05-27 (https://mimo.mi.com/docs/en-US/news/latest/v2.5-price-update); cache writes are free; retired 2026-10-21",
+      "checked": "2026-10-26"
+    },
+    "mimo-v2.5": {
+      "input_cost_per_token": 1.4e-7,
+      "output_cost_per_token": 2.8e-7,
+      "cache_read_input_token_cost": 2.8e-9,
+      "cache_creation_input_token_cost": 0,
+      "source": "Xiaomi's overseas rates from 2026-05-27 (https://mimo.mi.com/docs/en-US/news/latest/v2.5-price-update); cache writes are free; retired 2026-10-21",
+      "checked": "2026-10-26"
+    },
+    "glm-4.5": {
+      "input_cost_per_token": 6e-7,
+      "output_cost_per_token": 2.2e-6,
+      "cache_read_input_token_cost": 1.1e-7,
+      "cache_creation_input_token_cost": 0,
+      "source": "https://docs.z.ai/guides/overview/pricing; cached input storage is free for now, which LiteLLM's zai/ entries write as a zero cache write",
+      "checked": "2026-10-26"
+    },
+    "glm-4.5-x": {
+      "input_cost_per_token": 2.2e-6,
+      "output_cost_per_token": 8.9e-6,
+      "cache_read_input_token_cost": 4.5e-7,
+      "cache_creation_input_token_cost": 0,
+      "source": "https://docs.z.ai/guides/overview/pricing",
+      "checked": "2026-10-26"
+    },
+    "glm-4.5-air": {
+      "input_cost_per_token": 2e-7,
+      "output_cost_per_token": 1.1e-6,
+      "cache_read_input_token_cost": 3e-8,
+      "cache_creation_input_token_cost": 0,
+      "source": "https://docs.z.ai/guides/overview/pricing",
+      "checked": "2026-10-26"
+    },
+    "glm-4.5-airx": {
+      "input_cost_per_token": 1.1e-6,
+      "output_cost_per_token": 4.5e-6,
+      "cache_read_input_token_cost": 2.2e-7,
+      "cache_creation_input_token_cost": 0,
+      "source": "https://docs.z.ai/guides/overview/pricing",
+      "checked": "2026-10-26"
+    },
+    "glm-4.7-flashx": {
+      "input_cost_per_token": 7e-8,
+      "output_cost_per_token": 4e-7,
+      "cache_read_input_token_cost": 1e-8,
+      "cache_creation_input_token_cost": 0,
+      "source": "https://docs.z.ai/guides/overview/pricing",
+      "checked": "2026-10-26"
+    },
+    "glm-5.3-flashx": {
+      "input_cost_per_token": 3.7e-7,
+      "output_cost_per_token": 1.25e-6,
+      "cache_read_input_token_cost": 7.5e-8,
+      "cache_creation_input_token_cost": 0,
+      "source": "https://docs.z.ai/guides/overview/pricing",
+      "checked": "2026-10-26"
+    },
+    "minimax-m2.7": {
+      "input_cost_per_token": 3e-7,
+      "output_cost_per_token": 1.2e-6,
+      "cache_read_input_token_cost": 6e-8,
+      "cache_creation_input_token_cost": 3.75e-7,
+      "source": "OpenCode's list (https://opencode.ai/docs/zen), as MiniMax no longer lists M2.7; the cache write rate of LiteLLM's minimax/ M2 entries",
+      "checked": "2026-10-26"
+    },
+    "minimax-m2.7-highspeed": {
+      "input_cost_per_token": 6e-07,
+      "output_cost_per_token": 2.4e-06,
+      "cache_read_input_token_cost": 6e-08,
+      "source": "https://github.com/BerriAI/litellm/blob/c843cee062e08113f5afa101b0b6879824dd9025/model_prices_and_context_window.json, novita/minimax/minimax-m2.7-highspeed: input/output/cache-read rates. No independently verified cache-write rate.",
+      "checked": "2026-10-26"
+    },
+    "grok-4": {
+      "input_cost_per_token": 3e-06,
+      "output_cost_per_token": 1.5e-05,
+      "source": "https://github.com/BerriAI/litellm/blob/862736e74b4b697030994078b42c98856ed9911f/model_prices_and_context_window.json, xai/grok-4 and xai/grok-4-0709: historical input/output rates. No independently verified cache-read rate.",
+      "checked": "2026-10-26"
+    },
+    "grok-4-fast": {
+      "input_cost_per_token": 2e-07,
+      "output_cost_per_token": 5e-07,
+      "cache_read_input_token_cost": 5e-08,
+      "source": "https://x.ai/news/grok-4-fast: reasoning and non-reasoning input/output/cache-read prices, including the above-128k context tier. Cross-checked against LiteLLM commit 862736e74b4b697030994078b42c98856ed9911f, xai/grok-4-fast-reasoning and xai/grok-4-fast-non-reasoning.",
+      "checked": "2026-10-26",
+      "input_cost_per_token_above_128k_tokens": 4e-07,
+      "output_cost_per_token_above_128k_tokens": 1e-06
+    },
+    "big-pickle": {
+      "input_cost_per_token": 0,
+      "output_cost_per_token": 0,
+      "cache_read_input_token_cost": 0,
+      "cache_creation_input_token_cost": 0,
+      "source": "Free on OpenCode (https://opencode.ai/docs/zen)",
+      "checked": "2026-10-26"
+    },
+    "codex-auto-review": {
+      "input_cost_per_token": 0,
+      "output_cost_per_token": 0,
+      "cache_read_input_token_cost": 0,
+      "cache_creation_input_token_cost": 0,
+      "source": "Codex's hidden approval reviewer; OpenAI publishes no price for it (https://github.com/openai/codex/issues/20981), so it counts as included in the Codex plan",
+      "checked": "2026-10-26"
+    }
+  },
+  "aliases": {
+    "deepseek-v4.1-flash": {"to": "deepseek/deepseek-flash", "source": "DeepSeek serves deepseek-flash with DeepSeek-V4.1-Flash", "checked": "2026-10-26"},
+    "gemini-3-pro-preview": {"to": "vertex_ai/gemini-3-pro-preview", "source": "Google no longer lists Gemini 3 Pro Preview; LiteLLM keeps its Vertex rates", "checked": "2026-10-26"},
+    "gpt-5.3-codex-spark": {"to": "gpt-5.3-codex", "source": "A ChatGPT Pro research preview with no API price (https://www.orcarouter.ai/blog/gpt-5-3-codex-spark); priced at GPT-5.3 Codex's rates", "checked": "2026-10-26"},
+    "grok-build": {"to": "xai/grok-build-0.1", "source": "The only Grok Build model on xAI's price page (https://docs.x.ai/docs/models)", "checked": "2026-10-26"},
+    "kimi-for-coding": {"to": "moonshot/kimi-k2.7-code", "source": "Kimi Code's subscription id; it serves K2.8 Preview, which has no API price, and served K2.7 Code before", "checked": "2026-10-26"},
+    "k3": {"to": "kimi-k3", "source": "Kimi Code's id for K3", "checked": "2026-10-26"},
+    "k3-256k": {"to": "kimi-k3", "source": "Kimi Code's id for K3 with a 256K context", "checked": "2026-10-26"},
+    "k3.1-pro": {"to": "kimi-k3.1-pro", "source": "Kimi Code's id for K3.1 Pro", "checked": "2026-10-26"},
+    "k3.1-pro-highspeed": {"to": "kimi-k3.1-pro-highspeed", "source": "Kimi Code's id for K3.1 Pro Highspeed", "checked": "2026-10-26"},
+    "mimo-v2-pro": {"to": "mimo-v2.5-pro", "source": "Xiaomi routed mimo-v2-pro to V2.5, at V2.5 prices, from 2026-06-01", "checked": "2026-10-26"},
+    "mimo-v2-flash": {"to": "mimo-v2.5", "source": "Xiaomi routed mimo-v2-flash to V2.5, at V2.5 prices, from 2026-06-18", "checked": "2026-10-26"},
+    "grok-4-0709": {"to": "grok-4", "source": "Grok 4's dated id", "checked": "2026-10-26"},
+    "grok-4-fast-reasoning": {"to": "grok-4-fast", "source": "Grok 4 Fast with reasoning", "checked": "2026-10-26"},
+    "grok-4-fast-non-reasoning": {"to": "grok-4-fast", "source": "Grok 4 Fast without reasoning", "checked": "2026-10-26"},
+    "grok-4-1-fast-reasoning": {"to": "vertex_ai/xai/grok-4.1-fast-reasoning", "source": "LiteLLM commit 2590f641f5c8dca9127deed2a90dd44bc3cd05aa: preserved Grok 4.1 Fast Vertex rates under the corresponding provider-prefixed id", "checked": "2026-10-26"},
+    "grok-4-1-fast-non-reasoning": {"to": "vertex_ai/xai/grok-4.1-fast-non-reasoning", "source": "LiteLLM commit 2590f641f5c8dca9127deed2a90dd44bc3cd05aa: preserved Grok 4.1 Fast Vertex rates under the corresponding provider-prefixed id", "checked": "2026-10-26"}
+  }
+}

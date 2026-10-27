@@ -1,0 +1,32 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": 181,
+    "day": "2026-10-20",
+    "model": "claude-sonnet-4-6",
+    "tokens": 161,
+    "tool": "claude"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": "unpriced-model",
+    "tokens": 161,
+    "tool": "claude"
+  }
+]

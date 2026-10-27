@@ -1,0 +1,24 @@
+{
+  "lastScanAt": "2026-10-24T12:00:00.000Z",
+  "sources": [
+    {
+      "capabilities": {
+        "costs": false,
+        "models": true,
+        "projects": false,
+        "quotas": false,
+        "tokens": true
+      },
+      "enabled": true,
+      "eventCount": 5,
+      "id": "goose",
+      "lastImportedAt": "2026-10-24T12:00:00.000Z",
+      "message": "Import completed with diagnostics: invalid_counters.",
+      "name": "Goose",
+      "paths": [
+        "."
+      ],
+      "state": "stale"
+    }
+  ]
+}

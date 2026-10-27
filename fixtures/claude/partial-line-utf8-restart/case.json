@@ -1,0 +1,3 @@
+{
+  "description": "A final line cut inside a multi-byte character is not committed (partial_line_pending); after a restart the completed line is read and its project name is intact."
+}

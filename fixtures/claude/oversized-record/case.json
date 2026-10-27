@@ -1,0 +1,3 @@
+{
+  "description": "A line over 1 MiB is skipped with record_too_large without being stored, a 120 KB line before it is read across chunks, and a rescan changes nothing. The long line holds no usage key, so the Rust collector skips it without a diagnostic and the source stays current (rust-expected)."
+}

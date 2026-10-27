@@ -1,0 +1,34 @@
+# cargo-deny policy for the Rust workspace. Run `cargo deny check`; CI runs it on every push.
+
+[advisories]
+# Vulnerability advisories always fail. Unmaintained ones fail only for crates we depend on directly:
+# cargo-deny has no warning level for them, so transitive ones are left to their parents.
+unmaintained = "workspace"
+yanked = "warn"
+
+[licenses]
+allow = ["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC", "Unicode-3.0", "Unicode-DFS-2016", "Zlib"]
+confidence-threshold = 0.9
+unused-allowed-license = "allow"
+# Workspace crates are unpublished (`publish = false`) and carry no licence field.
+private = { ignore = true }
+exceptions = [
+    # Mozilla's root certificates as data. reqwest's rustls verifier needs them only on wasm32, which we never build.
+    { allow = ["CDLA-Permissive-2.0"], crate = "webpki-root-certs" },
+    # The Mac app (Tauri): file-level copyleft in unmodified crates.io sources. Servo's CSS parser and selectors under
+    # tauri-utils' HTML handling, and `option-ext` under `dirs`.
+    { allow = ["MPL-2.0"], crate = "cssparser" },
+    { allow = ["MPL-2.0"], crate = "cssparser-macros" },
+    { allow = ["MPL-2.0"], crate = "dtoa-short" },
+    { allow = ["MPL-2.0"], crate = "selectors" },
+    { allow = ["MPL-2.0"], crate = "option-ext" },
+    # Build tooling of Tauri's Linux GTK dependencies, which this workspace never builds (the app is macOS only).
+    { allow = ["Apache-2.0 WITH LLVM-exception"], crate = "target-lexicon" },
+]
+
+[bans]
+multiple-versions = "warn"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"

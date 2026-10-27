@@ -1,0 +1,12 @@
+{
+  "description": "Prices apply when events are read: the same table again changes nothing, a new table re-prices history and revises the cost bucket, switching pricing off makes costs null again.",
+  "price": {
+    "version": "v1",
+    "rates": {
+      "input": 1,
+      "output": 2,
+      "cacheRead": 1,
+      "cacheWrite": 1
+    }
+  }
+}

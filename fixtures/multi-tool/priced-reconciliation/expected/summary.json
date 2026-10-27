@@ -1,0 +1,135 @@
+{
+  "activity": {
+    "activeDays": 1,
+    "averagePerActiveDay": 292,
+    "bestDay": {
+      "day": "2026-10-20",
+      "tokens": 292
+    },
+    "currentStreak": 0,
+    "longestStreak": 1
+  },
+  "breakdown": {
+    "cacheRead": 200,
+    "cacheWrite": 30,
+    "cacheWrite1h": 20,
+    "input": 22,
+    "output": 40,
+    "reasoning": 14
+  },
+  "byModel": [
+    {
+      "breakdown": {
+        "cacheRead": 100,
+        "cacheWrite": 30,
+        "cacheWrite1h": 20,
+        "input": 11,
+        "output": 20,
+        "reasoning": 7
+      },
+      "costMicrousd": 181,
+      "costParts": {
+        "cacheRead": 100,
+        "cacheSavings": 0,
+        "cacheWrite": 30,
+        "input": 11,
+        "output": 40
+      },
+      "model": "claude-sonnet-4-6",
+      "tokens": 161
+    },
+    {
+      "breakdown": {
+        "cacheRead": 100,
+        "cacheWrite": 0,
+        "input": 11,
+        "output": 20,
+        "reasoning": 7
+      },
+      "costMicrousd": 151,
+      "costParts": {
+        "cacheRead": 100,
+        "cacheSavings": 0,
+        "cacheWrite": 0,
+        "input": 11,
+        "output": 40
+      },
+      "model": "gpt-5-codex",
+      "tokens": 131
+    }
+  ],
+  "byTool": [
+    {
+      "breakdown": {
+        "cacheRead": 100,
+        "cacheWrite": 30,
+        "cacheWrite1h": 20,
+        "input": 11,
+        "output": 20,
+        "reasoning": 7
+      },
+      "costMicrousd": 181,
+      "costParts": {
+        "cacheRead": 100,
+        "cacheSavings": 0,
+        "cacheWrite": 30,
+        "input": 11,
+        "output": 40
+      },
+      "tokens": 161,
+      "tool": "claude"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 100,
+        "cacheWrite": 0,
+        "input": 11,
+        "output": 20,
+        "reasoning": 7
+      },
+      "costMicrousd": 151,
+      "costParts": {
+        "cacheRead": 100,
+        "cacheSavings": 0,
+        "cacheWrite": 0,
+        "input": 11,
+        "output": 40
+      },
+      "tokens": 131,
+      "tool": "codex"
+    }
+  ],
+  "cacheRate": 0.7936507936507936,
+  "costMicrousd": 332,
+  "costParts": {
+    "cacheRead": 200,
+    "cacheSavings": 0,
+    "cacheWrite": 30,
+    "input": 22,
+    "output": 80
+  },
+  "daily": [
+    {
+      "breakdown": {
+        "cacheRead": 200,
+        "cacheWrite": 30,
+        "cacheWrite1h": 20,
+        "input": 22,
+        "output": 40,
+        "reasoning": 14
+      },
+      "costMicrousd": 332,
+      "costParts": {
+        "cacheRead": 200,
+        "cacheSavings": 0,
+        "cacheWrite": 30,
+        "input": 22,
+        "output": 80
+      },
+      "day": "2026-10-20",
+      "tokens": 292
+    }
+  ],
+  "sessions": 2,
+  "tokens": 292
+}

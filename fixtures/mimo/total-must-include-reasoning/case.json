@@ -1,0 +1,4 @@
+{
+  "description": "Input excludes both caches and reasoning is outside output, so it is added; a total must equal input, output, both caches and reasoning, and a row whose total leaves reasoning out or matches nothing, or whose input is negative, is skipped with invalid_counters.",
+  "rustOnly": true
+}

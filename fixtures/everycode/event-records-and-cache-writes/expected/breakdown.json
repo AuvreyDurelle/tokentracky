@@ -1,0 +1,30 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 700,
+      "cacheWrite": 0,
+      "input": 100,
+      "output": 100,
+      "reasoning": 30
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": "gpt-5.1-codex",
+    "tokens": 900,
+    "tool": "everycode"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 600,
+      "cacheWrite": 100,
+      "input": 300,
+      "output": 200,
+      "reasoning": 50
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": "gpt-5.1-codex-max",
+    "tokens": 1200,
+    "tool": "everycode"
+  }
+]

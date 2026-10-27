@@ -1,0 +1,2 @@
+"tool","model","timestamp","project","session","input","output","cache_read","cache_write","reasoning","total","cost_microusd"
+"cline","manifest-model","2026-10-23T09:00:05.000Z","/synthetic/cline-project","s_test","0","10","1000","0","0","1010",""

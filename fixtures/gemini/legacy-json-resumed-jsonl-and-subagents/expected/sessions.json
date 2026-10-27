@@ -1,0 +1,40 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 7,
+      "output": 3,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "subagent-1",
+    "lastUsedAt": "2026-10-23T09:00:03.000Z",
+    "model": "gemini-3-pro",
+    "models": [
+      "gemini-3-pro"
+    ],
+    "project": null,
+    "tokens": 10,
+    "tool": "gemini"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 1000,
+      "cacheWrite": 0,
+      "input": 250,
+      "output": 125,
+      "reasoning": 40
+    },
+    "costMicrousd": null,
+    "id": "abcd1234-0000-4000-8000-000000000001",
+    "lastUsedAt": "2026-10-23T09:00:03.000Z",
+    "model": "gemini-3-pro",
+    "models": [
+      "gemini-3-pro"
+    ],
+    "project": null,
+    "tokens": 1375,
+    "tool": "gemini"
+  }
+]

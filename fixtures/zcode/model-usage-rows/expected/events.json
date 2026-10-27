@@ -1,0 +1,87 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "zcode:2e957c0c7345ac7fd24518d0f4140769a7cff8fa1aecfe46b9312d4c64de099a",
+    "model": "glm-4.6",
+    "occurredAt": "2026-10-22T10:00:21.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/zcode-project",
+    "sessionId": "ses_Z1",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 300,
+      "output": 100,
+      "reasoning": 0
+    },
+    "tool": "zcode"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "zcode:74140c49a6cebe128c52f1267d4d7751e5065a13480cf36a5504068bd62a6f9b",
+    "model": "mimo-v2.5-pro",
+    "occurredAt": "2026-10-22T10:00:10.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/zcode-project",
+    "sessionId": "ses_Z1",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 1000,
+      "output": 200,
+      "reasoning": 0
+    },
+    "tool": "zcode"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "zcode:8c87686d212f00bca25c2a3fd1b05edaf8c5161f2fc6380d274dc5add70b0a8b",
+    "model": "unknown",
+    "occurredAt": "2026-10-22T10:01:50.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/zcode-project",
+    "sessionId": "ses_Z1",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 100,
+      "output": 20,
+      "reasoning": 0
+    },
+    "tool": "zcode"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "zcode:9668fcb8cf571e9857c754ecb5ce060ba1515489cd9b889d2960aef2ad0ad3d3",
+    "model": "glm-4.6",
+    "occurredAt": "2026-10-22T10:01:40.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/zcode-project",
+    "sessionId": "ses_Z1",
+    "tokens": {
+      "cacheRead": 400,
+      "cacheWrite": 0,
+      "input": 0,
+      "output": 50,
+      "reasoning": 0
+    },
+    "tool": "zcode"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "zcode:e6c012f6c76d5ab904ba90055c17109e3f45f02a4717c4380d62d2179bc52f5c",
+    "model": "glm-4.6",
+    "occurredAt": "2026-10-22T10:00:00.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/zcode-project",
+    "sessionId": "ses_Z1",
+    "tokens": {
+      "cacheRead": 3000,
+      "cacheWrite": 500,
+      "input": 1500,
+      "output": 800,
+      "reasoning": 300
+    },
+    "tool": "zcode"
+  }
+]

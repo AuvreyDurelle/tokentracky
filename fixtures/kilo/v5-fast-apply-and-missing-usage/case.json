@@ -1,0 +1,6 @@
+{
+  "description": "A fast-apply call is its own event, distinct from the request at the same timestamp, and a request marked usageMissing adds nothing.",
+  "forbidden": [
+    "Example AI"
+  ]
+}

@@ -1,0 +1,53 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "gemini:c4503fc68fd87541e24ef826bc1d1e5afd776434fb46416bbc317d88b134ff2d",
+    "model": "unknown",
+    "occurredAt": null,
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "g",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 5,
+      "output": 5,
+      "reasoning": 0
+    },
+    "tool": "gemini"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "opencode:00ea3e0c620d67fe252ff46e7168ad54f91d891aa5cae5f299ea677e5f47d6b4",
+    "model": "claude-sonnet-4-6",
+    "occurredAt": "2026-10-23T09:00:00.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/opencode-project",
+    "sessionId": "ses_01TEST",
+    "tokens": {
+      "cacheRead": 1000,
+      "cacheWrite": 100,
+      "input": 400,
+      "output": 250,
+      "reasoning": 50
+    },
+    "tool": "opencode"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "opencode:2a4d8ad7a72adbe3b44aa7be9bfe52ff3feffb432879b2db211b42e0b7f76f6a",
+    "model": "claude-sonnet-4-6",
+    "occurredAt": "2026-10-23T09:00:10.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/opencode-project",
+    "sessionId": "ses_01TEST",
+    "tokens": {
+      "cacheRead": 1000,
+      "cacheWrite": 100,
+      "input": 400,
+      "output": 250,
+      "reasoning": 50
+    },
+    "tool": "opencode"
+  }
+]

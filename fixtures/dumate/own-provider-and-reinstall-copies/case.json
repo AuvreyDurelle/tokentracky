@@ -1,0 +1,4 @@
+{
+  "description": "Only QianfanPersonalQuota rows count (the bundled opencode import copies Claude Code and OpenCode history); a reinstall's copy of the same messages under a new install id counts once, and memory.db is never opened.",
+  "rustOnly": true
+}

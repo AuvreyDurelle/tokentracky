@@ -1,0 +1,70 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "mimo:503b9cd340270e661309829ff7a5f55f1ea9f84fbacf0fb5f3fcad3d3197e517",
+    "model": "mimo-v2-flash",
+    "occurredAt": "2026-10-23T09:00:10.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/mimo-project",
+    "sessionId": "ses_M1",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 100,
+      "input": 500,
+      "output": 100,
+      "reasoning": 0
+    },
+    "tool": "mimo"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "mimo:5c2edf6a8f0e46f6b97dd31b982be3f53fe0c46924e0ef06b991e228ffce0035",
+    "model": "unknown",
+    "occurredAt": "2026-10-23T09:00:20.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/mimo-project",
+    "sessionId": "ses_M1",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 20,
+      "output": 10,
+      "reasoning": 0
+    },
+    "tool": "mimo"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "mimo:9361f3bfc6f842d3946c8492f8501d37dfb9b186d9daa4df5ea115ddd6bcad4f",
+    "model": "mimo-v2.5-pro",
+    "occurredAt": "2026-10-23T09:00:00.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/mimo-project",
+    "sessionId": "ses_M1",
+    "tokens": {
+      "cacheRead": 300,
+      "cacheWrite": 0,
+      "input": 1000,
+      "output": 250,
+      "reasoning": 50
+    },
+    "tool": "mimo"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "mimo:d4181b767abb0d796a57de4f49b0d7fbba393b21e5e9d70dacdb0f85314ac155",
+    "model": "mimo-v2.5-pro",
+    "occurredAt": "2026-10-23T09:01:10.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/mimo-dev-project",
+    "sessionId": "ses_D1",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 10,
+      "output": 5,
+      "reasoning": 0
+    },
+    "tool": "mimo"
+  }
+]

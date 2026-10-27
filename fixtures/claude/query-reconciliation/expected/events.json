@@ -1,0 +1,74 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "claude:27873558b00fcb843b8cceb87f362703c96dcae53798fc4dca18d8dfc5d9c3b8",
+    "model": "claude-sonnet-4-6",
+    "occurredAt": null,
+    "pricingVersion": null,
+    "project": "/synthetic/private-project",
+    "sessionId": "claude-session",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "tool": "claude"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "claude:3fc4ccfe745870e2c0d99f71f30ff0656c8dedd41cc1d7d3d376b0dbe685e2f3",
+    "model": "claude-sonnet-4-6",
+    "occurredAt": "2026-10-20T12:00:00.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/private-project",
+    "sessionId": "claude-session",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "tool": "claude"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "claude:7692c3ad3540bb803c020b3aee66cd8887123234ea0c6e7143c0add73ff431ed",
+    "model": "claude-sonnet-4-6",
+    "occurredAt": "2026-10-20T12:00:00.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/private-project",
+    "sessionId": "claude-session",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "tool": "claude"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "claude:cba06b5736faf67e54b07b561eae94395e774c517a7d910a54369e1263ccfbd4",
+    "model": "claude-sonnet-4-6",
+    "occurredAt": "2026-01-01T12:00:00.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/private-project",
+    "sessionId": "claude-session",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "tool": "claude"
+  }
+]

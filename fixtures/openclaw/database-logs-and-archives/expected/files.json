@@ -1,0 +1,17 @@
+{
+  "openclaw:main/agent/openclaw-agent.sqlite": {
+    "diagnostics": [
+      "invalid_counters"
+    ]
+  },
+  "openclaw:main/sessions/019a0b00-0000-7000-8000-000000000001.jsonl.reset.2026-10-22T10-00-00.000Z": {
+    "diagnostics": [],
+    "offset": 1568
+  },
+  "openclaw:main/sessions/019a0b00-0000-7000-8000-000000000004.jsonl": {
+    "diagnostics": [
+      "missing_stable_identity"
+    ],
+    "offset": 1292
+  }
+}

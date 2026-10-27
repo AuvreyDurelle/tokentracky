@@ -1,0 +1,66 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "unsloth:241baf867e2a3a656a1b7fc3f0c1a60a6e0a0fdf740897aa1c52097fc1419c12",
+    "model": "local/Qwen3-8B-Q4_K_M",
+    "occurredAt": "2026-10-22T09:00:02.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "th-local",
+    "tokens": {
+      "cacheRead": 800,
+      "cacheWrite": 0,
+      "input": 400,
+      "output": 300
+    },
+    "tool": "unsloth"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "unsloth:4113c0d1b87f8c7cfdbeb12a41e6784a000d2a0e86a5412b9cc50ae9fa3ce2cc",
+    "model": "gpt-5.6-terra",
+    "occurredAt": "2026-10-22T09:00:04.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "th-external",
+    "tokens": {
+      "cacheRead": 3000,
+      "cacheWrite": 1000,
+      "input": 1000,
+      "output": 700
+    },
+    "tool": "unsloth"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "unsloth:a0a86bc941688816a54e83017ffc6e3caf3d9def1fc0c8eff354a7ae3148e15d",
+    "model": "unsloth/Qwen3-8B-GGUF",
+    "occurredAt": "2026-10-22T10:00:00.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "api",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 2000,
+      "output": 500
+    },
+    "tool": "unsloth"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "unsloth:b8f6af74ffa0a24f50a479152c362a8b85c876eb6e44e132527eeaa58bf33b99",
+    "model": "local/unsloth/Qwen3-8B-GGUF",
+    "occurredAt": "2026-10-22T09:00:05.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "th-local",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 100,
+      "output": 50
+    },
+    "tool": "unsloth"
+  }
+]

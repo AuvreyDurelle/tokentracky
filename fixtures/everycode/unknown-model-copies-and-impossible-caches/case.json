@@ -1,0 +1,4 @@
+{
+  "description": "A token count naming no model (and no turn context) stays unknown, never taken from Codex nearby; a copied rollout counts once; cache reads and writes larger than input are rejected with invalid_counters.",
+  "rustOnly": true
+}

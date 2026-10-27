@@ -1,0 +1,16 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 1200,
+      "cacheWrite": 300,
+      "input": 1300,
+      "output": 400,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-21",
+    "model": "gpt-4.1-2025-04-14",
+    "tokens": 3200,
+    "tool": "copilot"
+  }
+]

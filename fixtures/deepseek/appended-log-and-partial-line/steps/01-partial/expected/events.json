@@ -1,0 +1,19 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "deepseek:40a2e768a2fea9c9706675b91383aee4eee0b18a35df80be2616b9378e6f5fc6",
+    "model": "deepseek-v4-flash",
+    "occurredAt": "2026-10-22T08:00:01.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/dsh-project",
+    "sessionId": "dsh-session-d",
+    "tokens": {
+      "cacheRead": 2000,
+      "cacheWrite": 50,
+      "input": 500,
+      "output": 100,
+      "reasoning": 0
+    },
+    "tool": "deepseek"
+  }
+]

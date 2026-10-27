@@ -1,0 +1,4 @@
+{
+  "description": "Token counts written as event records (with their sequence numbers) and as event_msg records are both read and differenced; cache writes leave input as they are inside it, cache reads too; the model is the one that answered, else the one requested; a replayed count and null info add nothing.",
+  "rustOnly": true
+}

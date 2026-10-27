@@ -1,0 +1,15 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 475,
+      "cacheWrite": 60,
+      "input": 150,
+      "output": 55,
+      "reasoning": 10
+    },
+    "costMicrousd": null,
+    "name": "/synthetic/dsh-project",
+    "sessions": 2,
+    "tokens": 740
+  }
+]

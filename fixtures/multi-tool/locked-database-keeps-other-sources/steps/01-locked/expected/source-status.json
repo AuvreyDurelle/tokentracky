@@ -1,0 +1,43 @@
+{
+  "lastScanAt": "2026-10-23T12:00:00.000Z",
+  "sources": [
+    {
+      "capabilities": {
+        "costs": false,
+        "models": true,
+        "projects": false,
+        "quotas": false,
+        "tokens": true
+      },
+      "enabled": true,
+      "eventCount": 1,
+      "id": "gemini",
+      "lastImportedAt": "2026-10-23T12:00:00.000Z",
+      "message": "Authorized logs are current.",
+      "name": "Gemini CLI",
+      "paths": [
+        "chats"
+      ],
+      "state": "current"
+    },
+    {
+      "capabilities": {
+        "costs": false,
+        "models": true,
+        "projects": true,
+        "quotas": false,
+        "tokens": true
+      },
+      "enabled": true,
+      "eventCount": 0,
+      "id": "opencode",
+      "lastImportedAt": null,
+      "message": "Some authorized logs could not be read.",
+      "name": "OpenCode",
+      "paths": [
+        "opencode.db"
+      ],
+      "state": "error"
+    }
+  ]
+}

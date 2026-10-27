@@ -1,0 +1,27 @@
+[package]
+name = "tokentracky-pricing"
+description = "Bundled LiteLLM price table, alias map and daily refresh for Tokentracky"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[lib]
+name = "tokentracky_pricing"
+
+[dependencies]
+tokentracky-core = { path = "../core" }
+serde = { workspace = true }
+# `float_roundtrip` parses every rate to the nearest f64, as JavaScript does; the table version hashes it back out.
+serde_json = { workspace = true, features = ["float_roundtrip"] }
+thiserror = { workspace = true }
+time = { workspace = true, features = ["formatting", "parsing", "macros"] }
+sha2 = { workspace = true }
+hex = { workspace = true }
+ryu-js = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+
+[lints]
+workspace = true

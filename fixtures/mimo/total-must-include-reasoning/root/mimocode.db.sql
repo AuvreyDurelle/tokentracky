@@ -1,0 +1,12 @@
+PRAGMA journal_mode=WAL;
+PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+CREATE TABLE session(id TEXT PRIMARY KEY, directory TEXT, title TEXT);
+CREATE TABLE message(id TEXT PRIMARY KEY, session_id TEXT NOT NULL, agent_id TEXT NOT NULL DEFAULT 'main', time_created INTEGER NOT NULL, time_updated INTEGER NOT NULL, data TEXT NOT NULL);
+CREATE TABLE part(id TEXT PRIMARY KEY, message_id TEXT, session_id TEXT, time_created INTEGER, time_updated INTEGER, data TEXT);
+INSERT INTO session VALUES('ses_M1','/synthetic/mimo-project','PRIVATE_PROMPT_MARKER');
+INSERT INTO message VALUES('msg_OK','ses_M1','main',1792746000000,1792746005000,'{"role":"assistant","time":{"created":1792746000000,"completed":1792746005000},"parentID":"msg_00USER","modelID":"mimo-v2.5-pro","providerID":"mimo","mode":"build","agent":"build","path":{"cwd":"/synthetic/mimo-project","root":"/synthetic/mimo-project"},"summary":{"title":"PRIVATE_PROMPT_MARKER"},"cost":0,"tokens":{"total":1200,"input":700,"output":300,"reasoning":100,"cache":{"read":100,"write":0}},"finish":"stop"}');
+INSERT INTO message VALUES('msg_INSIDE','ses_M1','main',1792746010000,1792746015000,'{"role":"assistant","time":{"created":1792746010000,"completed":1792746015000},"parentID":"msg_00USER","modelID":"mimo-v2.5-pro","providerID":"mimo","mode":"build","agent":"build","path":{"cwd":"/synthetic/mimo-project","root":"/synthetic/mimo-project"},"summary":{"title":"PRIVATE_PROMPT_MARKER"},"cost":0,"tokens":{"total":1100,"input":800,"output":300,"reasoning":100,"cache":{"read":0,"write":0}},"finish":"stop"}');
+INSERT INTO message VALUES('msg_BAD','ses_M1','main',1792746020000,1792746025000,'{"role":"assistant","time":{"created":1792746020000,"completed":1792746025000},"parentID":"msg_00USER","modelID":"mimo-v2.5-pro","providerID":"mimo","mode":"build","agent":"build","path":{"cwd":"/synthetic/mimo-project","root":"/synthetic/mimo-project"},"summary":{"title":"PRIVATE_PROMPT_MARKER"},"cost":0,"tokens":{"total":5,"input":800,"output":300,"reasoning":100,"cache":{"read":0,"write":0}},"finish":"stop"}');
+INSERT INTO message VALUES('msg_NEG','ses_M1','main',1792746030000,1792746035000,'{"role":"assistant","time":{"created":1792746030000,"completed":1792746035000},"parentID":"msg_00USER","modelID":"mimo-v2.5-pro","providerID":"mimo","mode":"build","agent":"build","path":{"cwd":"/synthetic/mimo-project","root":"/synthetic/mimo-project"},"summary":{"title":"PRIVATE_PROMPT_MARKER"},"cost":0,"tokens":{"total":650,"input":-50,"output":300,"reasoning":0,"cache":{"read":400,"write":0}},"finish":"stop"}');
+COMMIT;

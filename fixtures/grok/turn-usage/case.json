@@ -1,0 +1,13 @@
+{
+  "description": "Each turn_completed counts once per model in usage.modelUsage (or as grok-build without a split): input less both caches, output with reasoning inside it, and xAI's own cost in 10^-10 USD, unless the usage is incomplete, when the price table prices it. A cancelled turn without usage counts nothing, and the session's conversation files are never opened.",
+  "rustOnly": true,
+  "price": {
+    "version": "synthetic-grok",
+    "rates": {
+      "input": 2,
+      "output": 6,
+      "cacheRead": 1,
+      "cacheWrite": 3
+    }
+  }
+}

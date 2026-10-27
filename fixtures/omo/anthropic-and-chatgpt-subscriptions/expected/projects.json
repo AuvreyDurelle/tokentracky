@@ -1,0 +1,16 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 1738543,
+      "cacheWrite": 5119,
+      "cacheWrite1h": 5119,
+      "input": 1207,
+      "output": 1642,
+      "reasoning": 729
+    },
+    "costMicrousd": null,
+    "name": "/synthetic/delta",
+    "sessions": 1,
+    "tokens": 1746511
+  }
+]

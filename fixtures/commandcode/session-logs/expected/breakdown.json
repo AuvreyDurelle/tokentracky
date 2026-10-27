@@ -1,0 +1,44 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 2800,
+      "input": 200,
+      "output": 200,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": "claude-sonnet-4-6",
+    "tokens": 3200,
+    "tool": "commandcode"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 10000,
+      "cacheWrite": 1500,
+      "input": 500,
+      "output": 800,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": "deepseek-v4-flash",
+    "tokens": 12800,
+    "tool": "commandcode"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 100,
+      "output": 10,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": "unknown",
+    "tokens": 110,
+    "tool": "commandcode"
+  }
+]

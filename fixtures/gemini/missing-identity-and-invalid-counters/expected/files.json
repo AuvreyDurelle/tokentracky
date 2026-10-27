@@ -1,0 +1,14 @@
+{
+  "gemini:project-slug/chats/session-early.jsonl": {
+    "diagnostics": [
+      "missing_stable_identity"
+    ],
+    "offset": 229
+  },
+  "gemini:project-slug/chats/session-invalid.jsonl": {
+    "diagnostics": [
+      "invalid_counters"
+    ],
+    "offset": 655
+  }
+}

@@ -1,0 +1,46 @@
+[package]
+name = "tokentracky-local-api"
+description = "The local HTTP API of Tokentracky: routes, session protection, device connect and cloud sync"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[lib]
+name = "tokentracky_local_api"
+
+[dependencies]
+tokentracky-core = { path = "../core" }
+tokentracky-collector = { path = "../collector" }
+tokentracky-pricing = { path = "../pricing" }
+axum = { workspace = true }
+base64 = { workspace = true }
+gethostname = { workspace = true }
+getrandom = { workspace = true }
+hex = { workspace = true }
+hyper = { workspace = true, features = ["http1", "server"] }
+hyper-util = { workspace = true, features = ["tokio", "server", "server-graceful", "service"] }
+jiff = { workspace = true }
+reqwest = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+subtle = { workspace = true }
+thiserror = { workspace = true }
+time = { workspace = true }
+tokio = { workspace = true, features = ["net", "signal"] }
+tokio-util = { workspace = true }
+tower = { workspace = true, features = ["util"] }
+tower-http = { workspace = true, features = ["fs"] }
+url = { workspace = true }
+
+[dev-dependencies]
+rusqlite = { workspace = true }
+tempfile = { workspace = true }
+time = { workspace = true, features = ["parsing"] }
+tokio = { workspace = true, features = ["test-util", "io-util"] }
+tokio-util = { workspace = true, features = ["io"] }
+uuid = { workspace = true }
+
+[lints]
+workspace = true

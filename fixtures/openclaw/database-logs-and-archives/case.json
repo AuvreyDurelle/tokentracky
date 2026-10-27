@@ -1,0 +1,7 @@
+{
+  "description": "Assistant messages count once by entry id across the agent database (plain and zstd-compressed events), a reset archive and a session log: input leaves both caches out and the total must equal the four kinds, so a total that holds the cache read inside input is skipped. Compaction checkpoint copies, user messages and entries without an id do not count; a log without a header is its file's session; message text never leaves SQLite or the reader.",
+  "rustOnly": true,
+  "forbidden": [
+    "msg_PRIVATE_RESPONSE_ID"
+  ]
+}

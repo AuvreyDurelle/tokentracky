@@ -1,0 +1,53 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "lmstudio:6eb6f2668770729ed96bde10e287f5ce0dbbb099e037498fb1bf86448253ccf6",
+    "model": "lmstudio-community/llama-3.2-3b-instruct",
+    "occurredAt": "2026-10-21T09:00:00.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "2026-10-21.1",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 400,
+      "output": 100,
+      "reasoning": 0
+    },
+    "tool": "lmstudio"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "lmstudio:a773bfbe8c1fc205da6e2195cb5fa4fb50ea6f4bb461543f66f6054abf7e645c",
+    "model": "qwen2.5-7b-instruct",
+    "occurredAt": "2026-10-20T10:00:00.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "2026-10-21.1",
+    "tokens": {
+      "cacheRead": 1500,
+      "cacheWrite": 0,
+      "input": 500,
+      "output": 300,
+      "reasoning": 120
+    },
+    "tool": "lmstudio"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "lmstudio:f5989208cf0ed63ab62e0488666c7d117ecb81a48003e61f6e3c2e242598e7ed",
+    "model": "google/gemma-3-12b",
+    "occurredAt": "2026-10-20T10:02:00.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "2026-10-20.1",
+    "tokens": {
+      "cacheRead": 1276,
+      "cacheWrite": 0,
+      "input": 17,
+      "output": 42,
+      "reasoning": 0
+    },
+    "tool": "lmstudio"
+  }
+]

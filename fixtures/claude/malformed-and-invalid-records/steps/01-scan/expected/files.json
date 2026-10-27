@@ -1,0 +1,9 @@
+{
+  "claude:session.jsonl": {
+    "diagnostics": [
+      "malformed_json",
+      "invalid_record"
+    ],
+    "offset": 579
+  }
+}

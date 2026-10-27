@@ -1,0 +1,15 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 100,
+      "output": 10,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "name": "/synthetic/opencode-project",
+    "sessions": 1,
+    "tokens": 110
+  }
+]

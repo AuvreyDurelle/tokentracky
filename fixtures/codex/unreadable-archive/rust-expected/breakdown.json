@@ -1,0 +1,16 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 300,
+      "output": 30,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": "gpt-5-codex",
+    "tokens": 330,
+    "tool": "codex"
+  }
+]

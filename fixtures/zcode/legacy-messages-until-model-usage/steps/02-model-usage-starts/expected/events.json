@@ -1,0 +1,70 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "zcode:557adfeb41430eb72eb58608c16069dd7c40ad8e4249b5b8164e503239e3ac64",
+    "model": "glm-4.5",
+    "occurredAt": "2026-08-03T09:00:00.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/zcode-legacy",
+    "sessionId": "ses_L1",
+    "tokens": {
+      "cacheRead": 1500,
+      "cacheWrite": 0,
+      "input": 500,
+      "output": 300,
+      "reasoning": 100
+    },
+    "tool": "zcode"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "zcode:7f876827212c7896fa5444b04b4038b768ea6a4e8bfee6976c3c781df87086fb",
+    "model": "glm-4.5",
+    "occurredAt": "2026-09-01T09:58:15.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/zcode-legacy",
+    "sessionId": "ses_L1",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 50,
+      "output": 10,
+      "reasoning": 0
+    },
+    "tool": "zcode"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "zcode:853e9f1372ae3e5125d0158199bc396ea1a0a2294d7133d1eec55b441df662f8",
+    "model": "mimo-v2.5-pro",
+    "occurredAt": "2026-08-03T09:00:10.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/zcode-legacy",
+    "sessionId": "ses_L1",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 400,
+      "output": 100,
+      "reasoning": 0
+    },
+    "tool": "zcode"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "zcode:e6c012f6c76d5ab904ba90055c17109e3f45f02a4717c4380d62d2179bc52f5c",
+    "model": "glm-4.6",
+    "occurredAt": "2026-09-01T10:00:00.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/zcode-legacy",
+    "sessionId": "ses_N1",
+    "tokens": {
+      "cacheRead": 600,
+      "cacheWrite": 0,
+      "input": 400,
+      "output": 200,
+      "reasoning": 0
+    },
+    "tool": "zcode"
+  }
+]

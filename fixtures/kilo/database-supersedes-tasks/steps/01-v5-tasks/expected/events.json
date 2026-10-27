@@ -1,0 +1,18 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "kilo:40a0b8624c04121414dde90983e3c3ea1a20fedf8c23f988522ebc1218aac50d",
+    "model": "unknown",
+    "occurredAt": "2026-10-23T09:00:01.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "t1",
+    "tokens": {
+      "cacheRead": 1000,
+      "cacheWrite": 100,
+      "input": 400,
+      "output": 200
+    },
+    "tool": "kilo"
+  }
+]

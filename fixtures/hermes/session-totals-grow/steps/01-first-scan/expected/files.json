@@ -1,0 +1,10 @@
+{
+  "hermes:profiles/work/state.db": {
+    "diagnostics": []
+  },
+  "hermes:state.db": {
+    "diagnostics": [
+      "invalid_counters"
+    ]
+  }
+}

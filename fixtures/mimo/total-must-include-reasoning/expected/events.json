@@ -1,0 +1,19 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "mimo:5adb960ac003ac24d32bf66ea317865e1d304ff658e20a36e285d8b46fce4e21",
+    "model": "mimo-v2.5-pro",
+    "occurredAt": "2026-10-23T09:00:00.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/mimo-project",
+    "sessionId": "ses_M1",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 0,
+      "input": 700,
+      "output": 400,
+      "reasoning": 100
+    },
+    "tool": "mimo"
+  }
+]

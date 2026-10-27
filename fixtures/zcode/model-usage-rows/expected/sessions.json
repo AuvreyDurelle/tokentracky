@@ -1,0 +1,23 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 3400,
+      "cacheWrite": 500,
+      "input": 2900,
+      "output": 1170,
+      "reasoning": 300
+    },
+    "costMicrousd": null,
+    "id": "ses_Z1",
+    "lastUsedAt": "2026-10-22T10:01:50.000Z",
+    "model": "unknown",
+    "models": [
+      "glm-4.6",
+      "mimo-v2.5-pro",
+      "unknown"
+    ],
+    "project": "/synthetic/zcode-project",
+    "tokens": 7970,
+    "tool": "zcode"
+  }
+]

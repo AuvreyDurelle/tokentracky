@@ -1,0 +1,21 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 2000,
+      "cacheWrite": 50,
+      "input": 500,
+      "output": 100,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "dsh-session-d",
+    "lastUsedAt": "2026-10-22T08:00:01.000Z",
+    "model": "deepseek-v4-flash",
+    "models": [
+      "deepseek-v4-flash"
+    ],
+    "project": "/synthetic/dsh-project",
+    "tokens": 2650,
+    "tool": "deepseek"
+  }
+]

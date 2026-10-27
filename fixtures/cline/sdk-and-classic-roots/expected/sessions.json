@@ -1,0 +1,59 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 20,
+      "output": 5,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "agent_1",
+    "lastUsedAt": "2026-10-23T09:00:05.000Z",
+    "model": "claude-sonnet-4-6",
+    "models": [
+      "claude-sonnet-4-6"
+    ],
+    "project": "/synthetic/cline-project",
+    "tokens": 25,
+    "tool": "cline"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 1000,
+      "cacheWrite": 100,
+      "input": 400,
+      "output": 250,
+      "reasoning": 50
+    },
+    "costMicrousd": null,
+    "id": "s_test",
+    "lastUsedAt": "2026-10-23T09:00:05.000Z",
+    "model": "claude-sonnet-4-6",
+    "models": [
+      "claude-sonnet-4-6"
+    ],
+    "project": "/synthetic/cline-project",
+    "tokens": 1750,
+    "tool": "cline"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 1000,
+      "cacheWrite": 100,
+      "input": 400,
+      "output": 200,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "t1",
+    "lastUsedAt": "2026-10-23T09:00:01.000Z",
+    "model": "claude-sonnet-4-6",
+    "models": [
+      "claude-sonnet-4-6"
+    ],
+    "project": null,
+    "tokens": 1700,
+    "tool": "cline"
+  }
+]

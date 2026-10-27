@@ -1,0 +1,82 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "goose:37cd366bcc69e89a80ff079841e0699cd44321767ddf1c371055be4b11fe28cd",
+    "model": "gpt-5.6-terra",
+    "occurredAt": "2026-10-23T10:00:00.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "20261020_3",
+    "tokens": {
+      "cacheRead": 1000,
+      "cacheWrite": 0,
+      "input": 1000,
+      "output": 200
+    },
+    "tool": "goose"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "goose:4270ec52d04678689a6701d540834f21878e62829a0f91428a7d7dacf710c7b3",
+    "model": "claude-sonnet-4-6",
+    "occurredAt": "2026-10-22T09:00:00.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "20261022_1",
+    "tokens": {
+      "cacheRead": 3000,
+      "cacheWrite": 500,
+      "input": 1500,
+      "output": 400
+    },
+    "tool": "goose"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "goose:8ee09607ccccf12eaadf97f85d0830476f498de0e425df1a7fb66dba5a6903e6",
+    "model": "gpt-5.6-terra",
+    "occurredAt": "2026-10-23T10:00:00.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "20261020_3",
+    "tokens": {
+      "cacheRead": 2500,
+      "cacheWrite": 0,
+      "input": 500,
+      "output": 300
+    },
+    "tool": "goose"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "goose:a44a069d3df840d75462cb6be82139c12756fd24c087049b07ea52b84b661baf",
+    "model": "claude-haiku-4-5",
+    "occurredAt": "2026-10-22T09:30:00.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "20261022_1",
+    "tokens": {
+      "cacheRead": 1500,
+      "cacheWrite": 0,
+      "input": 500,
+      "output": 100
+    },
+    "tool": "goose"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "goose:c3f4940e637c754088a941981f2b5988cf2d6847b4d60109944e24f60505f25f",
+    "model": "gpt-5.6-terra",
+    "occurredAt": "2026-10-20T18:00:00.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "20261020_3",
+    "tokens": {
+      "cacheRead": 6000,
+      "cacheWrite": 1000,
+      "input": 3000,
+      "output": 1000
+    },
+    "tool": "goose"
+  }
+]

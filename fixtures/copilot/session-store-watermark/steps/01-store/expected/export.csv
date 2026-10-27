@@ -1,0 +1,4 @@
+"tool","model","timestamp","project","session","input","output","cache_read","cache_write","reasoning","total","cost_microusd"
+"copilot","gpt-5","2026-10-20T10:05:00.000Z","","copilot-session-1","1000","400","2000","0","150","3400",""
+"copilot","claude-haiku-4.5","","","copilot-session-2","600","50","0","0","0","650",""
+"copilot","claude-sonnet-4.5","2026-10-20T10:00:00.000Z","","copilot-session-1","500","800","10000","1500","200","12800",""

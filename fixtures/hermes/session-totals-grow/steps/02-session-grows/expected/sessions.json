@@ -1,0 +1,59 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 8000,
+      "cacheWrite": 600,
+      "input": 1500,
+      "output": 600,
+      "reasoning": 150
+    },
+    "costMicrousd": null,
+    "id": "20261022_090000_aaaa",
+    "lastUsedAt": "2026-10-23T10:00:00.000Z",
+    "model": "claude-sonnet-4-6",
+    "models": [
+      "claude-sonnet-4-6"
+    ],
+    "project": null,
+    "tokens": 10700,
+    "tool": "hermes"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 50,
+      "output": 10,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "20261022_110000_bbbb",
+    "lastUsedAt": "2026-10-22T12:00:00.000Z",
+    "model": "unknown",
+    "models": [
+      "unknown"
+    ],
+    "project": null,
+    "tokens": 60,
+    "tool": "hermes"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 200,
+      "output": 80,
+      "reasoning": 30
+    },
+    "costMicrousd": null,
+    "id": "20261022_090000_dddd",
+    "lastUsedAt": "2026-10-22T09:00:00.000Z",
+    "model": "gpt-5.6-terra",
+    "models": [
+      "gpt-5.6-terra"
+    ],
+    "project": null,
+    "tokens": 280,
+    "tool": "hermes"
+  }
+]

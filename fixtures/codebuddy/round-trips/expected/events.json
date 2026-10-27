@@ -1,0 +1,87 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "codebuddy:2560657a7fd7098aada0f63110fb5fcca19334fc2f1b0047666b18f5f55c611c",
+    "model": "deepseek-v4",
+    "occurredAt": "2026-10-23T09:00:30.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "cb-session-1",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 400,
+      "output": 40,
+      "reasoning": 0
+    },
+    "tool": "codebuddy"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "codebuddy:3ebde4b5e6d8a3d3041f11394caef4c3e6db345037fb0a816e0e1d263fae0426",
+    "model": "unknown",
+    "occurredAt": "2026-10-23T09:03:00.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "cb-session-1",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 100,
+      "output": 10,
+      "reasoning": 0
+    },
+    "tool": "codebuddy"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "codebuddy:6eb53ae42170efb49bd1e36f805330a2e83753f798a8cea1d997fe4173a1b43f",
+    "model": "claude-sonnet-4-6",
+    "occurredAt": "2026-10-23T09:01:00.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "cb-session-1",
+    "tokens": {
+      "cacheRead": 2000,
+      "cacheWrite": 500,
+      "input": 500,
+      "output": 100,
+      "reasoning": 0
+    },
+    "tool": "codebuddy"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "codebuddy:9a8fd09575cd0c25c4b0ee758841fe65024b0f3d6cc77dd1df47a232cf16788d",
+    "model": "deepseek-v4",
+    "occurredAt": "2026-10-23T09:00:04.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "cb-session-1",
+    "tokens": {
+      "cacheRead": 4000,
+      "cacheWrite": 0,
+      "input": 1000,
+      "output": 600,
+      "reasoning": 250
+    },
+    "tool": "codebuddy"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "codebuddy:cea8317ae2d94b2d36e4732f50a6310f4c36701b1a0658f1c1d907a6f5c55d01",
+    "model": "glm-5.3",
+    "occurredAt": "2026-10-23T09:02:00.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "cb-session-1",
+    "tokens": {
+      "cacheRead": 600,
+      "cacheWrite": 0,
+      "input": 200,
+      "output": 80,
+      "reasoning": 0
+    },
+    "tool": "codebuddy"
+  }
+]

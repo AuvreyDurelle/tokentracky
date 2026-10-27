@@ -1,0 +1,18 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "zed:20fa18d00e22cf28581fcb3a380f6e6c5123e6068a195d3f75d6d94762003da4",
+    "model": "claude-sonnet-4-6",
+    "occurredAt": "2026-10-22T09:00:00.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "t1",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 100,
+      "output": 20
+    },
+    "tool": "zed"
+  }
+]

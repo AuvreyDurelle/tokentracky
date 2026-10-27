@@ -1,0 +1,4 @@
+{
+  "description": "Chat replies count from their contextUsage: the prompt includes both caches and the total is prompt plus completion. A local route is named local/<model that answered>, a provider's route by the model that answered; an older reply without response details takes the model from contextUsage or its thread. API receipts count prompt and completion with their model as written. Estimated usage, totals that do not add up, caches above the prompt and replies without usage are skipped; message text never leaves SQLite.",
+  "rustOnly": true
+}

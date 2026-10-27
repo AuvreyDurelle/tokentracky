@@ -1,0 +1,8 @@
+{
+  "claude:session.jsonl": {
+    "diagnostics": [
+      "invalid_counters"
+    ],
+    "offset": 1025
+  }
+}

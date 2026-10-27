@@ -1,0 +1,87 @@
+[
+  {
+    "costMicrousd": 560,
+    "eventId": "grok:130a2e0cc19179b767e15600af050d3865bd0994fce14818aa66498ad56e287f",
+    "model": "grok-4.7-build",
+    "occurredAt": "2026-10-22T12:00:00.000Z",
+    "pricingVersion": "synthetic-grok",
+    "project": "/synthetic/grok-project",
+    "sessionId": "019a0000-0000-7000-8000-000000000001",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 0,
+      "input": 200,
+      "output": 10,
+      "reasoning": 0
+    },
+    "tool": "grok"
+  },
+  {
+    "costMicrousd": 3000,
+    "eventId": "grok:4355b69b4b1212c07519dd2a9b0696b26025e4700109965f360669cea64d4a3c",
+    "model": "grok-4.7-build",
+    "occurredAt": "2026-10-22T11:00:00.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/grok-project",
+    "sessionId": "019a0000-0000-7000-8000-000000000001",
+    "tokens": {
+      "cacheRead": 1500,
+      "cacheWrite": 0,
+      "input": 500,
+      "output": 100,
+      "reasoning": 40
+    },
+    "tool": "grok"
+  },
+  {
+    "costMicrousd": 1235,
+    "eventId": "grok:7c6e8dcb715c6c835ddb5c8113be874051361b5e18bfe0f55bb08a19c18f3324",
+    "model": "grok-4.7-build",
+    "occurredAt": "2026-10-22T10:05:00.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/grok-project",
+    "sessionId": "019a0000-0000-7000-8000-000000000001",
+    "tokens": {
+      "cacheRead": 600,
+      "cacheWrite": 0,
+      "input": 400,
+      "output": 50,
+      "reasoning": 20
+    },
+    "tool": "grok"
+  },
+  {
+    "costMicrousd": 160,
+    "eventId": "grok:afab76554e133e025a59673d5ceef7975b6d6ffd5cd389b8abae333f4cb8754a",
+    "model": "grok-4.6-build",
+    "occurredAt": "2026-10-22T11:00:00.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/grok-project",
+    "sessionId": "019a0000-0000-7000-8000-000000000001",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 500,
+      "output": 30,
+      "reasoning": 0
+    },
+    "tool": "grok"
+  },
+  {
+    "costMicrousd": 1,
+    "eventId": "grok:cedf0dc90ba889b66d7b975bdf95df3fa0db69e2cbe8cf391820e07be6a79c30",
+    "model": "grok-build",
+    "occurredAt": "2026-10-22T13:00:00.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/grok-project",
+    "sessionId": "019a0000-0000-7000-8000-000000000001",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 40,
+      "output": 5,
+      "reasoning": 0
+    },
+    "tool": "grok"
+  }
+]

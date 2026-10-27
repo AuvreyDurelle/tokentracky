@@ -1,0 +1,4 @@
+"tool","model","timestamp","project","session","input","output","cache_read","cache_write","reasoning","total","cost_microusd"
+"claude","claude-sonnet-4-6","2026-10-20T12:02:00.000Z","/synthetic/project","thinking-session","2","20","0","0","0","22",""
+"claude","claude-sonnet-4-6","2026-10-20T12:00:00.000Z","/synthetic/project","thinking-session","10","40","100","20","0","170",""
+"claude","claude-sonnet-4-6","2026-10-20T12:01:00.000Z","/synthetic/project","thinking-session","5","30","0","0","3","35",""

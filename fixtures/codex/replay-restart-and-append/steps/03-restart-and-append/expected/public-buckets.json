@@ -1,0 +1,142 @@
+{
+  "tools=off,cost=off,models=off,history=2026-10-21": [],
+  "tools=off,cost=off,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 60,
+        "cacheWrite": 0,
+        "input": 120,
+        "output": 50,
+        "reasoning": 25
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "revision": 11,
+      "tokens": 230,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=on,history=2026-10-21": [],
+  "tools=off,cost=off,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 60,
+        "cacheWrite": 0,
+        "input": 120,
+        "output": 50,
+        "reasoning": 25
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "gpt-5-codex",
+      "revision": 12,
+      "tokens": 230,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=off,history=2026-10-21": [],
+  "tools=off,cost=on,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 60,
+        "cacheWrite": 0,
+        "input": 120,
+        "output": 50,
+        "reasoning": 25
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "revision": 13,
+      "tokens": 230,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=on,history=2026-10-21": [],
+  "tools=off,cost=on,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 60,
+        "cacheWrite": 0,
+        "input": 120,
+        "output": 50,
+        "reasoning": 25
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "gpt-5-codex",
+      "revision": 14,
+      "tokens": 230,
+      "tool": "all"
+    }
+  ],
+  "tools=on,cost=off,models=off,history=2026-10-21": [],
+  "tools=on,cost=off,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 60,
+        "cacheWrite": 0,
+        "input": 120,
+        "output": 50,
+        "reasoning": 25
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "revision": 15,
+      "tokens": 230,
+      "tool": "codex"
+    }
+  ],
+  "tools=on,cost=off,models=on,history=2026-10-21": [],
+  "tools=on,cost=off,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 60,
+        "cacheWrite": 0,
+        "input": 120,
+        "output": 50,
+        "reasoning": 25
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "gpt-5-codex",
+      "revision": 16,
+      "tokens": 230,
+      "tool": "codex"
+    }
+  ],
+  "tools=on,cost=on,models=off,history=2026-10-21": [],
+  "tools=on,cost=on,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 60,
+        "cacheWrite": 0,
+        "input": 120,
+        "output": 50,
+        "reasoning": 25
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "revision": 17,
+      "tokens": 230,
+      "tool": "codex"
+    }
+  ],
+  "tools=on,cost=on,models=on,history=2026-10-21": [],
+  "tools=on,cost=on,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 60,
+        "cacheWrite": 0,
+        "input": 120,
+        "output": 50,
+        "reasoning": 25
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "gpt-5-codex",
+      "revision": 18,
+      "tokens": 230,
+      "tool": "codex"
+    }
+  ]
+}

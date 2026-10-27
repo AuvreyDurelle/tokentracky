@@ -1,0 +1,4 @@
+{
+  "description": "Assistant envelopes in dated session folders count by message_id, so a fork's copied envelopes count once; migrated historical-transcript rows with zero usage, user and tool rows, manifests and staged copies in .history-mutation folders add nothing, and the session comes from the folder with no project; after compaction replaces messages.jsonl the usage seen stays and the new message counts.",
+  "rustOnly": true
+}

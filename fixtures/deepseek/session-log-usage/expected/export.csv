@@ -1,0 +1,3 @@
+"tool","model","timestamp","project","session","input","output","cache_read","cache_write","reasoning","total","cost_microusd"
+"deepseek","deepseek-v4-flash","2026-10-20T10:00:05.000Z","/synthetic/dsh-project","dsh-session-a","1200","300","8000","0","120","9500",""
+"deepseek","deepseek-v4-pro","2026-10-20T10:00:08.000Z","/synthetic/dsh-project","dsh-session-a","50","20","0","0","0","70",""

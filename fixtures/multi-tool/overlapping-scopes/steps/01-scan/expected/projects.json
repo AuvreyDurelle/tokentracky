@@ -1,0 +1,29 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "name": "/synthetic/private-project",
+    "sessions": 1,
+    "tokens": 161
+  },
+  {
+    "breakdown": {
+      "cacheRead": 20,
+      "cacheWrite": 0,
+      "input": 80,
+      "output": 10,
+      "reasoning": 3
+    },
+    "costMicrousd": null,
+    "name": "/synthetic/codex-project",
+    "sessions": 1,
+    "tokens": 110
+  }
+]

@@ -1,0 +1,4 @@
+{
+  "description": "Each session's running total (input without caches, reasoning inside output) counts once, from the main and profile databases but not a snapshot copy; when it grows only the growth counts, dated at the session's latest start, end or activity and given to its model. A lower total keeps what was counted; reasoning above output is invalid; system prompts, messages, titles and folders are never read.",
+  "rustOnly": true
+}

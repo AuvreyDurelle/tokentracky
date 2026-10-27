@@ -1,0 +1,36 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "gemini:46155f2f1edbe34ee864bf4e592f439321ac8a614627e10240acf70ad3624e17",
+    "model": "gemini-3-pro",
+    "occurredAt": "2026-10-23T09:00:03.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "abcd1234-0000-4000-8000-000000000001",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 10,
+      "output": 5,
+      "reasoning": 0
+    },
+    "tool": "gemini"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "gemini:6f0579c962633a935315ea56fb15b1c434fe7cc1e57db542a14fe3fe8f6e253b",
+    "model": "gemini-3-pro",
+    "occurredAt": "2026-10-23T09:00:03.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "abcd1234-0000-4000-8000-000000000001",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 0,
+      "input": 430,
+      "output": 20,
+      "reasoning": 0
+    },
+    "tool": "gemini"
+  }
+]

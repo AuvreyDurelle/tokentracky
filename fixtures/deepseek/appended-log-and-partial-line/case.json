@@ -1,0 +1,4 @@
+{
+  "description": "A half-written final line waits (partial_line_pending) and counts once completed; the appended lines are read with the session, project and request model saved from the first scan.",
+  "rustOnly": true
+}

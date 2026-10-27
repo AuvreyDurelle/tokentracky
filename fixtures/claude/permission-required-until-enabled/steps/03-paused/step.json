@@ -1,0 +1,13 @@
+{
+  "ops": [
+    {
+      "op": "configure",
+      "tool": "claude",
+      "enabled": false,
+      "paths": [
+        "."
+      ]
+    }
+  ],
+  "tokens": 161
+}

@@ -1,0 +1,87 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "omp:2bfb68e6d0770795545cefc3ae8f7ada375e1173055327c83859ae98336f52ec",
+    "model": "gpt-5.1-codex",
+    "occurredAt": "2026-10-20T11:00:04.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/gamma",
+    "sessionId": "0199f010-0000-7000-8000-000000000010",
+    "tokens": {
+      "cacheRead": 2000,
+      "cacheWrite": 0,
+      "input": 500,
+      "output": 300,
+      "reasoning": 120
+    },
+    "tool": "omp"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "omp:394c97e54d9b3580164e2683f3324496aa91e0481c0b1870c336395b3a2418a7",
+    "model": "gpt-5-mini",
+    "occurredAt": "2026-10-20T11:00:09.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/gamma",
+    "sessionId": "0199f010-0000-7000-8000-000000000010",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 200,
+      "output": 20,
+      "reasoning": 0
+    },
+    "tool": "omp"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "omp:75ec1e7e42db85aa73fd3aad95113ad173cca7140148469b389fef4f00ef6e70",
+    "model": "claude-haiku-4-5",
+    "occurredAt": "2026-10-20T11:00:06.500Z",
+    "pricingVersion": null,
+    "project": "/synthetic/gamma",
+    "sessionId": "0199f010-0000-7000-8000-000000000011",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 600,
+      "input": 400,
+      "output": 100,
+      "reasoning": 0
+    },
+    "tool": "omp"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "omp:a01ac6ffac93a0830c5f5360cafbfb866caff08958ce182cc3af54f019335dd9",
+    "model": "claude-opus-4-6",
+    "occurredAt": "2026-10-20T11:00:08.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/gamma",
+    "sessionId": "0199f010-0000-7000-8000-000000000010",
+    "tokens": {
+      "cacheRead": 3000,
+      "cacheWrite": 500,
+      "input": 10,
+      "output": 40,
+      "reasoning": 0
+    },
+    "tool": "omp"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "omp:e0e08c254727fd3282bef774a5e28c840cc6f61cb4ed1774bc1f705043500bfd",
+    "model": "claude-opus-4-6",
+    "occurredAt": "2026-10-20T11:00:30.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/gamma",
+    "sessionId": "0199f010-0000-7000-8000-000000000010",
+    "tokens": {
+      "cacheRead": 3500,
+      "cacheWrite": 100,
+      "input": 5,
+      "output": 60,
+      "reasoning": 0
+    },
+    "tool": "omp"
+  }
+]

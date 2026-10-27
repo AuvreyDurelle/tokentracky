@@ -1,0 +1,3 @@
+{
+  "description": "Delta-only records count, their replay does not, and a later cumulative snapshot continues from the deltas."
+}

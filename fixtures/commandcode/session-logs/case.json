@@ -1,0 +1,4 @@
+{
+  "description": "A session log: the header gives the session and working folder, input includes both caches (taken out), the provider prefix of the model is dropped, an entry without a model is unknown, caches larger than input are invalid_counters, an entry without a timestamp is missing_stable_identity; costUsd, compaction entries, checkpoints, prompts and metadata files add nothing.",
+  "rustOnly": true
+}

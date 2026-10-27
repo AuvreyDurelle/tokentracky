@@ -1,0 +1,61 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 12300,
+      "cacheWrite": 550,
+      "input": 745,
+      "output": 415,
+      "reasoning": 120
+    },
+    "costMicrousd": null,
+    "id": "0199f012-0000-7000-8000-000000000012",
+    "lastUsedAt": "2026-10-20T11:10:05.000Z",
+    "model": "claude-opus-4-6",
+    "models": [
+      "claude-opus-4-6",
+      "gpt-5.1-codex",
+      "gpt-5-mini"
+    ],
+    "project": "/synthetic/gamma",
+    "tokens": 14010,
+    "tool": "omp"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 3500,
+      "cacheWrite": 100,
+      "input": 5,
+      "output": 60,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "0199f010-0000-7000-8000-000000000010",
+    "lastUsedAt": "2026-10-20T11:00:30.000Z",
+    "model": "claude-opus-4-6",
+    "models": [
+      "claude-opus-4-6"
+    ],
+    "project": "/synthetic/gamma",
+    "tokens": 3665,
+    "tool": "omp"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 600,
+      "input": 400,
+      "output": 100,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "0199f010-0000-7000-8000-000000000011",
+    "lastUsedAt": "2026-10-20T11:00:06.500Z",
+    "model": "claude-haiku-4-5",
+    "models": [
+      "claude-haiku-4-5"
+    ],
+    "project": "/synthetic/gamma",
+    "tokens": 1100,
+    "tool": "omp"
+  }
+]

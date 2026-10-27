@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "updated_at": "2026-10-23T09:00:05.000Z",
+  "agent": "lead",
+  "sessionId": "s_test",
+  "origin": {
+    "source": "cli",
+    "mode": "user",
+    "sessionId": "s_test"
+  },
+  "messages": [
+    {
+      "id": "m_u1",
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "PRIVATE_PROMPT_MARKER"
+        }
+      ]
+    },
+    {
+      "id": "m_a1",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "PRIVATE_RESPONSE_MARKER"
+        }
+      ],
+      "ts": 1792746005000,
+      "modelInfo": {
+        "id": "claude-sonnet-4-6",
+        "provider": "anthropic"
+      },
+      "metrics": {
+        "inputTokens": 1500,
+        "outputTokens": 200,
+        "cacheReadTokens": 1000,
+        "cacheWriteTokens": 100,
+        "reasoningTokenCount": 50,
+        "cost": 0.0123
+      }
+    }
+  ],
+  "system_prompt": "PRIVATE_PROMPT_MARKER"
+}

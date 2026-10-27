@@ -1,0 +1,3 @@
+{
+  "description": "Cumulative totals are differenced, cached input is subtracted from input, a repeated total is skipped and reasoning stays informational."
+}

@@ -1,0 +1,3 @@
+{
+  "description": "A message larger than the usual 1 MiB line limit is kept; a half-written final line waits (partial_line_pending) and is counted once completed."
+}

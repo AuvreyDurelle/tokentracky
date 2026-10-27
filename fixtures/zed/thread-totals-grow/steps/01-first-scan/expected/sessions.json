@@ -1,0 +1,59 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 0,
+      "output": 7,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "t4",
+    "lastUsedAt": "2026-10-22T11:00:00.000Z",
+    "model": "unknown",
+    "models": [
+      "unknown"
+    ],
+    "project": null,
+    "tokens": 7,
+    "tool": "zed"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 100,
+      "output": 20,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "t2",
+    "lastUsedAt": "2026-10-22T10:00:00.000Z",
+    "model": "gemini-3-pro",
+    "models": [
+      "gemini-3-pro"
+    ],
+    "project": null,
+    "tokens": 120,
+    "tool": "zed"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 4000,
+      "cacheWrite": 500,
+      "input": 1200,
+      "output": 300,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "t1",
+    "lastUsedAt": "2026-10-22T09:00:00.123Z",
+    "model": "claude-sonnet-4-6",
+    "models": [
+      "claude-sonnet-4-6"
+    ],
+    "project": null,
+    "tokens": 6000,
+    "tool": "zed"
+  }
+]

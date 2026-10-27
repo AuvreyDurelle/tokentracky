@@ -1,0 +1,53 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "deepseek:27e84f0c4adaceabd0936dbc74cd87201d8b93e941bf620ad5a5a6d3cc74ac5b",
+    "model": "deepseek-v4-flash",
+    "occurredAt": "2026-10-21T09:00:35.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/dsh-project",
+    "sessionId": "dsh-session-c",
+    "tokens": {
+      "cacheRead": 75,
+      "cacheWrite": 0,
+      "input": 20,
+      "output": 5,
+      "reasoning": 0
+    },
+    "tool": "deepseek"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "deepseek:5102369078df4ceb8657d086567b40767f93c7ecfa42398973ca550049d9ad68",
+    "model": "deepseek-v4-flash",
+    "occurredAt": "2026-10-21T09:00:03.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/dsh-project",
+    "sessionId": "dsh-session-b",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 60,
+      "input": 30,
+      "output": 10,
+      "reasoning": 0
+    },
+    "tool": "deepseek"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "deepseek:d8c2a18406c84b4e6909a6d3ed4b067fb38567dc8d3430db6600c3ccafe2a910",
+    "model": "deepseek-v4-flash",
+    "occurredAt": "2026-10-21T09:00:01.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/dsh-project",
+    "sessionId": "dsh-session-c",
+    "tokens": {
+      "cacheRead": 400,
+      "cacheWrite": 0,
+      "input": 100,
+      "output": 40,
+      "reasoning": 10
+    },
+    "tool": "deepseek"
+  }
+]

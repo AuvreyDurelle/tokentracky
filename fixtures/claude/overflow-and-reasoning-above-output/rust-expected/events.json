@@ -1,0 +1,20 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "claude:0c4d01e81bb3d1fd0dc4a0b4224518953794068715317ff39e0bbfc29e4ab06a",
+    "model": "claude-sonnet-4-6",
+    "occurredAt": "2026-10-20T12:00:00.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/private-project",
+    "sessionId": "claude-session",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 20
+    },
+    "tool": "claude"
+  }
+]

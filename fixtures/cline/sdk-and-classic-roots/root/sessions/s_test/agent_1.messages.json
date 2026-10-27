@@ -1,0 +1,1 @@
+{"version":1,"agent":"subagent","sessionId":"agent_1","messages":[{"id":"m_sub","role":"assistant","content":[{"type":"text","text":"PRIVATE_RESPONSE_MARKER"}],"ts":1792746005000,"modelInfo":{"id":"claude-sonnet-4-6","provider":"anthropic"},"metrics":{"inputTokens":20,"outputTokens":5}}]}

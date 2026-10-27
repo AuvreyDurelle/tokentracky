@@ -1,0 +1,16 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 2100,
+      "cacheWrite": 0,
+      "input": 1200,
+      "output": 330,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-22",
+    "model": "local/unsloth/Qwen3-8B-GGUF",
+    "tokens": 3630,
+    "tool": "unsloth"
+  }
+]

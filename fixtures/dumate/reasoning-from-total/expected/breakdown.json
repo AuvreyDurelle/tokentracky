@@ -1,0 +1,30 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 768,
+      "cacheWrite": 0,
+      "input": 1070,
+      "output": 888,
+      "reasoning": 818
+    },
+    "costMicrousd": null,
+    "day": "2026-10-08",
+    "model": "glm-5",
+    "tokens": 2726,
+    "tool": "dumate"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 110,
+      "output": 75,
+      "reasoning": 20
+    },
+    "costMicrousd": null,
+    "day": "2026-10-23",
+    "model": "glm-5",
+    "tokens": 185,
+    "tool": "dumate"
+  }
+]

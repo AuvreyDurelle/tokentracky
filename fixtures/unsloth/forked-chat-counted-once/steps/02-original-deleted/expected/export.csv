@@ -1,0 +1,4 @@
+"tool","model","timestamp","project","session","input","output","cache_read","cache_write","reasoning","total","cost_microusd"
+"unsloth","local/unsloth/Qwen3-8B-GGUF","2026-10-22T09:02:10.000Z","","C","300","30","0","0","0","330",""
+"unsloth","local/unsloth/Qwen3-8B-GGUF","2026-10-22T09:00:02.000Z","","A","400","100","600","0","0","1100",""
+"unsloth","local/unsloth/Qwen3-8B-GGUF","2026-10-22T09:01:11.000Z","","B","500","200","1500","0","0","2200",""

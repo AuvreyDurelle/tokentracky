@@ -1,0 +1,121 @@
+{
+  "activity": {
+    "activeDays": 2,
+    "averagePerActiveDay": 4289,
+    "bestDay": {
+      "day": "2026-10-22",
+      "tokens": 6127
+    },
+    "currentStreak": 2,
+    "longestStreak": 2
+  },
+  "breakdown": {
+    "cacheRead": 6000,
+    "cacheWrite": 500,
+    "input": 1600,
+    "output": 477,
+    "reasoning": 0
+  },
+  "byModel": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 100,
+        "output": 20,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "gemini-3-pro",
+      "tokens": 120
+    },
+    {
+      "breakdown": {
+        "cacheRead": 2000,
+        "cacheWrite": 0,
+        "input": 300,
+        "output": 150,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "gpt-5.6-terra",
+      "tokens": 2450
+    },
+    {
+      "breakdown": {
+        "cacheRead": 4000,
+        "cacheWrite": 500,
+        "input": 1200,
+        "output": 300,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "claude-sonnet-4-6",
+      "tokens": 6000
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 0,
+        "output": 7,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "unknown",
+      "tokens": 7
+    }
+  ],
+  "byTool": [
+    {
+      "breakdown": {
+        "cacheRead": 6000,
+        "cacheWrite": 500,
+        "input": 1600,
+        "output": 477,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "tokens": 8577,
+      "tool": "zed"
+    }
+  ],
+  "cacheRate": 0.7407407407407407,
+  "costMicrousd": null,
+  "costParts": null,
+  "daily": [
+    {
+      "breakdown": {
+        "cacheRead": 4000,
+        "cacheWrite": 500,
+        "input": 1300,
+        "output": 327,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "day": "2026-10-22",
+      "tokens": 6127
+    },
+    {
+      "breakdown": {
+        "cacheRead": 2000,
+        "cacheWrite": 0,
+        "input": 300,
+        "output": 150,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "day": "2026-10-23",
+      "tokens": 2450
+    }
+  ],
+  "sessions": 3,
+  "tokens": 8577
+}

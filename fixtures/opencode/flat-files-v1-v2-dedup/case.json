@@ -1,0 +1,9 @@
+{
+  "description": "The same message as a flat file, a v1 row and a v2 row counts once, scan after scan.",
+  "sources": {
+    "opencode": [
+      "opencode.db",
+      "storage"
+    ]
+  }
+}

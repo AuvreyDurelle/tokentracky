@@ -1,0 +1,42 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 10,
+      "output": 5,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "ses_D1",
+    "lastUsedAt": "2026-10-23T09:01:10.000Z",
+    "model": "mimo-v2.5-pro",
+    "models": [
+      "mimo-v2.5-pro"
+    ],
+    "project": "/synthetic/mimo-dev-project",
+    "tokens": 15,
+    "tool": "mimo"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 300,
+      "cacheWrite": 100,
+      "input": 1520,
+      "output": 360,
+      "reasoning": 50
+    },
+    "costMicrousd": null,
+    "id": "ses_M1",
+    "lastUsedAt": "2026-10-23T09:00:20.000Z",
+    "model": "unknown",
+    "models": [
+      "mimo-v2.5-pro",
+      "mimo-v2-flash",
+      "unknown"
+    ],
+    "project": "/synthetic/mimo-project",
+    "tokens": 2280,
+    "tool": "mimo"
+  }
+]

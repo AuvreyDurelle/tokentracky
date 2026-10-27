@@ -1,0 +1,6 @@
+{
+  "description": "A conversation history and history item written after the task re-read it: its usage gains the model and workspace and is not counted again.",
+  "forbidden": [
+    "environment_details"
+  ]
+}

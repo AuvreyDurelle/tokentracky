@@ -1,0 +1,14 @@
+{
+  "ops": [
+    {
+      "op": "remove",
+      "path": "project-slug/chats/session-2026-10-23T09-00-abcd1234.jsonl.unreadable-1792746000000"
+    },
+    {
+      "op": "rename",
+      "from": "project-slug/chats/session-2026-10-23T09-00-abcd1234.jsonl",
+      "to": "project-slug/chats/session-2026-10-23T09-00-abcd1234-1-.jsonl"
+    }
+  ],
+  "tokens": 1430
+}

@@ -1,0 +1,3 @@
+{
+  "description": "Claude reasoning is read from output_tokens_details.thinking_tokens, then reasoning_tokens, capped at output; it is never added to totals."
+}

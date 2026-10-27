@@ -1,0 +1,3 @@
+{
+  "description": "A forked rollout and a spawned subagent open with copies of the parent's counters; only their own requests count."
+}

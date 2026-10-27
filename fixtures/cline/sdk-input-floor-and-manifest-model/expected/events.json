@@ -1,0 +1,19 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "cline:33813b478376aee96305b3e95ff90780dc8de5e0c352a416f220d64d52802a10",
+    "model": "manifest-model",
+    "occurredAt": "2026-10-23T09:00:05.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/cline-project",
+    "sessionId": "s_test",
+    "tokens": {
+      "cacheRead": 1000,
+      "cacheWrite": 0,
+      "input": 0,
+      "output": 10,
+      "reasoning": 0
+    },
+    "tool": "cline"
+  }
+]

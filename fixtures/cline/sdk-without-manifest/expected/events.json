@@ -1,0 +1,19 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "cline:8079803ce15a925603ec7d7d4c53cbef9ed028c3f2b8a9d208024a4e77e6c381",
+    "model": "claude-sonnet-4-6",
+    "occurredAt": "2026-10-23T09:00:05.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "s_test",
+    "tokens": {
+      "cacheRead": 1000,
+      "cacheWrite": 100,
+      "input": 400,
+      "output": 250,
+      "reasoning": 50
+    },
+    "tool": "cline"
+  }
+]

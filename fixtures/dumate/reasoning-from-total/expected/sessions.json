@@ -1,0 +1,21 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 768,
+      "cacheWrite": 0,
+      "input": 1180,
+      "output": 963,
+      "reasoning": 838
+    },
+    "costMicrousd": null,
+    "id": "ses_D1",
+    "lastUsedAt": "2026-10-23T09:00:10.000Z",
+    "model": "glm-5",
+    "models": [
+      "glm-5"
+    ],
+    "project": "/synthetic/dumate-workspace",
+    "tokens": 2911,
+    "tool": "dumate"
+  }
+]

@@ -1,0 +1,1 @@
+[{"ts":1792746000000,"type":"say","say":"task","text":"PRIVATE_PROMPT_MARKER"},{"ts":1792746009000,"type":"say","say":"deleted_api_reqs","text":"{\"tokensIn\":400,\"tokensOut\":200,\"cacheWrites\":100,\"cacheReads\":1000,\"cost\":0.0123}"}]

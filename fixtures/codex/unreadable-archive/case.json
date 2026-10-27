@@ -1,0 +1,4 @@
+{
+  "description": "A truncated Codex archive reports archive_unreadable and adds nothing, keeping any usage counted from it before; other rollouts still count.",
+  "rustOnly": true
+}

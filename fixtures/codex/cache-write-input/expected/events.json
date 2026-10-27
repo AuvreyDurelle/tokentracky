@@ -1,0 +1,19 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "codex:0298c65a630a2dd1a44ec91e4af08b25f0bd7677ab0b155cd34a588f6843a62c",
+    "model": "gpt-5-codex",
+    "occurredAt": "2026-10-20T10:01:00.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/codex-project",
+    "sessionId": "cache-writes",
+    "tokens": {
+      "cacheRead": 600,
+      "cacheWrite": 0,
+      "input": 400,
+      "output": 50,
+      "reasoning": 10
+    },
+    "tool": "codex"
+  }
+]

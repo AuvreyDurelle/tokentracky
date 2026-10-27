@@ -1,0 +1,12 @@
+{
+  "description": "Subagent transcripts and classic tasks are read from two authorized roots, sessions share the manifest project, and hooks files are ignored.",
+  "sources": {
+    "cline": [
+      "sessions",
+      "globalStorage/saoudrizwan.claude-dev/tasks"
+    ]
+  },
+  "forbidden": [
+    "manifest-model"
+  ]
+}

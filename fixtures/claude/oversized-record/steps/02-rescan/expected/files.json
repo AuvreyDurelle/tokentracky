@@ -1,0 +1,8 @@
+{
+  "claude:large.jsonl": {
+    "diagnostics": [
+      "record_too_large"
+    ],
+    "offset": 1169567
+  }
+}

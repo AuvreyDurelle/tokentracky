@@ -1,0 +1,3 @@
+{
+  "description": "Each Codex request carries the service tier of the last thread_settings_applied record; before any, the tier is unknown and omitted."
+}

@@ -1,0 +1,36 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "primeagent:675570f6ce0f7b3de05faab0bbd27d4810b64a323780c38323f3d51b1747deb2",
+    "model": "claude-haiku-4-5",
+    "occurredAt": "2026-10-22T09:00:20.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/epsilon",
+    "sessionId": "0199f031-0000-7000-8000-000000000031",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 300,
+      "input": 60,
+      "output": 40,
+      "reasoning": 0
+    },
+    "tool": "primeagent"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "primeagent:d48649b9894a7b97389eee0ac2ee9a2fa1b3d1834c90c8985056b2fc2aded6ad",
+    "model": "claude-sonnet-4-6",
+    "occurredAt": "2026-10-22T09:00:05.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/epsilon",
+    "sessionId": "0199f030-0000-7000-8000-000000000030",
+    "tokens": {
+      "cacheRead": 900,
+      "cacheWrite": 150,
+      "input": 100,
+      "output": 50,
+      "reasoning": 0
+    },
+    "tool": "primeagent"
+  }
+]

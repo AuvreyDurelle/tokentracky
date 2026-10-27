@@ -1,0 +1,8 @@
+{
+  "zed:threads.db": {
+    "diagnostics": [
+      "invalid_record",
+      "cumulative_reset_or_branch"
+    ]
+  }
+}

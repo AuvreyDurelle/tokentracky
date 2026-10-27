@@ -1,0 +1,95 @@
+{
+  "activity": {
+    "activeDays": 1,
+    "averagePerActiveDay": 2295,
+    "bestDay": {
+      "day": "2026-10-23",
+      "tokens": 2295
+    },
+    "currentStreak": 1,
+    "longestStreak": 1
+  },
+  "breakdown": {
+    "cacheRead": 300,
+    "cacheWrite": 100,
+    "input": 1530,
+    "output": 365,
+    "reasoning": 50
+  },
+  "byModel": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 100,
+        "input": 500,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "mimo-v2-flash",
+      "tokens": 700
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 20,
+        "output": 10,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "unknown",
+      "tokens": 30
+    },
+    {
+      "breakdown": {
+        "cacheRead": 300,
+        "cacheWrite": 0,
+        "input": 1010,
+        "output": 255,
+        "reasoning": 50
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "mimo-v2.5-pro",
+      "tokens": 1565
+    }
+  ],
+  "byTool": [
+    {
+      "breakdown": {
+        "cacheRead": 300,
+        "cacheWrite": 100,
+        "input": 1530,
+        "output": 365,
+        "reasoning": 50
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "tokens": 2295,
+      "tool": "mimo"
+    }
+  ],
+  "cacheRate": 0.15544041450777202,
+  "costMicrousd": null,
+  "costParts": null,
+  "daily": [
+    {
+      "breakdown": {
+        "cacheRead": 300,
+        "cacheWrite": 100,
+        "input": 1530,
+        "output": 365,
+        "reasoning": 50
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "day": "2026-10-23",
+      "tokens": 2295
+    }
+  ],
+  "sessions": 2,
+  "tokens": 2295
+}

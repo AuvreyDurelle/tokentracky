@@ -1,0 +1,108 @@
+{
+  "activity": {
+    "activeDays": 2,
+    "averagePerActiveDay": 5520,
+    "bestDay": {
+      "day": "2026-10-22",
+      "tokens": 7340
+    },
+    "currentStreak": 2,
+    "longestStreak": 2
+  },
+  "breakdown": {
+    "cacheRead": 8000,
+    "cacheWrite": 600,
+    "input": 1750,
+    "output": 690,
+    "reasoning": 180
+  },
+  "byModel": [
+    {
+      "breakdown": {
+        "cacheRead": 8000,
+        "cacheWrite": 600,
+        "input": 1500,
+        "output": 600,
+        "reasoning": 150
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "claude-sonnet-4-6",
+      "tokens": 10700
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 200,
+        "output": 80,
+        "reasoning": 30
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "gpt-5.6-terra",
+      "tokens": 280
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 50,
+        "output": 10,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "unknown",
+      "tokens": 60
+    }
+  ],
+  "byTool": [
+    {
+      "breakdown": {
+        "cacheRead": 8000,
+        "cacheWrite": 600,
+        "input": 1750,
+        "output": 690,
+        "reasoning": 180
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "tokens": 11040,
+      "tool": "hermes"
+    }
+  ],
+  "cacheRate": 0.7729468599033816,
+  "costMicrousd": null,
+  "costParts": null,
+  "daily": [
+    {
+      "breakdown": {
+        "cacheRead": 5000,
+        "cacheWrite": 600,
+        "input": 1250,
+        "output": 490,
+        "reasoning": 130
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "day": "2026-10-22",
+      "tokens": 7340
+    },
+    {
+      "breakdown": {
+        "cacheRead": 3000,
+        "cacheWrite": 0,
+        "input": 500,
+        "output": 200,
+        "reasoning": 50
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "day": "2026-10-23",
+      "tokens": 3700
+    }
+  ],
+  "sessions": 3,
+  "tokens": 11040
+}

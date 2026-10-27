@@ -1,0 +1,69 @@
+{
+  "activity": {
+    "activeDays": 1,
+    "averagePerActiveDay": 1050,
+    "bestDay": {
+      "day": "2026-10-20",
+      "tokens": 1050
+    },
+    "currentStreak": 0,
+    "longestStreak": 1
+  },
+  "breakdown": {
+    "cacheRead": 600,
+    "cacheWrite": 100,
+    "input": 300,
+    "output": 50,
+    "reasoning": 10
+  },
+  "byModel": [
+    {
+      "breakdown": {
+        "cacheRead": 600,
+        "cacheWrite": 100,
+        "input": 300,
+        "output": 50,
+        "reasoning": 10
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "gpt-5-codex",
+      "tokens": 1050
+    }
+  ],
+  "byTool": [
+    {
+      "breakdown": {
+        "cacheRead": 600,
+        "cacheWrite": 100,
+        "input": 300,
+        "output": 50,
+        "reasoning": 10
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "tokens": 1050,
+      "tool": "codex"
+    }
+  ],
+  "cacheRate": 0.6,
+  "costMicrousd": null,
+  "costParts": null,
+  "daily": [
+    {
+      "breakdown": {
+        "cacheRead": 600,
+        "cacheWrite": 100,
+        "input": 300,
+        "output": 50,
+        "reasoning": 10
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "day": "2026-10-20",
+      "tokens": 1050
+    }
+  ],
+  "sessions": 1,
+  "tokens": 1050
+}

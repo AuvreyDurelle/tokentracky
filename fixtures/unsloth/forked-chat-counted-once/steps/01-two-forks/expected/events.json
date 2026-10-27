@@ -1,0 +1,50 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "unsloth:05e32997d5d5802aab0c003e64ef4963e2c6853011c269632082674092a1a333",
+    "model": "local/unsloth/Qwen3-8B-GGUF",
+    "occurredAt": "2026-10-22T09:02:10.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "C",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 300,
+      "output": 30
+    },
+    "tool": "unsloth"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "unsloth:26fedc88bcb72951c79eaa2c0a2f08b7225b9f08cf468fc120c16d8175bf9207",
+    "model": "local/unsloth/Qwen3-8B-GGUF",
+    "occurredAt": "2026-10-22T09:00:02.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "A",
+    "tokens": {
+      "cacheRead": 600,
+      "cacheWrite": 0,
+      "input": 400,
+      "output": 100
+    },
+    "tool": "unsloth"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "unsloth:7158f4b7e92b7cd8f45825bea7a61ea2d31bba232e3ae26b219c5c21a75112ca",
+    "model": "local/unsloth/Qwen3-8B-GGUF",
+    "occurredAt": "2026-10-22T09:01:11.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "B",
+    "tokens": {
+      "cacheRead": 1500,
+      "cacheWrite": 0,
+      "input": 500,
+      "output": 200
+    },
+    "tool": "unsloth"
+  }
+]

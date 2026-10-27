@@ -1,0 +1,3 @@
+{
+  "description": "The same rollout in two files counts once, as one session."
+}

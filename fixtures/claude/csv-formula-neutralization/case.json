@@ -1,0 +1,3 @@
+{
+  "description": "CSV cells that start with = + - or @, after optional white space, are prefixed with an apostrophe in the model, project and session columns; ordinary quotes, commas, operators and Unicode survive."
+}

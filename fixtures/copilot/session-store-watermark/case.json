@@ -1,0 +1,4 @@
+{
+  "description": "The session store's assistant_usage_events rows: input includes both caches and output includes reasoning, the token_details_json split is used when it adds up to the input and the columns otherwise, caches above input are skipped, a row without a valid time is undated; rows appended later are read from the last row id; other tables and databases are never read.",
+  "rustOnly": true
+}

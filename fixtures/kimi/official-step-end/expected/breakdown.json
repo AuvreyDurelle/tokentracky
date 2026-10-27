@@ -1,0 +1,44 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 9000,
+      "cacheWrite": 0,
+      "input": 100,
+      "output": 900,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-23",
+    "model": "k3",
+    "tokens": 10000,
+    "tool": "kimi"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 6000,
+      "cacheWrite": 1000,
+      "input": 2000,
+      "output": 400,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-23",
+    "model": "kimi-code/kimi-for-coding",
+    "tokens": 9400,
+    "tool": "kimi"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 9500,
+      "cacheWrite": 0,
+      "input": 560,
+      "output": 150,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-23",
+    "model": "kimi-for-coding",
+    "tokens": 10210,
+    "tool": "kimi"
+  }
+]

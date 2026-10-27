@@ -1,0 +1,20 @@
+{
+  "description": "Summaries, models, days, sessions, projects, CSV and public buckets reconcile; dated, undated and old events; rolling-day, project-text, tool and invalid-days queries.",
+  "queries": {
+    "last-7-days": {
+      "days": 7,
+      "now": "2026-10-23T12:00:00.000Z"
+    },
+    "last-7-days-project-text": {
+      "days": 7,
+      "now": "2026-10-23T12:00:00.000Z",
+      "q": "private-project"
+    },
+    "tool-codex": {
+      "tool": "codex"
+    },
+    "invalid-days": {
+      "days": -1
+    }
+  }
+}

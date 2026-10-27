@@ -1,0 +1,3 @@
+{
+  "description": "Public buckets split by model only when models are shared; unpublishable model ids become other; models removed from the log leave zero tombstones with unchanged revisions elsewhere."
+}

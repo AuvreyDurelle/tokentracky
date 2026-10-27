@@ -1,0 +1,4 @@
+{
+  "description": "A fork copies its thread's earlier messages with fresh ids and their original times; a fork of a fork copies them again. Each reply counts once, under the thread it was written in, and still once after that original thread is deleted.",
+  "rustOnly": true
+}

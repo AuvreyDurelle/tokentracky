@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "sessionId": "session-a",
+  "createdAtMs": 1792663200000,
+  "updatedAtMs": 1792663210000,
+  "source": "local-runtime",
+  "layout": "v2-final-dated-session"
+}

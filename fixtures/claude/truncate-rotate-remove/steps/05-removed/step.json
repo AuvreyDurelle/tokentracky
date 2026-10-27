@@ -1,0 +1,13 @@
+{
+  "ops": [
+    {
+      "op": "remove",
+      "path": "session.jsonl"
+    },
+    {
+      "op": "remove",
+      "path": "archived.jsonl"
+    }
+  ],
+  "tokens": 322
+}

@@ -1,0 +1,9 @@
+{
+  "ops": [
+    {
+      "op": "remove",
+      "path": "globalStorage/rooveterinaryinc.roo-cline/tasks/t1/ui_messages.json"
+    }
+  ],
+  "tokens": 3400
+}

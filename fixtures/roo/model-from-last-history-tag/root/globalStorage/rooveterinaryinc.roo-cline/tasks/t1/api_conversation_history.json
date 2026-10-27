@@ -1,0 +1,1 @@
+[{"role":"user","content":[{"type":"text","text":"PRIVATE_PROMPT_MARKER\n<environment_details>\n<model>claude-opus-4-1</model>\n</environment_details>"}],"ts":1792746000500}][{"role":"user","content":[{"type":"text","text":"PRIVATE_PROMPT_MARKER\n<environment_details>\n<model> claude-sonnet-4-6</model>\n</environment_details>"}],"ts":1792746000500}]

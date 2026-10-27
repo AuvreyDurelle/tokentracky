@@ -1,0 +1,50 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "commandcode:207b39a2755fa22a5c10c22a0967b407499e5aa705119aefd510be365bf1d1d8",
+    "model": "deepseek-v4-flash",
+    "occurredAt": "2026-10-20T10:00:05.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/command-code",
+    "sessionId": "cc-s1",
+    "tokens": {
+      "cacheRead": 600,
+      "cacheWrite": 100,
+      "input": 200,
+      "output": 100
+    },
+    "tool": "commandcode"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "commandcode:66ef8b9c6d3e20948250fb5ec22b56075e72d23f5211a5e4aae3a2830438106f",
+    "model": "deepseek-v4-flash",
+    "occurredAt": "2026-10-20T10:05:00.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/command-code",
+    "sessionId": "cc-s1",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 300,
+      "output": 30
+    },
+    "tool": "commandcode"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "commandcode:8f6fc1916f86168d9b3e9aac28ce07ff42e24e307d9dab348ea8be05c30adc61",
+    "model": "deepseek-v4-flash",
+    "occurredAt": "2026-10-20T10:01:00.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/command-code",
+    "sessionId": "cc-s1",
+    "tokens": {
+      "cacheRead": 400,
+      "cacheWrite": 0,
+      "input": 100,
+      "output": 50
+    },
+    "tool": "commandcode"
+  }
+]

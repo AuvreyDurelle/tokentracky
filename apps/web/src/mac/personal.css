@@ -1,0 +1,330 @@
+/* The personal pages of the Mac app: Tokens (tk-), Settings (st-) and the menu bar popover (po-).
+   Every rule sits under .mac and starts from a class with its page's prefix, so nothing reaches the website's pages.
+   Shared pieces (cards, segmented controls, buttons, tables, toggles) are mac.css's m- primitives. */
+
+/* ---------- stacked area chart (tokens.html) ---------- */
+.mac .tk-chart { position: relative; }
+.mac .tk-plot { position: relative; border-radius: 6px; }
+.mac .tk-plot:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.mac .tk-chart svg { display: block; width: 100%; height: auto; overflow: visible; touch-action: pan-y; }
+.mac .tk-chart text { font-family: var(--font); font-size: 11px; fill: var(--text-4); font-variant-numeric: tabular-nums; }
+.mac .tk-chart .tk-grid { stroke: rgba(255, 255, 255, 0.055); vector-effect: non-scaling-stroke; }
+.mac .tk-chart .tk-base { stroke: rgba(255, 255, 255, 0.13); vector-effect: non-scaling-stroke; }
+.mac .tk-chart .tk-avg { stroke: rgba(255, 255, 255, 0.34); stroke-dasharray: 2 4; vector-effect: non-scaling-stroke; }
+.mac .tk-chart .tk-avg-label { fill: var(--text-3); }
+.mac .tk-chart .tk-xhair { stroke: rgba(255, 255, 255, 0.4); vector-effect: non-scaling-stroke; }
+.mac .tk-chart .tk-xband { fill: rgba(255, 255, 255, 0.035); }
+.mac .tk-chart .tk-line { fill: none; stroke-width: 1.5; stroke-opacity: 0.92; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.mac .tk-chart .tk-mark { stroke: var(--surface); stroke-width: 2; }
+.mac .tk-chart .tk-mark-top { fill: var(--surface); stroke: var(--text); stroke-width: 1.75; }
+.mac .tk-chart .tk-today-ring { fill: none; stroke-opacity: 0.35; }
+.mac .tk-chart .tk-today-dot { fill: var(--text); }
+.mac .tk-chart .tk-x-pill { fill: var(--surface-3); stroke: var(--border-2); }
+.mac .tk-chart .tk-x-on { fill: var(--text); font-weight: 600; }
+.mac .tk-tip { position: absolute; top: 5%; width: max-content; min-width: 236px; max-width: 320px; padding: 12px 14px 10px; transform: translateX(18px); pointer-events: none; }
+.mac .tk-tip.flip { transform: translateX(calc(-100% - 18px)); }
+.mac .tk-tip-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--text-3); }
+.mac .tk-tip-total { display: flex; align-items: baseline; justify-content: space-between; margin: 4px 0 8px; padding-bottom: 10px; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; }
+.mac .tk-tip-total b { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
+.mac .tk-tip-total span { color: var(--text-2); }
+.mac .tk-tip-row { display: grid; grid-template-columns: 8px minmax(0, 1fr) auto auto; align-items: center; gap: 8px; height: 22px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.mac .tk-tip-row i { width: 8px; height: 8px; border-radius: 2px; }
+.mac .tk-tip-row span:first-of-type { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mac .tk-tip-row b { font-weight: 500; color: var(--text); text-align: right; }
+.mac .tk-tip-row span + b + span { min-width: 50px; text-align: right; color: var(--text-4); }
+
+.mac .tk-strip { display: block; width: 100%; height: auto; overflow: visible; }
+.mac .tk-strip text { font-family: var(--font); font-size: 10px; fill: var(--text-4); }
+.mac .tk-strip .tk-strip-base { fill: rgba(255, 255, 255, 0.15); }
+.mac .tk-strip .tk-strip-sel { fill: rgba(255, 255, 255, 0.62); }
+.mac .tk-strip .tk-strip-win { fill: rgba(255, 255, 255, 0.035); stroke: rgba(255, 255, 255, 0.24); vector-effect: non-scaling-stroke; }
+.mac .tk-strip .tk-strip-handle { fill: var(--text-2); }
+
+/* ---------- tokens page (tokens.html) ---------- */
+.mac .tk-page { padding-top: 24px; }
+.mac .tk-bar { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-bottom: 8px; }
+/* Overrides of m- primitives name both classes: this file can load before mac.css. */
+.mac .tk-seg-sm.m-seg button { height: 22px; padding: 0 9px; font-size: 12px; }
+.mac .tk-select.m-btn { position: relative; padding: 0; }
+.mac .tk-select select { height: 100%; padding: 0 30px 0 12px; border: 0; background: none; color: inherit; font: inherit; appearance: none; cursor: pointer; }
+.mac .tk-select select option { background: var(--surface-2); color: var(--text); }
+.mac .tk-select svg { position: absolute; top: 50%; right: 10px; margin-top: -7px; pointer-events: none; }
+.mac .tk-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin: 40px 0 12px; }
+.mac .tk-section-head h2 { font-size: 13px; font-weight: 600; }
+.mac .tk-section-head p { font-size: 12px; color: var(--text-4); }
+.mac .tk-faint { font-size: 12px; color: var(--text-4); }
+.mac .tk-push { margin-left: auto; }
+.mac .tk-up { color: var(--green); }
+.mac .tk-empty { padding: 72px 0; text-align: center; color: var(--text-4); }
+
+.mac .tk-setup { display: flex; align-items: center; gap: 14px; margin: 8px 0 24px; padding: 14px 16px; }
+.mac .tk-setup-icon { display: grid; place-items: center; flex: none; width: 34px; height: 34px; border-radius: 9px; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--border); color: var(--text-3); }
+.mac .tk-setup-icon svg { width: 16px; height: 16px; }
+.mac .tk-setup div { flex: 1; min-width: 0; line-height: 1.45; }
+.mac .tk-setup b { display: block; font-weight: 600; }
+.mac .tk-setup div span { display: block; font-size: 12.5px; color: var(--text-3); }
+
+/* hero */
+.mac .tk-hero { display: grid; grid-template-columns: minmax(0, 1fr) 556px; gap: 56px; align-items: center; padding: 8px 2px 32px; }
+.mac .tk-hero-total { display: flex; align-items: center; gap: 16px; margin: 14px 0 16px; }
+.mac .tk-hero-total .m-big-number { font-size: 80px; letter-spacing: -0.055em; }
+.mac .tk-delta { display: inline-flex; align-items: center; gap: 3px; height: 24px; padding: 0 9px 0 7px; border-radius: 999px; background: var(--green-soft); color: var(--green); font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.mac .tk-delta svg { width: 12px; height: 12px; }
+.mac .tk-delta.flat { padding: 0 9px; background: var(--surface-3); color: var(--text-3); }
+.mac .tk-delta.neg { background: rgba(235, 87, 87, 0.12); color: var(--red); }
+.mac .tk-delta.sm { height: auto; padding: 0; background: none; font-size: 12px; font-weight: 500; }
+.mac .tk-hero-meta { font-size: 14px; color: var(--text-3); }
+.mac .tk-hero-meta b { color: var(--text); font-weight: 500; font-variant-numeric: tabular-nums; }
+.mac .tk-sep { margin: 0 7px; color: var(--text-4); }
+.mac .tk-hero-range { margin-top: 6px; font-size: 12px; color: var(--text-4); }
+.mac .tk-tools { width: 100%; border-collapse: collapse; table-layout: fixed; font-variant-numeric: tabular-nums; }
+.mac .tk-tools th, .mac .tk-tools td { height: 38px; padding: 0 0 0 16px; border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; color: var(--text-3); font-weight: 400; }
+.mac .tk-tools thead th { height: 28px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-4); }
+.mac .tk-tools thead th:nth-child(2) { width: 128px; text-align: left; }
+.mac .tk-tools thead th:nth-child(3) { width: 80px; }
+.mac .tk-tools thead th:nth-child(4) { width: 68px; }
+.mac .tk-tools thead th:nth-child(5) { width: 82px; }
+.mac .tk-tools tr > :first-child { padding-left: 0; text-align: left; }
+.mac .tk-tools tbody th { overflow: hidden; text-overflow: ellipsis; font-weight: 500; color: var(--text); }
+.mac .tk-tools tbody th .tool-ic { margin-right: 9px; vertical-align: -2px; }
+.mac .tk-tools tbody tr:last-child > * { border-bottom: 0; }
+.mac .tk-tools .tk-v { color: var(--text); }
+.mac .tk-share { display: block; height: 4px; overflow: hidden; border-radius: 2px; background: var(--surface-3); }
+.mac .tk-share i { display: block; height: 100%; border-radius: 2px; background: var(--c); }
+
+/* chart card */
+.mac .tk-chart-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 18px 20px 4px; }
+.mac .tk-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; font-size: 12px; color: var(--text-3); }
+.mac .tk-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.mac .tk-legend i { width: 8px; height: 8px; border-radius: 2px; }
+.mac .tk-chart-controls { display: flex; flex: none; gap: 8px; }
+.mac .tk-chart-box { padding: 10px 20px 0; }
+.mac .tk-strip-box { padding: 4px 20px 16px; }
+.mac .tk-kpis { border-top: 1px solid var(--border); }
+.mac .tk-kpis > div { padding: 16px 20px; }
+.mac .tk-kpis .m-stat-value { margin-top: 2px; font-size: 20px; }
+.mac .tk-kpi-sub { margin-top: 1px; font-size: 12px; color: var(--text-4); font-variant-numeric: tabular-nums; }
+
+/* tool cards */
+.mac .tk-tool-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+.mac .tk-tool-card { overflow: hidden; padding: 16px 16px 0; }
+.mac .tk-tc-head { display: flex; align-items: center; gap: 8px; font-size: 11.5px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-2); }
+.mac .tk-tc-pct { display: flex; align-items: baseline; justify-content: space-between; margin-top: 12px; }
+.mac .tk-tc-pct b { font-size: 26px; font-weight: 600; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.mac .tk-tc-sub { font-size: 12px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.mac .tk-spark { display: block; width: calc(100% + 32px); height: 44px; margin: 12px -16px 0; }
+
+/* insights */
+.mac .tk-insights { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.mac .tk-insights > :last-child:nth-child(4n + 3) { grid-column: span 2; }
+.mac .tk-ins { display: flex; flex-direction: column; min-width: 0; min-height: 176px; padding: 16px; }
+.mac .tk-ins-label { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 500; color: var(--text-3); }
+.mac .tk-ins-label svg { width: 14px; height: 14px; color: var(--text-4); }
+.mac .tk-ins-value { margin-top: 12px; overflow: hidden; font-size: 20px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; text-overflow: ellipsis; white-space: nowrap; }
+.mac .tk-ins-value.m { font-family: var(--mono); font-size: 15px; font-weight: 500; letter-spacing: 0; }
+.mac .tk-model { display: inline-flex; align-items: center; gap: 8px; }
+.mac .tk-ins-sub { margin-top: 3px; font-size: 12px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.mac .tk-ins-foot { margin-top: auto; padding-top: 14px; }
+.mac .tk-ins-foot .m-pill { max-width: 100%; overflow: hidden; }
+.mac .tk-mini-bars { display: flex; align-items: flex-end; gap: 6px; height: 38px; }
+.mac .tk-mini-bars span { flex: 1; border-radius: 3px; background: var(--heat-1); }
+.mac .tk-mini-bars .hi { background: var(--text); }
+.mac .tk-mini-axis { display: flex; margin-top: 5px; font-size: 10.5px; color: var(--text-4); }
+.mac .tk-mini-axis span { flex: 1; text-align: center; }
+.mac .tk-mini-axis .on { color: var(--text); }
+.mac .tk-meter { height: 6px; overflow: hidden; border-radius: 3px; background: var(--surface-3); }
+.mac .tk-meter i { display: block; height: 100%; border-radius: 3px; background: var(--c, var(--text)); }
+.mac .tk-meter-cap { display: flex; justify-content: space-between; gap: 8px; margin-top: 6px; font-size: 11.5px; color: var(--text-4); font-variant-numeric: tabular-nums; }
+.mac .tk-lock { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface-2); font-size: 11.5px; color: var(--text-3); }
+.mac .tk-lock svg { width: 12px; height: 12px; }
+.mac .tk-compare { display: grid; grid-template-columns: 54px 1fr 40px; gap: 8px; align-items: center; height: 18px; font-size: 11.5px; color: var(--text-4); font-variant-numeric: tabular-nums; }
+.mac .tk-compare .tk-meter { height: 5px; }
+.mac .tk-compare b { font-weight: 500; text-align: right; color: var(--text-2); }
+
+/* breakdown */
+.mac .tk-breakdown { margin-top: 16px; overflow: hidden; }
+.mac .tk-breakdown .m-card-head { padding: 12px 20px; }
+.mac .tk-table th { padding-top: 12px; padding-bottom: 12px; }
+.mac .tk-table tr > :first-child { padding-left: 20px; }
+.mac .tk-table tr > :last-child { padding-right: 20px; }
+.mac .tk-table tbody td { height: 58px; padding-top: 0; padding-bottom: 0; }
+.mac .tk-table tbody tr:last-child td { border-bottom: 0; }
+.mac .tk-table .tk-rank { width: 40px; color: var(--text-4); }
+.mac .tk-table .tk-tok { font-weight: 600; color: var(--text); }
+.mac .tk-table .tk-muted { color: var(--text-3); }
+.mac .tk-model-cell { display: flex; flex-direction: column; gap: 8px; }
+.mac .tk-model-name { display: flex; align-items: center; gap: 9px; font-family: var(--mono); font-size: 12.5px; letter-spacing: 0; color: var(--text); }
+.mac .tk-model-name.tk-sans { font-family: var(--font); font-size: 13px; font-weight: 500; }
+.mac .tk-uline { height: 2px; border-radius: 1px; background: var(--c); }
+.mac .tk-project { font-family: var(--mono); font-size: 12.5px; color: var(--text); }
+.mac .tk-table-foot { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-4); }
+.mac .tk-link { padding: 0; border: 0; background: none; font-size: 12px; color: var(--text-3); }
+.mac .tk-link:hover { color: var(--text); }
+
+@media (max-width: 1260px) {
+  .mac .tk-hero { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .mac .tk-insights { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ---------- settings page (settings.html) ---------- */
+.mac .st-page { display: grid; grid-template-columns: 200px minmax(0, 760px); gap: 56px; justify-content: center; max-width: none; }
+.mac .st-nav { position: sticky; top: 32px; align-self: start; display: flex; flex-direction: column; gap: 1px; }
+.mac .st-nav-title { padding: 0 10px 10px; font-size: 11px; font-weight: 500; color: var(--text-4); }
+.mac .st-nav-item { display: flex; align-items: center; gap: 10px; height: 30px; padding: 0 10px; border: 0; border-radius: var(--radius-sm); background: none; color: var(--text-3); font-weight: 500; text-align: left; }
+.mac .st-nav-item svg { flex: none; width: 15px; height: 15px; }
+.mac .st-nav-item:hover { background: var(--hover); color: var(--text-2); }
+.mac .st-nav-item.on { background: rgba(255, 255, 255, 0.07); color: var(--text); }
+.mac .st-count { margin-left: auto; font-size: 11px; color: var(--text-4); font-variant-numeric: tabular-nums; }
+.mac .st-nav-foot { margin-top: 18px; padding: 12px 10px 0; border-top: 1px solid var(--border); font-size: 11.5px; line-height: 1.5; color: var(--text-4); }
+.mac .st-col { min-width: 0; }
+.mac .st-intro { margin-bottom: 28px; }
+.mac .st-section { margin-bottom: 36px; padding-top: 8px; scroll-margin-top: 24px; }
+.mac .st-head { margin-bottom: 12px; }
+.mac .st-head h2 { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+.mac .st-head p { margin-top: 2px; font-size: 12.5px; color: var(--text-3); }
+.mac .st-group { overflow: hidden; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+.mac .st-group + .st-group { margin-top: 12px; }
+.mac .st-row { display: flex; align-items: center; gap: 24px; min-height: 60px; padding: 12px 18px; border-top: 1px solid var(--border); }
+.mac .st-row:first-child { border-top: 0; }
+.mac .st-row-text { flex: 1; min-width: 0; }
+.mac .st-row-label { font-size: 13px; font-weight: 500; color: var(--text); }
+.mac .st-row-desc { margin-top: 1px; font-size: 12px; line-height: 1.45; color: var(--text-3); }
+.mac .st-row-meta { margin-top: 4px; font-size: 11.5px; line-height: 1.45; color: var(--text-4); }
+.mac .st-row-ctl { display: flex; flex: none; align-items: center; gap: 10px; }
+.mac .st-sm.m-btn { height: 26px; padding: 0 9px; font-size: 12px; }
+.mac .st-sm.m-btn.danger { border-color: rgba(235, 87, 87, 0.35); background: rgba(235, 87, 87, 0.08); }
+.mac .st-sm.m-btn.danger:hover:not(:disabled) { background: rgba(235, 87, 87, 0.14); color: #ff8080; }
+
+.mac .st-callout { display: flex; gap: 12px; margin-bottom: 12px; padding: 12px 14px; border-radius: 10px; background: rgba(76, 183, 130, 0.06); box-shadow: inset 0 0 0 1px rgba(76, 183, 130, 0.18); font-size: 12.5px; line-height: 1.5; color: var(--text-2); }
+.mac .st-callout svg { flex: none; width: 16px; height: 16px; margin-top: 1px; color: var(--green); }
+.mac .st-callout b { font-weight: 600; color: var(--text); }
+.mac .st-src { gap: 14px; min-height: 56px; }
+.mac .st-src-ic { display: grid; place-items: center; flex: none; width: 30px; height: 30px; border-radius: 8px; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--border); }
+.mac .st-src.missing .st-row-label { color: var(--text-3); }
+.mac .st-src.missing .st-src-ic .tool-ic { opacity: 0.45; }
+.mac .st-path { display: block; overflow: hidden; font-family: var(--mono); font-size: 11.5px; letter-spacing: 0; color: var(--text-4); text-overflow: ellipsis; white-space: nowrap; }
+.mac .st-status { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text-4); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.mac .st-dot { width: 6px; height: 6px; border-radius: 50%; box-shadow: inset 0 0 0 1.2px var(--text-4); }
+.mac .st-status.ok { color: var(--text-3); }
+.mac .st-status.ok .st-dot { background: var(--green); box-shadow: 0 0 0 3px rgba(76, 183, 130, 0.15); }
+.mac .st-status.warn { color: var(--warn); }
+.mac .st-status.warn .st-dot { background: var(--warn); box-shadow: none; }
+.mac .st-group-foot { display: flex; align-items: center; gap: 10px; padding: 12px 18px; border-top: 1px solid var(--border); background: rgba(255, 255, 255, 0.015); font-size: 12px; color: var(--text-3); }
+.mac .st-grow { flex: 1; }
+
+.mac .st-shared { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--border); }
+.mac .st-shared > div { padding: 16px 18px 18px; }
+.mac .st-shared > div + div { border-left: 1px solid var(--border); }
+.mac .st-shared h3 { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 12px; font-weight: 600; color: var(--text); }
+.mac .st-shared ul { display: flex; flex-direction: column; gap: 7px; margin: 0; padding: 0; list-style: none; }
+.mac .st-shared li { display: flex; align-items: center; gap: 9px; font-size: 12.5px; color: var(--text-2); }
+.mac .st-shared li svg { flex: none; width: 13px; height: 13px; }
+.mac .st-shared + .st-row { border-top: 1px solid var(--border); }
+.mac .st-hico { display: grid; place-items: center; width: 18px; height: 18px; border-radius: 5px; }
+.mac .st-hico svg { width: 11px; height: 11px; }
+.mac .st-hico.yes { background: var(--accent-soft); color: var(--accent); }
+.mac .st-hico.no { background: var(--green-soft); color: var(--green); }
+.mac .st-yes li svg { color: var(--accent); }
+.mac .st-no li svg { color: var(--green); }
+
+.mac .st-acct { display: flex; align-items: center; gap: 12px; }
+.mac .st-acct .avatar { width: 36px; height: 36px; font-size: 13px; }
+.mac .st-acct b { display: block; font-size: 13px; font-weight: 600; }
+.mac .st-acct > span > span { font-size: 12px; font-weight: 400; color: var(--text-3); }
+.mac .st-ok { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--green); }
+.mac .st-ok svg { width: 13px; height: 13px; }
+.mac .st-code { font-family: var(--mono); font-size: 15px; font-weight: 600; letter-spacing: 0.12em; color: var(--text); }
+.mac .st-waiting { display: inline-flex; align-items: center; gap: 8px; }
+
+@media (max-width: 1100px) {
+  .mac .st-page { grid-template-columns: minmax(0, 1fr); }
+  .mac .st-nav { display: none; }
+}
+
+/* ---------- menu bar popover (menubar.html, state 1) ----------
+   The page is transparent: the window's vibrancy shows through the panel's tint. */
+.mac.po-root { height: 100vh; overflow: hidden; background: transparent; color: var(--text); font-size: 13px; line-height: 1.5; letter-spacing: -0.005em; }
+.mac .po-panel {
+  display: flex; flex-direction: column; height: 100%; overflow: hidden; border-radius: 14px;
+  background: rgba(30, 30, 36, 0.74); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.09);
+  backdrop-filter: blur(44px) saturate(180%); -webkit-backdrop-filter: blur(44px) saturate(180%);
+}
+.mac .po-head { display: flex; flex: none; align-items: center; gap: 12px; padding: 14px 12px 14px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.06); background: rgba(255, 255, 255, 0.045); }
+.mac .po-head .avatar { width: 38px; height: 38px; border-radius: 10px; font-size: 14px; }
+.mac .po-who { flex: 1; min-width: 0; line-height: 1.35; }
+.mac .po-who b { display: block; font-size: 14px; font-weight: 600; letter-spacing: -0.01em; }
+.mac .po-who span { font-size: 12.5px; color: var(--text-3); }
+.mac .po-icon-btn { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 8px; background: none; color: var(--text-2); }
+.mac .po-icon-btn:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
+.mac .po-icon-btn svg { width: 18px; height: 18px; }
+/* The mockup's content is taller than the 640px window: the middle scrolls between the header and the actions. */
+.mac .po-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.mac .po-sep { height: 1px; background: rgba(255, 255, 255, 0.07); }
+.mac .po-error { margin: 10px 16px 0; font-size: 12px; color: var(--red); }
+
+.mac .po-hero { padding: 12px 16px; }
+.mac .po-label { font-size: 12px; font-weight: 500; color: var(--text-3); }
+.mac .po-hero-num { display: flex; align-items: flex-end; justify-content: space-between; margin-top: 6px; }
+.mac .po-hn { font-size: 38px; font-weight: 600; line-height: 1; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+.mac .po-unit { margin-left: 6px; font-size: 13px; color: var(--text-3); }
+.mac .po-cost { line-height: 1.25; text-align: right; }
+.mac .po-cost b { display: block; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.mac .po-cost span { font-size: 11.5px; color: var(--text-4); }
+.mac .po-bars { display: grid; grid-template-columns: repeat(14, 1fr); grid-template-rows: 34px; align-items: end; gap: 4px; margin-top: 12px; }
+.mac .po-bars i { display: block; border-radius: 2px; background: #676b73; }
+.mac .po-bars .z { height: 2px; background: rgba(255, 255, 255, 0.12); }
+.mac .po-bars .now { background: #fff; box-shadow: 0 0 14px rgba(255, 255, 255, 0.3); }
+.mac .po-axis { display: flex; justify-content: space-between; margin-top: 6px; font-size: 10.5px; color: var(--text-4); font-variant-numeric: tabular-nums; }
+
+.mac .po-periods { padding: 4px 16px 6px; }
+.mac .po-prow { display: flex; align-items: center; justify-content: space-between; height: 29px; }
+.mac .po-prow + .po-prow { border-top: 1px solid rgba(255, 255, 255, 0.05); }
+.mac .po-prow span { color: var(--text-3); }
+.mac .po-prow b { font-size: 13.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.mac .po-mix { padding: 10px 16px 12px; }
+.mac .po-row-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 9px; }
+.mac .po-row-head span:first-child { font-size: 12px; font-weight: 600; color: var(--text-2); }
+.mac .po-row-head span:last-child { font-size: 11.5px; color: var(--text-4); }
+.mac .po-legend { display: flex; flex-wrap: wrap; gap: 5px 14px; margin-top: 10px; font-size: 12px; color: var(--text-2); }
+.mac .po-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.mac .po-legend .tool-ic { width: 11px; height: 11px; }
+.mac .po-legend em { font-style: normal; color: var(--text-4); font-variant-numeric: tabular-nums; }
+
+.mac .po-streak { display: flex; align-items: center; gap: 12px; padding: 8px 16px; }
+.mac .po-tile { position: relative; display: grid; place-items: center; flex: none; width: 34px; height: 34px; border-radius: 9px; background: color-mix(in srgb, var(--c) 15%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 24%, transparent); }
+.mac .po-tile .tool-ic { width: 16px; height: 16px; }
+.mac .po-tile svg { width: 17px; height: 17px; color: var(--c); }
+.mac .po-tile.flame { --c: var(--warn); }
+.mac .po-txt { flex: 1; min-width: 0; line-height: 1.35; }
+.mac .po-txt b { display: block; overflow: hidden; font-size: 13.5px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+.mac .po-txt span { display: block; overflow: hidden; font-size: 12px; color: var(--text-3); text-overflow: ellipsis; white-space: nowrap; }
+.mac .po-weeks { display: grid; flex: none; grid-template-columns: repeat(7, 7px); grid-template-rows: repeat(7, 7px); grid-auto-flow: column; gap: 2px; }
+.mac .po-weeks i { border-radius: 2px; }
+.mac .po-weeks .l0 { background: rgba(255, 255, 255, 0.06); }
+.mac .po-weeks .l1 { background: var(--heat-1); }
+.mac .po-weeks .l2 { background: var(--heat-2); }
+.mac .po-weeks .l3 { background: var(--heat-3); }
+.mac .po-weeks .l4 { background: var(--heat-4); }
+.mac .po-weeks .today { box-shadow: 0 0 0 1px #fff; }
+
+.mac .po-sessions { padding-bottom: 4px; }
+.mac .po-sec-head { display: flex; align-items: center; justify-content: space-between; padding: 11px 16px 3px; }
+.mac .po-sec-head > span { font-size: 12px; font-weight: 600; color: var(--text-2); }
+.mac .po-sec-head button { display: inline-flex; align-items: center; gap: 2px; padding: 0; border: 0; background: none; font-size: 12px; color: var(--text-3); }
+.mac .po-sec-head button:hover { color: var(--text); }
+.mac .po-sec-head svg { width: 13px; height: 13px; }
+.mac .po-session { display: flex; align-items: center; gap: 12px; padding: 7px 16px; }
+.mac .po-session .po-txt span { font-family: var(--mono); font-size: 11.5px; letter-spacing: 0; }
+.mac .po-tok { font-size: 13px; font-weight: 600; color: var(--text-2); font-variant-numeric: tabular-nums; }
+
+.mac .po-status { display: flex; flex: none; align-items: center; gap: 8px; padding: 10px 16px; border-top: 1px solid rgba(255, 255, 255, 0.07); font-size: 12.5px; color: var(--text-2); }
+.mac .po-state { display: inline-flex; color: var(--green); }
+.mac .po-state.paused { color: var(--tool-kilo); }
+.mac .po-state svg { width: 16px; height: 16px; }
+.mac .po-r { margin-left: auto; font-size: 12px; color: var(--text-4); }
+.mac .po-actions { display: grid; flex: none; grid-template-columns: repeat(3, 1fr); padding: 8px 6px; border-top: 1px solid rgba(255, 255, 255, 0.06); background: rgba(255, 255, 255, 0.055); }
+.mac .po-act { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 4px 0; border: 0; border-radius: 8px; background: none; font-size: 12px; font-weight: 500; color: var(--text-2); }
+.mac .po-act:hover:not(:disabled) { background: rgba(255, 255, 255, 0.08); color: #fff; }
+.mac .po-act svg { width: 19px; height: 19px; }
+.mac .po-act.warm { color: var(--tool-kilo); }

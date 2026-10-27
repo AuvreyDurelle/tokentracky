@@ -1,0 +1,16 @@
+PRAGMA journal_mode=WAL;
+PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+CREATE TABLE sessions(id TEXT PRIMARY KEY, name TEXT NOT NULL DEFAULT '', working_dir TEXT NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, accumulated_total_tokens INTEGER, accumulated_input_tokens INTEGER, accumulated_output_tokens INTEGER, accumulated_cache_read_tokens INTEGER, accumulated_cache_write_tokens INTEGER, model_config_json TEXT);
+CREATE TABLE messages(id INTEGER PRIMARY KEY AUTOINCREMENT, message_id TEXT, session_id TEXT NOT NULL REFERENCES sessions(id), role TEXT NOT NULL, content_json TEXT NOT NULL, created_timestamp INTEGER NOT NULL);
+CREATE TABLE usage_ledger(id INTEGER PRIMARY KEY AUTOINCREMENT, session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE, created_timestamp INTEGER NOT NULL, model TEXT, input_tokens INTEGER, output_tokens INTEGER, total_tokens INTEGER, cache_read_tokens INTEGER, cache_write_tokens INTEGER, cost REAL, cost_source TEXT, is_compaction INTEGER DEFAULT 0);
+INSERT INTO sessions VALUES('20261022_1','PRIVATE_SESSION_NAME','/PRIVATE_PROJECT','2026-10-22 09:30:00','2026-10-22 09:30:00',7675,7100,550,4500,500,'{"model_name": "claude-sonnet-4-6", "context_limit": 200000, "temperature": null}');
+INSERT INTO messages(message_id, session_id, role, content_json, created_timestamp) VALUES('msg_1','20261022_1','user','[{"type":"text","text":"PRIVATE_PROMPT"}]',0);
+INSERT INTO usage_ledger(session_id, created_timestamp, model, input_tokens, output_tokens, total_tokens, cache_read_tokens, cache_write_tokens, cost, cost_source, is_compaction) VALUES('20261022_1',1792659600,'claude-sonnet-4-6',5000,400,5400,3000,500,NULL,'estimated',0);
+INSERT INTO usage_ledger(session_id, created_timestamp, model, input_tokens, output_tokens, total_tokens, cache_read_tokens, cache_write_tokens, cost, cost_source, is_compaction) VALUES('20261022_1',1792661400,'claude-haiku-4-5',2000,100,2100,1500,0,NULL,NULL,1);
+INSERT INTO usage_ledger(session_id, created_timestamp, model, input_tokens, output_tokens, total_tokens, cache_read_tokens, cache_write_tokens, cost, cost_source, is_compaction) VALUES('20261022_1',1792662000,'claude-sonnet-4-6',100,50,175,0,0,NULL,NULL,0);
+INSERT INTO sessions VALUES('20261020_3','PRIVATE_SESSION_NAME','/PRIVATE_PROJECT','2026-10-20 18:00:00','2026-10-20 18:00:00',11000,10000,1000,6000,1000,'{"model_name": "gpt-5.6-terra", "context_limit": 200000, "temperature": null}');
+INSERT INTO messages(message_id, session_id, role, content_json, created_timestamp) VALUES('msg_1','20261020_3','user','[{"type":"text","text":"PRIVATE_PROMPT"}]',0);
+INSERT INTO sessions VALUES('20261021_1','PRIVATE_SESSION_NAME','/PRIVATE_PROJECT','2026-10-21 08:00:00','2026-10-21 08:00:00',NULL,NULL,NULL,NULL,NULL,NULL);
+INSERT INTO messages(message_id, session_id, role, content_json, created_timestamp) VALUES('msg_1','20261021_1','user','[{"type":"text","text":"PRIVATE_PROMPT"}]',0);
+COMMIT;

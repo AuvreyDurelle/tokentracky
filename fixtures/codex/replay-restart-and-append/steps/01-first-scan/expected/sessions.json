@@ -1,0 +1,21 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 40,
+      "cacheWrite": 0,
+      "input": 60,
+      "output": 20,
+      "reasoning": 10
+    },
+    "costMicrousd": null,
+    "id": "codex-session",
+    "lastUsedAt": "2026-10-20T12:00:00.000Z",
+    "model": "gpt-5-codex",
+    "models": [
+      "gpt-5-codex"
+    ],
+    "project": "/synthetic/codex-project",
+    "tokens": 120,
+    "tool": "codex"
+  }
+]

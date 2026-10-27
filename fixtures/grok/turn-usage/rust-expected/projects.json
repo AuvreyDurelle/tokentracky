@@ -1,0 +1,15 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 2200,
+      "cacheWrite": 0,
+      "input": 1640,
+      "output": 195,
+      "reasoning": 60
+    },
+    "costMicrousd": 4956,
+    "name": "/synthetic/grok-project",
+    "sessions": 1,
+    "tokens": 4035
+  }
+]

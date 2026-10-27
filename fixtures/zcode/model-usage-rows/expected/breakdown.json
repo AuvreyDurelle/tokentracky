@@ -1,0 +1,44 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 3400,
+      "cacheWrite": 500,
+      "input": 1800,
+      "output": 950,
+      "reasoning": 300
+    },
+    "costMicrousd": null,
+    "day": "2026-10-22",
+    "model": "glm-4.6",
+    "tokens": 6650,
+    "tool": "zcode"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 1000,
+      "output": 200,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-22",
+    "model": "mimo-v2.5-pro",
+    "tokens": 1200,
+    "tool": "zcode"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 100,
+      "output": 20,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-22",
+    "model": "unknown",
+    "tokens": 120,
+    "tool": "zcode"
+  }
+]

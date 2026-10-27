@@ -1,0 +1,21 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 7,
+      "output": 3,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "0199f004-0000-7000-8000-000000000004",
+    "lastUsedAt": "2026-10-22T08:00:06.000Z",
+    "model": "gpt-5.1",
+    "models": [
+      "gpt-5.1"
+    ],
+    "project": "/synthetic/gamma",
+    "tokens": 10,
+    "tool": "pi"
+  }
+]

@@ -1,0 +1,58 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 4000,
+      "cacheWrite": 500,
+      "input": 1200,
+      "output": 300,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-22",
+    "model": "claude-sonnet-4-6",
+    "tokens": 6000,
+    "tool": "zed"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 100,
+      "output": 20,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-22",
+    "model": "gemini-3-pro",
+    "tokens": 120,
+    "tool": "zed"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 0,
+      "output": 7,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-22",
+    "model": "unknown",
+    "tokens": 7,
+    "tool": "zed"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 2000,
+      "cacheWrite": 0,
+      "input": 300,
+      "output": 150,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-23",
+    "model": "gpt-5.6-terra",
+    "tokens": 2450,
+    "tool": "zed"
+  }
+]

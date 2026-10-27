@@ -1,0 +1,28 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 300,
+      "cacheWrite": 100,
+      "input": 1520,
+      "output": 360,
+      "reasoning": 50
+    },
+    "costMicrousd": null,
+    "name": "/synthetic/mimo-project",
+    "sessions": 1,
+    "tokens": 2280
+  },
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 10,
+      "output": 5,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "name": "/synthetic/mimo-dev-project",
+    "sessions": 1,
+    "tokens": 15
+  }
+]

@@ -1,0 +1,5 @@
+"tool","model","timestamp","project","session","input","output","cache_read","cache_write","reasoning","total","cost_microusd"
+"unsloth","local/Qwen3-8B-Q4_K_M","2026-10-22T09:00:02.000Z","","th-local","400","300","800","0","0","1500",""
+"unsloth","gpt-5.6-terra","2026-10-22T09:00:04.000Z","","th-external","1000","700","3000","1000","0","5700",""
+"unsloth","unsloth/Qwen3-8B-GGUF","2026-10-22T10:00:00.000Z","","api","2000","500","0","0","0","2500",""
+"unsloth","local/unsloth/Qwen3-8B-GGUF","2026-10-22T09:00:05.000Z","","th-local","100","50","0","0","0","150",""

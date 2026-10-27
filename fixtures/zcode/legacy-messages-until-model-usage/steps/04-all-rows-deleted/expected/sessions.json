@@ -1,0 +1,41 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 600,
+      "cacheWrite": 0,
+      "input": 900,
+      "output": 300,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "ses_N1",
+    "lastUsedAt": "2026-10-22T10:00:00.000Z",
+    "model": "glm-4.6",
+    "models": [
+      "glm-4.6"
+    ],
+    "project": "/synthetic/zcode-legacy",
+    "tokens": 1800,
+    "tool": "zcode"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 1500,
+      "cacheWrite": 0,
+      "input": 950,
+      "output": 410,
+      "reasoning": 100
+    },
+    "costMicrousd": null,
+    "id": "ses_L1",
+    "lastUsedAt": "2026-09-01T09:58:15.000Z",
+    "model": "glm-4.5",
+    "models": [
+      "glm-4.5",
+      "mimo-v2.5-pro"
+    ],
+    "project": "/synthetic/zcode-legacy",
+    "tokens": 2860,
+    "tool": "zcode"
+  }
+]

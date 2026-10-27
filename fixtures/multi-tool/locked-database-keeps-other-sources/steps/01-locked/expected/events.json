@@ -1,0 +1,19 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "gemini:c4503fc68fd87541e24ef826bc1d1e5afd776434fb46416bbc317d88b134ff2d",
+    "model": "unknown",
+    "occurredAt": null,
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "g",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 5,
+      "output": 5,
+      "reasoning": 0
+    },
+    "tool": "gemini"
+  }
+]

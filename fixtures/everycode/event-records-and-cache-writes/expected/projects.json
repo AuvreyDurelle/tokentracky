@@ -1,0 +1,15 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 1300,
+      "cacheWrite": 100,
+      "input": 400,
+      "output": 300,
+      "reasoning": 80
+    },
+    "costMicrousd": null,
+    "name": "/synthetic/every-code",
+    "sessions": 1,
+    "tokens": 2100
+  }
+]

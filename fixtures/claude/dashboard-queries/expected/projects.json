@@ -1,0 +1,16 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 500,
+      "cacheWrite": 150,
+      "cacheWrite1h": 100,
+      "input": 55,
+      "output": 100,
+      "reasoning": 35
+    },
+    "costMicrousd": 805,
+    "name": "/synthetic/private-project",
+    "sessions": 2,
+    "tokens": 805
+  }
+]

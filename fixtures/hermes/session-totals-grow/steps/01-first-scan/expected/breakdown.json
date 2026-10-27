@@ -1,0 +1,44 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 5000,
+      "cacheWrite": 600,
+      "input": 1000,
+      "output": 400,
+      "reasoning": 100
+    },
+    "costMicrousd": null,
+    "day": "2026-10-22",
+    "model": "claude-sonnet-4-6",
+    "tokens": 7000,
+    "tool": "hermes"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 200,
+      "output": 80,
+      "reasoning": 30
+    },
+    "costMicrousd": null,
+    "day": "2026-10-22",
+    "model": "gpt-5.6-terra",
+    "tokens": 280,
+    "tool": "hermes"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 50,
+      "output": 10,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-22",
+    "model": "unknown",
+    "tokens": 60,
+    "tool": "hermes"
+  }
+]

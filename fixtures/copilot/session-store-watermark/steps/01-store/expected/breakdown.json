@@ -1,0 +1,30 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 10000,
+      "cacheWrite": 1500,
+      "input": 500,
+      "output": 800,
+      "reasoning": 200
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": "claude-sonnet-4.5",
+    "tokens": 12800,
+    "tool": "copilot"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 2000,
+      "cacheWrite": 0,
+      "input": 1000,
+      "output": 400,
+      "reasoning": 150
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": "gpt-5",
+    "tokens": 3400,
+    "tool": "copilot"
+  }
+]

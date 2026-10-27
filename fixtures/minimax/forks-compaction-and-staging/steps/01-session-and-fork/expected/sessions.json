@@ -1,0 +1,21 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 13900,
+      "cacheWrite": 0,
+      "input": 910,
+      "output": 410,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "session_c2Vzc2lvbi1i",
+    "lastUsedAt": "2026-10-22T11:00:20.000Z",
+    "model": "MiniMax-M2",
+    "models": [
+      "MiniMax-M2"
+    ],
+    "project": null,
+    "tokens": 15220,
+    "tool": "minimax"
+  }
+]

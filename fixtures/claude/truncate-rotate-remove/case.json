@@ -1,0 +1,3 @@
+{
+  "description": "Truncating a log refunds it with a zero tombstone; rotation keeps one count of shared history; deleting every log file keeps the usage already seen."
+}

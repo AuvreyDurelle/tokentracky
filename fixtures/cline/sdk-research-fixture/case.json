@@ -1,0 +1,6 @@
+{
+  "description": "An SDK session: input includes both caches (so it is split out), reasoning is added to output, the model comes from the message and the project from the manifest.",
+  "forbidden": [
+    "manifest-model"
+  ]
+}

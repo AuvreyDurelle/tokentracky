@@ -1,0 +1,3 @@
+{
+  "description": "A request updated in place counts once, a rescan does not double count, and replacing the request with a deleted-request summary keeps the usage."
+}

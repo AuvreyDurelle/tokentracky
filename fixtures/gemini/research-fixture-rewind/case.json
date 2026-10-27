@@ -1,0 +1,6 @@
+{
+  "description": "The research fixture: a placeholder, its completed message and a rewind record give one event with disjoint input, cache read, output and thoughts; the project hash and directories are not kept.",
+  "forbidden": [
+    "0000000000000000000000000000000000000000000000000000000000000000"
+  ]
+}

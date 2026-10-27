@@ -1,0 +1,4 @@
+{
+  "description": "Kimi Code logs: step.end usage counts by its uuid, inside context.append_loop_event or on its own; usage.record and message usage repeat it and add nothing; the model is the latest llm.request model or profile.bind / config.update alias before the step and the project their working folder; a subagent log counts under its session; a fork copy counts once; a negative counter is invalid_counters, a step without a uuid missing_stable_identity, a step without usage nothing.",
+  "rustOnly": true
+}

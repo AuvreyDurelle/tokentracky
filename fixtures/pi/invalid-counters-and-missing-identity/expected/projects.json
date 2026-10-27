@@ -1,0 +1,15 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 7,
+      "output": 3,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "name": "/synthetic/gamma",
+    "sessions": 1,
+    "tokens": 10
+  }
+]

@@ -1,0 +1,4 @@
+{
+  "description": "A message copied into a forked session (same times, counters, model and provider, new id) counts once; a new message in the fork counts.",
+  "rustOnly": true
+}

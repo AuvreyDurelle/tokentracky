@@ -1,0 +1,121 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "codex:0fdcbed0608f273c14f846559e211d4c53298d80a63ffa1e2141bd34a1329bf6",
+    "model": "gpt-5-codex",
+    "occurredAt": "2026-10-20T12:00:00.001Z",
+    "pricingVersion": null,
+    "project": "/synthetic/codex-project",
+    "sessionId": "spawn",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 100,
+      "output": 10,
+      "reasoning": 0
+    },
+    "tool": "codex"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "codex:484a00101ef2bab1adcb37de59b9b9a0eb38fbcff4044f2fe8526a1f065a02bb",
+    "model": "gpt-5-codex",
+    "occurredAt": "2026-10-20T11:00:00.001Z",
+    "pricingVersion": null,
+    "project": "/synthetic/codex-project",
+    "sessionId": "fork",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 100,
+      "output": 10,
+      "reasoning": 0
+    },
+    "tool": "codex"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "codex:50d0861e9dc4c6173885f3f43d2c39731104fa767abf0e3aa9afb88b56513f8e",
+    "model": "gpt-5-codex",
+    "occurredAt": "2026-10-20T10:00:05.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/codex-project",
+    "sessionId": "parent",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 100,
+      "output": 10,
+      "reasoning": 0
+    },
+    "tool": "codex"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "codex:824f82d0df913762e6c7551282113006f296eb9ceab05d0fed7f21622232a7fc",
+    "model": "gpt-5-codex",
+    "occurredAt": "2026-10-20T11:00:06.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/codex-project",
+    "sessionId": "fork",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 200,
+      "output": 20,
+      "reasoning": 0
+    },
+    "tool": "codex"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "codex:e1763b8aa7507cb3fa8ee31cefb4259923ca4f9b71f6fd44ac6a62c95037cc92",
+    "model": "gpt-5-codex",
+    "occurredAt": "2026-10-20T12:00:08.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/codex-project",
+    "sessionId": "spawn",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 50,
+      "output": 5,
+      "reasoning": 0
+    },
+    "tool": "codex"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "codex:ebe654e6aa526bde550478f3d49183fd2438098fc0e7f13c79867d00f0af7f93",
+    "model": "gpt-5-codex",
+    "occurredAt": "2026-10-20T10:00:30.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/codex-project",
+    "sessionId": "parent",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 200,
+      "output": 20,
+      "reasoning": 0
+    },
+    "tool": "codex"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "codex:ee0c7f0cc096b1735767405985fdb4fed71144d094311abe9ba3c38efd6180f4",
+    "model": "gpt-5-codex",
+    "occurredAt": "2026-10-20T11:00:00.002Z",
+    "pricingVersion": null,
+    "project": "/synthetic/codex-project",
+    "sessionId": "fork",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 200,
+      "output": 20,
+      "reasoning": 0
+    },
+    "tool": "codex"
+  }
+]

@@ -1,0 +1,4 @@
+{
+  "description": "Legacy kimi-cli logs: each StatusUpdate counts once by its message id (a repeat, and a subagent update forwarded into the parent log and also in the subagent log, count once), disjoint buckets map 1:1, the model is unknown, a null token_usage adds nothing, an update without an id is skipped with missing_stable_identity, and context.jsonl is never opened.",
+  "rustOnly": true
+}

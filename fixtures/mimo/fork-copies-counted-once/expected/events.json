@@ -1,0 +1,36 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "mimo:67a06643d61ed777b74879d2e5ea8a6d62db3b5ebc2a0d36365fa5be84f4c0a7",
+    "model": "mimo-v2.5-pro",
+    "occurredAt": "2026-10-23T09:00:00.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/mimo-project",
+    "sessionId": "ses_01",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 400,
+      "output": 200,
+      "reasoning": 50
+    },
+    "tool": "mimo"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "mimo:f090345fce93eaac9b6f06dc5113130200163f7414e36ab4c8877e2a86bbaef4",
+    "model": "mimo-v2.5-pro",
+    "occurredAt": "2026-10-23T09:03:20.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/mimo-project",
+    "sessionId": "ses_09",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 200,
+      "output": 100,
+      "reasoning": 0
+    },
+    "tool": "mimo"
+  }
+]

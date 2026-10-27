@@ -1,0 +1,15 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 900,
+      "cacheWrite": 450,
+      "input": 160,
+      "output": 90,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "name": "/synthetic/epsilon",
+    "sessions": 2,
+    "tokens": 1600
+  }
+]

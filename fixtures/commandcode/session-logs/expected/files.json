@@ -1,0 +1,9 @@
+{
+  "commandcode:synthetic-command-code/cc-session-1.jsonl": {
+    "diagnostics": [
+      "invalid_counters",
+      "missing_stable_identity"
+    ],
+    "offset": 2186
+  }
+}

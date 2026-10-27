@@ -1,0 +1,6 @@
+"tool","model","timestamp","project","session","input","output","cache_read","cache_write","reasoning","total","cost_microusd"
+"zcode","glm-4.5","2026-08-03T09:00:00.000Z","/synthetic/zcode-legacy","ses_L1","500","300","1500","0","100","2300",""
+"zcode","glm-4.6","2026-10-22T10:00:00.000Z","/synthetic/zcode-legacy","ses_N1","500","100","0","0","0","600",""
+"zcode","glm-4.5","2026-09-01T09:58:15.000Z","/synthetic/zcode-legacy","ses_L1","50","10","0","0","0","60",""
+"zcode","mimo-v2.5-pro","2026-08-03T09:00:10.000Z","/synthetic/zcode-legacy","ses_L1","400","100","0","0","0","500",""
+"zcode","glm-4.6","2026-09-01T10:00:00.000Z","/synthetic/zcode-legacy","ses_N1","400","200","600","0","0","1200",""

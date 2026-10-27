@@ -1,0 +1,20 @@
+-- Synthetic usage-only projection of pinned projectFork (before/through, sequence gaps, settled-only copies).
+-- Copy rows match upstream-fork-output.json from the unmodified extracted projector on synthetic SQLite.
+-- The full OpenCode application was not run; see verify-upstream-fork.ts.
+PRAGMA journal_mode=WAL;
+CREATE TABLE session_v2(id TEXT PRIMARY KEY, directory TEXT, fork_session_id TEXT, fork_boundary TEXT, title TEXT);
+CREATE TABLE session_message(id TEXT PRIMARY KEY, session_id TEXT, type TEXT, seq INTEGER, time_created INTEGER, data TEXT);
+INSERT INTO session_v2 VALUES('ses_root','/synthetic/project',NULL,NULL,'PRIVATE_PROMPT_MARKER');
+INSERT INTO session_v2 VALUES('ses_before','/synthetic/project','ses_root','{"type": "before", "messageID": "msg_compact"}','PRIVATE_PROMPT_MARKER');
+INSERT INTO session_v2 VALUES('ses_nested','/synthetic/project','ses_before','{"type": "through", "messageID": "msg_newb"}','PRIVATE_PROMPT_MARKER');
+INSERT INTO session_v2 VALUES('ses_unrelated','/synthetic/project',NULL,NULL,'PRIVATE_PROMPT_MARKER');
+INSERT INTO session_message VALUES('msg_user','ses_root','user',1,1792746001000,'{"text":"PRIVATE_PROMPT_MARKER"}');
+INSERT INTO session_message VALUES('msg_original','ses_root','assistant',2,1792746002000,'{"model":{"id":"synthetic-model","providerID":"synthetic"},"time":{"created":1792746002000,"completed":1792746002100},"tokens":{"input":100,"output":10,"reasoning":2,"cache":{"read":3,"write":1}},"content":"PRIVATE_RESPONSE_MARKER"}');
+INSERT INTO session_message VALUES('msg_pending','ses_root','assistant',3,1792746003000,'{"model":{"id":"synthetic-model","providerID":"synthetic"},"time":{"created":1792746003000},"tokens":{"input":4,"output":1,"reasoning":0,"cache":{"read":0,"write":0}},"content":"PRIVATE_RESPONSE_MARKER"}');
+INSERT INTO session_message VALUES('msg_compact','ses_root','compaction',5,1792746005000,'{"model":{"id":"synthetic-model","providerID":"synthetic"},"time":{"created":1792746005000,"completed":1792746005100},"tokens":{"input":20,"output":2,"reasoning":1,"cache":{"read":0,"write":0}},"content":"PRIVATE_RESPONSE_MARKER","status":"completed"}');
+INSERT INTO session_message VALUES('msg_forkb_2','ses_before','assistant',2,1792746002000,'{"model":{"id":"synthetic-model","providerID":"synthetic"},"time":{"created":1792746002000,"completed":1792746002100},"tokens":{"input":100,"output":10,"reasoning":2,"cache":{"read":3,"write":1}},"content":"PRIVATE_RESPONSE_MARKER"}');
+INSERT INTO session_message VALUES('msg_newb','ses_before','assistant',6,1792746006000,'{"model":{"id":"synthetic-model","providerID":"synthetic"},"time":{"created":1792746006000,"completed":1792746006100},"tokens":{"input":30,"output":3,"reasoning":1,"cache":{"read":0,"write":0}},"content":"PRIVATE_RESPONSE_MARKER"}');
+INSERT INTO session_message VALUES('msg_forkc_2','ses_nested','assistant',2,1792746002000,'{"model":{"id":"synthetic-model","providerID":"synthetic"},"time":{"created":1792746002000,"completed":1792746002100},"tokens":{"input":100,"output":10,"reasoning":2,"cache":{"read":3,"write":1}},"content":"PRIVATE_RESPONSE_MARKER"}');
+INSERT INTO session_message VALUES('msg_forkc_6','ses_nested','assistant',6,1792746006000,'{"model":{"id":"synthetic-model","providerID":"synthetic"},"time":{"created":1792746006000,"completed":1792746006100},"tokens":{"input":30,"output":3,"reasoning":1,"cache":{"read":0,"write":0}},"content":"PRIVATE_RESPONSE_MARKER"}');
+INSERT INTO session_message VALUES('msg_newc','ses_nested','assistant',7,1792746007000,'{"model":{"id":"synthetic-model","providerID":"synthetic"},"time":{"created":1792746007000,"completed":1792746007100},"tokens":{"input":40,"output":4,"reasoning":1,"cache":{"read":0,"write":0}},"content":"PRIVATE_RESPONSE_MARKER"}');
+INSERT INTO session_message VALUES('msg_independent','ses_unrelated','assistant',2,1792746002000,'{"model":{"id":"synthetic-model","providerID":"synthetic"},"time":{"created":1792746002000,"completed":1792746002100},"tokens":{"input":100,"output":10,"reasoning":2,"cache":{"read":3,"write":1}},"content":"PRIVATE_RESPONSE_MARKER"}');

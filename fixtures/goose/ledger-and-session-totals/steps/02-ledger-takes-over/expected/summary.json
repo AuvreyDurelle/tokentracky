@@ -1,0 +1,121 @@
+{
+  "activity": {
+    "activeDays": 3,
+    "averagePerActiveDay": 8000,
+    "bestDay": {
+      "day": "2026-10-20",
+      "tokens": 11000
+    },
+    "currentStreak": 2,
+    "longestStreak": 2
+  },
+  "breakdown": {
+    "cacheRead": 14000,
+    "cacheWrite": 1500,
+    "input": 6500,
+    "output": 2000,
+    "reasoning": 0
+  },
+  "byModel": [
+    {
+      "breakdown": {
+        "cacheRead": 9500,
+        "cacheWrite": 1000,
+        "input": 4500,
+        "output": 1500,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "gpt-5.6-terra",
+      "tokens": 16500
+    },
+    {
+      "breakdown": {
+        "cacheRead": 3000,
+        "cacheWrite": 500,
+        "input": 1500,
+        "output": 400,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "claude-sonnet-4-6",
+      "tokens": 5400
+    },
+    {
+      "breakdown": {
+        "cacheRead": 1500,
+        "cacheWrite": 0,
+        "input": 500,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "claude-haiku-4-5",
+      "tokens": 2100
+    }
+  ],
+  "byTool": [
+    {
+      "breakdown": {
+        "cacheRead": 14000,
+        "cacheWrite": 1500,
+        "input": 6500,
+        "output": 2000,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "tokens": 24000,
+      "tool": "goose"
+    }
+  ],
+  "cacheRate": 0.6363636363636364,
+  "costMicrousd": null,
+  "costParts": null,
+  "daily": [
+    {
+      "breakdown": {
+        "cacheRead": 6000,
+        "cacheWrite": 1000,
+        "input": 3000,
+        "output": 1000,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "day": "2026-10-20",
+      "tokens": 11000
+    },
+    {
+      "breakdown": {
+        "cacheRead": 4500,
+        "cacheWrite": 500,
+        "input": 2000,
+        "output": 500,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "day": "2026-10-22",
+      "tokens": 7500
+    },
+    {
+      "breakdown": {
+        "cacheRead": 3500,
+        "cacheWrite": 0,
+        "input": 1500,
+        "output": 500,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "day": "2026-10-23",
+      "tokens": 5500
+    }
+  ],
+  "sessions": 2,
+  "tokens": 24000
+}

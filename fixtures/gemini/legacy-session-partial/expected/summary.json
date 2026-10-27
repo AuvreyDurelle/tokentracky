@@ -1,0 +1,24 @@
+{
+  "activity": {
+    "activeDays": 0,
+    "averagePerActiveDay": 0,
+    "bestDay": null,
+    "currentStreak": 0,
+    "longestStreak": 0
+  },
+  "breakdown": {
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "input": 0,
+    "output": 0,
+    "reasoning": 0
+  },
+  "byModel": [],
+  "byTool": [],
+  "cacheRate": 0,
+  "costMicrousd": null,
+  "costParts": null,
+  "daily": [],
+  "sessions": 0,
+  "tokens": 0
+}

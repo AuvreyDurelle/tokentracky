@@ -1,0 +1,6 @@
+"tool","model","timestamp","project","session","input","output","cache_read","cache_write","reasoning","total","cost_microusd"
+"codebuddy","deepseek-v4","2026-10-23T09:00:30.000Z","","cb-session-1","400","40","0","0","0","440",""
+"codebuddy","unknown","2026-10-23T09:03:00.000Z","","cb-session-1","100","10","0","0","0","110",""
+"codebuddy","claude-sonnet-4-6","2026-10-23T09:01:00.000Z","","cb-session-1","500","100","2000","500","0","3100",""
+"codebuddy","deepseek-v4","2026-10-23T09:00:04.000Z","","cb-session-1","1000","600","4000","0","250","5600",""
+"codebuddy","glm-5.3","2026-10-23T09:02:00.000Z","","cb-session-1","200","80","600","0","0","880",""

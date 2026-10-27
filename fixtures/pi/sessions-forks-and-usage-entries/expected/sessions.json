@@ -1,0 +1,62 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 45,
+      "output": 15,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "0199f003-0000-7000-8000-000000000003",
+    "lastUsedAt": "2026-10-21T09:00:20.000Z",
+    "model": "unknown",
+    "models": [
+      "glm-4.6",
+      "unknown"
+    ],
+    "project": "/synthetic/beta",
+    "tokens": 60,
+    "tool": "pi"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 2400,
+      "cacheWrite": 260,
+      "cacheWrite1h": 200,
+      "input": 470,
+      "output": 255,
+      "reasoning": 130
+    },
+    "costMicrousd": null,
+    "id": "0199f002-0000-7000-8000-000000000002",
+    "lastUsedAt": "2026-10-21T08:00:10.000Z",
+    "model": "claude-sonnet-4-6",
+    "models": [
+      "claude-sonnet-4-6",
+      "gemini-2.5-pro"
+    ],
+    "project": "/synthetic/alpha",
+    "tokens": 3385,
+    "tool": "pi"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 1320,
+      "cacheWrite": 0,
+      "input": 3,
+      "output": 1,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "0199f001-0000-7000-8000-000000000001",
+    "lastUsedAt": "2026-10-20T10:04:00.000Z",
+    "model": "claude-sonnet-4-6",
+    "models": [
+      "claude-sonnet-4-6"
+    ],
+    "project": "/synthetic/alpha",
+    "tokens": 1324,
+    "tool": "pi"
+  }
+]

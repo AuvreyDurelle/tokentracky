@@ -1,0 +1,20 @@
+{
+  "description": "Two tools priced from one table: tool, model, session, project, CSV and bucket costs add up to the summary cost.",
+  "sources": {
+    "claude": [
+      "claude"
+    ],
+    "codex": [
+      "codex"
+    ]
+  },
+  "price": {
+    "version": "v1",
+    "rates": {
+      "input": 1,
+      "output": 2,
+      "cacheRead": 1,
+      "cacheWrite": 1
+    }
+  }
+}

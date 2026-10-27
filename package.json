@@ -1,0 +1,36 @@
+{
+  "name": "tokentracky",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/core",
+    "packages/cloud",
+    "apps/server",
+    "apps/web"
+  ],
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "scripts": {
+    "build": "npm run build --workspace=@tokentracky/web && npm run build --workspace=@tokentracky/server",
+    "typecheck": "tsc --noEmit",
+    "test": "cargo build -p tokentracky-local-api --bin contract-server && vitest run",
+    "lint": "eslint .",
+    "dev": "cargo run -p tokentracky-cli -- serve",
+    "dev:web": "npm run dev --workspace=@tokentracky/web",
+    "desktop": "cargo run -p tokentracky-mac",
+    "cli": "cargo run -p tokentracky-cli --",
+    "dev:hosted": "tsx apps/server/src/main.ts"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "22.20.5",
+    "esbuild": "0.28.2",
+    "eslint": "10.13.0",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.0",
+    "vitest": "5.0.5"
+  }
+}

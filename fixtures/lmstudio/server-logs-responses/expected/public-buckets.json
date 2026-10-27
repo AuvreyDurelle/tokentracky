@@ -1,0 +1,442 @@
+{
+  "tools=off,cost=off,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 400,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "revision": 5,
+      "tokens": 500,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 2776,
+        "cacheWrite": 0,
+        "input": 517,
+        "output": 342,
+        "reasoning": 120
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "revision": 7,
+      "tokens": 3635,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 400,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "revision": 6,
+      "tokens": 500,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 400,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "lmstudio-community/llama-3.2-3b-instruct",
+      "revision": 8,
+      "tokens": 500,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 1276,
+        "cacheWrite": 0,
+        "input": 17,
+        "output": 42,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "google/gemma-3-12b",
+      "revision": 11,
+      "tokens": 1335,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 1500,
+        "cacheWrite": 0,
+        "input": 500,
+        "output": 300,
+        "reasoning": 120
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "qwen2.5-7b-instruct",
+      "revision": 10,
+      "tokens": 2300,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 400,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "lmstudio-community/llama-3.2-3b-instruct",
+      "revision": 9,
+      "tokens": 500,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 400,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "revision": 12,
+      "tokens": 500,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 2776,
+        "cacheWrite": 0,
+        "input": 517,
+        "output": 342,
+        "reasoning": 120
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "revision": 14,
+      "tokens": 3635,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 400,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "revision": 13,
+      "tokens": 500,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 400,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "lmstudio-community/llama-3.2-3b-instruct",
+      "revision": 15,
+      "tokens": 500,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 1276,
+        "cacheWrite": 0,
+        "input": 17,
+        "output": 42,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "google/gemma-3-12b",
+      "revision": 18,
+      "tokens": 1335,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 1500,
+        "cacheWrite": 0,
+        "input": 500,
+        "output": 300,
+        "reasoning": 120
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "qwen2.5-7b-instruct",
+      "revision": 17,
+      "tokens": 2300,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 400,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "lmstudio-community/llama-3.2-3b-instruct",
+      "revision": 16,
+      "tokens": 500,
+      "tool": "all"
+    }
+  ],
+  "tools=on,cost=off,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 400,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "revision": 19,
+      "tokens": 500,
+      "tool": "lmstudio"
+    }
+  ],
+  "tools=on,cost=off,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 2776,
+        "cacheWrite": 0,
+        "input": 517,
+        "output": 342,
+        "reasoning": 120
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "revision": 21,
+      "tokens": 3635,
+      "tool": "lmstudio"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 400,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "revision": 20,
+      "tokens": 500,
+      "tool": "lmstudio"
+    }
+  ],
+  "tools=on,cost=off,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 400,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "lmstudio-community/llama-3.2-3b-instruct",
+      "revision": 22,
+      "tokens": 500,
+      "tool": "lmstudio"
+    }
+  ],
+  "tools=on,cost=off,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 1276,
+        "cacheWrite": 0,
+        "input": 17,
+        "output": 42,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "google/gemma-3-12b",
+      "revision": 25,
+      "tokens": 1335,
+      "tool": "lmstudio"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 1500,
+        "cacheWrite": 0,
+        "input": 500,
+        "output": 300,
+        "reasoning": 120
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "qwen2.5-7b-instruct",
+      "revision": 24,
+      "tokens": 2300,
+      "tool": "lmstudio"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 400,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "lmstudio-community/llama-3.2-3b-instruct",
+      "revision": 23,
+      "tokens": 500,
+      "tool": "lmstudio"
+    }
+  ],
+  "tools=on,cost=on,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 400,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "revision": 26,
+      "tokens": 500,
+      "tool": "lmstudio"
+    }
+  ],
+  "tools=on,cost=on,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 2776,
+        "cacheWrite": 0,
+        "input": 517,
+        "output": 342,
+        "reasoning": 120
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "revision": 28,
+      "tokens": 3635,
+      "tool": "lmstudio"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 400,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "revision": 27,
+      "tokens": 500,
+      "tool": "lmstudio"
+    }
+  ],
+  "tools=on,cost=on,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 400,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "lmstudio-community/llama-3.2-3b-instruct",
+      "revision": 29,
+      "tokens": 500,
+      "tool": "lmstudio"
+    }
+  ],
+  "tools=on,cost=on,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 1276,
+        "cacheWrite": 0,
+        "input": 17,
+        "output": 42,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "google/gemma-3-12b",
+      "revision": 32,
+      "tokens": 1335,
+      "tool": "lmstudio"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 1500,
+        "cacheWrite": 0,
+        "input": 500,
+        "output": 300,
+        "reasoning": 120
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "qwen2.5-7b-instruct",
+      "revision": 31,
+      "tokens": 2300,
+      "tool": "lmstudio"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 400,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "lmstudio-community/llama-3.2-3b-instruct",
+      "revision": 30,
+      "tokens": 500,
+      "tool": "lmstudio"
+    }
+  ]
+}

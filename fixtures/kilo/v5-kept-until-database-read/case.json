@@ -1,0 +1,3 @@
+{
+  "description": "Version 5 tasks stay counted while kilo.db cannot be read (its writer holds it locked mid-write, file_read_failed), and are withdrawn once it has been read."
+}

@@ -1,0 +1,11 @@
+{
+  "name": "tokentracky",
+  "version": "0.1.0",
+  "description": "Tokentracky Rust CLI for Apple Silicon Macs",
+  "type": "module",
+  "bin": { "tokentracky": "bin/tokentracky.mjs" },
+  "files": ["bin/tokentracky.mjs", "release-manifest.json", "README.md", "LICENSE"],
+  "engines": { "node": ">=18" },
+  "scripts": { "prepublishOnly": "node scripts/validate-publication.mjs", "test": "node --test test/*.test.mjs", "test:harness": "node scripts/npm-harness.mjs", "pack:check": "npm pack --dry-run" },
+  "license": "MIT"
+}

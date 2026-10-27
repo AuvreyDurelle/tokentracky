@@ -1,0 +1,24 @@
+{
+  "lastScanAt": "2026-10-23T12:00:00.000Z",
+  "sources": [
+    {
+      "capabilities": {
+        "costs": false,
+        "models": true,
+        "projects": true,
+        "quotas": false,
+        "tokens": true
+      },
+      "enabled": true,
+      "eventCount": 1,
+      "id": "pi",
+      "lastImportedAt": "2026-10-23T12:00:00.000Z",
+      "message": "Import completed with diagnostics: invalid_counters, malformed_json, missing_stable_identity.",
+      "name": "pi",
+      "paths": [
+        "."
+      ],
+      "state": "stale"
+    }
+  ]
+}

@@ -1,0 +1,104 @@
+name: CI
+on:
+  # Branches are covered by pull_request; pushing there too built every PR commit twice.
+  push:
+    branches: [main]
+  pull_request:
+  # Runs the full suite, native macOS included, on any branch: gh workflow run CI --ref <branch>
+  workflow_dispatch:
+permissions:
+  contents: read
+# A newer push to the same branch or PR cancels the run it supersedes.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: tokentracky_test
+          POSTGRES_USER: tokentracky
+          POSTGRES_PASSWORD: test-only-password
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U tokentracky -d tokentracky_test"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      TEST_DATABASE_URL: postgres://tokentracky:test-only-password@127.0.0.1:5432/tokentracky_test
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: '1.99.0'
+      - uses: Swatinem/rust-cache@bc2d2e71bd35c5549942babaa51a89c586b981d1 # v2.8.1
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: node --test scripts/check-hosted.test.mjs
+      - run: PYTHONDONTWRITEBYTECODE=1 python3 scripts/test_restore_drill.py
+      - run: PYTHONDONTWRITEBYTECODE=1 python3 scripts/test_native_runtime.py
+      - run: node --test scripts/macos-release*.test.mjs packaging/test/*.test.mjs
+      - run: npm run test:harness --prefix packaging
+      - run: shellcheck scripts/prepare-macos-release.sh scripts/check-native-package.sh
+      - run: npm run build
+
+  rust:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: '1.99.0'
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@bc2d2e71bd35c5549942babaa51a89c586b981d1 # v2.8.1
+      - run: cargo fmt --all --check
+      # Embedded CLI assets are checked in native-macos after the web build. Keep this job Rust-only.
+      - run: cargo clippy --workspace --exclude tokentracky-cli --all-targets --all-features -- -D warnings
+      - run: cargo clippy -p tokentracky-cli --all-targets -- -D warnings
+      - run: cargo test --workspace
+        env:
+          # Keep the checkout's generated types untouched so the check below compares against the committed files.
+          TOKENTRACKY_TS_OUT: ${{ runner.temp }}/generated-types
+      - uses: EmbarkStudios/cargo-deny-action@b66acf5e9fe20f8aba065be86778a8a4c846f902 # v2
+      - run: scripts/check-generated-types.sh
+
+  native-macos:
+    # Builds the Tauri app, Rust CLI and React resources on Apple Silicon.
+    # macOS minutes bill at 10x, so this runs on main and manual dispatch only.
+    if: github.event_name != 'pull_request'
+    runs-on: macos-14
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: '1.99.0'
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@bc2d2e71bd35c5549942babaa51a89c586b981d1 # v2.8.1
+      - run: npm ci
+      - run: npm run build --workspace=@tokentracky/web
+      - run: cargo fmt --all --check
+      - run: cargo clippy -p tokentracky-cli --all-targets --features embed-web -- -D warnings
+      - run: cargo test -p tokentracky-cli --features embed-web
+      - run: cargo clippy -p tokentracky-mac --all-targets -- -D warnings
+      - run: cargo test -p tokentracky-mac
+        env:
+          TOKENTRACKY_TS_OUT: ${{ runner.temp }}/generated-types
+      - run: cargo install tauri-cli --version 2.11.5 --locked
+      - run: bash scripts/check-native-package.sh
+      - run: node --test scripts/macos-release*.test.mjs packaging/test/*.test.mjs
+      - run: npm run test:harness --prefix packaging

@@ -1,0 +1,18 @@
+{
+  "claude:claude.jsonl": {
+    "diagnostics": [],
+    "offset": 498
+  },
+  "claude:codex.jsonl": {
+    "diagnostics": [],
+    "offset": 497
+  },
+  "codex:claude.jsonl": {
+    "diagnostics": [],
+    "offset": 498
+  },
+  "codex:codex.jsonl": {
+    "diagnostics": [],
+    "offset": 497
+  }
+}

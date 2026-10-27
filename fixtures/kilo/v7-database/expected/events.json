@@ -1,0 +1,19 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "kilo:d4283f48d67afbc494498b8904bda08c999aea8549df94aa1647cb5b28a69c81",
+    "model": "claude-sonnet-4-6",
+    "occurredAt": "2026-10-23T09:00:01.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/kilo-project",
+    "sessionId": "ses_kilo",
+    "tokens": {
+      "cacheRead": 1000,
+      "cacheWrite": 100,
+      "input": 400,
+      "output": 250,
+      "reasoning": 50
+    },
+    "tool": "kilo"
+  }
+]

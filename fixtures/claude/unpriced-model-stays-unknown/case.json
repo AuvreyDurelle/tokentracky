@@ -1,0 +1,15 @@
+{
+  "description": "A model with no price keeps a null cost, which makes every aggregate containing it null, while priced sessions keep their cost.",
+  "price": {
+    "version": "v1",
+    "rates": {
+      "input": 1,
+      "output": 2,
+      "cacheRead": 1,
+      "cacheWrite": 1
+    },
+    "unpriced": [
+      "unpriced-model"
+    ]
+  }
+}

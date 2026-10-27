@@ -1,0 +1,36 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "everycode:a35bd46ac0484fc0bd2ce9c4dbbe2c502de72d835ac6639f65dd5d33403d1348",
+    "model": "gpt-5.1-codex",
+    "occurredAt": "2026-10-20T12:01:00.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/every-code",
+    "sessionId": "every-session-1",
+    "tokens": {
+      "cacheRead": 700,
+      "cacheWrite": 0,
+      "input": 100,
+      "output": 100,
+      "reasoning": 30
+    },
+    "tool": "everycode"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "everycode:b47b0a91fc25a7b7cf6749932d794dd77e46eab2d04196aa9028ee1eb5c4f2cb",
+    "model": "gpt-5.1-codex-max",
+    "occurredAt": "2026-10-20T12:00:05.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/every-code",
+    "sessionId": "every-session-1",
+    "tokens": {
+      "cacheRead": 600,
+      "cacheWrite": 100,
+      "input": 300,
+      "output": 200,
+      "reasoning": 50
+    },
+    "tool": "everycode"
+  }
+]

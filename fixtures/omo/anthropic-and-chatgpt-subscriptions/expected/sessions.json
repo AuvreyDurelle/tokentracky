@@ -1,0 +1,23 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 1738543,
+      "cacheWrite": 5119,
+      "cacheWrite1h": 5119,
+      "input": 1207,
+      "output": 1642,
+      "reasoning": 729
+    },
+    "costMicrousd": null,
+    "id": "0199f020-0000-7000-8000-000000000020",
+    "lastUsedAt": "2026-10-22T07:06:00.000Z",
+    "model": "claude-opus-4-6",
+    "models": [
+      "claude-opus-4-6",
+      "gpt-5.1-codex"
+    ],
+    "project": "/synthetic/delta",
+    "tokens": 1746511,
+    "tool": "omo"
+  }
+]

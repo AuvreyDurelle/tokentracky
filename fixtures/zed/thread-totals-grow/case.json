@@ -1,0 +1,4 @@
+{
+  "description": "A thread's cumulative usage (input without caches) counts once; when it grows, only the growth counts, dated at the thread's update and given to its current model, so earlier days stay as they were. A lower total or a deleted thread keeps what was counted. JSON and zstd threads are read; imported threads and blobs that do not decode are skipped; titles, messages and project paths are never kept.",
+  "rustOnly": true
+}

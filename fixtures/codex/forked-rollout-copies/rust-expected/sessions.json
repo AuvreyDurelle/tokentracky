@@ -1,0 +1,59 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 50,
+      "output": 5,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "spawn",
+    "lastUsedAt": "2026-10-20T12:00:08.000Z",
+    "model": "gpt-5-codex",
+    "models": [
+      "gpt-5-codex"
+    ],
+    "project": "/synthetic/codex-project",
+    "tokens": 55,
+    "tool": "codex"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 200,
+      "output": 20,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "fork",
+    "lastUsedAt": "2026-10-20T11:00:06.000Z",
+    "model": "gpt-5-codex",
+    "models": [
+      "gpt-5-codex"
+    ],
+    "project": "/synthetic/codex-project",
+    "tokens": 220,
+    "tool": "codex"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 300,
+      "output": 30,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "parent",
+    "lastUsedAt": "2026-10-20T10:00:30.000Z",
+    "model": "gpt-5-codex",
+    "models": [
+      "gpt-5-codex"
+    ],
+    "project": "/synthetic/codex-project",
+    "tokens": 330,
+    "tool": "codex"
+  }
+]

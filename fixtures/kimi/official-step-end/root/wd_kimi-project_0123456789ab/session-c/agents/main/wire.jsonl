@@ -1,0 +1,12 @@
+{"type":"metadata","protocol_version":"1.5","created_at":1792746000000}
+{"type":"profile.bind","agentId":"main","modelAlias":"kimi-code/kimi-for-coding","profileName":"default","thinkingEffort":"high","systemPrompt":"PRIVATE_SYSTEM_PROMPT_MARKER","environmentDisclosure":{"cwd":"/synthetic/kimi-project"},"disallowedTools":[],"time":1792746000000}
+{"type":"turn.prompt","agentId":"main","input":[{"type":"text","text":"PRIVATE_PROMPT_MARKER"}],"time":1792746001000}
+{"type":"context.append_loop_event","agentId":"main","event":{"type":"step.begin","uuid":"step-0001","turnId":"1","step":1},"time":1792746002000}
+{"type":"context.append_loop_event","agentId":"main","event":{"type":"step.end","uuid":"step-0001","turnId":"1","step":1,"finishReason":"tool_calls","usage":{"inputOther":2000,"output":400,"inputCacheRead":6000,"inputCacheCreation":1000}},"time":1792746005000}
+{"type":"usage.record","agentId":"main","model":"kimi-code/kimi-for-coding","usage":{"inputOther":2000,"output":400,"inputCacheRead":6000,"inputCacheCreation":1000},"usageScope":"turn","time":1792746005000}
+{"type":"llm.request","agentId":"main","kind":"loop","provider":"kimi","model":"kimi-for-coding","modelAlias":"kimi-code/kimi-for-coding","toolSelect":false,"systemPromptHash":"0f0f","toolsHash":"a1a1","messageCount":3,"time":1792746006000}
+{"type":"context.append_message","agentId":"main","message":{"role":"assistant","content":[{"type":"text","text":"PRIVATE_RESPONSE_MARKER"}],"toolCalls":[],"usage":{"inputOther":500,"output":120,"inputCacheRead":8000,"inputCacheCreation":0}},"time":1792746009000}
+{"type":"step.end","uuid":"step-0002","turnId":"1","step":2,"usage":{"inputOther":500,"output":120,"inputCacheRead":8000,"inputCacheCreation":0},"time":1792746010000}
+{"type":"forked","agentId":"main","time":1792746060000}
+{"type":"llm.request","agentId":"main","kind":"loop","provider":"kimi","model":"kimi-for-coding","modelAlias":"kimi-code/kimi-for-coding","toolSelect":false,"systemPromptHash":"0f0f","toolsHash":"a1a1","messageCount":3,"time":1792746061000}
+{"type":"context.append_loop_event","agentId":"main","event":{"type":"step.end","uuid":"step-0101","turnId":"1","step":1,"finishReason":"tool_calls","usage":{"inputOther":10,"output":5,"inputCacheRead":1000,"inputCacheCreation":0}},"time":1792746065000}

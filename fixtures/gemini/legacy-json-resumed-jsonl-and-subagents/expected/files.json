@@ -1,0 +1,13 @@
+{
+  "gemini:project-slug/chats/abcd1234-0000-4000-8000-000000000001/subagent-1.jsonl": {
+    "diagnostics": [],
+    "offset": 422
+  },
+  "gemini:project-slug/chats/session-2026-10-23T09-00-abcd1234.json": {
+    "diagnostics": []
+  },
+  "gemini:project-slug/chats/session-2026-10-23T09-00-abcd1234.jsonl": {
+    "diagnostics": [],
+    "offset": 1014
+  }
+}

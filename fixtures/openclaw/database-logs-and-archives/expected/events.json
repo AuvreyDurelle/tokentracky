@@ -1,0 +1,83 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "openclaw:1d6cc84064e288ebeff830de49eeb168036cbca75078ba5a0489ae2f0d3c6dd3",
+    "model": "gpt-5.6-terra",
+    "occurredAt": "2026-10-22T09:05:00.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "019a0b00-0000-7000-8000-000000000001",
+    "tokens": {
+      "cacheRead": 3000,
+      "cacheWrite": 0,
+      "input": 1000,
+      "output": 250,
+      "reasoning": 100
+    },
+    "tool": "openclaw"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "openclaw:21f41624723c42f850dbf1f6148cae5c671534f204dce92ec832ee971e5fa189",
+    "model": "unknown",
+    "occurredAt": "2026-10-21T08:00:00.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "019a0b00-0000-7000-8000-000000000004",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 7,
+      "output": 3
+    },
+    "tool": "openclaw"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "openclaw:6501ff0dce8752f2487b7ba85d6aaf2af0321aa43564a5bfebe7e83d9ce295a5",
+    "model": "claude-haiku-4-5",
+    "occurredAt": "2026-10-22T11:00:00.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "019a0b00-0000-7000-8000-000000000003",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 500,
+      "output": 100
+    },
+    "tool": "openclaw"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "openclaw:6571d4e359ec406c3301596113d910908408f4b10c7786a075bd9dc74e25d1bf",
+    "model": "claude-sonnet-4-6",
+    "occurredAt": "2026-10-22T09:20:00.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "019a0b00-0000-7000-8000-000000000001",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 40,
+      "output": 60
+    },
+    "tool": "openclaw"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "openclaw:d883b0f8bc29f67435aefe6d0fca5a02ebbea05477995b83166a21f8bec9443a",
+    "model": "claude-sonnet-4-6",
+    "occurredAt": "2026-10-22T09:01:00.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "019a0b00-0000-7000-8000-000000000001",
+    "tokens": {
+      "cacheRead": 8000,
+      "cacheWrite": 1200,
+      "input": 20,
+      "output": 300
+    },
+    "tool": "openclaw"
+  }
+]

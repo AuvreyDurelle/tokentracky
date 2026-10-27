@@ -1,0 +1,60 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 2000,
+      "output": 500,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "api",
+    "lastUsedAt": "2026-10-22T10:00:00.000Z",
+    "model": "unsloth/Qwen3-8B-GGUF",
+    "models": [
+      "unsloth/Qwen3-8B-GGUF"
+    ],
+    "project": null,
+    "tokens": 2500,
+    "tool": "unsloth"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 800,
+      "cacheWrite": 0,
+      "input": 500,
+      "output": 350,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "th-local",
+    "lastUsedAt": "2026-10-22T09:00:05.000Z",
+    "model": "local/unsloth/Qwen3-8B-GGUF",
+    "models": [
+      "local/Qwen3-8B-Q4_K_M",
+      "local/unsloth/Qwen3-8B-GGUF"
+    ],
+    "project": null,
+    "tokens": 1650,
+    "tool": "unsloth"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 3000,
+      "cacheWrite": 1000,
+      "input": 1000,
+      "output": 700,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "th-external",
+    "lastUsedAt": "2026-10-22T09:00:04.000Z",
+    "model": "gpt-5.6-terra",
+    "models": [
+      "gpt-5.6-terra"
+    ],
+    "project": null,
+    "tokens": 5700,
+    "tool": "unsloth"
+  }
+]

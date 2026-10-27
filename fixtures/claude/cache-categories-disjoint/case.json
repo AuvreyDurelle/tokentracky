@@ -1,0 +1,3 @@
+{
+  "description": "One assistant record: cache reads and writes stay separate from input, reasoning stays inside output, prompt text is dropped."
+}

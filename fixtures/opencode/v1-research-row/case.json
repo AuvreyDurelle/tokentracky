@@ -1,0 +1,6 @@
+{
+  "description": "A v1 assistant row: input excludes both caches, reasoning is added to output; user rows, malformed rows and zero-usage streaming rows are skipped.",
+  "forbidden": [
+    "msg_00USER"
+  ]
+}

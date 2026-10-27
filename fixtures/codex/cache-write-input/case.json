@@ -1,0 +1,3 @@
+{
+  "description": "Codex cache writes are read from cache_write_input_tokens and, like cached reads, taken out of the inclusive input."
+}

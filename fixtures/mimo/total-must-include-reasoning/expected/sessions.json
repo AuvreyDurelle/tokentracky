@@ -1,0 +1,21 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 0,
+      "input": 700,
+      "output": 400,
+      "reasoning": 100
+    },
+    "costMicrousd": null,
+    "id": "ses_M1",
+    "lastUsedAt": "2026-10-23T09:00:00.000Z",
+    "model": "mimo-v2.5-pro",
+    "models": [
+      "mimo-v2.5-pro"
+    ],
+    "project": "/synthetic/mimo-project",
+    "tokens": 1200,
+    "tool": "mimo"
+  }
+]

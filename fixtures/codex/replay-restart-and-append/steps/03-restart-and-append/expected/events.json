@@ -1,0 +1,36 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "codex:f0bf0f59c1e489703309dcbb863dc34981c0e5b45eda4a9d569980475b57279a",
+    "model": "gpt-5-codex",
+    "occurredAt": "2026-10-20T12:00:00.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/codex-project",
+    "sessionId": "codex-session",
+    "tokens": {
+      "cacheRead": 40,
+      "cacheWrite": 0,
+      "input": 60,
+      "output": 20,
+      "reasoning": 10
+    },
+    "tool": "codex"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "codex:fb273276bc412d38c04f704ba1418a3bb74061068fa5abdf34b6301b384248a2",
+    "model": "gpt-5-codex",
+    "occurredAt": "2026-10-20T12:00:01.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/codex-project",
+    "sessionId": "codex-session",
+    "tokens": {
+      "cacheRead": 20,
+      "cacheWrite": 0,
+      "input": 60,
+      "output": 30,
+      "reasoning": 15
+    },
+    "tool": "codex"
+  }
+]

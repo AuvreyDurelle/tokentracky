@@ -1,0 +1,11 @@
+{
+  "description": "With tools private every bucket is merged into tool all and carries no project, session or tool field; with tools shared there is one bucket per tool; a history start after the usage leaves none.",
+  "sources": {
+    "claude": [
+      "claude"
+    ],
+    "codex": [
+      "codex"
+    ]
+  }
+}

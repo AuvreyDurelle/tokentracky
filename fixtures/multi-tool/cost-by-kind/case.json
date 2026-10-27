@@ -1,0 +1,20 @@
+{
+  "description": "Cost is split by token kind on the summary and its tool, model and day rows, the parts add up to the cost, and cache reads save their price difference from input.",
+  "sources": {
+    "claude": [
+      "claude"
+    ],
+    "codex": [
+      "codex"
+    ]
+  },
+  "price": {
+    "version": "v1",
+    "rates": {
+      "input": 10,
+      "output": 40,
+      "cacheRead": 1,
+      "cacheWrite": 12
+    }
+  }
+}

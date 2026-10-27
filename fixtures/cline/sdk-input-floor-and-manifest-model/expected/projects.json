@@ -1,0 +1,15 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 1000,
+      "cacheWrite": 0,
+      "input": 0,
+      "output": 10,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "name": "/synthetic/cline-project",
+    "sessions": 1,
+    "tokens": 1010
+  }
+]

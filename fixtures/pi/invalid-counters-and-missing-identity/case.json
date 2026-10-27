@@ -1,0 +1,4 @@
+{
+  "description": "Usage before the session header and entries without an id are skipped with missing_stable_identity; a total below the four counts, reasoning above output and a negative counter are skipped with invalid_counters; malformed JSON is skipped; the valid message after them still counts.",
+  "rustOnly": true
+}

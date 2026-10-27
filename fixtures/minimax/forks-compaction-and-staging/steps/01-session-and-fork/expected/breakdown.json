@@ -1,0 +1,16 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 13900,
+      "cacheWrite": 0,
+      "input": 910,
+      "output": 410,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-22",
+    "model": "MiniMax-M2",
+    "tokens": 15220,
+    "tool": "minimax"
+  }
+]

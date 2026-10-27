@@ -1,0 +1,37 @@
+{
+  "sessionId": "abcd1234-0000-4000-8000-000000000001",
+  "projectHash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "startTime": "2026-10-23T09:00:00.000Z",
+  "lastUpdated": "2026-10-23T09:00:00.000Z",
+  "directories": [
+    "/PRIVATE_PATH_MARKER"
+  ],
+  "messages": [
+    {
+      "id": "u-1",
+      "timestamp": "2026-10-23T09:00:01.000Z",
+      "type": "user",
+      "content": [
+        {
+          "text": "PRIVATE_PROMPT_MARKER"
+        }
+      ]
+    },
+    {
+      "id": "not-a-chat",
+      "timestamp": "2026-10-23T09:00:03.000Z",
+      "type": "gemini",
+      "content": "PRIVATE_RESPONSE_MARKER",
+      "thoughts": [],
+      "model": "gemini-3-pro",
+      "tokens": {
+        "input": 1200,
+        "output": 80,
+        "cached": 1000,
+        "thoughts": 40,
+        "tool": 0,
+        "total": 1320
+      }
+    }
+  ]
+}

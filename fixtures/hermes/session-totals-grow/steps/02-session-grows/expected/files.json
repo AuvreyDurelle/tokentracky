@@ -1,0 +1,12 @@
+{
+  "hermes:profiles/work/state.db": {
+    "diagnostics": [
+      "cumulative_reset_or_branch"
+    ]
+  },
+  "hermes:state.db": {
+    "diagnostics": [
+      "invalid_counters"
+    ]
+  }
+}

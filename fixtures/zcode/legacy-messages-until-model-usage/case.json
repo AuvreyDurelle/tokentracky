@@ -1,0 +1,4 @@
+{
+  "description": "Before model_usage exists, ZCode's assistant messages count (inclusive counters; Z.ai and custom providers; fork copies and sub-agents skipped). Once it exists only messages updated before its first row count, as ZCode writes both for each request since; later rows are read from a watermark, and after ZCode deletes its oldest rows, or all of them, the messages of the requests already counted are still not counted again.",
+  "rustOnly": true
+}

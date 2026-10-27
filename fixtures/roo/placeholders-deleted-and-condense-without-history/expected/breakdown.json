@@ -1,0 +1,16 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 1000,
+      "cacheWrite": 100,
+      "input": 400,
+      "output": 200,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-23",
+    "model": "unknown",
+    "tokens": 1700,
+    "tool": "roo"
+  }
+]

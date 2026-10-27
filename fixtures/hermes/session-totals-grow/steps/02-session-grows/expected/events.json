@@ -1,0 +1,70 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "hermes:2ded9db5746c7b06e9df2b93637cf28425d87588a15ce8f8e900d65bdb50a9e5",
+    "model": "claude-sonnet-4-6",
+    "occurredAt": "2026-10-22T10:00:00.500Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "20261022_090000_aaaa",
+    "tokens": {
+      "cacheRead": 5000,
+      "cacheWrite": 600,
+      "input": 1000,
+      "output": 400,
+      "reasoning": 100
+    },
+    "tool": "hermes"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "hermes:3a3844fba72b57368753e4ca8a193baffb55c43df66f516cb1ce76bdca0ce0a4",
+    "model": "gpt-5.6-terra",
+    "occurredAt": "2026-10-22T09:00:00.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "20261022_090000_dddd",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 200,
+      "output": 80,
+      "reasoning": 30
+    },
+    "tool": "hermes"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "hermes:4bafd9919d5a6d7770481315db04d8f6bd7449a78ad0c499d38e56e80c0b32bf",
+    "model": "unknown",
+    "occurredAt": "2026-10-22T12:00:00.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "20261022_110000_bbbb",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 50,
+      "output": 10,
+      "reasoning": 0
+    },
+    "tool": "hermes"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "hermes:e9f7ce7e9b2b4e1c5f9b5f4b55a3925197d2bfe8c0c681b262c8bcbf48f6e974",
+    "model": "claude-sonnet-4-6",
+    "occurredAt": "2026-10-23T10:00:00.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "20261022_090000_aaaa",
+    "tokens": {
+      "cacheRead": 3000,
+      "cacheWrite": 0,
+      "input": 500,
+      "output": 200,
+      "reasoning": 50
+    },
+    "tool": "hermes"
+  }
+]

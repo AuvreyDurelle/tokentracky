@@ -1,0 +1,266 @@
+{
+  "tools=off,cost=off,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 1200,
+        "cacheWrite": 300,
+        "input": 1300,
+        "output": 400,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "revision": 3,
+      "tokens": 3200,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 1200,
+        "cacheWrite": 300,
+        "input": 1300,
+        "output": 400,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "revision": 4,
+      "tokens": 3200,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 1200,
+        "cacheWrite": 300,
+        "input": 1300,
+        "output": 400,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "gpt-4.1-2025-04-14",
+      "revision": 5,
+      "tokens": 3200,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 1200,
+        "cacheWrite": 300,
+        "input": 1300,
+        "output": 400,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "gpt-4.1-2025-04-14",
+      "revision": 6,
+      "tokens": 3200,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 1200,
+        "cacheWrite": 300,
+        "input": 1300,
+        "output": 400,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "revision": 7,
+      "tokens": 3200,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 1200,
+        "cacheWrite": 300,
+        "input": 1300,
+        "output": 400,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "revision": 8,
+      "tokens": 3200,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 1200,
+        "cacheWrite": 300,
+        "input": 1300,
+        "output": 400,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "gpt-4.1-2025-04-14",
+      "revision": 9,
+      "tokens": 3200,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 1200,
+        "cacheWrite": 300,
+        "input": 1300,
+        "output": 400,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "gpt-4.1-2025-04-14",
+      "revision": 10,
+      "tokens": 3200,
+      "tool": "all"
+    }
+  ],
+  "tools=on,cost=off,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 1200,
+        "cacheWrite": 300,
+        "input": 1300,
+        "output": 400,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "revision": 11,
+      "tokens": 3200,
+      "tool": "copilot"
+    }
+  ],
+  "tools=on,cost=off,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 1200,
+        "cacheWrite": 300,
+        "input": 1300,
+        "output": 400,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "revision": 12,
+      "tokens": 3200,
+      "tool": "copilot"
+    }
+  ],
+  "tools=on,cost=off,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 1200,
+        "cacheWrite": 300,
+        "input": 1300,
+        "output": 400,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "gpt-4.1-2025-04-14",
+      "revision": 13,
+      "tokens": 3200,
+      "tool": "copilot"
+    }
+  ],
+  "tools=on,cost=off,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 1200,
+        "cacheWrite": 300,
+        "input": 1300,
+        "output": 400,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "gpt-4.1-2025-04-14",
+      "revision": 14,
+      "tokens": 3200,
+      "tool": "copilot"
+    }
+  ],
+  "tools=on,cost=on,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 1200,
+        "cacheWrite": 300,
+        "input": 1300,
+        "output": 400,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "revision": 15,
+      "tokens": 3200,
+      "tool": "copilot"
+    }
+  ],
+  "tools=on,cost=on,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 1200,
+        "cacheWrite": 300,
+        "input": 1300,
+        "output": 400,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "revision": 16,
+      "tokens": 3200,
+      "tool": "copilot"
+    }
+  ],
+  "tools=on,cost=on,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 1200,
+        "cacheWrite": 300,
+        "input": 1300,
+        "output": 400,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "gpt-4.1-2025-04-14",
+      "revision": 17,
+      "tokens": 3200,
+      "tool": "copilot"
+    }
+  ],
+  "tools=on,cost=on,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 1200,
+        "cacheWrite": 300,
+        "input": 1300,
+        "output": 400,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "gpt-4.1-2025-04-14",
+      "revision": 18,
+      "tokens": 3200,
+      "tool": "copilot"
+    }
+  ]
+}

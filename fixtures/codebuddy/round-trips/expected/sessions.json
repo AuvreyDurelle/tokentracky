@@ -1,0 +1,24 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 6600,
+      "cacheWrite": 500,
+      "input": 2200,
+      "output": 830,
+      "reasoning": 250
+    },
+    "costMicrousd": null,
+    "id": "cb-session-1",
+    "lastUsedAt": "2026-10-23T09:03:00.000Z",
+    "model": "unknown",
+    "models": [
+      "deepseek-v4",
+      "claude-sonnet-4-6",
+      "glm-5.3",
+      "unknown"
+    ],
+    "project": null,
+    "tokens": 10130,
+    "tool": "codebuddy"
+  }
+]

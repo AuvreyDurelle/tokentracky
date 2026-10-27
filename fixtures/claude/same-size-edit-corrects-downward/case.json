@@ -1,0 +1,3 @@
+{
+  "description": "A same-size edit inside the already processed prefix is detected; totals and the published bucket correct downward with a higher revision, and a rescan keeps them."
+}

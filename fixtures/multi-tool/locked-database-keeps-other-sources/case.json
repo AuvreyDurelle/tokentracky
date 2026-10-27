@@ -1,0 +1,11 @@
+{
+  "description": "A database locked by its writer fails only its own source (file_read_failed, state error) while another source still imports; the next scan after the writer commits reads it.",
+  "sources": {
+    "opencode": [
+      "opencode.db"
+    ],
+    "gemini": [
+      "chats"
+    ]
+  }
+}

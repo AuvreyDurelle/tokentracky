@@ -1,0 +1,8 @@
+"tool","model","timestamp","project","session","input","output","cache_read","cache_write","reasoning","total","cost_microusd"
+"codex","gpt-5-codex","2026-10-20T12:00:00.001Z","/synthetic/codex-project","spawn","100","10","0","0","0","110",""
+"codex","gpt-5-codex","2026-10-20T11:00:00.001Z","/synthetic/codex-project","fork","100","10","0","0","0","110",""
+"codex","gpt-5-codex","2026-10-20T10:00:05.000Z","/synthetic/codex-project","parent","100","10","0","0","0","110",""
+"codex","gpt-5-codex","2026-10-20T11:00:06.000Z","/synthetic/codex-project","fork","200","20","0","0","0","220",""
+"codex","gpt-5-codex","2026-10-20T12:00:08.000Z","/synthetic/codex-project","spawn","50","5","0","0","0","55",""
+"codex","gpt-5-codex","2026-10-20T10:00:30.000Z","/synthetic/codex-project","parent","200","20","0","0","0","220",""
+"codex","gpt-5-codex","2026-10-20T11:00:00.002Z","/synthetic/codex-project","fork","200","20","0","0","0","220",""

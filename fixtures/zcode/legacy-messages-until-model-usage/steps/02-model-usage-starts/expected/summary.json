@@ -1,0 +1,108 @@
+{
+  "activity": {
+    "activeDays": 2,
+    "averagePerActiveDay": 2030,
+    "bestDay": {
+      "day": "2026-08-03",
+      "tokens": 2800
+    },
+    "currentStreak": 0,
+    "longestStreak": 1
+  },
+  "breakdown": {
+    "cacheRead": 2100,
+    "cacheWrite": 0,
+    "input": 1350,
+    "output": 610,
+    "reasoning": 100
+  },
+  "byModel": [
+    {
+      "breakdown": {
+        "cacheRead": 1500,
+        "cacheWrite": 0,
+        "input": 550,
+        "output": 310,
+        "reasoning": 100
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "glm-4.5",
+      "tokens": 2360
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 400,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "mimo-v2.5-pro",
+      "tokens": 500
+    },
+    {
+      "breakdown": {
+        "cacheRead": 600,
+        "cacheWrite": 0,
+        "input": 400,
+        "output": 200,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "glm-4.6",
+      "tokens": 1200
+    }
+  ],
+  "byTool": [
+    {
+      "breakdown": {
+        "cacheRead": 2100,
+        "cacheWrite": 0,
+        "input": 1350,
+        "output": 610,
+        "reasoning": 100
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "tokens": 4060,
+      "tool": "zcode"
+    }
+  ],
+  "cacheRate": 0.6086956521739131,
+  "costMicrousd": null,
+  "costParts": null,
+  "daily": [
+    {
+      "breakdown": {
+        "cacheRead": 1500,
+        "cacheWrite": 0,
+        "input": 900,
+        "output": 400,
+        "reasoning": 100
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "day": "2026-08-03",
+      "tokens": 2800
+    },
+    {
+      "breakdown": {
+        "cacheRead": 600,
+        "cacheWrite": 0,
+        "input": 450,
+        "output": 210,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "day": "2026-09-01",
+      "tokens": 1260
+    }
+  ],
+  "sessions": 2,
+  "tokens": 4060
+}

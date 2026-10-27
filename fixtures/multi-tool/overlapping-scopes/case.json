@@ -1,0 +1,11 @@
+{
+  "description": "Claude Code and Codex both authorized on one folder keep separate checkpoints and a rescan changes nothing.",
+  "sources": {
+    "claude": [
+      "."
+    ],
+    "codex": [
+      "."
+    ]
+  }
+}

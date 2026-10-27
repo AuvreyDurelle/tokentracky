@@ -1,0 +1,4 @@
+{
+  "description": "A round trip's function call and message share providerData.messageId and count once (else the uuid, else the id is the key); prompt_tokens includes cache reads and writes in their OpenAI, DeepSeek and Anthropic spellings and completion_tokens includes reasoning; a total that does not add up is invalid_counters; the model is providerData.model, else the record's, else unknown; credit is ignored, a subagent transcript counts and the IDE log is never opened.",
+  "rustOnly": true
+}

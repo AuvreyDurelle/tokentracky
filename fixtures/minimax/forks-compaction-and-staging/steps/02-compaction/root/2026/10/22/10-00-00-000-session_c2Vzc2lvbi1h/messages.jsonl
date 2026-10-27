@@ -1,0 +1,3 @@
+{"message_id":"msg-compaction-1","turn_id":"turn-3","message":{"role":"compactionSummary","summary":"PRIVATE_SUMMARY"}}
+{"message_id":"msg-user-v1-0003","turn_id":"turn-3","message":{"role":"user","content":"PRIVATE_PROMPT_TWO","timestamp":1792670400000}}
+{"message_id":"msg-5eBlU","turn_id":"turn-3","message":{"role":"assistant","content":[{"type":"text","text":"PRIVATE_REPLY_TWO"}],"api":"anthropic-messages","provider":"minimax","model":"MiniMax-M2","usage":{"input":300,"output":80,"cacheRead":1000,"cacheWrite":200,"totalTokens":1580,"cost":{"input":0,"output":0,"cacheRead":0,"cacheWrite":0,"total":0}},"stopReason":"stop","timestamp":1792670405000}}

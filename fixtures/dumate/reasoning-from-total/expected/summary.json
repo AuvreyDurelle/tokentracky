@@ -1,0 +1,82 @@
+{
+  "activity": {
+    "activeDays": 2,
+    "averagePerActiveDay": 1456,
+    "bestDay": {
+      "day": "2026-10-08",
+      "tokens": 2726
+    },
+    "currentStreak": 1,
+    "longestStreak": 1
+  },
+  "breakdown": {
+    "cacheRead": 768,
+    "cacheWrite": 0,
+    "input": 1180,
+    "output": 963,
+    "reasoning": 838
+  },
+  "byModel": [
+    {
+      "breakdown": {
+        "cacheRead": 768,
+        "cacheWrite": 0,
+        "input": 1180,
+        "output": 963,
+        "reasoning": 838
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "glm-5",
+      "tokens": 2911
+    }
+  ],
+  "byTool": [
+    {
+      "breakdown": {
+        "cacheRead": 768,
+        "cacheWrite": 0,
+        "input": 1180,
+        "output": 963,
+        "reasoning": 838
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "tokens": 2911,
+      "tool": "dumate"
+    }
+  ],
+  "cacheRate": 0.3942505133470226,
+  "costMicrousd": null,
+  "costParts": null,
+  "daily": [
+    {
+      "breakdown": {
+        "cacheRead": 768,
+        "cacheWrite": 0,
+        "input": 1070,
+        "output": 888,
+        "reasoning": 818
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "day": "2026-10-08",
+      "tokens": 2726
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 110,
+        "output": 75,
+        "reasoning": 20
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "day": "2026-10-23",
+      "tokens": 185
+    }
+  ],
+  "sessions": 1,
+  "tokens": 2911
+}

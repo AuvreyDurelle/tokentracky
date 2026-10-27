@@ -1,0 +1,87 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "codex:24294322579535435fe8c1308de020eb49bcf111c5bc570a313b8612ffb0c5b8",
+    "model": "gpt-5-codex",
+    "occurredAt": "2026-10-20T12:00:04.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/codex-project",
+    "sessionId": "codex-session",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 30,
+      "output": 0,
+      "reasoning": 0
+    },
+    "tool": "codex"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "codex:a81d94d45881ecb988ea964772e2d44a92c51db5d0adeb795ed6d431587a315c",
+    "model": "gpt-5-codex",
+    "occurredAt": "2026-10-20T12:00:03.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/codex-project",
+    "sessionId": "codex-session",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 50,
+      "output": 0,
+      "reasoning": 0
+    },
+    "tool": "codex"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "codex:ad5a23da06a99eb0b0e5737f5d1e49e3a6dbdadbf66d98a2b3f203f8aea347a9",
+    "model": "gpt-5-codex",
+    "occurredAt": "2026-10-20T12:00:05.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/codex-project",
+    "sessionId": "codex-session",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 10,
+      "output": 0,
+      "reasoning": 0
+    },
+    "tool": "codex"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "codex:f0bf0f59c1e489703309dcbb863dc34981c0e5b45eda4a9d569980475b57279a",
+    "model": "gpt-5-codex",
+    "occurredAt": "2026-10-20T12:00:00.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/codex-project",
+    "sessionId": "codex-session",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 100,
+      "output": 0,
+      "reasoning": 0
+    },
+    "tool": "codex"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "codex:fb273276bc412d38c04f704ba1418a3bb74061068fa5abdf34b6301b384248a2",
+    "model": "gpt-5-codex",
+    "occurredAt": "2026-10-20T12:00:01.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/codex-project",
+    "sessionId": "codex-session",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 200,
+      "output": 0,
+      "reasoning": 0
+    },
+    "tool": "codex"
+  }
+]

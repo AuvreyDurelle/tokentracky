@@ -1,0 +1,506 @@
+{
+  "tools=off,cost=off,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 24500,
+        "cacheWrite": 1000,
+        "input": 2660,
+        "output": 1450,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 8,
+      "tokens": 29610,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 24500,
+        "cacheWrite": 1000,
+        "input": 2660,
+        "output": 1450,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 9,
+      "tokens": 29610,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 9000,
+        "cacheWrite": 0,
+        "input": 100,
+        "output": 900,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "k3",
+      "revision": 10,
+      "tokens": 10000,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 6000,
+        "cacheWrite": 1000,
+        "input": 2000,
+        "output": 400,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "kimi-code/kimi-for-coding",
+      "revision": 11,
+      "tokens": 9400,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 9500,
+        "cacheWrite": 0,
+        "input": 560,
+        "output": 150,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "kimi-for-coding",
+      "revision": 12,
+      "tokens": 10210,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 9000,
+        "cacheWrite": 0,
+        "input": 100,
+        "output": 900,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "k3",
+      "revision": 13,
+      "tokens": 10000,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 6000,
+        "cacheWrite": 1000,
+        "input": 2000,
+        "output": 400,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "kimi-code/kimi-for-coding",
+      "revision": 14,
+      "tokens": 9400,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 9500,
+        "cacheWrite": 0,
+        "input": 560,
+        "output": 150,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "kimi-for-coding",
+      "revision": 15,
+      "tokens": 10210,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 24500,
+        "cacheWrite": 1000,
+        "input": 2660,
+        "output": 1450,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 16,
+      "tokens": 29610,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 24500,
+        "cacheWrite": 1000,
+        "input": 2660,
+        "output": 1450,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 17,
+      "tokens": 29610,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 9000,
+        "cacheWrite": 0,
+        "input": 100,
+        "output": 900,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "k3",
+      "revision": 18,
+      "tokens": 10000,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 6000,
+        "cacheWrite": 1000,
+        "input": 2000,
+        "output": 400,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "kimi-code/kimi-for-coding",
+      "revision": 19,
+      "tokens": 9400,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 9500,
+        "cacheWrite": 0,
+        "input": 560,
+        "output": 150,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "kimi-for-coding",
+      "revision": 20,
+      "tokens": 10210,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 9000,
+        "cacheWrite": 0,
+        "input": 100,
+        "output": 900,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "k3",
+      "revision": 21,
+      "tokens": 10000,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 6000,
+        "cacheWrite": 1000,
+        "input": 2000,
+        "output": 400,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "kimi-code/kimi-for-coding",
+      "revision": 22,
+      "tokens": 9400,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 9500,
+        "cacheWrite": 0,
+        "input": 560,
+        "output": 150,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "kimi-for-coding",
+      "revision": 23,
+      "tokens": 10210,
+      "tool": "all"
+    }
+  ],
+  "tools=on,cost=off,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 24500,
+        "cacheWrite": 1000,
+        "input": 2660,
+        "output": 1450,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 24,
+      "tokens": 29610,
+      "tool": "kimi"
+    }
+  ],
+  "tools=on,cost=off,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 24500,
+        "cacheWrite": 1000,
+        "input": 2660,
+        "output": 1450,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 25,
+      "tokens": 29610,
+      "tool": "kimi"
+    }
+  ],
+  "tools=on,cost=off,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 9000,
+        "cacheWrite": 0,
+        "input": 100,
+        "output": 900,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "k3",
+      "revision": 26,
+      "tokens": 10000,
+      "tool": "kimi"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 6000,
+        "cacheWrite": 1000,
+        "input": 2000,
+        "output": 400,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "kimi-code/kimi-for-coding",
+      "revision": 27,
+      "tokens": 9400,
+      "tool": "kimi"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 9500,
+        "cacheWrite": 0,
+        "input": 560,
+        "output": 150,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "kimi-for-coding",
+      "revision": 28,
+      "tokens": 10210,
+      "tool": "kimi"
+    }
+  ],
+  "tools=on,cost=off,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 9000,
+        "cacheWrite": 0,
+        "input": 100,
+        "output": 900,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "k3",
+      "revision": 29,
+      "tokens": 10000,
+      "tool": "kimi"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 6000,
+        "cacheWrite": 1000,
+        "input": 2000,
+        "output": 400,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "kimi-code/kimi-for-coding",
+      "revision": 30,
+      "tokens": 9400,
+      "tool": "kimi"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 9500,
+        "cacheWrite": 0,
+        "input": 560,
+        "output": 150,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "kimi-for-coding",
+      "revision": 31,
+      "tokens": 10210,
+      "tool": "kimi"
+    }
+  ],
+  "tools=on,cost=on,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 24500,
+        "cacheWrite": 1000,
+        "input": 2660,
+        "output": 1450,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 32,
+      "tokens": 29610,
+      "tool": "kimi"
+    }
+  ],
+  "tools=on,cost=on,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 24500,
+        "cacheWrite": 1000,
+        "input": 2660,
+        "output": 1450,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 33,
+      "tokens": 29610,
+      "tool": "kimi"
+    }
+  ],
+  "tools=on,cost=on,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 9000,
+        "cacheWrite": 0,
+        "input": 100,
+        "output": 900,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "k3",
+      "revision": 34,
+      "tokens": 10000,
+      "tool": "kimi"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 6000,
+        "cacheWrite": 1000,
+        "input": 2000,
+        "output": 400,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "kimi-code/kimi-for-coding",
+      "revision": 35,
+      "tokens": 9400,
+      "tool": "kimi"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 9500,
+        "cacheWrite": 0,
+        "input": 560,
+        "output": 150,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "kimi-for-coding",
+      "revision": 36,
+      "tokens": 10210,
+      "tool": "kimi"
+    }
+  ],
+  "tools=on,cost=on,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 9000,
+        "cacheWrite": 0,
+        "input": 100,
+        "output": 900,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "k3",
+      "revision": 37,
+      "tokens": 10000,
+      "tool": "kimi"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 6000,
+        "cacheWrite": 1000,
+        "input": 2000,
+        "output": 400,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "kimi-code/kimi-for-coding",
+      "revision": 38,
+      "tokens": 9400,
+      "tool": "kimi"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 9500,
+        "cacheWrite": 0,
+        "input": 560,
+        "output": 150,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "kimi-for-coding",
+      "revision": 39,
+      "tokens": 10210,
+      "tool": "kimi"
+    }
+  ]
+}

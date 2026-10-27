@@ -1,0 +1,4 @@
+"tool","model","timestamp","project","session","input","output","cache_read","cache_write","reasoning","total","cost_microusd"
+"dumate","glm-5","2026-10-23T09:00:10.000Z","/synthetic/dumate-workspace","ses_D1","10","5","0","0","0","15",""
+"dumate","glm-5","2026-10-08T07:03:15.758Z","/synthetic/dumate-workspace","ses_D1","1070","888","768","0","818","2726",""
+"dumate","glm-5","2026-10-23T09:00:00.000Z","/synthetic/dumate-workspace","ses_D1","100","70","0","0","20","170",""

@@ -1,0 +1,4 @@
+{"sessionId":"abcd1234-0000-4000-8000-000000000001","projectHash":"0000000000000000000000000000000000000000000000000000000000000000","startTime":"2026-10-23T09:00:00.000Z","lastUpdated":"2026-10-23T09:00:00.000Z","directories":["/PRIVATE_PATH_MARKER"]}
+{"id":"a","timestamp":"2026-10-23T09:00:03.000Z","type":"gemini","content":"PRIVATE_RESPONSE_MARKER","thoughts":[],"model":"gemini-3-pro","tokens":{"input":500,"output":20,"cached":100,"tool":30,"total":999999}}
+{"id":"b","timestamp":"2026-10-23T09:00:03.000Z","type":"gemini","content":"PRIVATE_RESPONSE_MARKER","thoughts":[],"model":"gemini-3-pro","tokens":{"input":10,"output":5,"cached":null,"thoughts":null,"total":15}}
+{"id":"c","timestamp":"2026-10-23T09:00:03.000Z","type":"gemini","content":"PRIVATE_RESPONSE_MARKER","thoughts":[],"model":"gemini-3-pro","tokens":{"input":0,"output":0,"cached":0,"total":0}}

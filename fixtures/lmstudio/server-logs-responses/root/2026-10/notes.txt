@@ -1,0 +1,21 @@
+[2026-10-21 11:00:00] Generated prediction:  {
+  "id": "chatcmpl-synthetic0006",
+  "object": "chat.completion",
+  "created": 1792573200,
+  "model": "lmstudio-community/llama-3.2-3b-instruct",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "PRIVATE_RESPONSE_MARKER"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 400,
+    "completion_tokens": 100,
+    "total_tokens": 500
+  }
+}

@@ -1,0 +1,12 @@
+PRAGMA journal_mode=WAL;
+PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+CREATE TABLE session(id TEXT PRIMARY KEY, directory TEXT, title TEXT);
+CREATE TABLE message(id TEXT PRIMARY KEY, session_id TEXT NOT NULL, time_created INTEGER NOT NULL, time_updated INTEGER NOT NULL, data TEXT NOT NULL);
+CREATE TABLE part(id TEXT PRIMARY KEY, message_id TEXT, session_id TEXT, time_created INTEGER, time_updated INTEGER, data TEXT);
+INSERT INTO session VALUES('ses_D1','/synthetic/dumate-workspace','PRIVATE_PROMPT_MARKER');
+INSERT INTO message VALUES('msg_1','ses_D1',1792746000000,1792746005000,'{"role":"assistant","time":{"created":1792746000000,"completed":1792746005000},"parentID":"msg_00USER","modelID":"glm-5","providerID":"QianfanPersonalQuota","mode":"build","agent":"build","path":{"cwd":"/synthetic/dumate-workspace","root":"/synthetic/dumate-workspace"},"summary":{"title":"PRIVATE_PROMPT_MARKER"},"cost":0,"tokens":{"total":1500,"input":1000,"output":300,"reasoning":100,"cache":{"read":200,"write":0}},"finish":"stop"}');
+INSERT INTO message VALUES('msg_2','ses_D1',1792746010000,1792746015000,'{"role":"assistant","time":{"created":1792746010000,"completed":1792746015000},"parentID":"msg_00USER","modelID":"glm-5","providerID":"QianfanPersonalQuota","mode":"build","agent":"build","path":{"cwd":"/synthetic/dumate-workspace","root":"/synthetic/dumate-workspace"},"summary":{"title":"PRIVATE_PROMPT_MARKER"},"cost":0,"tokens":{"total":400,"input":300,"output":100,"reasoning":0,"cache":{"read":0,"write":0}},"finish":"stop"}');
+INSERT INTO message VALUES('msg_CC','ses_CC',1792746020000,1792746025000,'{"role":"assistant","time":{"created":1792746020000,"completed":1792746025000},"parentID":"msg_00USER","modelID":"claude-sonnet-4-6","providerID":"anthropic","mode":"build","agent":"build","path":{"cwd":"/synthetic/claude-project","root":"/synthetic/claude-project"},"summary":{"title":"PRIVATE_PROMPT_MARKER"},"cost":0,"tokens":{"total":1700,"input":400,"output":200,"reasoning":0,"cache":{"read":1000,"write":100}},"finish":"stop"}');
+INSERT INTO message VALUES('msg_OC','ses_OC',1792746030000,1792746035000,'{"role":"assistant","time":{"created":1792746030000,"completed":1792746035000},"parentID":"msg_00USER","modelID":"big-pickle","providerID":"opencode","mode":"build","agent":"build","path":{"cwd":"/synthetic/opencode-project","root":"/synthetic/opencode-project"},"summary":{"title":"PRIVATE_PROMPT_MARKER"},"cost":0,"tokens":{"total":990,"input":900,"output":90,"reasoning":0,"cache":{"read":0,"write":0}},"finish":"stop"}');
+COMMIT;

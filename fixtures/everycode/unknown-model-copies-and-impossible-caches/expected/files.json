@@ -1,0 +1,16 @@
+{
+  "everycode:2026/10/21/rollout-2026-10-21T08-00-00-every-session-2.jsonl": {
+    "diagnostics": [],
+    "offset": 806
+  },
+  "everycode:2026/10/21/rollout-2026-10-21T09-00-00-every-session-3.jsonl": {
+    "diagnostics": [
+      "invalid_counters"
+    ],
+    "offset": 702
+  },
+  "everycode:copy/rollout-2026-10-21T08-00-00-every-session-2.jsonl": {
+    "diagnostics": [],
+    "offset": 806
+  }
+}

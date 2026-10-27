@@ -1,0 +1,41 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 4500,
+      "cacheWrite": 500,
+      "input": 2000,
+      "output": 500,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "20261022_1",
+    "lastUsedAt": "2026-10-22T09:30:00.000Z",
+    "model": "claude-haiku-4-5",
+    "models": [
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "project": null,
+    "tokens": 7500,
+    "tool": "goose"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 6000,
+      "cacheWrite": 1000,
+      "input": 3000,
+      "output": 1000,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "20261020_3",
+    "lastUsedAt": "2026-10-20T18:00:00.000Z",
+    "model": "gpt-5.6-terra",
+    "models": [
+      "gpt-5.6-terra"
+    ],
+    "project": null,
+    "tokens": 11000,
+    "tool": "goose"
+  }
+]

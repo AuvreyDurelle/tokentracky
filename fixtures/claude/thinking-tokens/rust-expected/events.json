@@ -1,0 +1,53 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "claude:5a194219907fbbede83523b4776c99480377fbf87850563dbd611781ee69faaa",
+    "model": "claude-sonnet-4-6",
+    "occurredAt": "2026-10-20T12:02:00.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/project",
+    "sessionId": "thinking-session",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 2,
+      "output": 20,
+      "reasoning": 20
+    },
+    "tool": "claude"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "claude:6ee16429668c2d8207707407c8c3ee4285a9e26eef5bd0c17ff00efe090808e2",
+    "model": "claude-sonnet-4-6",
+    "occurredAt": "2026-10-20T12:00:00.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/project",
+    "sessionId": "thinking-session",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 20,
+      "input": 10,
+      "output": 40,
+      "reasoning": 25
+    },
+    "tool": "claude"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "claude:ff7772053abf7d817d6eec229a09e14f0d1552f1cb0aeedb2ac73784ac2d2e39",
+    "model": "claude-sonnet-4-6",
+    "occurredAt": "2026-10-20T12:01:00.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/project",
+    "sessionId": "thinking-session",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 5,
+      "output": 30,
+      "reasoning": 12
+    },
+    "tool": "claude"
+  }
+]

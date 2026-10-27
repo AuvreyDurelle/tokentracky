@@ -1,0 +1,3 @@
+{
+  "description": "Subagent usage is its own event, and a request without a model takes the latest model recorded in the task metadata at or before it."
+}

@@ -1,0 +1,86 @@
+{
+  "activity": {
+    "activeDays": 1,
+    "averagePerActiveDay": 1746511,
+    "bestDay": {
+      "day": "2026-10-22",
+      "tokens": 1746511
+    },
+    "currentStreak": 1,
+    "longestStreak": 1
+  },
+  "breakdown": {
+    "cacheRead": 1738543,
+    "cacheWrite": 5119,
+    "cacheWrite1h": 5119,
+    "input": 1207,
+    "output": 1642,
+    "reasoning": 729
+  },
+  "byModel": [
+    {
+      "breakdown": {
+        "cacheRead": 8000,
+        "cacheWrite": 0,
+        "input": 1200,
+        "output": 400,
+        "reasoning": 250
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "gpt-5.1-codex",
+      "tokens": 9600
+    },
+    {
+      "breakdown": {
+        "cacheRead": 1730543,
+        "cacheWrite": 5119,
+        "cacheWrite1h": 5119,
+        "input": 7,
+        "output": 1242,
+        "reasoning": 479
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "claude-opus-4-6",
+      "tokens": 1736911
+    }
+  ],
+  "byTool": [
+    {
+      "breakdown": {
+        "cacheRead": 1738543,
+        "cacheWrite": 5119,
+        "cacheWrite1h": 5119,
+        "input": 1207,
+        "output": 1642,
+        "reasoning": 729
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "tokens": 1746511,
+      "tool": "omo"
+    }
+  ],
+  "cacheRate": 0.9963745129290509,
+  "costMicrousd": null,
+  "costParts": null,
+  "daily": [
+    {
+      "breakdown": {
+        "cacheRead": 1738543,
+        "cacheWrite": 5119,
+        "cacheWrite1h": 5119,
+        "input": 1207,
+        "output": 1642,
+        "reasoning": 729
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "day": "2026-10-22",
+      "tokens": 1746511
+    }
+  ],
+  "sessions": 1,
+  "tokens": 1746511
+}

@@ -1,0 +1,15 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 550,
+      "output": 55,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "name": "/synthetic/codex-project",
+    "sessions": 3,
+    "tokens": 605
+  }
+]

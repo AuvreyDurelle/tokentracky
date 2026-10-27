@@ -1,0 +1,452 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "claude:03822375f2aca5e53d66838a3e803183e0c1a7921da8e4056d3341ea95777cd9",
+    "model": " local+model",
+    "occurredAt": "2026-10-20T12:00:00.000Z",
+    "pricingVersion": null,
+    "project": " /local/项目,\"quoted\"",
+    "sessionId": " session@host",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "tool": "claude"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "claude:1bfba9bec03483860740272664248c9f9047d34fc1e5f36e92707ec8e4854c98",
+    "model": " =HYPERLINK(\"https://example.invalid\")",
+    "occurredAt": "2026-10-20T12:00:00.000Z",
+    "pricingVersion": null,
+    "project": " =HYPERLINK(\"https://example.invalid\")",
+    "sessionId": " =HYPERLINK(\"https://example.invalid\")",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "tool": "claude"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "claude:1e626586317ffe24772be8710c369c9d23991c2fa66be2d11f27d552d27d7415",
+    "model": "   =HYPERLINK(\"https://example.invalid\")",
+    "occurredAt": "2026-10-20T12:00:00.000Z",
+    "pricingVersion": null,
+    "project": "   =HYPERLINK(\"https://example.invalid\")",
+    "sessionId": "   =HYPERLINK(\"https://example.invalid\")",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "tool": "claude"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "claude:21d91ac24091ae2249c2a9a138d6c906839e15664c44a0de622d0a90cd3653a4",
+    "model": "   -HYPERLINK(\"https://example.invalid\")",
+    "occurredAt": "2026-10-20T12:00:00.000Z",
+    "pricingVersion": null,
+    "project": "   -HYPERLINK(\"https://example.invalid\")",
+    "sessionId": "   -HYPERLINK(\"https://example.invalid\")",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "tool": "claude"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "claude:2896a4226a9b80652abb81306223c4abf34cad40909911b4d6413a70696cde0f",
+    "model": " =HYPERLINK(\"https://example.invalid\")",
+    "occurredAt": "2026-10-20T12:00:00.000Z",
+    "pricingVersion": null,
+    "project": " =HYPERLINK(\"https://example.invalid\")",
+    "sessionId": " =HYPERLINK(\"https://example.invalid\")",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "tool": "claude"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "claude:3a8c05bbc866e04d5b90887b17609a51cea8b43e9e0cf6add065702fec73e471",
+    "model": " -HYPERLINK(\"https://example.invalid\")",
+    "occurredAt": "2026-10-20T12:00:00.000Z",
+    "pricingVersion": null,
+    "project": " -HYPERLINK(\"https://example.invalid\")",
+    "sessionId": " -HYPERLINK(\"https://example.invalid\")",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "tool": "claude"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "claude:4f1caf04751175ad36f1a41ff36683361b6e10363fda9641e736b8c45d773432",
+    "model": " -HYPERLINK(\"https://example.invalid\")",
+    "occurredAt": "2026-10-20T12:00:00.000Z",
+    "pricingVersion": null,
+    "project": " -HYPERLINK(\"https://example.invalid\")",
+    "sessionId": " -HYPERLINK(\"https://example.invalid\")",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "tool": "claude"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "claude:53b2d68b36f623baaa229827492b8ff75fd60fe94d37ff8a75d784327b511969",
+    "model": " -HYPERLINK(\"https://example.invalid\")",
+    "occurredAt": "2026-10-20T12:00:00.000Z",
+    "pricingVersion": null,
+    "project": " -HYPERLINK(\"https://example.invalid\")",
+    "sessionId": " -HYPERLINK(\"https://example.invalid\")",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "tool": "claude"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "claude:54a735c7996588c74e0dee6efac81753830f1bb2688b1915165842b9e9057c9d",
+    "model": "   @HYPERLINK(\"https://example.invalid\")",
+    "occurredAt": "2026-10-20T12:00:00.000Z",
+    "pricingVersion": null,
+    "project": "   @HYPERLINK(\"https://example.invalid\")",
+    "sessionId": "   @HYPERLINK(\"https://example.invalid\")",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "tool": "claude"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "claude:5737774dbbe0ef8de78c942c9dcfe3dcc84ab4d5f9c3e70d46744440721a02a3",
+    "model": " +HYPERLINK(\"https://example.invalid\")",
+    "occurredAt": "2026-10-20T12:00:00.000Z",
+    "pricingVersion": null,
+    "project": " +HYPERLINK(\"https://example.invalid\")",
+    "sessionId": " +HYPERLINK(\"https://example.invalid\")",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "tool": "claude"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "claude:5d442d3f2921386bee71274388a61a267f584d3aaacf9fffae2f8aa7cf26be72",
+    "model": " @HYPERLINK(\"https://example.invalid\")",
+    "occurredAt": "2026-10-20T12:00:00.000Z",
+    "pricingVersion": null,
+    "project": " @HYPERLINK(\"https://example.invalid\")",
+    "sessionId": " @HYPERLINK(\"https://example.invalid\")",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "tool": "claude"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "claude:5ed01e689117ad3daef49cd1f31a91e6ce8f6928880a32031676f159d692ef15",
+    "model": " @HYPERLINK(\"https://example.invalid\")",
+    "occurredAt": "2026-10-20T12:00:00.000Z",
+    "pricingVersion": null,
+    "project": " @HYPERLINK(\"https://example.invalid\")",
+    "sessionId": " @HYPERLINK(\"https://example.invalid\")",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "tool": "claude"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "claude:725d89629418cc042ccdbe03243ef82cfaa86fa6a90dbd8f2315382c95a43b9e",
+    "model": " =HYPERLINK(\"https://example.invalid\")",
+    "occurredAt": "2026-10-20T12:00:00.000Z",
+    "pricingVersion": null,
+    "project": " =HYPERLINK(\"https://example.invalid\")",
+    "sessionId": " =HYPERLINK(\"https://example.invalid\")",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "tool": "claude"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "claude:759cd70f27c9a7046401018ecb2012e22e517e73cbb79e02b41c10f982cd8532",
+    "model": " +HYPERLINK(\"https://example.invalid\")",
+    "occurredAt": "2026-10-20T12:00:00.000Z",
+    "pricingVersion": null,
+    "project": " +HYPERLINK(\"https://example.invalid\")",
+    "sessionId": " +HYPERLINK(\"https://example.invalid\")",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "tool": "claude"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "claude:82da5a0c60f61341ca937e3bc9b51ac5d6b786eba99bf6af5e36dd95b5ea3bce",
+    "model": "﻿-HYPERLINK(\"https://example.invalid\")",
+    "occurredAt": "2026-10-20T12:00:00.000Z",
+    "pricingVersion": null,
+    "project": "﻿-HYPERLINK(\"https://example.invalid\")",
+    "sessionId": "﻿-HYPERLINK(\"https://example.invalid\")",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "tool": "claude"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "claude:85d507543e78e90f9aebfc2e743b00dc0c7bf1af067fba4c739c99c59feab0ff",
+    "model": "   +HYPERLINK(\"https://example.invalid\")",
+    "occurredAt": "2026-10-20T12:00:00.000Z",
+    "pricingVersion": null,
+    "project": "   +HYPERLINK(\"https://example.invalid\")",
+    "sessionId": "   +HYPERLINK(\"https://example.invalid\")",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "tool": "claude"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "claude:909c4c339beb9e5873d147bc81f7c0cba7cf6a949c85d5347c92434ff1bd46c5",
+    "model": "﻿+HYPERLINK(\"https://example.invalid\")",
+    "occurredAt": "2026-10-20T12:00:00.000Z",
+    "pricingVersion": null,
+    "project": "﻿+HYPERLINK(\"https://example.invalid\")",
+    "sessionId": "﻿+HYPERLINK(\"https://example.invalid\")",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "tool": "claude"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "claude:a323349bbbd69ea9f50de14f87e6cea2895322280b2545d1e1b9f81fed98210f",
+    "model": " +HYPERLINK(\"https://example.invalid\")",
+    "occurredAt": "2026-10-20T12:00:00.000Z",
+    "pricingVersion": null,
+    "project": " +HYPERLINK(\"https://example.invalid\")",
+    "sessionId": " +HYPERLINK(\"https://example.invalid\")",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "tool": "claude"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "claude:b72b292b73f3236bcfa21b1977ec3e81633295505bef47b94b9d4e0d5e481449",
+    "model": "+HYPERLINK(\"https://example.invalid\")",
+    "occurredAt": "2026-10-20T12:00:00.000Z",
+    "pricingVersion": null,
+    "project": "+HYPERLINK(\"https://example.invalid\")",
+    "sessionId": "+HYPERLINK(\"https://example.invalid\")",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "tool": "claude"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "claude:b85369717b329e678306c4428d1cbfff83a62f5c7a3f2c3a717082d8e8ee294a",
+    "model": "@HYPERLINK(\"https://example.invalid\")",
+    "occurredAt": "2026-10-20T12:00:00.000Z",
+    "pricingVersion": null,
+    "project": "@HYPERLINK(\"https://example.invalid\")",
+    "sessionId": "@HYPERLINK(\"https://example.invalid\")",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "tool": "claude"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "claude:bf762b46ec00288908c763302df81599e15177e21af17a7972d6e0ae2771c1f9",
+    "model": " @HYPERLINK(\"https://example.invalid\")",
+    "occurredAt": "2026-10-20T12:00:00.000Z",
+    "pricingVersion": null,
+    "project": " @HYPERLINK(\"https://example.invalid\")",
+    "sessionId": " @HYPERLINK(\"https://example.invalid\")",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "tool": "claude"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "claude:ca5c5eaa846ac307bc1d2dc17647db7edfc4be21aef73ee9f8a260491399abad",
+    "model": "=HYPERLINK(\"https://example.invalid\")",
+    "occurredAt": "2026-10-20T12:00:00.000Z",
+    "pricingVersion": null,
+    "project": "=HYPERLINK(\"https://example.invalid\")",
+    "sessionId": "=HYPERLINK(\"https://example.invalid\")",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "tool": "claude"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "claude:cfc57002fae05d10d8e3cdba1fde42aa81d493903fba1406d023463b73dff2a1",
+    "model": "﻿=HYPERLINK(\"https://example.invalid\")",
+    "occurredAt": "2026-10-20T12:00:00.000Z",
+    "pricingVersion": null,
+    "project": "﻿=HYPERLINK(\"https://example.invalid\")",
+    "sessionId": "﻿=HYPERLINK(\"https://example.invalid\")",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "tool": "claude"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "claude:dd7d1be4533f5348ad3a4e6620ad609a0ee5f8ad382cfcf57268345c1102b560",
+    "model": "﻿@HYPERLINK(\"https://example.invalid\")",
+    "occurredAt": "2026-10-20T12:00:00.000Z",
+    "pricingVersion": null,
+    "project": "﻿@HYPERLINK(\"https://example.invalid\")",
+    "sessionId": "﻿@HYPERLINK(\"https://example.invalid\")",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "tool": "claude"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "claude:e95f36aa52e92c42d24a7bc82c8adab8a9c45c3a0a10a9874d7e974d1c852b7b",
+    "model": "-HYPERLINK(\"https://example.invalid\")",
+    "occurredAt": "2026-10-20T12:00:00.000Z",
+    "pricingVersion": null,
+    "project": "-HYPERLINK(\"https://example.invalid\")",
+    "sessionId": "-HYPERLINK(\"https://example.invalid\")",
+    "tokens": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "tool": "claude"
+  }
+]

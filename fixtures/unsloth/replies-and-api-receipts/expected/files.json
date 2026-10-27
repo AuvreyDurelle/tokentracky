@@ -1,0 +1,8 @@
+{
+  "unsloth:studio.db": {
+    "diagnostics": [
+      "estimated_usage_skipped",
+      "invalid_counters"
+    ]
+  }
+}

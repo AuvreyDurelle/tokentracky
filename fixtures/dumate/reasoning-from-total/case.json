@@ -1,0 +1,4 @@
+{
+  "description": "Each record's total shows whether output already includes reasoning (input 1070 + output 888 + cache read 768 = total 2726, with reasoning 818) or not (reasoning added); a record matching neither, or with reasoning but no total, is skipped with invalid_counters.",
+  "rustOnly": true
+}

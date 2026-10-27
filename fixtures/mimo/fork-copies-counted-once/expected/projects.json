@@ -1,0 +1,15 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 600,
+      "output": 300,
+      "reasoning": 50
+    },
+    "costMicrousd": null,
+    "name": "/synthetic/mimo-project",
+    "sessions": 2,
+    "tokens": 900
+  }
+]

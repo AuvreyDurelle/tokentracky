@@ -1,0 +1,9 @@
+{
+  "deepseek:--synthetic-dsh-project--/dsh-session-a/session.v4.jsonl": {
+    "diagnostics": [
+      "invalid_counters",
+      "missing_stable_identity"
+    ],
+    "offset": 4597
+  }
+}

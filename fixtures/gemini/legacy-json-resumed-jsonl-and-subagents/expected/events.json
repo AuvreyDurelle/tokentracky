@@ -1,0 +1,53 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "gemini:15c039d784d05ce5c525336ded2002b17236b8dd7cd9d989b5b605a1b43f9b90",
+    "model": "gemini-3-pro",
+    "occurredAt": "2026-10-23T09:00:03.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "subagent-1",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 7,
+      "output": 3,
+      "reasoning": 0
+    },
+    "tool": "gemini"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "gemini:cb6d6b62ee94582f424e65545a26df84bb6e81489a10ead1b017668387b4bf5e",
+    "model": "gemini-3-pro",
+    "occurredAt": "2026-10-23T09:00:03.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "abcd1234-0000-4000-8000-000000000001",
+    "tokens": {
+      "cacheRead": 1000,
+      "cacheWrite": 0,
+      "input": 200,
+      "output": 120,
+      "reasoning": 40
+    },
+    "tool": "gemini"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "gemini:e02f72a63b830374621076d92987b7b5bcc5954f1df26db3ca66e4a67811e32e",
+    "model": "gemini-3-pro",
+    "occurredAt": "2026-10-23T09:00:03.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "abcd1234-0000-4000-8000-000000000001",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 50,
+      "output": 5,
+      "reasoning": 0
+    },
+    "tool": "gemini"
+  }
+]

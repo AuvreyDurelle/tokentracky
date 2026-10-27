@@ -1,0 +1,4 @@
+"tool","model","timestamp","project","session","input","output","cache_read","cache_write","reasoning","total","cost_microusd"
+"lmstudio","lmstudio-community/llama-3.2-3b-instruct","2026-10-21T09:00:00.000Z","","2026-10-21.1","400","100","0","0","0","500",""
+"lmstudio","qwen2.5-7b-instruct","2026-10-20T10:00:00.000Z","","2026-10-21.1","500","300","1500","0","120","2300",""
+"lmstudio","google/gemma-3-12b","2026-10-20T10:02:00.000Z","","2026-10-20.1","17","42","1276","0","0","1335",""

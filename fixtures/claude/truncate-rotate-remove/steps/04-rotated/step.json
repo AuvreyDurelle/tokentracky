@@ -1,0 +1,10 @@
+{
+  "ops": [
+    {
+      "op": "rename",
+      "from": "session.jsonl",
+      "to": "archived.jsonl"
+    }
+  ],
+  "tokens": 322
+}

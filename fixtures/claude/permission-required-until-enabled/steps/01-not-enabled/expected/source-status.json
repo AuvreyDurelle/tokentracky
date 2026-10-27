@@ -1,0 +1,22 @@
+{
+  "lastScanAt": "2026-10-23T12:00:00.000Z",
+  "sources": [
+    {
+      "capabilities": {
+        "costs": false,
+        "models": true,
+        "projects": true,
+        "quotas": false,
+        "tokens": true
+      },
+      "enabled": false,
+      "eventCount": 0,
+      "id": "claude",
+      "lastImportedAt": null,
+      "message": "Permission required before reading local logs.",
+      "name": "Claude Code",
+      "paths": [],
+      "state": "permission_required"
+    }
+  ]
+}

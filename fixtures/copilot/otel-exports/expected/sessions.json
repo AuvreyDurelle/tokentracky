@@ -1,0 +1,21 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 1200,
+      "cacheWrite": 300,
+      "input": 1300,
+      "output": 400,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "trace-2",
+    "lastUsedAt": "2026-10-21T09:06:00.000Z",
+    "model": "gpt-4.1-2025-04-14",
+    "models": [
+      "gpt-4.1-2025-04-14"
+    ],
+    "project": null,
+    "tokens": 3200,
+    "tool": "copilot"
+  }
+]

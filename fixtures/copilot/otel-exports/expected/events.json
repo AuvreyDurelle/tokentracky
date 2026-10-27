@@ -1,0 +1,36 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "copilot:c4175c5bd1460bce7dc38bfc486299e6b8cc3487b2cbe374e986b8325f51a925",
+    "model": "gpt-4.1-2025-04-14",
+    "occurredAt": "2026-10-21T09:06:00.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "trace-2",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 800,
+      "output": 100,
+      "reasoning": 0
+    },
+    "tool": "copilot"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "copilot:f1c25d4ab8e1a4cad2b01d59ba733947cf7c7e6083a4ccdaeb22b1d8606c0b73",
+    "model": "gpt-4.1-2025-04-14",
+    "occurredAt": "2026-10-21T09:05:00.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "trace-2",
+    "tokens": {
+      "cacheRead": 1200,
+      "cacheWrite": 300,
+      "input": 500,
+      "output": 300,
+      "reasoning": 0
+    },
+    "tool": "copilot"
+  }
+]

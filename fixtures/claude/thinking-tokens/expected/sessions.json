@@ -1,0 +1,21 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 20,
+      "input": 17,
+      "output": 90,
+      "reasoning": 3
+    },
+    "costMicrousd": null,
+    "id": "thinking-session",
+    "lastUsedAt": "2026-10-20T12:02:00.000Z",
+    "model": "claude-sonnet-4-6",
+    "models": [
+      "claude-sonnet-4-6"
+    ],
+    "project": "/synthetic/project",
+    "tokens": 227,
+    "tool": "claude"
+  }
+]

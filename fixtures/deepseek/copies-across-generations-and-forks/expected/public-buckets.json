@@ -1,0 +1,266 @@
+{
+  "tools=off,cost=off,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 475,
+        "cacheWrite": 60,
+        "input": 150,
+        "output": 55,
+        "reasoning": 10
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "revision": 5,
+      "tokens": 740,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 475,
+        "cacheWrite": 60,
+        "input": 150,
+        "output": 55,
+        "reasoning": 10
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "revision": 6,
+      "tokens": 740,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 475,
+        "cacheWrite": 60,
+        "input": 150,
+        "output": 55,
+        "reasoning": 10
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "deepseek-v4-flash",
+      "revision": 7,
+      "tokens": 740,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 475,
+        "cacheWrite": 60,
+        "input": 150,
+        "output": 55,
+        "reasoning": 10
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "deepseek-v4-flash",
+      "revision": 8,
+      "tokens": 740,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 475,
+        "cacheWrite": 60,
+        "input": 150,
+        "output": 55,
+        "reasoning": 10
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "revision": 9,
+      "tokens": 740,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 475,
+        "cacheWrite": 60,
+        "input": 150,
+        "output": 55,
+        "reasoning": 10
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "revision": 10,
+      "tokens": 740,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 475,
+        "cacheWrite": 60,
+        "input": 150,
+        "output": 55,
+        "reasoning": 10
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "deepseek-v4-flash",
+      "revision": 11,
+      "tokens": 740,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 475,
+        "cacheWrite": 60,
+        "input": 150,
+        "output": 55,
+        "reasoning": 10
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "deepseek-v4-flash",
+      "revision": 12,
+      "tokens": 740,
+      "tool": "all"
+    }
+  ],
+  "tools=on,cost=off,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 475,
+        "cacheWrite": 60,
+        "input": 150,
+        "output": 55,
+        "reasoning": 10
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "revision": 13,
+      "tokens": 740,
+      "tool": "deepseek"
+    }
+  ],
+  "tools=on,cost=off,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 475,
+        "cacheWrite": 60,
+        "input": 150,
+        "output": 55,
+        "reasoning": 10
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "revision": 14,
+      "tokens": 740,
+      "tool": "deepseek"
+    }
+  ],
+  "tools=on,cost=off,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 475,
+        "cacheWrite": 60,
+        "input": 150,
+        "output": 55,
+        "reasoning": 10
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "deepseek-v4-flash",
+      "revision": 15,
+      "tokens": 740,
+      "tool": "deepseek"
+    }
+  ],
+  "tools=on,cost=off,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 475,
+        "cacheWrite": 60,
+        "input": 150,
+        "output": 55,
+        "reasoning": 10
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "deepseek-v4-flash",
+      "revision": 16,
+      "tokens": 740,
+      "tool": "deepseek"
+    }
+  ],
+  "tools=on,cost=on,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 475,
+        "cacheWrite": 60,
+        "input": 150,
+        "output": 55,
+        "reasoning": 10
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "revision": 17,
+      "tokens": 740,
+      "tool": "deepseek"
+    }
+  ],
+  "tools=on,cost=on,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 475,
+        "cacheWrite": 60,
+        "input": 150,
+        "output": 55,
+        "reasoning": 10
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "revision": 18,
+      "tokens": 740,
+      "tool": "deepseek"
+    }
+  ],
+  "tools=on,cost=on,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 475,
+        "cacheWrite": 60,
+        "input": 150,
+        "output": 55,
+        "reasoning": 10
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "deepseek-v4-flash",
+      "revision": 19,
+      "tokens": 740,
+      "tool": "deepseek"
+    }
+  ],
+  "tools=on,cost=on,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 475,
+        "cacheWrite": 60,
+        "input": 150,
+        "output": 55,
+        "reasoning": 10
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "deepseek-v4-flash",
+      "revision": 20,
+      "tokens": 740,
+      "tool": "deepseek"
+    }
+  ]
+}

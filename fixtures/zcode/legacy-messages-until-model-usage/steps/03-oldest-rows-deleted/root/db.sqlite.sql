@@ -1,0 +1,5 @@
+BEGIN TRANSACTION;
+DELETE FROM model_usage WHERE started_at < 1790071200000;
+INSERT INTO model_usage(id, logical_request_id, attempt_index, session_id, query_source, provider_id, model_id, status, started_at, completed_at, input_tokens, output_tokens, reasoning_tokens, cache_creation_input_tokens, cache_read_input_tokens, provider_total_tokens, computed_total_tokens, error_message, raw_usage_json) VALUES('mu_2','req_2',0,'ses_N1','main_turn','builtin:zai-coding-plan','glm-4.6','completed',1792663200000,1792663204000,500,100,0,0,0,600,600,NULL,'{"inputTokens":500,"outputTokens":100,"note":"PRIVATE_RESPONSE_MARKER"}');
+INSERT INTO message VALUES('msg_N2','ses_N1',1792663200500,1792663205000,'{"id":"x","role":"assistant","time":{"created":1792663200500,"completed":1792663204500},"parentID":"msg_U","modelId":"glm-4.6","providerId":"builtin:zai-coding-plan","mode":"build","agent":"zcode-agent","path":{"cwd":"/synthetic/zcode-legacy","root":"/synthetic/zcode-legacy"},"summary":true,"cost":0,"tokens":{"total":600,"input":500,"output":100,"reasoning":0,"cache":{"read":0,"write":0}},"structured":{"text":"PRIVATE_RESPONSE_MARKER"}}',NULL);
+COMMIT;

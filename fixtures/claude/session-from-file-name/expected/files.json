@@ -1,0 +1,12 @@
+{
+  "claude:encoded-private-project/12345678-1234-1234-1234-123456789012.jsonl": {
+    "diagnostics": [],
+    "offset": 434
+  },
+  "claude:unknown.jsonl": {
+    "diagnostics": [
+      "missing_stable_identity"
+    ],
+    "offset": 434
+  }
+}

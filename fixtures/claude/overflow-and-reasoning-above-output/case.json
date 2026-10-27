@@ -1,0 +1,3 @@
+{
+  "description": "A counter sum above the safe-integer range, and reasoning larger than output, are rejected with invalid_counters."
+}

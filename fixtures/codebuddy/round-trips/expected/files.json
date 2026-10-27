@@ -1,0 +1,12 @@
+{
+  "codebuddy:synthetic-codebuddy/cb-session-1.jsonl": {
+    "diagnostics": [
+      "invalid_counters"
+    ],
+    "offset": 2928
+  },
+  "codebuddy:synthetic-codebuddy/cb-session-1/subagents/agent-a.jsonl": {
+    "diagnostics": [],
+    "offset": 338
+  }
+}

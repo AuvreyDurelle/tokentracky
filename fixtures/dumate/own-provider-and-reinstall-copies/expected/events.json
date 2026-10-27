@@ -1,0 +1,53 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "dumate:1545a3b9e95f2dc01fc216bfd9ede33dab7bc5c4bc2475ae964ffe949da62473",
+    "model": "glm-5",
+    "occurredAt": "2026-10-23T09:00:00.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/dumate-workspace",
+    "sessionId": "ses_D1",
+    "tokens": {
+      "cacheRead": 200,
+      "cacheWrite": 0,
+      "input": 1000,
+      "output": 300,
+      "reasoning": 100
+    },
+    "tool": "dumate"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "dumate:5206404c07dce3f6335fd32a80fe7872d02fce3a6100de204fa58ba86d65da69",
+    "model": "glm-5",
+    "occurredAt": "2026-10-23T09:00:10.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/dumate-workspace",
+    "sessionId": "ses_D1",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 300,
+      "output": 100,
+      "reasoning": 0
+    },
+    "tool": "dumate"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "dumate:5c0e6a82bcbbf723be110b8c5198d2373e78430411672e07b0e71ab48c23373b",
+    "model": "glm-5",
+    "occurredAt": "2026-10-23T09:00:40.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/dumate-workspace",
+    "sessionId": "ses_D2",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 200,
+      "output": 50,
+      "reasoning": 0
+    },
+    "tool": "dumate"
+  }
+]

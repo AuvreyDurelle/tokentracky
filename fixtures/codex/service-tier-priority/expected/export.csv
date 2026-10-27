@@ -1,0 +1,4 @@
+"tool","model","timestamp","project","session","input","output","cache_read","cache_write","reasoning","total","cost_microusd"
+"codex","gpt-5","2026-10-20T12:04:00.000Z","/synthetic/codex-project","codex-session","50","10","10","0","0","70",""
+"codex","gpt-5","2026-10-20T12:02:00.000Z","/synthetic/codex-project","codex-session","100","30","100","0","10","230",""
+"codex","gpt-5","2026-10-20T12:00:00.000Z","/synthetic/codex-project","codex-session","60","20","40","0","10","120",""

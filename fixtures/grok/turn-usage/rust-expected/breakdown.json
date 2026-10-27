@@ -1,0 +1,44 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 500,
+      "output": 30,
+      "reasoning": 0
+    },
+    "costMicrousd": 160,
+    "day": "2026-10-22",
+    "model": "grok-4.6-build",
+    "tokens": 530,
+    "tool": "grok"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 2200,
+      "cacheWrite": 0,
+      "input": 1100,
+      "output": 160,
+      "reasoning": 60
+    },
+    "costMicrousd": 4795,
+    "day": "2026-10-22",
+    "model": "grok-4.7-build",
+    "tokens": 3460,
+    "tool": "grok"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 40,
+      "output": 5,
+      "reasoning": 0
+    },
+    "costMicrousd": 1,
+    "day": "2026-10-22",
+    "model": "grok-build",
+    "tokens": 45,
+    "tool": "grok"
+  }
+]

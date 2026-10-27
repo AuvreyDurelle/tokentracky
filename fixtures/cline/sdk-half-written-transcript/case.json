@@ -1,0 +1,3 @@
+{
+  "description": "A half-written transcript is skipped for the scan (partial_document_pending, source stale), earlier usage is kept, and the completed document is read next."
+}

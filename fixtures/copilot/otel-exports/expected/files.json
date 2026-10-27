@@ -1,0 +1,13 @@
+{
+  "copilot:.copilot-otel/copilot-chat-otel.jsonl": {
+    "diagnostics": [
+      "missing_stable_identity",
+      "invalid_counters"
+    ],
+    "offset": 3368
+  },
+  "copilot:otel/copilot-otel-2026-10-21.jsonl": {
+    "diagnostics": [],
+    "offset": 1888
+  }
+}

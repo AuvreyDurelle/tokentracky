@@ -1,0 +1,40 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 2000,
+      "cacheWrite": 200,
+      "input": 800,
+      "output": 500,
+      "reasoning": 100
+    },
+    "costMicrousd": null,
+    "id": "ses_01TEST",
+    "lastUsedAt": "2026-10-23T09:00:10.000Z",
+    "model": "claude-sonnet-4-6",
+    "models": [
+      "claude-sonnet-4-6"
+    ],
+    "project": "/synthetic/opencode-project",
+    "tokens": 3500,
+    "tool": "opencode"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 5,
+      "output": 5,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "g",
+    "lastUsedAt": null,
+    "model": "unknown",
+    "models": [
+      "unknown"
+    ],
+    "project": null,
+    "tokens": 10,
+    "tool": "gemini"
+  }
+]

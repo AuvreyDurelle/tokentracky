@@ -1,0 +1,7 @@
+{
+  "goose:sessions.db": {
+    "diagnostics": [
+      "invalid_counters"
+    ]
+  }
+}

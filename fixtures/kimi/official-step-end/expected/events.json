@@ -1,0 +1,82 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "kimi:0fb0e39aa4389e49e8e08790426388a887f46a35ce0605fd86e894de4e11783c",
+    "model": "k3",
+    "occurredAt": "2026-10-23T09:00:35.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/kimi-project",
+    "sessionId": "session-b",
+    "tokens": {
+      "cacheRead": 9000,
+      "cacheWrite": 0,
+      "input": 100,
+      "output": 900
+    },
+    "tool": "kimi"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "kimi:1e3cf952fd7c9b677708c6a8f6e76f4acc8a2b8b1565bf949db53358b455fa0f",
+    "model": "kimi-code/kimi-for-coding",
+    "occurredAt": "2026-10-23T09:00:05.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/kimi-project",
+    "sessionId": "session-c",
+    "tokens": {
+      "cacheRead": 6000,
+      "cacheWrite": 1000,
+      "input": 2000,
+      "output": 400
+    },
+    "tool": "kimi"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "kimi:2dadd4d74e0802ee1aba72e60a4c8e6665ff9452b85e3e85f691dfe7bf16d05e",
+    "model": "kimi-for-coding",
+    "occurredAt": "2026-10-23T09:00:45.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/kimi-project",
+    "sessionId": "session-b",
+    "tokens": {
+      "cacheRead": 500,
+      "cacheWrite": 0,
+      "input": 50,
+      "output": 25
+    },
+    "tool": "kimi"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "kimi:3bd4a1bed975d4b3b3f83532756e00c1340d7aa5fbdf45e248a69fdea2e0b766",
+    "model": "kimi-for-coding",
+    "occurredAt": "2026-10-23T09:00:10.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/kimi-project",
+    "sessionId": "session-c",
+    "tokens": {
+      "cacheRead": 8000,
+      "cacheWrite": 0,
+      "input": 500,
+      "output": 120
+    },
+    "tool": "kimi"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "kimi:909b544a937d59c98b4a90bc7a0d9029c68c16ae9d7a16fff79bee189ccc1932",
+    "model": "kimi-for-coding",
+    "occurredAt": "2026-10-23T09:01:05.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/kimi-project",
+    "sessionId": "session-c",
+    "tokens": {
+      "cacheRead": 1000,
+      "cacheWrite": 0,
+      "input": 10,
+      "output": 5
+    },
+    "tool": "kimi"
+  }
+]

@@ -1,0 +1,21 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 2000,
+      "cacheWrite": 200,
+      "input": 800,
+      "output": 400,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "t1",
+    "lastUsedAt": "2026-10-23T09:00:02.000Z",
+    "model": "claude-sonnet-4-6",
+    "models": [
+      "claude-sonnet-4-6"
+    ],
+    "project": "/synthetic/roo-project",
+    "tokens": 3400,
+    "tool": "roo"
+  }
+]

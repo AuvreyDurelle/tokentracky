@@ -1,0 +1,4 @@
+{
+  "description": "A database copied or moved to another folder adds nothing: a thread's growth is measured against what any copy of the tool's databases already counted, so the copy's total counts once and only its later growth is added.",
+  "rustOnly": true
+}

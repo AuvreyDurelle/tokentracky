@@ -1,0 +1,18 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "roo:67f0b14dabbd6f745d87d149868534d14dc2407a789430a900283677a33538bf",
+    "model": "unknown",
+    "occurredAt": "2026-10-23T09:00:02.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "t1",
+    "tokens": {
+      "cacheRead": 1000,
+      "cacheWrite": 100,
+      "input": 400,
+      "output": 200
+    },
+    "tool": "roo"
+  }
+]

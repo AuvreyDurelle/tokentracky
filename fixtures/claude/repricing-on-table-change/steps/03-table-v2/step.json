@@ -1,0 +1,17 @@
+{
+  "ops": [
+    {
+      "op": "price",
+      "price": {
+        "version": "v2",
+        "rates": {
+          "input": 3,
+          "output": 6,
+          "cacheRead": 3,
+          "cacheWrite": 3
+        }
+      }
+    }
+  ],
+  "tokens": 161
+}

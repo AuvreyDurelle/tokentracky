@@ -1,0 +1,3 @@
+{
+  "description": "Counter resets, repeated totals and interleaved known lineages are resolved per record, with a cumulative_reset_or_branch diagnostic."
+}

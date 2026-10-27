@@ -1,0 +1,19 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "opencode:00ea3e0c620d67fe252ff46e7168ad54f91d891aa5cae5f299ea677e5f47d6b4",
+    "model": "claude-sonnet-4-6",
+    "occurredAt": "2026-10-23T09:00:00.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/opencode-project",
+    "sessionId": "ses_01TEST",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 100,
+      "output": 10,
+      "reasoning": 0
+    },
+    "tool": "opencode"
+  }
+]

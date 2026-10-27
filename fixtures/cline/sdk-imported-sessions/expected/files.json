@@ -1,0 +1,11 @@
+{
+  "cline:sessions/s_epoch/s_epoch.messages.json": {
+    "diagnostics": []
+  },
+  "cline:sessions/s_iso/s_iso.messages.json": {
+    "diagnostics": []
+  },
+  "cline:sessions/s_unknown/s_unknown.messages.json": {
+    "diagnostics": []
+  }
+}

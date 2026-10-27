@@ -1,0 +1,24 @@
+{
+  "lastScanAt": "2026-10-23T12:00:00.000Z",
+  "sources": [
+    {
+      "capabilities": {
+        "costs": false,
+        "models": true,
+        "projects": false,
+        "quotas": false,
+        "tokens": true
+      },
+      "enabled": true,
+      "eventCount": 3,
+      "id": "minimax",
+      "lastImportedAt": "2026-10-23T12:00:00.000Z",
+      "message": "Authorized logs are current.",
+      "name": "MiniMax Code",
+      "paths": [
+        "."
+      ],
+      "state": "current"
+    }
+  ]
+}

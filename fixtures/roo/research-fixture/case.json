@@ -1,0 +1,6 @@
+{
+  "description": "A task: tokensIn includes both caches (so they are split out), the model comes from the conversation history, the workspace from the history item; task metadata is ignored.",
+  "forbidden": [
+    "environment_details"
+  ]
+}

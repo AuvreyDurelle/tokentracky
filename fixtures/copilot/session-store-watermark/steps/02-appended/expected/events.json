@@ -1,0 +1,70 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "copilot:1e0756a145a544da7871297e578b726d277ee602c1130ada16378296b9ac8dd5",
+    "model": "gpt-5",
+    "occurredAt": "2026-10-20T10:05:00.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "copilot-session-1",
+    "tokens": {
+      "cacheRead": 2000,
+      "cacheWrite": 0,
+      "input": 1000,
+      "output": 400,
+      "reasoning": 150
+    },
+    "tool": "copilot"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "copilot:1f2520c60c520c413ba4e53299735ac615b44f649dacfcfd384dd8adf2751d3d",
+    "model": "claude-sonnet-4.5",
+    "occurredAt": "2026-10-21T09:00:00.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "copilot-session-2",
+    "tokens": {
+      "cacheRead": 1500,
+      "cacheWrite": 0,
+      "input": 500,
+      "output": 100,
+      "reasoning": 0
+    },
+    "tool": "copilot"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "copilot:347c9c847af1e059678369d4c5cd276b102a2e9167dfb6b239eb602fc24a059a",
+    "model": "claude-haiku-4.5",
+    "occurredAt": null,
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "copilot-session-2",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 600,
+      "output": 50,
+      "reasoning": 0
+    },
+    "tool": "copilot"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "copilot:9adfe8c4666eecbd2c6f47a5f80fd344fe7a1dedd01dec715c6b4bb4349728c1",
+    "model": "claude-sonnet-4.5",
+    "occurredAt": "2026-10-20T10:00:00.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "copilot-session-1",
+    "tokens": {
+      "cacheRead": 10000,
+      "cacheWrite": 1500,
+      "input": 500,
+      "output": 800,
+      "reasoning": 200
+    },
+    "tool": "copilot"
+  }
+]

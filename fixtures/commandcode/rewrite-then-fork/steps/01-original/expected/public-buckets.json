@@ -1,0 +1,142 @@
+{
+  "tools=off,cost=off,models=off,history=2026-10-21": [],
+  "tools=off,cost=off,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 1000,
+        "cacheWrite": 100,
+        "input": 300,
+        "output": 150,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "revision": 3,
+      "tokens": 1550,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=on,history=2026-10-21": [],
+  "tools=off,cost=off,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 1000,
+        "cacheWrite": 100,
+        "input": 300,
+        "output": 150,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "deepseek-v4-flash",
+      "revision": 4,
+      "tokens": 1550,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=off,history=2026-10-21": [],
+  "tools=off,cost=on,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 1000,
+        "cacheWrite": 100,
+        "input": 300,
+        "output": 150,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "revision": 5,
+      "tokens": 1550,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=on,history=2026-10-21": [],
+  "tools=off,cost=on,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 1000,
+        "cacheWrite": 100,
+        "input": 300,
+        "output": 150,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "deepseek-v4-flash",
+      "revision": 6,
+      "tokens": 1550,
+      "tool": "all"
+    }
+  ],
+  "tools=on,cost=off,models=off,history=2026-10-21": [],
+  "tools=on,cost=off,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 1000,
+        "cacheWrite": 100,
+        "input": 300,
+        "output": 150,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "revision": 7,
+      "tokens": 1550,
+      "tool": "commandcode"
+    }
+  ],
+  "tools=on,cost=off,models=on,history=2026-10-21": [],
+  "tools=on,cost=off,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 1000,
+        "cacheWrite": 100,
+        "input": 300,
+        "output": 150,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "deepseek-v4-flash",
+      "revision": 8,
+      "tokens": 1550,
+      "tool": "commandcode"
+    }
+  ],
+  "tools=on,cost=on,models=off,history=2026-10-21": [],
+  "tools=on,cost=on,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 1000,
+        "cacheWrite": 100,
+        "input": 300,
+        "output": 150,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "revision": 9,
+      "tokens": 1550,
+      "tool": "commandcode"
+    }
+  ],
+  "tools=on,cost=on,models=on,history=2026-10-21": [],
+  "tools=on,cost=on,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 1000,
+        "cacheWrite": 100,
+        "input": 300,
+        "output": 150,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "deepseek-v4-flash",
+      "revision": 10,
+      "tokens": 1550,
+      "tool": "commandcode"
+    }
+  ]
+}

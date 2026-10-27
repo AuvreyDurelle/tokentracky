@@ -1,0 +1,15 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 768,
+      "cacheWrite": 0,
+      "input": 1180,
+      "output": 963,
+      "reasoning": 838
+    },
+    "costMicrousd": null,
+    "name": "/synthetic/dumate-workspace",
+    "sessions": 1,
+    "tokens": 2911
+  }
+]

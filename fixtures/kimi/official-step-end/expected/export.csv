@@ -1,0 +1,6 @@
+"tool","model","timestamp","project","session","input","output","cache_read","cache_write","reasoning","total","cost_microusd"
+"kimi","k3","2026-10-23T09:00:35.000Z","/synthetic/kimi-project","session-b","100","900","9000","0","0","10000",""
+"kimi","kimi-code/kimi-for-coding","2026-10-23T09:00:05.000Z","/synthetic/kimi-project","session-c","2000","400","6000","1000","0","9400",""
+"kimi","kimi-for-coding","2026-10-23T09:00:45.000Z","/synthetic/kimi-project","session-b","50","25","500","0","0","575",""
+"kimi","kimi-for-coding","2026-10-23T09:00:10.000Z","/synthetic/kimi-project","session-c","500","120","8000","0","0","8620",""
+"kimi","kimi-for-coding","2026-10-23T09:01:05.000Z","/synthetic/kimi-project","session-c","10","5","1000","0","0","1015",""

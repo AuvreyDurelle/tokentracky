@@ -1,0 +1,6 @@
+"tool","model","timestamp","project","session","input","output","cache_read","cache_write","reasoning","total","cost_microusd"
+"claude","claude-haiku-4-5","2026-09-01T00:00:00.000Z","/synthetic/private-project","two","11","20","100","30","7","161","161"
+"claude","claude-sonnet-4-6","2026-10-23T00:00:00.000Z","/synthetic/private-project","one","11","20","100","30","7","161","161"
+"claude","claude-opus-4-7","2026-10-22T23:59:59.000Z","/synthetic/private-project","one","11","20","100","30","7","161","161"
+"claude","claude-sonnet-4-6","","/synthetic/private-project","one","11","20","100","30","7","161","161"
+"claude","claude-sonnet-4-6","2026-10-21T08:00:00.000Z","/synthetic/private-project","one","11","20","100","30","7","161","161"

@@ -1,0 +1,6 @@
+# One toolchain for everyone who builds the workspace, so a lint that a newer clippy adds cannot fail CI on a
+# tree that passed locally. Bump it deliberately, together with the `dtolnay/rust-toolchain@...` steps in
+# .github/workflows/ci.yml. `rust-version` in Cargo.toml stays the oldest compiler the crates support.
+[toolchain]
+channel = "1.99.0"
+components = ["rustfmt", "clippy"]

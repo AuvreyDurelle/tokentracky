@@ -1,0 +1,30 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 300,
+      "input": 60,
+      "output": 40,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-22",
+    "model": "claude-haiku-4-5",
+    "tokens": 400,
+    "tool": "primeagent"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 2000,
+      "cacheWrite": 150,
+      "input": 130,
+      "output": 70,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-22",
+    "model": "claude-sonnet-4-6",
+    "tokens": 2350,
+    "tool": "primeagent"
+  }
+]

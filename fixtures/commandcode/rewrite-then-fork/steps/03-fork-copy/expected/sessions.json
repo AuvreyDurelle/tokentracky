@@ -1,0 +1,41 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 400,
+      "cacheWrite": 0,
+      "input": 600,
+      "output": 100,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "cc-s2",
+    "lastUsedAt": "2026-10-20T11:00:00.000Z",
+    "model": "deepseek-v4-pro",
+    "models": [
+      "deepseek-v4-flash",
+      "deepseek-v4-pro"
+    ],
+    "project": "/synthetic/command-code",
+    "tokens": 1100,
+    "tool": "commandcode"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 600,
+      "cacheWrite": 100,
+      "input": 200,
+      "output": 100,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "cc-s1",
+    "lastUsedAt": "2026-10-20T10:00:05.000Z",
+    "model": "deepseek-v4-flash",
+    "models": [
+      "deepseek-v4-flash"
+    ],
+    "project": "/synthetic/command-code",
+    "tokens": 1000,
+    "tool": "commandcode"
+  }
+]

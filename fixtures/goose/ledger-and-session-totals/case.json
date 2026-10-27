@@ -1,0 +1,4 @@
+{
+  "description": "Each usage_ledger row counts once (input includes both caches, a total must be input plus output); a session without ledger rows counts the growth of its accumulated totals, dated at its update. When Goose carries an older session's total forward into the ledger, only what was not already counted from the running total is added. Session names, folders and messages are never read.",
+  "rustOnly": true
+}

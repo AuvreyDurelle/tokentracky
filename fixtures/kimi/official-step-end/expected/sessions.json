@@ -1,0 +1,42 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 15000,
+      "cacheWrite": 1000,
+      "input": 2510,
+      "output": 525,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "session-c",
+    "lastUsedAt": "2026-10-23T09:01:05.000Z",
+    "model": "kimi-for-coding",
+    "models": [
+      "kimi-for-coding",
+      "kimi-code/kimi-for-coding"
+    ],
+    "project": "/synthetic/kimi-project",
+    "tokens": 19035,
+    "tool": "kimi"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 9500,
+      "cacheWrite": 0,
+      "input": 150,
+      "output": 925,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "session-b",
+    "lastUsedAt": "2026-10-23T09:00:45.000Z",
+    "model": "kimi-for-coding",
+    "models": [
+      "k3",
+      "kimi-for-coding"
+    ],
+    "project": "/synthetic/kimi-project",
+    "tokens": 10575,
+    "tool": "kimi"
+  }
+]

@@ -1,0 +1,12 @@
+PRAGMA journal_mode=WAL;
+PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+CREATE TABLE session(id TEXT PRIMARY KEY, directory TEXT, title TEXT);
+CREATE TABLE message(id TEXT PRIMARY KEY, session_id TEXT NOT NULL, agent_id TEXT NOT NULL DEFAULT 'main', time_created INTEGER NOT NULL, time_updated INTEGER NOT NULL, data TEXT NOT NULL);
+CREATE TABLE part(id TEXT PRIMARY KEY, message_id TEXT, session_id TEXT, time_created INTEGER, time_updated INTEGER, data TEXT);
+INSERT INTO session VALUES('ses_01','/synthetic/mimo-project','PRIVATE_PROMPT_MARKER');
+INSERT INTO session VALUES('ses_09','/synthetic/mimo-project','PRIVATE_PROMPT_MARKER (fork #1)');
+INSERT INTO message VALUES('msg_01','ses_01','main',1792746000000,1792746005000,'{"role":"assistant","time":{"created":1792746000000,"completed":1792746005000},"parentID":"msg_00USER","modelID":"mimo-v2.5-pro","providerID":"mimo","mode":"build","agent":"build","path":{"cwd":"/synthetic/mimo-project","root":"/synthetic/mimo-project"},"summary":{"title":"PRIVATE_PROMPT_MARKER"},"cost":0,"tokens":{"total":600,"input":400,"output":150,"reasoning":50,"cache":{"read":0,"write":0}},"finish":"stop"}');
+INSERT INTO message VALUES('msg_09COPY','ses_09','main',1792746000000,1792746100000,'{"role":"assistant","time":{"created":1792746000000,"completed":1792746005000},"parentID":"msg_00USER","modelID":"mimo-v2.5-pro","providerID":"mimo","mode":"build","agent":"build","path":{"cwd":"/synthetic/mimo-project","root":"/synthetic/mimo-project"},"summary":{"title":"PRIVATE_PROMPT_MARKER"},"cost":0,"tokens":{"total":600,"input":400,"output":150,"reasoning":50,"cache":{"read":0,"write":0}},"finish":"stop"}');
+INSERT INTO message VALUES('msg_09NEW','ses_09','main',1792746200000,1792746205000,'{"role":"assistant","time":{"created":1792746200000,"completed":1792746205000},"parentID":"msg_00USER","modelID":"mimo-v2.5-pro","providerID":"mimo","mode":"build","agent":"build","path":{"cwd":"/synthetic/mimo-project","root":"/synthetic/mimo-project"},"summary":{"title":"PRIVATE_PROMPT_MARKER"},"cost":0,"tokens":{"total":300,"input":200,"output":100,"reasoning":0,"cache":{"read":0,"write":0}},"finish":"stop"}');
+COMMIT;

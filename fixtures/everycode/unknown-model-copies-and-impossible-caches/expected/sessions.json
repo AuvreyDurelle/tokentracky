@@ -1,0 +1,21 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 500,
+      "output": 50,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "every-session-2",
+    "lastUsedAt": "2026-10-21T08:00:10.000Z",
+    "model": "unknown",
+    "models": [
+      "unknown"
+    ],
+    "project": "/synthetic/every-code",
+    "tokens": 550,
+    "tool": "everycode"
+  }
+]

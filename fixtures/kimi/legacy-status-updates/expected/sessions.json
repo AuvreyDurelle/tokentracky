@@ -1,0 +1,21 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 4800,
+      "cacheWrite": 30,
+      "input": 1500,
+      "output": 370,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "session-a",
+    "lastUsedAt": "2026-10-23T09:02:00.000Z",
+    "model": "unknown",
+    "models": [
+      "unknown"
+    ],
+    "project": null,
+    "tokens": 6700,
+    "tool": "kimi"
+  }
+]

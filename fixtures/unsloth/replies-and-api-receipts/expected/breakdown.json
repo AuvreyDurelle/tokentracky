@@ -1,0 +1,58 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 3000,
+      "cacheWrite": 1000,
+      "input": 1000,
+      "output": 700,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-22",
+    "model": "gpt-5.6-terra",
+    "tokens": 5700,
+    "tool": "unsloth"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 800,
+      "cacheWrite": 0,
+      "input": 400,
+      "output": 300,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-22",
+    "model": "local/Qwen3-8B-Q4_K_M",
+    "tokens": 1500,
+    "tool": "unsloth"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 100,
+      "output": 50,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-22",
+    "model": "local/unsloth/Qwen3-8B-GGUF",
+    "tokens": 150,
+    "tool": "unsloth"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 2000,
+      "output": 500,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-22",
+    "model": "unsloth/Qwen3-8B-GGUF",
+    "tokens": 2500,
+    "tool": "unsloth"
+  }
+]

@@ -1,0 +1,5 @@
+"tool","model","timestamp","project","session","input","output","cache_read","cache_write","reasoning","total","cost_microusd"
+"mimo","mimo-v2-flash","2026-10-23T09:00:10.000Z","/synthetic/mimo-project","ses_M1","500","100","0","100","0","700",""
+"mimo","unknown","2026-10-23T09:00:20.000Z","/synthetic/mimo-project","ses_M1","20","10","0","0","0","30",""
+"mimo","mimo-v2.5-pro","2026-10-23T09:00:00.000Z","/synthetic/mimo-project","ses_M1","1000","250","300","0","50","1550",""
+"mimo","mimo-v2.5-pro","2026-10-23T09:01:10.000Z","/synthetic/mimo-dev-project","ses_D1","10","5","0","0","0","15",""

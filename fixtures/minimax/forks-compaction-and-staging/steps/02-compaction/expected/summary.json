@@ -1,0 +1,69 @@
+{
+  "activity": {
+    "activeDays": 1,
+    "averagePerActiveDay": 16800,
+    "bestDay": {
+      "day": "2026-10-22",
+      "tokens": 16800
+    },
+    "currentStreak": 1,
+    "longestStreak": 1
+  },
+  "breakdown": {
+    "cacheRead": 14900,
+    "cacheWrite": 200,
+    "input": 1210,
+    "output": 490,
+    "reasoning": 0
+  },
+  "byModel": [
+    {
+      "breakdown": {
+        "cacheRead": 14900,
+        "cacheWrite": 200,
+        "input": 1210,
+        "output": 490,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "MiniMax-M2",
+      "tokens": 16800
+    }
+  ],
+  "byTool": [
+    {
+      "breakdown": {
+        "cacheRead": 14900,
+        "cacheWrite": 200,
+        "input": 1210,
+        "output": 490,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "tokens": 16800,
+      "tool": "minimax"
+    }
+  ],
+  "cacheRate": 0.9135499693439607,
+  "costMicrousd": null,
+  "costParts": null,
+  "daily": [
+    {
+      "breakdown": {
+        "cacheRead": 14900,
+        "cacheWrite": 200,
+        "input": 1210,
+        "output": 490,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "day": "2026-10-22",
+      "tokens": 16800
+    }
+  ],
+  "sessions": 2,
+  "tokens": 16800
+}

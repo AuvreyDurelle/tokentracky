@@ -1,0 +1,21 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 100,
+      "output": 10,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "ses_01TEST",
+    "lastUsedAt": "2026-10-23T09:00:00.000Z",
+    "model": "claude-sonnet-4-6",
+    "models": [
+      "claude-sonnet-4-6"
+    ],
+    "project": "/synthetic/opencode-project",
+    "tokens": 110,
+    "tool": "opencode"
+  }
+]

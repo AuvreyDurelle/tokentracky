@@ -1,0 +1,22 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 200,
+      "cacheWrite": 60,
+      "cacheWrite1h": 40,
+      "input": 187,
+      "output": 40,
+      "reasoning": 14
+    },
+    "costMicrousd": null,
+    "id": "claude-session",
+    "lastUsedAt": "2026-10-20T12:00:00.000Z",
+    "model": "claude-sonnet-4-6",
+    "models": [
+      "claude-sonnet-4-6"
+    ],
+    "project": "/synthetic/private-project",
+    "tokens": 487,
+    "tool": "claude"
+  }
+]

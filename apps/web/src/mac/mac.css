@@ -1,0 +1,166 @@
+/* The Mac app's layout and components. Every rule sits under .mac so the website is untouched.
+   Only what apps/web/src/mac uses is here; each ported page brings its own rules. The website's pages still render inside the shell,
+   so a rule naming a class they also use (.dot, .faint, .spark, .heat-*) sits under .sidebar, .toolbar or .activity.
+   Design tokens and tool glyphs are global (styles.css); only the two the website has no use for are declared here. */
+.mac {
+  --bg-sidebar: #0b0c0d;
+  --active: rgba(255, 255, 255, 0.07);
+}
+.mac .sidebar, .mac .toolbar, .mac .activity { font-size: 13px; letter-spacing: -0.005em; }
+.mac .label { font-size: 12px; font-weight: 500; color: var(--text-3); }
+.mac .stat-value { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+
+/* ---------- app shell ---------- */
+/* Only the pane scrolls. Positioned and clipping, the frame holds what is placed in the pane without a positioned ancestor (the activity card's hidden table),
+   which would otherwise stretch the window; clip rather than hidden, so a screen reader reaching that table cannot scroll the frame either. */
+.mac.app { position: relative; display: grid; grid-template-columns: 228px minmax(0, 1fr); height: 100vh; overflow: clip; }
+
+.mac .sidebar {
+  display: flex; flex-direction: column;
+  /* No fake traffic lights: the native title bar stays, so the brand lines up with the toolbar instead. */
+  padding: 9px 10px 10px;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+}
+.mac .brand { display: flex; align-items: center; gap: 9px; padding: 4px 8px 16px; font-size: 13.5px; font-weight: 600; letter-spacing: -0.01em; }
+
+.mac .nav { display: flex; flex-direction: column; gap: 1px; }
+.mac .nav-item {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; height: 30px; padding: 0 8px; border: 0; border-radius: var(--radius-sm);
+  background: none; color: var(--text-3); font-weight: 500; text-align: left;
+}
+.mac .nav-item svg { width: 16px; height: 16px; flex: none; }
+.mac .nav-item:hover { background: var(--hover); color: var(--text-2); }
+.mac .nav-item[aria-current="page"] { background: var(--active); color: var(--text); }
+.mac .sidebar-spacer { flex: 1; }
+
+.mac .today-card { margin: 0 0 8px; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); }
+.mac .today-card .row { display: flex; align-items: baseline; justify-content: space-between; }
+.mac .sidebar .faint { color: var(--text-4); }
+.mac .today-card .value { font-size: 18px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+/* Fills the card; the website's .spark is 82px wide. */
+.mac .sidebar .spark { display: flex; align-items: flex-end; gap: 2px; width: auto; height: 22px; margin-top: 8px; }
+.mac .sidebar .spark span { flex: 1; border-radius: 1.5px; background: var(--heat-2); }
+.mac .sidebar .spark span:last-child { background: var(--text); }
+
+.mac .sync { display: flex; align-items: center; gap: 8px; padding: 6px 8px; font-size: 12px; color: var(--text-3); }
+.mac .sidebar .dot { display: inline-block; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--text-3); }
+.mac .sidebar .dot-live { background: var(--green); box-shadow: 0 0 0 3px rgba(76, 183, 130, 0.18); }
+.mac .me { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px; border: 0; border-radius: var(--radius-sm); background: none; text-align: left; }
+.mac .me:hover { background: var(--hover); }
+.mac .sidebar .who { display: block; line-height: 1.3; min-width: 0; }
+.mac .sidebar .who b { display: block; font-weight: 500; font-size: 12.5px; }
+.mac .sidebar .who span { font-size: 11.5px; color: var(--text-3); }
+
+.mac .main { display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+.mac .toolbar {
+  display: flex; align-items: center; gap: 12px; flex: none;
+  height: 46px; padding: 0 24px;
+  border-bottom: 1px solid var(--border);
+}
+.mac .toolbar-title { font-size: 13px; font-weight: 600; }
+.mac .toolbar-right { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.mac .kbd { padding: 0 5px; border: 1px solid var(--border-2); border-radius: 4px; font: 11px var(--mono); color: var(--text-4); }
+.mac .content { flex: 1; overflow: auto; }
+
+/* ---------- surfaces ---------- */
+.mac .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+.mac .card-head { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+.mac .card-title { font-size: 13px; font-weight: 600; }
+.mac .stat-strip { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; }
+.mac .stat-strip > div { padding: 16px 18px; border-left: 1px solid var(--border); }
+.mac .stat-strip > div:first-child { border-left: 0; }
+.mac .tip { padding: 10px 12px; border-radius: var(--radius-md); background: rgba(24, 25, 27, 0.96); box-shadow: var(--shadow-pop); font-size: 12px; backdrop-filter: blur(12px); }
+
+/* ---------- activity grid (tokens.html) ---------- */
+.mac .card-head .right { margin-left: auto; font-size: 12px; color: var(--text-4); }
+.mac .activity .heat-body { display: block; width: auto; padding: 20px 22px 16px; }
+.mac .heat-box { position: relative; }
+.mac .heat-box svg { display: block; width: 100%; height: auto; overflow: visible; }
+.mac .heat text { font-family: var(--font); font-size: 10.5px; fill: var(--text-4); font-variant-numeric: tabular-nums; }
+.mac .heat .h0 { fill: var(--heat-0); }
+.mac .heat .h1 { fill: var(--heat-1); }
+.mac .heat .h2 { fill: var(--heat-2); }
+.mac .heat .h3 { fill: var(--heat-3); }
+.mac .heat .h4 { fill: var(--heat-4); }
+.mac .heat .hov { fill: none; stroke: var(--text); stroke-width: 1.5; }
+.mac .heat-tip { position: absolute; transform: translate(calc(-100% - 8px), -50%); white-space: nowrap; pointer-events: none; }
+.mac .heat-tip.flip { transform: translate(8px, -50%); }
+.mac .heat-tip b { font-weight: 600; }
+.mac .activity .heat-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; font-size: 12px; color: var(--text-4); }
+.mac .activity .heat-legend { display: flex; align-items: center; gap: 4px; font-size: 12px; }
+.mac .activity .heat-legend i { width: 11px; height: 11px; border-radius: 3px; }
+.mac .activity .heat-legend span { margin: 0 4px; }
+.mac .activity .stat-strip { border-top: 1px solid var(--border); }
+.mac .activity .stat-strip > div { padding: 18px 22px 20px; }
+.mac .activity .stat-value { margin-top: 4px; }
+.mac .activity .stat-value small { font-size: 14px; font-weight: 500; color: var(--text-3); letter-spacing: 0; }
+
+/* ---------- page primitives ----------
+   The m- prefix keeps them apart from the website's class names; a modifier (.on, .l, .primary) only ever sits on or inside one. */
+.mac .m-page { max-width: 1200px; margin: 0 auto; padding: 32px 40px 80px; font-size: 13px; letter-spacing: -0.005em; }
+.mac .m-page-title { font-size: 28px; font-weight: 600; letter-spacing: -0.025em; line-height: 1.2; }
+.mac .m-page-sub { margin-top: 4px; color: var(--text-3); }
+
+.mac .m-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-4); }
+.mac .m-label { font-size: 12px; font-weight: 500; color: var(--text-3); }
+.mac .m-stat-value { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.mac .m-big-number { font-size: 56px; font-weight: 600; letter-spacing: -0.045em; line-height: 1; font-variant-numeric: tabular-nums; }
+
+.mac .m-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+.mac .m-card-head { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+.mac .m-card-title { font-size: 13px; font-weight: 600; }
+.mac .m-card-body { padding: 18px; }
+
+.mac .m-stat-strip { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; }
+.mac .m-stat-strip > div { padding: 16px 18px; border-left: 1px solid var(--border); }
+.mac .m-stat-strip > div:first-child { border-left: 0; }
+
+.mac .m-seg { display: inline-flex; gap: 2px; padding: 2px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; }
+.mac .m-seg button {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 26px; padding: 0 10px; border: 0; border-radius: 6px; background: none;
+  color: var(--text-3); font-size: 12.5px; font-weight: 500;
+}
+.mac .m-seg button:hover:not(:disabled) { color: var(--text-2); }
+.mac .m-seg .on { background: var(--surface-3); color: var(--text); box-shadow: inset 0 0 0 1px var(--border-2), 0 1px 2px rgba(0, 0, 0, 0.4); }
+
+.mac .m-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 30px; padding: 0 12px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border-2); background: var(--surface-2);
+  color: var(--text-2); font-size: 12.5px; font-weight: 500; white-space: nowrap; text-decoration: none;
+}
+.mac .m-btn:hover:not(:disabled) { background: var(--surface-3); color: var(--text); }
+.mac .m-btn svg { width: 14px; height: 14px; }
+.mac .m-btn.primary { background: var(--text); border-color: transparent; color: #0b0b0c; }
+.mac .m-btn.primary:hover:not(:disabled) { background: #fff; color: #000; }
+.mac .m-btn.ghost { background: transparent; border-color: transparent; }
+.mac .m-btn.danger { color: var(--red); }
+.mac .m-btn.icon { width: 30px; padding: 0; }
+
+.mac .m-toggle { position: relative; display: inline-block; flex: none; width: 30px; height: 18px; padding: 0; border: 0; border-radius: 9px; background: var(--surface-3); box-shadow: inset 0 0 0 1px var(--border-2); }
+.mac .m-toggle::after { content: ""; position: absolute; top: 3px; left: 3px; width: 12px; height: 12px; border-radius: 50%; background: var(--text-3); transition: left 0.15s; }
+.mac .m-toggle.on { background: var(--accent); box-shadow: none; }
+.mac .m-toggle.on::after { left: 15px; background: #fff; }
+
+.mac .m-table { width: 100%; border-collapse: collapse; }
+.mac .m-table th {
+  padding: 10px 14px; text-align: right; white-space: nowrap;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-4);
+  border-bottom: 1px solid var(--border);
+}
+.mac .m-table td { padding: 12px 14px; text-align: right; color: var(--text-2); font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.mac .m-table .l { text-align: left; }
+.mac .m-table tbody tr:hover td { background: var(--hover); }
+.mac .m-table .zero { color: var(--text-4); }
+
+.mac .m-pill { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--border-2); font-size: 12px; color: var(--text-2); white-space: nowrap; }
+.mac .m-badge { display: inline-flex; align-items: center; gap: 4px; padding: 1px 6px; border-radius: 5px; background: var(--surface-3); color: var(--text-2); font-size: 11px; font-weight: 600; }
+.mac .m-badge.gold { background: rgba(232, 182, 76, 0.14); color: var(--gold); }
+.mac .m-badge.green { background: var(--green-soft); color: var(--green); }
+.mac .m-badge.accent { background: var(--accent-soft); color: var(--accent); }
+.mac .m-bar { display: flex; gap: 2px; height: 6px; overflow: hidden; border-radius: 3px; background: var(--surface-3); }
+.mac .m-bar > span { display: block; height: 100%; background: var(--c, var(--text-3)); }
+.mac .m-tip { padding: 10px 12px; border-radius: var(--radius-md); background: rgba(24, 25, 27, 0.96); box-shadow: var(--shadow-pop); font-size: 12px; backdrop-filter: blur(12px); }

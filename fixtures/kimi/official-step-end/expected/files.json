@@ -1,0 +1,17 @@
+{
+  "kimi:wd_kimi-project_0123456789ab/session-b/agents/agent-0/wire.jsonl": {
+    "diagnostics": [],
+    "offset": 828
+  },
+  "kimi:wd_kimi-project_0123456789ab/session-b/agents/main/wire.jsonl": {
+    "diagnostics": [
+      "invalid_counters",
+      "missing_stable_identity"
+    ],
+    "offset": 2963
+  },
+  "kimi:wd_kimi-project_0123456789ab/session-c/agents/main/wire.jsonl": {
+    "diagnostics": [],
+    "offset": 2303
+  }
+}

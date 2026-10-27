@@ -1,0 +1,3 @@
+"tool","model","timestamp","project","session","input","output","cache_read","cache_write","reasoning","total","cost_microusd"
+"primeagent","claude-haiku-4-5","2026-10-22T09:00:20.000Z","/synthetic/epsilon","0199f031-0000-7000-8000-000000000031","60","40","0","300","0","400",""
+"primeagent","claude-sonnet-4-6","2026-10-22T09:00:05.000Z","/synthetic/epsilon","0199f030-0000-7000-8000-000000000030","100","50","900","150","0","1200",""

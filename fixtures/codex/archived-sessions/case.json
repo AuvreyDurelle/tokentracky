@@ -1,0 +1,5 @@
+{
+  "description": "Codex archives in archived_sessions count exactly; a rollout moved there, compressed beside its original and then left only as its archive counts once throughout.",
+  "rustOnly": true,
+  "sources": {"codex": ["sessions", "archived_sessions"]}
+}

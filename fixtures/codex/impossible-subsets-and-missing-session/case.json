@@ -1,0 +1,3 @@
+{
+  "description": "Cached input above input, reasoning above output and a rollout without session metadata are each rejected with a diagnostic; per-file diagnostics are recorded."
+}

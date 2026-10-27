@@ -1,0 +1,202 @@
+{
+  "tools=off,cost=off,models=off,history=2026-10-21": [],
+  "tools=off,cost=off,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 8000,
+        "cacheWrite": 0,
+        "input": 1250,
+        "output": 320,
+        "reasoning": 120
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "revision": 3,
+      "tokens": 9570,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=on,history=2026-10-21": [],
+  "tools=off,cost=off,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 8000,
+        "cacheWrite": 0,
+        "input": 1200,
+        "output": 300,
+        "reasoning": 120
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "deepseek-v4-flash",
+      "revision": 4,
+      "tokens": 9500,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 50,
+        "output": 20,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "deepseek-v4-pro",
+      "revision": 5,
+      "tokens": 70,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=off,history=2026-10-21": [],
+  "tools=off,cost=on,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 8000,
+        "cacheWrite": 0,
+        "input": 1250,
+        "output": 320,
+        "reasoning": 120
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "revision": 6,
+      "tokens": 9570,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=on,history=2026-10-21": [],
+  "tools=off,cost=on,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 8000,
+        "cacheWrite": 0,
+        "input": 1200,
+        "output": 300,
+        "reasoning": 120
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "deepseek-v4-flash",
+      "revision": 7,
+      "tokens": 9500,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 50,
+        "output": 20,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "deepseek-v4-pro",
+      "revision": 8,
+      "tokens": 70,
+      "tool": "all"
+    }
+  ],
+  "tools=on,cost=off,models=off,history=2026-10-21": [],
+  "tools=on,cost=off,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 8000,
+        "cacheWrite": 0,
+        "input": 1250,
+        "output": 320,
+        "reasoning": 120
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "revision": 9,
+      "tokens": 9570,
+      "tool": "deepseek"
+    }
+  ],
+  "tools=on,cost=off,models=on,history=2026-10-21": [],
+  "tools=on,cost=off,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 8000,
+        "cacheWrite": 0,
+        "input": 1200,
+        "output": 300,
+        "reasoning": 120
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "deepseek-v4-flash",
+      "revision": 10,
+      "tokens": 9500,
+      "tool": "deepseek"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 50,
+        "output": 20,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "deepseek-v4-pro",
+      "revision": 11,
+      "tokens": 70,
+      "tool": "deepseek"
+    }
+  ],
+  "tools=on,cost=on,models=off,history=2026-10-21": [],
+  "tools=on,cost=on,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 8000,
+        "cacheWrite": 0,
+        "input": 1250,
+        "output": 320,
+        "reasoning": 120
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "revision": 12,
+      "tokens": 9570,
+      "tool": "deepseek"
+    }
+  ],
+  "tools=on,cost=on,models=on,history=2026-10-21": [],
+  "tools=on,cost=on,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 8000,
+        "cacheWrite": 0,
+        "input": 1200,
+        "output": 300,
+        "reasoning": 120
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "deepseek-v4-flash",
+      "revision": 13,
+      "tokens": 9500,
+      "tool": "deepseek"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 50,
+        "output": 20,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "deepseek-v4-pro",
+      "revision": 14,
+      "tokens": 70,
+      "tool": "deepseek"
+    }
+  ]
+}

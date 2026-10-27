@@ -1,0 +1,10 @@
+{
+  "pi:2026-10-22T08-00-00-000Z_0199f004-0000-7000-8000-000000000004.jsonl": {
+    "diagnostics": [
+      "missing_stable_identity",
+      "invalid_counters",
+      "malformed_json"
+    ],
+    "offset": 1974
+  }
+}

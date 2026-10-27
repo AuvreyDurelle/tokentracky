@@ -1,0 +1,386 @@
+{
+  "tools=off,cost=off,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 2000,
+        "cacheWrite": 450,
+        "input": 190,
+        "output": 110,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "revision": 28,
+      "tokens": 2750,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 2000,
+        "cacheWrite": 450,
+        "input": 190,
+        "output": 110,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "revision": 29,
+      "tokens": 2750,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 300,
+        "input": 60,
+        "output": 40,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-haiku-4-5",
+      "revision": 5,
+      "tokens": 400,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 2000,
+        "cacheWrite": 150,
+        "input": 130,
+        "output": 70,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-sonnet-4-6",
+      "revision": 30,
+      "tokens": 2350,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 300,
+        "input": 60,
+        "output": 40,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-haiku-4-5",
+      "revision": 7,
+      "tokens": 400,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 2000,
+        "cacheWrite": 150,
+        "input": 130,
+        "output": 70,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-sonnet-4-6",
+      "revision": 31,
+      "tokens": 2350,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 2000,
+        "cacheWrite": 450,
+        "input": 190,
+        "output": 110,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "revision": 32,
+      "tokens": 2750,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 2000,
+        "cacheWrite": 450,
+        "input": 190,
+        "output": 110,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "revision": 33,
+      "tokens": 2750,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 300,
+        "input": 60,
+        "output": 40,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-haiku-4-5",
+      "revision": 11,
+      "tokens": 400,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 2000,
+        "cacheWrite": 150,
+        "input": 130,
+        "output": 70,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-sonnet-4-6",
+      "revision": 34,
+      "tokens": 2350,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 300,
+        "input": 60,
+        "output": 40,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-haiku-4-5",
+      "revision": 13,
+      "tokens": 400,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 2000,
+        "cacheWrite": 150,
+        "input": 130,
+        "output": 70,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-sonnet-4-6",
+      "revision": 35,
+      "tokens": 2350,
+      "tool": "all"
+    }
+  ],
+  "tools=on,cost=off,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 2000,
+        "cacheWrite": 450,
+        "input": 190,
+        "output": 110,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "revision": 36,
+      "tokens": 2750,
+      "tool": "primeagent"
+    }
+  ],
+  "tools=on,cost=off,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 2000,
+        "cacheWrite": 450,
+        "input": 190,
+        "output": 110,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "revision": 37,
+      "tokens": 2750,
+      "tool": "primeagent"
+    }
+  ],
+  "tools=on,cost=off,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 300,
+        "input": 60,
+        "output": 40,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-haiku-4-5",
+      "revision": 17,
+      "tokens": 400,
+      "tool": "primeagent"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 2000,
+        "cacheWrite": 150,
+        "input": 130,
+        "output": 70,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-sonnet-4-6",
+      "revision": 38,
+      "tokens": 2350,
+      "tool": "primeagent"
+    }
+  ],
+  "tools=on,cost=off,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 300,
+        "input": 60,
+        "output": 40,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-haiku-4-5",
+      "revision": 19,
+      "tokens": 400,
+      "tool": "primeagent"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 2000,
+        "cacheWrite": 150,
+        "input": 130,
+        "output": 70,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-sonnet-4-6",
+      "revision": 39,
+      "tokens": 2350,
+      "tool": "primeagent"
+    }
+  ],
+  "tools=on,cost=on,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 2000,
+        "cacheWrite": 450,
+        "input": 190,
+        "output": 110,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "revision": 40,
+      "tokens": 2750,
+      "tool": "primeagent"
+    }
+  ],
+  "tools=on,cost=on,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 2000,
+        "cacheWrite": 450,
+        "input": 190,
+        "output": 110,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "revision": 41,
+      "tokens": 2750,
+      "tool": "primeagent"
+    }
+  ],
+  "tools=on,cost=on,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 300,
+        "input": 60,
+        "output": 40,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-haiku-4-5",
+      "revision": 23,
+      "tokens": 400,
+      "tool": "primeagent"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 2000,
+        "cacheWrite": 150,
+        "input": 130,
+        "output": 70,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-sonnet-4-6",
+      "revision": 42,
+      "tokens": 2350,
+      "tool": "primeagent"
+    }
+  ],
+  "tools=on,cost=on,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 300,
+        "input": 60,
+        "output": 40,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-haiku-4-5",
+      "revision": 25,
+      "tokens": 400,
+      "tool": "primeagent"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 2000,
+        "cacheWrite": 150,
+        "input": 130,
+        "output": 70,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-sonnet-4-6",
+      "revision": 43,
+      "tokens": 2350,
+      "tool": "primeagent"
+    }
+  ]
+}

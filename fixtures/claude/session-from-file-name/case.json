@@ -1,0 +1,3 @@
+{
+  "description": "A UUID file name may name the session but no project is inferred from folders; a record with no identity at all is skipped with missing_stable_identity."
+}

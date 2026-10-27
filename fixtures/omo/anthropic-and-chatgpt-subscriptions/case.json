@@ -1,0 +1,4 @@
+{
+  "description": "OmO turns on an Anthropic subscription (claude-sdk-oauth, with the Anthropic message id as responseId), on a ChatGPT subscription and one billing two internal requests count under OmO with reasoning inside output, as does a cache-warm usage entry; the costs OmO writes are ignored.",
+  "rustOnly": true
+}

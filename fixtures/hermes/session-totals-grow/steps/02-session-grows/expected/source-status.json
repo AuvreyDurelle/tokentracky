@@ -1,0 +1,24 @@
+{
+  "lastScanAt": "2026-10-24T12:00:00.000Z",
+  "sources": [
+    {
+      "capabilities": {
+        "costs": false,
+        "models": true,
+        "projects": false,
+        "quotas": false,
+        "tokens": true
+      },
+      "enabled": true,
+      "eventCount": 4,
+      "id": "hermes",
+      "lastImportedAt": "2026-10-24T12:00:00.000Z",
+      "message": "Import completed with diagnostics: cumulative_reset_or_branch, invalid_counters.",
+      "name": "Hermes Agent",
+      "paths": [
+        "."
+      ],
+      "state": "stale"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 1500,
+      "cacheWrite": 0,
+      "input": 900,
+      "output": 400,
+      "reasoning": 100
+    },
+    "costMicrousd": null,
+    "name": "/synthetic/zcode-legacy",
+    "sessions": 1,
+    "tokens": 2800
+  }
+]

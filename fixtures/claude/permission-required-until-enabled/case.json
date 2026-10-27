@@ -1,0 +1,4 @@
+{
+  "description": "Nothing is read until a source is enabled; pausing keeps the earlier total and ignores new records.",
+  "sources": {}
+}

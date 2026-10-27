@@ -1,0 +1,23 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 10000,
+      "cacheWrite": 4300,
+      "input": 800,
+      "output": 1010,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "cc-session-1",
+    "lastUsedAt": "2026-10-20T09:02:00.000Z",
+    "model": "unknown",
+    "models": [
+      "deepseek-v4-flash",
+      "claude-sonnet-4-6",
+      "unknown"
+    ],
+    "project": "/synthetic/command-code",
+    "tokens": 16110,
+    "tool": "commandcode"
+  }
+]

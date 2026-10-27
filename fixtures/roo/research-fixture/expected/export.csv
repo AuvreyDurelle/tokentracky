@@ -1,0 +1,2 @@
+"tool","model","timestamp","project","session","input","output","cache_read","cache_write","reasoning","total","cost_microusd"
+"roo","claude-sonnet-4-6","2026-10-23T09:00:01.000Z","/synthetic/roo-project","t1","400","200","1000","100","0","1700",""

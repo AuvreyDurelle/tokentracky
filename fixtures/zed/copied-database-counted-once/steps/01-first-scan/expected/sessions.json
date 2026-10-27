@@ -1,0 +1,21 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 100,
+      "output": 20,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "t1",
+    "lastUsedAt": "2026-10-22T09:00:00.000Z",
+    "model": "claude-sonnet-4-6",
+    "models": [
+      "claude-sonnet-4-6"
+    ],
+    "project": null,
+    "tokens": 120,
+    "tool": "zed"
+  }
+]

@@ -1,0 +1,29 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 3720,
+      "cacheWrite": 260,
+      "cacheWrite1h": 200,
+      "input": 473,
+      "output": 256,
+      "reasoning": 130
+    },
+    "costMicrousd": null,
+    "name": "/synthetic/alpha",
+    "sessions": 2,
+    "tokens": 4709
+  },
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 45,
+      "output": 15,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "name": "/synthetic/beta",
+    "sessions": 1,
+    "tokens": 60
+  }
+]

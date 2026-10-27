@@ -1,0 +1,3 @@
+{
+  "description": "A thread_settings_applied record sets the service tier of the token counts after it: Fast (priority) is carried as serviceTier until a default record resets it, and no tier is guessed before the first record. Rust-only, in rust-expected."
+}

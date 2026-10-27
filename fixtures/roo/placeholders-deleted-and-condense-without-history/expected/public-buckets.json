@@ -1,0 +1,266 @@
+{
+  "tools=off,cost=off,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 1000,
+        "cacheWrite": 100,
+        "input": 400,
+        "output": 200,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 2,
+      "tokens": 1700,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 1000,
+        "cacheWrite": 100,
+        "input": 400,
+        "output": 200,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 3,
+      "tokens": 1700,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 1000,
+        "cacheWrite": 100,
+        "input": 400,
+        "output": 200,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "unknown",
+      "revision": 4,
+      "tokens": 1700,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 1000,
+        "cacheWrite": 100,
+        "input": 400,
+        "output": 200,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "unknown",
+      "revision": 5,
+      "tokens": 1700,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 1000,
+        "cacheWrite": 100,
+        "input": 400,
+        "output": 200,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 6,
+      "tokens": 1700,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 1000,
+        "cacheWrite": 100,
+        "input": 400,
+        "output": 200,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 7,
+      "tokens": 1700,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 1000,
+        "cacheWrite": 100,
+        "input": 400,
+        "output": 200,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "unknown",
+      "revision": 8,
+      "tokens": 1700,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 1000,
+        "cacheWrite": 100,
+        "input": 400,
+        "output": 200,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "unknown",
+      "revision": 9,
+      "tokens": 1700,
+      "tool": "all"
+    }
+  ],
+  "tools=on,cost=off,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 1000,
+        "cacheWrite": 100,
+        "input": 400,
+        "output": 200,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 10,
+      "tokens": 1700,
+      "tool": "roo"
+    }
+  ],
+  "tools=on,cost=off,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 1000,
+        "cacheWrite": 100,
+        "input": 400,
+        "output": 200,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 11,
+      "tokens": 1700,
+      "tool": "roo"
+    }
+  ],
+  "tools=on,cost=off,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 1000,
+        "cacheWrite": 100,
+        "input": 400,
+        "output": 200,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "unknown",
+      "revision": 12,
+      "tokens": 1700,
+      "tool": "roo"
+    }
+  ],
+  "tools=on,cost=off,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 1000,
+        "cacheWrite": 100,
+        "input": 400,
+        "output": 200,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "unknown",
+      "revision": 13,
+      "tokens": 1700,
+      "tool": "roo"
+    }
+  ],
+  "tools=on,cost=on,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 1000,
+        "cacheWrite": 100,
+        "input": 400,
+        "output": 200,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 14,
+      "tokens": 1700,
+      "tool": "roo"
+    }
+  ],
+  "tools=on,cost=on,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 1000,
+        "cacheWrite": 100,
+        "input": 400,
+        "output": 200,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 15,
+      "tokens": 1700,
+      "tool": "roo"
+    }
+  ],
+  "tools=on,cost=on,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 1000,
+        "cacheWrite": 100,
+        "input": 400,
+        "output": 200,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "unknown",
+      "revision": 16,
+      "tokens": 1700,
+      "tool": "roo"
+    }
+  ],
+  "tools=on,cost=on,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 1000,
+        "cacheWrite": 100,
+        "input": 400,
+        "output": 200,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "unknown",
+      "revision": 17,
+      "tokens": 1700,
+      "tool": "roo"
+    }
+  ]
+}

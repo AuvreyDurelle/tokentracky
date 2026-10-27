@@ -1,0 +1,377 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": "   -HYPERLINK(\"https://example.invalid\")",
+    "tokens": 161,
+    "tool": "claude"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": "   @HYPERLINK(\"https://example.invalid\")",
+    "tokens": 161,
+    "tool": "claude"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": "   +HYPERLINK(\"https://example.invalid\")",
+    "tokens": 161,
+    "tool": "claude"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": "   =HYPERLINK(\"https://example.invalid\")",
+    "tokens": 161,
+    "tool": "claude"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": " -HYPERLINK(\"https://example.invalid\")",
+    "tokens": 161,
+    "tool": "claude"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": " -HYPERLINK(\"https://example.invalid\")",
+    "tokens": 161,
+    "tool": "claude"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": " -HYPERLINK(\"https://example.invalid\")",
+    "tokens": 161,
+    "tool": "claude"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": " @HYPERLINK(\"https://example.invalid\")",
+    "tokens": 161,
+    "tool": "claude"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": " @HYPERLINK(\"https://example.invalid\")",
+    "tokens": 161,
+    "tool": "claude"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": " @HYPERLINK(\"https://example.invalid\")",
+    "tokens": 161,
+    "tool": "claude"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": " +HYPERLINK(\"https://example.invalid\")",
+    "tokens": 161,
+    "tool": "claude"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": " +HYPERLINK(\"https://example.invalid\")",
+    "tokens": 161,
+    "tool": "claude"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": " +HYPERLINK(\"https://example.invalid\")",
+    "tokens": 161,
+    "tool": "claude"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": " =HYPERLINK(\"https://example.invalid\")",
+    "tokens": 161,
+    "tool": "claude"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": " =HYPERLINK(\"https://example.invalid\")",
+    "tokens": 161,
+    "tool": "claude"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": " =HYPERLINK(\"https://example.invalid\")",
+    "tokens": 161,
+    "tool": "claude"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": " local+model",
+    "tokens": 161,
+    "tool": "claude"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": "﻿-HYPERLINK(\"https://example.invalid\")",
+    "tokens": 161,
+    "tool": "claude"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": "-HYPERLINK(\"https://example.invalid\")",
+    "tokens": 161,
+    "tool": "claude"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": "@HYPERLINK(\"https://example.invalid\")",
+    "tokens": 161,
+    "tool": "claude"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": "﻿@HYPERLINK(\"https://example.invalid\")",
+    "tokens": 161,
+    "tool": "claude"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": "﻿+HYPERLINK(\"https://example.invalid\")",
+    "tokens": 161,
+    "tool": "claude"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": "+HYPERLINK(\"https://example.invalid\")",
+    "tokens": 161,
+    "tool": "claude"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": "=HYPERLINK(\"https://example.invalid\")",
+    "tokens": 161,
+    "tool": "claude"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": "﻿=HYPERLINK(\"https://example.invalid\")",
+    "tokens": 161,
+    "tool": "claude"
+  }
+]

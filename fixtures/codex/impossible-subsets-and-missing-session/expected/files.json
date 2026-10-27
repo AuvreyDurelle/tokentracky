@@ -1,0 +1,20 @@
+{
+  "codex:cached-above-input.jsonl": {
+    "diagnostics": [
+      "invalid_counters"
+    ],
+    "offset": 381
+  },
+  "codex:no-session-meta.jsonl": {
+    "diagnostics": [
+      "missing_stable_identity"
+    ],
+    "offset": 252
+  },
+  "codex:reasoning-above-output.jsonl": {
+    "diagnostics": [
+      "invalid_counters"
+    ],
+    "offset": 381
+  }
+}

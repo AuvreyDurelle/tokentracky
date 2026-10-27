@@ -1,0 +1,53 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "minimax:0cee97ee0bd358062afd145d636cc1b1486df5d5d747d5d745026c3c015a5f9d",
+    "model": "MiniMax-M2",
+    "occurredAt": "2026-10-22T11:00:20.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "session_c2Vzc2lvbi1i",
+    "tokens": {
+      "cacheRead": 5100,
+      "cacheWrite": 0,
+      "input": 60,
+      "output": 90,
+      "reasoning": 0
+    },
+    "tool": "minimax"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "minimax:14a0e79bd80125b19dd00522221a9c27267d2552c06c205ec1358fbc056baf3a",
+    "model": "MiniMax-M2",
+    "occurredAt": "2026-10-22T10:00:05.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "session_c2Vzc2lvbi1i",
+    "tokens": {
+      "cacheRead": 4000,
+      "cacheWrite": 0,
+      "input": 800,
+      "output": 200,
+      "reasoning": 0
+    },
+    "tool": "minimax"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "minimax:4816bdad2b349eec42a678b6371518ab47c9973de4cc809195a1280f081384ef",
+    "model": "MiniMax-M2",
+    "occurredAt": "2026-10-22T10:00:10.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "session_c2Vzc2lvbi1i",
+    "tokens": {
+      "cacheRead": 4800,
+      "cacheWrite": 0,
+      "input": 50,
+      "output": 120,
+      "reasoning": 0
+    },
+    "tool": "minimax"
+  }
+]

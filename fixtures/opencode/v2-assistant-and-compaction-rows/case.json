@@ -1,0 +1,3 @@
+{
+  "description": "OpenCode 2 assistant and compaction rows count (compaction with an unknown model); rows copied into a fork, rows without usage and user rows are skipped."
+}

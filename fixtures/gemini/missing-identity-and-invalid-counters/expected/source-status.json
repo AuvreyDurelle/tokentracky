@@ -1,0 +1,24 @@
+{
+  "lastScanAt": "2026-10-23T12:00:00.000Z",
+  "sources": [
+    {
+      "capabilities": {
+        "costs": false,
+        "models": true,
+        "projects": false,
+        "quotas": false,
+        "tokens": true
+      },
+      "enabled": true,
+      "eventCount": 1,
+      "id": "gemini",
+      "lastImportedAt": "2026-10-23T12:00:00.000Z",
+      "message": "Import completed with diagnostics: invalid_counters, missing_stable_identity.",
+      "name": "Gemini CLI",
+      "paths": [
+        "."
+      ],
+      "state": "stale"
+    }
+  ]
+}

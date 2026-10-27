@@ -1,0 +1,19 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "pi:9a0e60b2ca7aeb910bf16975535fc60f2b2031389b7f073ccb8ddc514a0f4b09",
+    "model": "gpt-5.1",
+    "occurredAt": "2026-10-22T08:00:06.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/gamma",
+    "sessionId": "0199f004-0000-7000-8000-000000000004",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 7,
+      "output": 3,
+      "reasoning": 0
+    },
+    "tool": "pi"
+  }
+]

@@ -1,0 +1,82 @@
+{
+  "activity": {
+    "activeDays": 1,
+    "averagePerActiveDay": 2800,
+    "bestDay": {
+      "day": "2026-08-03",
+      "tokens": 2800
+    },
+    "currentStreak": 0,
+    "longestStreak": 1
+  },
+  "breakdown": {
+    "cacheRead": 1500,
+    "cacheWrite": 0,
+    "input": 900,
+    "output": 400,
+    "reasoning": 100
+  },
+  "byModel": [
+    {
+      "breakdown": {
+        "cacheRead": 1500,
+        "cacheWrite": 0,
+        "input": 500,
+        "output": 300,
+        "reasoning": 100
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "glm-4.5",
+      "tokens": 2300
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 400,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "mimo-v2.5-pro",
+      "tokens": 500
+    }
+  ],
+  "byTool": [
+    {
+      "breakdown": {
+        "cacheRead": 1500,
+        "cacheWrite": 0,
+        "input": 900,
+        "output": 400,
+        "reasoning": 100
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "tokens": 2800,
+      "tool": "zcode"
+    }
+  ],
+  "cacheRate": 0.625,
+  "costMicrousd": null,
+  "costParts": null,
+  "daily": [
+    {
+      "breakdown": {
+        "cacheRead": 1500,
+        "cacheWrite": 0,
+        "input": 900,
+        "output": 400,
+        "reasoning": 100
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "day": "2026-08-03",
+      "tokens": 2800
+    }
+  ],
+  "sessions": 1,
+  "tokens": 2800
+}

@@ -1,0 +1,4 @@
+{"type":"session","version":3,"id":"cc-s1","timestamp":"2026-10-20T10:00:00.000Z","cwd":"/synthetic/command-code"}
+{"type":"message","id":"u1000001","parentId":null,"timestamp":"2026-10-20T10:00:01.000Z","message":{"role":"user","content":[{"type":"text","text":"PRIVATE_PROMPT_MARKER"}]}}
+{"type":"message","id":"a1000001","parentId":"u1000001","timestamp":"2026-10-20T10:00:05.000Z","message":{"role":"assistant","content":[{"type":"text","text":"PRIVATE_RESPONSE_MARKER"}]},"usage":{"inputTokens":900,"outputTokens":100,"cacheReadTokens":600,"cacheWriteTokens":100},"model":"deepseek/deepseek-v4-flash","effort":"medium"}
+{"type":"message","id":"a1000002","parentId":"a1000001","timestamp":"2026-10-20T10:01:00.000Z","message":{"role":"assistant","content":[{"type":"text","text":"PRIVATE_RESPONSE_MARKER"}]},"usage":{"inputTokens":500,"outputTokens":50,"cacheReadTokens":400,"cacheWriteTokens":0},"model":"deepseek/deepseek-v4-flash","effort":"medium"}

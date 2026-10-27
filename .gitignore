@@ -1,0 +1,63 @@
+node_modules/
+dist/
+out/
+release/
+coverage/
+.cache/
+.runtime/
+.env
+.env.*
+!.env.example
+*.sqlite
+*.sqlite-*
+*.db
+*.db-*
+test-results/
+playwright-report/
+.DS_Store
+.vitest/
+
+# Rust
+target/
+.vercel/
+supabase/.temp/
+
+# Local git worktrees
+.worktrees/
+.claude/
+
+# Private: infrastructure runbooks and anti-cheat rules stay on the owner's machine only
+docs/DEPLOYMENT.md
+docs/HOSTED_OPERATIONS.md
+docs/GATEWAY_DEPLOYMENT.md
+docs/ANTI_CHEAT_PLAN.md
+
+# Local design, planning, and diagnostic archives
+mockups/
+docs/plans/
+docs/native-runtime-evidence/
+docs/evidence/
+docs/BROWSER_QA.md
+docs/COMPETITOR_FEATURES_PLAN.md
+docs/DOMAIN_SETUP.md
+docs/IMPLEMENTATION_STATUS.md
+docs/INTEGRATION_EVIDENCE.md
+docs/MERGE_VERIFICATION_2026-10-26.md
+docs/NATIVE_RUNTIME_EVIDENCE.md
+docs/PARITY_PLAN.md
+docs/PR_REVIEW_FIXES.md
+docs/R8_CLEANUP_HANDOFF.md
+docs/REA_STATIC_EVIDENCE.json
+docs/REBUILD_PLAN.md
+docs/RELEASE_COMPLETION_PLAN.md
+docs/RELEASE_EXECUTION_STATUS.md
+docs/RUST_REWRITE_PLAN.md
+docs/TOKEN_TYPES_PLAN.md
+docs/WEB_UI_INTEGRATION_PLAN.md
+**/.shots/
+SECURITY_AUDIT_REPORT.md
+SECURITY_REMEDIATION_LOG.md
+
+# Python tool caches
+__pycache__/
+*.pyc

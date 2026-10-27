@@ -1,0 +1,4 @@
+"tool","model","timestamp","project","session","input","output","cache_read","cache_write","reasoning","total","cost_microusd"
+"minimax","MiniMax-M2","2026-10-22T11:00:20.000Z","","session_c2Vzc2lvbi1i","60","90","5100","0","0","5250",""
+"minimax","MiniMax-M2","2026-10-22T10:00:05.000Z","","session_c2Vzc2lvbi1i","800","200","4000","0","0","5000",""
+"minimax","MiniMax-M2","2026-10-22T10:00:10.000Z","","session_c2Vzc2lvbi1i","50","120","4800","0","0","4970",""

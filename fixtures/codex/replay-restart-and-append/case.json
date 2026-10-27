@@ -1,0 +1,3 @@
+{
+  "description": "A rescan and a restart do not double count, the saved source scope survives the restart, and an appended cumulative record is differenced against the stored baseline."
+}

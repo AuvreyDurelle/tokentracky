@@ -1,0 +1,16 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 1000,
+      "cacheWrite": 100,
+      "input": 600,
+      "output": 180,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": "deepseek-v4-flash",
+    "tokens": 1880,
+    "tool": "commandcode"
+  }
+]

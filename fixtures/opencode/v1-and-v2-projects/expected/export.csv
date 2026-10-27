@@ -1,0 +1,3 @@
+"tool","model","timestamp","project","session","input","output","cache_read","cache_write","reasoning","total","cost_microusd"
+"opencode","claude-sonnet-4-6","2026-10-23T09:00:00.000Z","/synthetic/opencode-project","ses_01TEST","400","250","1000","100","50","1750",""
+"opencode","claude-sonnet-4-6","2026-10-23T09:00:00.000Z","/synthetic/opencode-2-project","ses_02TEST","400","250","1000","100","50","1750",""

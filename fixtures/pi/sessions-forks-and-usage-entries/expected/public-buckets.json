@@ -1,0 +1,682 @@
+{
+  "tools=off,cost=off,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 1400,
+        "cacheWrite": 60,
+        "input": 95,
+        "output": 40,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "revision": 9,
+      "tokens": 1595,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 2320,
+        "cacheWrite": 200,
+        "input": 423,
+        "output": 231,
+        "reasoning": 130
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "revision": 10,
+      "tokens": 3174,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 1400,
+        "cacheWrite": 60,
+        "input": 95,
+        "output": 40,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "revision": 11,
+      "tokens": 1595,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 1400,
+        "cacheWrite": 60,
+        "input": 50,
+        "output": 25,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "claude-sonnet-4-6",
+      "revision": 13,
+      "tokens": 1535,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 40,
+        "output": 10,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "glm-4.6",
+      "revision": 14,
+      "tokens": 50,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 5,
+        "output": 5,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "unknown",
+      "revision": 12,
+      "tokens": 10,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 2320,
+        "cacheWrite": 200,
+        "input": 123,
+        "output": 81,
+        "reasoning": 30
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "claude-sonnet-4-6",
+      "revision": 15,
+      "tokens": 2724,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 300,
+        "output": 150,
+        "reasoning": 100
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "gemini-2.5-pro",
+      "revision": 18,
+      "tokens": 450,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 1400,
+        "cacheWrite": 60,
+        "input": 50,
+        "output": 25,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "claude-sonnet-4-6",
+      "revision": 17,
+      "tokens": 1535,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 40,
+        "output": 10,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "glm-4.6",
+      "revision": 19,
+      "tokens": 50,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 5,
+        "output": 5,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "unknown",
+      "revision": 16,
+      "tokens": 10,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 1400,
+        "cacheWrite": 60,
+        "input": 95,
+        "output": 40,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "revision": 20,
+      "tokens": 1595,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 2320,
+        "cacheWrite": 200,
+        "input": 423,
+        "output": 231,
+        "reasoning": 130
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "revision": 21,
+      "tokens": 3174,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 1400,
+        "cacheWrite": 60,
+        "input": 95,
+        "output": 40,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "revision": 22,
+      "tokens": 1595,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 1400,
+        "cacheWrite": 60,
+        "input": 50,
+        "output": 25,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "claude-sonnet-4-6",
+      "revision": 24,
+      "tokens": 1535,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 40,
+        "output": 10,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "glm-4.6",
+      "revision": 25,
+      "tokens": 50,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 5,
+        "output": 5,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "unknown",
+      "revision": 23,
+      "tokens": 10,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 2320,
+        "cacheWrite": 200,
+        "input": 123,
+        "output": 81,
+        "reasoning": 30
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "claude-sonnet-4-6",
+      "revision": 26,
+      "tokens": 2724,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 300,
+        "output": 150,
+        "reasoning": 100
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "gemini-2.5-pro",
+      "revision": 29,
+      "tokens": 450,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 1400,
+        "cacheWrite": 60,
+        "input": 50,
+        "output": 25,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "claude-sonnet-4-6",
+      "revision": 28,
+      "tokens": 1535,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 40,
+        "output": 10,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "glm-4.6",
+      "revision": 30,
+      "tokens": 50,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 5,
+        "output": 5,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "unknown",
+      "revision": 27,
+      "tokens": 10,
+      "tool": "all"
+    }
+  ],
+  "tools=on,cost=off,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 1400,
+        "cacheWrite": 60,
+        "input": 95,
+        "output": 40,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "revision": 31,
+      "tokens": 1595,
+      "tool": "pi"
+    }
+  ],
+  "tools=on,cost=off,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 2320,
+        "cacheWrite": 200,
+        "input": 423,
+        "output": 231,
+        "reasoning": 130
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "revision": 32,
+      "tokens": 3174,
+      "tool": "pi"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 1400,
+        "cacheWrite": 60,
+        "input": 95,
+        "output": 40,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "revision": 33,
+      "tokens": 1595,
+      "tool": "pi"
+    }
+  ],
+  "tools=on,cost=off,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 1400,
+        "cacheWrite": 60,
+        "input": 50,
+        "output": 25,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "claude-sonnet-4-6",
+      "revision": 35,
+      "tokens": 1535,
+      "tool": "pi"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 40,
+        "output": 10,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "glm-4.6",
+      "revision": 36,
+      "tokens": 50,
+      "tool": "pi"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 5,
+        "output": 5,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "unknown",
+      "revision": 34,
+      "tokens": 10,
+      "tool": "pi"
+    }
+  ],
+  "tools=on,cost=off,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 2320,
+        "cacheWrite": 200,
+        "input": 123,
+        "output": 81,
+        "reasoning": 30
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "claude-sonnet-4-6",
+      "revision": 37,
+      "tokens": 2724,
+      "tool": "pi"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 300,
+        "output": 150,
+        "reasoning": 100
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "gemini-2.5-pro",
+      "revision": 40,
+      "tokens": 450,
+      "tool": "pi"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 1400,
+        "cacheWrite": 60,
+        "input": 50,
+        "output": 25,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "claude-sonnet-4-6",
+      "revision": 39,
+      "tokens": 1535,
+      "tool": "pi"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 40,
+        "output": 10,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "glm-4.6",
+      "revision": 41,
+      "tokens": 50,
+      "tool": "pi"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 5,
+        "output": 5,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "unknown",
+      "revision": 38,
+      "tokens": 10,
+      "tool": "pi"
+    }
+  ],
+  "tools=on,cost=on,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 1400,
+        "cacheWrite": 60,
+        "input": 95,
+        "output": 40,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "revision": 42,
+      "tokens": 1595,
+      "tool": "pi"
+    }
+  ],
+  "tools=on,cost=on,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 2320,
+        "cacheWrite": 200,
+        "input": 423,
+        "output": 231,
+        "reasoning": 130
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "revision": 43,
+      "tokens": 3174,
+      "tool": "pi"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 1400,
+        "cacheWrite": 60,
+        "input": 95,
+        "output": 40,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "revision": 44,
+      "tokens": 1595,
+      "tool": "pi"
+    }
+  ],
+  "tools=on,cost=on,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 1400,
+        "cacheWrite": 60,
+        "input": 50,
+        "output": 25,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "claude-sonnet-4-6",
+      "revision": 46,
+      "tokens": 1535,
+      "tool": "pi"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 40,
+        "output": 10,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "glm-4.6",
+      "revision": 47,
+      "tokens": 50,
+      "tool": "pi"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 5,
+        "output": 5,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "unknown",
+      "revision": 45,
+      "tokens": 10,
+      "tool": "pi"
+    }
+  ],
+  "tools=on,cost=on,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 2320,
+        "cacheWrite": 200,
+        "input": 123,
+        "output": 81,
+        "reasoning": 30
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "claude-sonnet-4-6",
+      "revision": 48,
+      "tokens": 2724,
+      "tool": "pi"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 300,
+        "output": 150,
+        "reasoning": 100
+      },
+      "costMicrousd": null,
+      "day": "2026-10-20",
+      "model": "gemini-2.5-pro",
+      "revision": 51,
+      "tokens": 450,
+      "tool": "pi"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 1400,
+        "cacheWrite": 60,
+        "input": 50,
+        "output": 25,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "claude-sonnet-4-6",
+      "revision": 50,
+      "tokens": 1535,
+      "tool": "pi"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 40,
+        "output": 10,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "glm-4.6",
+      "revision": 52,
+      "tokens": 50,
+      "tool": "pi"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 5,
+        "output": 5,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-21",
+      "model": "unknown",
+      "revision": 49,
+      "tokens": 10,
+      "tool": "pi"
+    }
+  ]
+}

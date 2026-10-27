@@ -1,0 +1,3 @@
+{
+  "description": "Tool-use prompt tokens count as input, absent optional counters are zero, the reported total is never added, and a message with no usage is skipped."
+}

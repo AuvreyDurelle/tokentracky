@@ -1,0 +1,50 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "kimi:15c72d3ff9a2e280b14e4ab41b8ede679ef9f6d75f872bb8052c8eea81204336",
+    "model": "unknown",
+    "occurredAt": "2026-10-23T09:00:01.250Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "session-a",
+    "tokens": {
+      "cacheRead": 4000,
+      "cacheWrite": 0,
+      "input": 1200,
+      "output": 300
+    },
+    "tool": "kimi"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "kimi:63857aa5baaa9ed482aa2ad58de101412c89e177a36d06c375c190a8b7cfac3d",
+    "model": "unknown",
+    "occurredAt": "2026-10-23T09:01:00.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "session-a",
+    "tokens": {
+      "cacheRead": 800,
+      "cacheWrite": 0,
+      "input": 200,
+      "output": 50
+    },
+    "tool": "kimi"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "kimi:6c7d8fe614051313995aba68c6b4630ae012a7c78c01ead47c2bcc8fd2075dba",
+    "model": "unknown",
+    "occurredAt": "2026-10-23T09:02:00.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "session-a",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 30,
+      "input": 100,
+      "output": 20
+    },
+    "tool": "kimi"
+  }
+]

@@ -1,0 +1,4 @@
+{
+  "description": "Only rows of Mimo's own providers (mimo, xiaomi) count, from mimocode.db and a channel's mimocode-<channel>.db; Claude Code, Codex and OpenCode history mirrored under their providers, and a row without a provider, are skipped; a row without a model is unknown.",
+  "rustOnly": true
+}

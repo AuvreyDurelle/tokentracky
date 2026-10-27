@@ -1,0 +1,3 @@
+{
+  "description": "A legacy .json and its resumed .jsonl count once, subagent sessions are separate sessions, and logs outside chats and .unreadable files are ignored."
+}

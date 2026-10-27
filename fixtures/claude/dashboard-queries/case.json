@@ -1,0 +1,43 @@
+{
+  "description": "Inclusive UTC day ranges, rolling days, invalid ranges, streaks and best day, per-session token kinds and model order, and the day x tool x model breakdown with every token priced at 1 micro-USD.",
+  "now": "2026-10-23T09:00:00.000Z",
+  "price": {
+    "version": "v",
+    "rates": {
+      "input": 1,
+      "output": 1,
+      "cacheRead": 1,
+      "cacheWrite": 1
+    }
+  },
+  "queries": {
+    "today": {
+      "from": "2026-10-23",
+      "to": "2026-10-23"
+    },
+    "two-days": {
+      "from": "2026-10-21",
+      "to": "2026-10-22"
+    },
+    "from-october": {
+      "from": "2026-10-01"
+    },
+    "last-365-days": {
+      "days": 365,
+      "now": "2026-10-23T12:00:00.000Z"
+    },
+    "from-22nd": {
+      "from": "2026-10-22"
+    },
+    "impossible-day": {
+      "from": "2026-02-30"
+    },
+    "not-a-day": {
+      "to": "today"
+    },
+    "reversed-range": {
+      "from": "2026-10-23",
+      "to": "2026-10-22"
+    }
+  }
+}

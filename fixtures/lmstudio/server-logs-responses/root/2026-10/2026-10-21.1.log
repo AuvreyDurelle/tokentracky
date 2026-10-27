@@ -1,0 +1,53 @@
+[2026-10-20 12:00:05][INFO][qwen2.5-7b-instruct] Generated prediction:  {
+  "id": "chatcmpl-synthetic0001",
+  "object": "chat.completion",
+  "created": 1792490400,
+  "model": "qwen2.5-7b-instruct",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "PRIVATE_RESPONSE_MARKER quoting \"usage\": {\"prompt_tokens\": 999999} and } braces {",
+        "reasoning_content": "PRIVATE_REASONING_MARKER",
+        "tool_calls": []
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 2000,
+    "completion_tokens": 300,
+    "total_tokens": 2300,
+    "prompt_tokens_details": {
+      "cached_tokens": 1500
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 120
+    }
+  },
+  "stats": {},
+  "system_fingerprint": "qwen2.5-7b-instruct"
+}
+[2026-10-21 11:00:00][INFO][lmstudio-community/llama-3.2-3b-instruct] Generated prediction:  {
+  "id": "chatcmpl-synthetic0005",
+  "object": "chat.completion",
+  "created": 1792573200,
+  "model": "lmstudio-community/llama-3.2-3b-instruct",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "PRIVATE_RESPONSE_MARKER"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 400,
+    "completion_tokens": 100,
+    "total_tokens": 500
+  }
+}

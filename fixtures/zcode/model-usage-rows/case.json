@@ -1,0 +1,4 @@
+{
+  "description": "Completed model_usage attempts of Z.ai and custom providers count: input includes both caches and output includes reasoning, checked against the row's total (an input of 0 totals the caches); errors, running and cancelled attempts, bundled Anthropic, OpenAI and Google sub-agents and totals that do not add up are skipped; the message written for the same request and the database backup are not read.",
+  "rustOnly": true
+}

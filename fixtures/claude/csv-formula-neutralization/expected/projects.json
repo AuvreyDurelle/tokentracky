@@ -1,0 +1,352 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "name": "   -HYPERLINK(\"https://example.invalid\")",
+    "sessions": 1,
+    "tokens": 161
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "name": "   @HYPERLINK(\"https://example.invalid\")",
+    "sessions": 1,
+    "tokens": 161
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "name": "   +HYPERLINK(\"https://example.invalid\")",
+    "sessions": 1,
+    "tokens": 161
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "name": "   =HYPERLINK(\"https://example.invalid\")",
+    "sessions": 1,
+    "tokens": 161
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "name": " -HYPERLINK(\"https://example.invalid\")",
+    "sessions": 1,
+    "tokens": 161
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "name": " -HYPERLINK(\"https://example.invalid\")",
+    "sessions": 1,
+    "tokens": 161
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "name": " -HYPERLINK(\"https://example.invalid\")",
+    "sessions": 1,
+    "tokens": 161
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "name": " @HYPERLINK(\"https://example.invalid\")",
+    "sessions": 1,
+    "tokens": 161
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "name": " @HYPERLINK(\"https://example.invalid\")",
+    "sessions": 1,
+    "tokens": 161
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "name": " @HYPERLINK(\"https://example.invalid\")",
+    "sessions": 1,
+    "tokens": 161
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "name": " /local/项目,\"quoted\"",
+    "sessions": 1,
+    "tokens": 161
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "name": " +HYPERLINK(\"https://example.invalid\")",
+    "sessions": 1,
+    "tokens": 161
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "name": " +HYPERLINK(\"https://example.invalid\")",
+    "sessions": 1,
+    "tokens": 161
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "name": " +HYPERLINK(\"https://example.invalid\")",
+    "sessions": 1,
+    "tokens": 161
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "name": " =HYPERLINK(\"https://example.invalid\")",
+    "sessions": 1,
+    "tokens": 161
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "name": " =HYPERLINK(\"https://example.invalid\")",
+    "sessions": 1,
+    "tokens": 161
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "name": " =HYPERLINK(\"https://example.invalid\")",
+    "sessions": 1,
+    "tokens": 161
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "name": "﻿-HYPERLINK(\"https://example.invalid\")",
+    "sessions": 1,
+    "tokens": 161
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "name": "-HYPERLINK(\"https://example.invalid\")",
+    "sessions": 1,
+    "tokens": 161
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "name": "@HYPERLINK(\"https://example.invalid\")",
+    "sessions": 1,
+    "tokens": 161
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "name": "﻿@HYPERLINK(\"https://example.invalid\")",
+    "sessions": 1,
+    "tokens": 161
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "name": "﻿+HYPERLINK(\"https://example.invalid\")",
+    "sessions": 1,
+    "tokens": 161
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "name": "+HYPERLINK(\"https://example.invalid\")",
+    "sessions": 1,
+    "tokens": 161
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "name": "=HYPERLINK(\"https://example.invalid\")",
+    "sessions": 1,
+    "tokens": 161
+  },
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 30,
+      "cacheWrite1h": 20,
+      "input": 11,
+      "output": 20,
+      "reasoning": 7
+    },
+    "costMicrousd": null,
+    "name": "﻿=HYPERLINK(\"https://example.invalid\")",
+    "sessions": 1,
+    "tokens": 161
+  }
+]

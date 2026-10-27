@@ -1,0 +1,36 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "opencode:00ea3e0c620d67fe252ff46e7168ad54f91d891aa5cae5f299ea677e5f47d6b4",
+    "model": "claude-sonnet-4-6",
+    "occurredAt": "2026-10-23T09:00:00.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/opencode-project",
+    "sessionId": "ses_01TEST",
+    "tokens": {
+      "cacheRead": 1000,
+      "cacheWrite": 100,
+      "input": 400,
+      "output": 250,
+      "reasoning": 50
+    },
+    "tool": "opencode"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "opencode:63d830d4fec20e5c4ba1d80b5ea54b08503395a34d64de3862fb4f99a6cb201e",
+    "model": "claude-sonnet-4-6",
+    "occurredAt": "2026-10-23T09:03:20.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/opencode-project",
+    "sessionId": "ses_09FORK",
+    "tokens": {
+      "cacheRead": 1000,
+      "cacheWrite": 100,
+      "input": 400,
+      "output": 250,
+      "reasoning": 50
+    },
+    "tool": "opencode"
+  }
+]

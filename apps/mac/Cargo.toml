@@ -1,0 +1,74 @@
+[package]
+name = "tokentracky-mac"
+description = "The Tokentracky Mac app: menu bar, dashboard window and the in-process local API"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+# The app is macOS only. Elsewhere (the Linux CI job) the crate builds without Tauri: its portable modules and their
+# tests, and a binary that says it needs macOS.
+[target.'cfg(target_os = "macos")'.build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tokentracky-local-api = { path = "../../crates/local-api" }
+axum = { workspace = true }
+tokio = { workspace = true }
+serde_json = { workspace = true }
+serde = { workspace = true }
+tower = { workspace = true, features = ["util"] }
+url = { workspace = true }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+tokentracky-pricing = { path = "../../crates/pricing" }
+tokentracky-secrets = { path = "../../crates/secrets" }
+time = { workspace = true, features = ["parsing"] }
+# `macos-private-api`: the popover's transparent web view. Fine for Developer ID; rules out the Mac App Store.
+tauri = { version = "2", features = ["tray-icon", "macos-private-api"] }
+tauri-plugin-autostart = "2"
+tauri-plugin-opener = "2"
+tauri-plugin-single-instance = "2"
+# macOS uses the mandatory tar.gz reader; do not enable the Windows/Linux ZIP compatibility feature.
+tauri-plugin-updater = { version = "=2.14.0", default-features = false, features = ["rustls-tls", "system-proxy"] }
+libc = { workspace = true }
+block2 = "0.6"
+objc2 = "0.6"
+objc2-app-kit = { version = "0.3", default-features = false, features = [
+    "std",
+    "NSAlert",
+    "NSApplication",
+    "NSButton",
+    "NSControl",
+    "NSEvent",
+    "NSFont",
+    "NSFontDescriptor",
+    "NSGraphicsContext",
+    "NSResponder",
+    "NSStatusBarButton",
+    "NSStatusItem",
+    "NSView",
+    "NSWindow",
+    "NSWorkspace",
+] }
+objc2-foundation = { version = "0.3", default-features = false, features = [
+    "std",
+    "block2",
+    "NSAttributedString",
+    "NSDate",
+    "NSDateFormatter",
+    "NSDictionary",
+    "NSFormatter",
+    "NSGeometry",
+    "NSNotification",
+    "NSOperation",
+    "NSString",
+] }
+
+[dev-dependencies]
+tokentracky-collector = { path = "../../crates/collector" }
+tokentracky-core = { path = "../../crates/core" }
+tempfile = { workspace = true }
+
+[lints]
+workspace = true

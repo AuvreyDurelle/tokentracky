@@ -1,0 +1,17 @@
+{
+  "name": "@tokentracky/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "start": "node dist/main.mjs"
+  },
+  "dependencies": {
+    "@fastify/rate-limit": "^10.3.0",
+    "@fastify/static": "10.1.7",
+    "@tokentracky/cloud": "*",
+    "fastify": "^5.6.2",
+    "pg": "^8.16.3"
+  }
+}

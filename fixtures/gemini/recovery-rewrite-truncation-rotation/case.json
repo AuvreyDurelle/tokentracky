@@ -1,0 +1,3 @@
+{
+  "description": "Usage stays counted through a recovery rewrite that keeps only surviving messages, an emptied file and a rotation to a new file name."
+}

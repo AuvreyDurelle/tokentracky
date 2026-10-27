@@ -1,0 +1,36 @@
+[package]
+name = "tokentracky-collector"
+description = "Passive readers, SQLite store, ingestion and refresh scheduling for Tokentracky"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[lib]
+name = "tokentracky_collector"
+
+[dependencies]
+tokentracky-core = { path = "../core" }
+tokentracky-pricing = { path = "../pricing" }
+serde = { workspace = true }
+# Checkpoints compare stored file times exactly, so every f64 must parse back to the value written.
+serde_json = { workspace = true, features = ["float_roundtrip"] }
+thiserror = { workspace = true }
+time = { workspace = true, features = ["formatting", "parsing", "macros", "local-offset"] }
+rusqlite = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
+uuid = { workspace = true }
+ryu-js = { workspace = true }
+tokio = { workspace = true }
+libc = { workspace = true }
+# Codex archives (`rollout-*.jsonl.zst`): a pure-Rust zstd decoder, so release builds need no C toolchain.
+ruzstd = { workspace = true }
+jiff = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+tokio = { workspace = true, features = ["test-util"] }
+
+[lints]
+workspace = true

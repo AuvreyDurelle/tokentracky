@@ -1,0 +1,3 @@
+{
+  "description": "A pre-1.2 storage/message file has the identity of its migrated row; other storage files are never opened."
+}

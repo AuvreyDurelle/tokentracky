@@ -1,0 +1,4 @@
+{
+  "description": "Server logs: Chat Completions and Responses API predictions with the cached part inside the prompt and reasoning inside the completion, dated by the response's own creation time; a response logged in two files counts once; a response without an id, one whose total does not add up and one cut short are skipped; request bodies and other files add nothing.",
+  "rustOnly": true
+}

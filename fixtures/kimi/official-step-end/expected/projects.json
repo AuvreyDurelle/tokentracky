@@ -1,0 +1,15 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 24500,
+      "cacheWrite": 1000,
+      "input": 2660,
+      "output": 1450,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "name": "/synthetic/kimi-project",
+    "sessions": 2,
+    "tokens": 29610
+  }
+]

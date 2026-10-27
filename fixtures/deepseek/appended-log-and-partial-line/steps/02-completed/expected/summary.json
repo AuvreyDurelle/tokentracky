@@ -1,0 +1,82 @@
+{
+  "activity": {
+    "activeDays": 1,
+    "averagePerActiveDay": 3050,
+    "bestDay": {
+      "day": "2026-10-22",
+      "tokens": 3050
+    },
+    "currentStreak": 1,
+    "longestStreak": 1
+  },
+  "breakdown": {
+    "cacheRead": 2300,
+    "cacheWrite": 50,
+    "input": 540,
+    "output": 160,
+    "reasoning": 25
+  },
+  "byModel": [
+    {
+      "breakdown": {
+        "cacheRead": 2000,
+        "cacheWrite": 50,
+        "input": 500,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "deepseek-v4-flash",
+      "tokens": 2650
+    },
+    {
+      "breakdown": {
+        "cacheRead": 300,
+        "cacheWrite": 0,
+        "input": 40,
+        "output": 60,
+        "reasoning": 25
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "deepseek-v4-pro",
+      "tokens": 400
+    }
+  ],
+  "byTool": [
+    {
+      "breakdown": {
+        "cacheRead": 2300,
+        "cacheWrite": 50,
+        "input": 540,
+        "output": 160,
+        "reasoning": 25
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "tokens": 3050,
+      "tool": "deepseek"
+    }
+  ],
+  "cacheRate": 0.7958477508650519,
+  "costMicrousd": null,
+  "costParts": null,
+  "daily": [
+    {
+      "breakdown": {
+        "cacheRead": 2300,
+        "cacheWrite": 50,
+        "input": 540,
+        "output": 160,
+        "reasoning": 25
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "day": "2026-10-22",
+      "tokens": 3050
+    }
+  ],
+  "sessions": 1,
+  "tokens": 3050
+}

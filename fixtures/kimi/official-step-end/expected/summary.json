@@ -1,0 +1,95 @@
+{
+  "activity": {
+    "activeDays": 1,
+    "averagePerActiveDay": 29610,
+    "bestDay": {
+      "day": "2026-10-23",
+      "tokens": 29610
+    },
+    "currentStreak": 1,
+    "longestStreak": 1
+  },
+  "breakdown": {
+    "cacheRead": 24500,
+    "cacheWrite": 1000,
+    "input": 2660,
+    "output": 1450,
+    "reasoning": 0
+  },
+  "byModel": [
+    {
+      "breakdown": {
+        "cacheRead": 9000,
+        "cacheWrite": 0,
+        "input": 100,
+        "output": 900,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "k3",
+      "tokens": 10000
+    },
+    {
+      "breakdown": {
+        "cacheRead": 6000,
+        "cacheWrite": 1000,
+        "input": 2000,
+        "output": 400,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "kimi-code/kimi-for-coding",
+      "tokens": 9400
+    },
+    {
+      "breakdown": {
+        "cacheRead": 9500,
+        "cacheWrite": 0,
+        "input": 560,
+        "output": 150,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "kimi-for-coding",
+      "tokens": 10210
+    }
+  ],
+  "byTool": [
+    {
+      "breakdown": {
+        "cacheRead": 24500,
+        "cacheWrite": 1000,
+        "input": 2660,
+        "output": 1450,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "tokens": 29610,
+      "tool": "kimi"
+    }
+  ],
+  "cacheRate": 0.8700284090909091,
+  "costMicrousd": null,
+  "costParts": null,
+  "daily": [
+    {
+      "breakdown": {
+        "cacheRead": 24500,
+        "cacheWrite": 1000,
+        "input": 2660,
+        "output": 1450,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "day": "2026-10-23",
+      "tokens": 29610
+    }
+  ],
+  "sessions": 2,
+  "tokens": 29610
+}

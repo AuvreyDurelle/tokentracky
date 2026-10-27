@@ -1,0 +1,16 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 100,
+      "cacheWrite": 20,
+      "input": 17,
+      "output": 90,
+      "reasoning": 57
+    },
+    "costMicrousd": null,
+    "day": "2026-10-20",
+    "model": "claude-sonnet-4-6",
+    "tokens": 227,
+    "tool": "claude"
+  }
+]

@@ -1,0 +1,95 @@
+{
+  "activity": {
+    "activeDays": 1,
+    "averagePerActiveDay": 16110,
+    "bestDay": {
+      "day": "2026-10-20",
+      "tokens": 16110
+    },
+    "currentStreak": 0,
+    "longestStreak": 1
+  },
+  "breakdown": {
+    "cacheRead": 10000,
+    "cacheWrite": 4300,
+    "input": 800,
+    "output": 1010,
+    "reasoning": 0
+  },
+  "byModel": [
+    {
+      "breakdown": {
+        "cacheRead": 10000,
+        "cacheWrite": 1500,
+        "input": 500,
+        "output": 800,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "deepseek-v4-flash",
+      "tokens": 12800
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 2800,
+        "input": 200,
+        "output": 200,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "claude-sonnet-4-6",
+      "tokens": 3200
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 100,
+        "output": 10,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "unknown",
+      "tokens": 110
+    }
+  ],
+  "byTool": [
+    {
+      "breakdown": {
+        "cacheRead": 10000,
+        "cacheWrite": 4300,
+        "input": 800,
+        "output": 1010,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "tokens": 16110,
+      "tool": "commandcode"
+    }
+  ],
+  "cacheRate": 0.6622516556291391,
+  "costMicrousd": null,
+  "costParts": null,
+  "daily": [
+    {
+      "breakdown": {
+        "cacheRead": 10000,
+        "cacheWrite": 4300,
+        "input": 800,
+        "output": 1010,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "day": "2026-10-20",
+      "tokens": 16110
+    }
+  ],
+  "sessions": 1,
+  "tokens": 16110
+}

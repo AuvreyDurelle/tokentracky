@@ -1,0 +1,506 @@
+{
+  "tools=off,cost=off,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 300,
+        "cacheWrite": 100,
+        "input": 1530,
+        "output": 365,
+        "reasoning": 50
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 5,
+      "tokens": 2295,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 300,
+        "cacheWrite": 100,
+        "input": 1530,
+        "output": 365,
+        "reasoning": 50
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 6,
+      "tokens": 2295,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 100,
+        "input": 500,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "mimo-v2-flash",
+      "revision": 7,
+      "tokens": 700,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 300,
+        "cacheWrite": 0,
+        "input": 1010,
+        "output": 255,
+        "reasoning": 50
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "mimo-v2.5-pro",
+      "revision": 9,
+      "tokens": 1565,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 20,
+        "output": 10,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "unknown",
+      "revision": 8,
+      "tokens": 30,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 100,
+        "input": 500,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "mimo-v2-flash",
+      "revision": 10,
+      "tokens": 700,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 300,
+        "cacheWrite": 0,
+        "input": 1010,
+        "output": 255,
+        "reasoning": 50
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "mimo-v2.5-pro",
+      "revision": 12,
+      "tokens": 1565,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 20,
+        "output": 10,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "unknown",
+      "revision": 11,
+      "tokens": 30,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 300,
+        "cacheWrite": 100,
+        "input": 1530,
+        "output": 365,
+        "reasoning": 50
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 13,
+      "tokens": 2295,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 300,
+        "cacheWrite": 100,
+        "input": 1530,
+        "output": 365,
+        "reasoning": 50
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 14,
+      "tokens": 2295,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 100,
+        "input": 500,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "mimo-v2-flash",
+      "revision": 15,
+      "tokens": 700,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 300,
+        "cacheWrite": 0,
+        "input": 1010,
+        "output": 255,
+        "reasoning": 50
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "mimo-v2.5-pro",
+      "revision": 17,
+      "tokens": 1565,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 20,
+        "output": 10,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "unknown",
+      "revision": 16,
+      "tokens": 30,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 100,
+        "input": 500,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "mimo-v2-flash",
+      "revision": 18,
+      "tokens": 700,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 300,
+        "cacheWrite": 0,
+        "input": 1010,
+        "output": 255,
+        "reasoning": 50
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "mimo-v2.5-pro",
+      "revision": 20,
+      "tokens": 1565,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 20,
+        "output": 10,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "unknown",
+      "revision": 19,
+      "tokens": 30,
+      "tool": "all"
+    }
+  ],
+  "tools=on,cost=off,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 300,
+        "cacheWrite": 100,
+        "input": 1530,
+        "output": 365,
+        "reasoning": 50
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 21,
+      "tokens": 2295,
+      "tool": "mimo"
+    }
+  ],
+  "tools=on,cost=off,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 300,
+        "cacheWrite": 100,
+        "input": 1530,
+        "output": 365,
+        "reasoning": 50
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 22,
+      "tokens": 2295,
+      "tool": "mimo"
+    }
+  ],
+  "tools=on,cost=off,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 100,
+        "input": 500,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "mimo-v2-flash",
+      "revision": 23,
+      "tokens": 700,
+      "tool": "mimo"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 300,
+        "cacheWrite": 0,
+        "input": 1010,
+        "output": 255,
+        "reasoning": 50
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "mimo-v2.5-pro",
+      "revision": 25,
+      "tokens": 1565,
+      "tool": "mimo"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 20,
+        "output": 10,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "unknown",
+      "revision": 24,
+      "tokens": 30,
+      "tool": "mimo"
+    }
+  ],
+  "tools=on,cost=off,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 100,
+        "input": 500,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "mimo-v2-flash",
+      "revision": 26,
+      "tokens": 700,
+      "tool": "mimo"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 300,
+        "cacheWrite": 0,
+        "input": 1010,
+        "output": 255,
+        "reasoning": 50
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "mimo-v2.5-pro",
+      "revision": 28,
+      "tokens": 1565,
+      "tool": "mimo"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 20,
+        "output": 10,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "unknown",
+      "revision": 27,
+      "tokens": 30,
+      "tool": "mimo"
+    }
+  ],
+  "tools=on,cost=on,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 300,
+        "cacheWrite": 100,
+        "input": 1530,
+        "output": 365,
+        "reasoning": 50
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 29,
+      "tokens": 2295,
+      "tool": "mimo"
+    }
+  ],
+  "tools=on,cost=on,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 300,
+        "cacheWrite": 100,
+        "input": 1530,
+        "output": 365,
+        "reasoning": 50
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 30,
+      "tokens": 2295,
+      "tool": "mimo"
+    }
+  ],
+  "tools=on,cost=on,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 100,
+        "input": 500,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "mimo-v2-flash",
+      "revision": 31,
+      "tokens": 700,
+      "tool": "mimo"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 300,
+        "cacheWrite": 0,
+        "input": 1010,
+        "output": 255,
+        "reasoning": 50
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "mimo-v2.5-pro",
+      "revision": 33,
+      "tokens": 1565,
+      "tool": "mimo"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 20,
+        "output": 10,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "unknown",
+      "revision": 32,
+      "tokens": 30,
+      "tool": "mimo"
+    }
+  ],
+  "tools=on,cost=on,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 100,
+        "input": 500,
+        "output": 100,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "mimo-v2-flash",
+      "revision": 34,
+      "tokens": 700,
+      "tool": "mimo"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 300,
+        "cacheWrite": 0,
+        "input": 1010,
+        "output": 255,
+        "reasoning": 50
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "mimo-v2.5-pro",
+      "revision": 36,
+      "tokens": 1565,
+      "tool": "mimo"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 20,
+        "output": 10,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "unknown",
+      "revision": 35,
+      "tokens": 30,
+      "tool": "mimo"
+    }
+  ]
+}

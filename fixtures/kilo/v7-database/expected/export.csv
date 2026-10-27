@@ -1,0 +1,2 @@
+"tool","model","timestamp","project","session","input","output","cache_read","cache_write","reasoning","total","cost_microusd"
+"kilo","claude-sonnet-4-6","2026-10-23T09:00:01.000Z","/synthetic/kilo-project","ses_kilo","400","250","1000","100","50","1750",""

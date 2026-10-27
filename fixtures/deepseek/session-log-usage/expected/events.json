@@ -1,0 +1,36 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "deepseek:8ae32d1ab7b2a297138782dad1fe90cbe3c9f11e059ea6507c73dfd542950329",
+    "model": "deepseek-v4-flash",
+    "occurredAt": "2026-10-20T10:00:05.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/dsh-project",
+    "sessionId": "dsh-session-a",
+    "tokens": {
+      "cacheRead": 8000,
+      "cacheWrite": 0,
+      "input": 1200,
+      "output": 300,
+      "reasoning": 120
+    },
+    "tool": "deepseek"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "deepseek:cf235e3c5139ebe52f53ba049ae47db08a998133218e5e072e2cc0a86a25cb7f",
+    "model": "deepseek-v4-pro",
+    "occurredAt": "2026-10-20T10:00:08.000Z",
+    "pricingVersion": null,
+    "project": "/synthetic/dsh-project",
+    "sessionId": "dsh-session-a",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 50,
+      "output": 20,
+      "reasoning": 0
+    },
+    "tool": "deepseek"
+  }
+]

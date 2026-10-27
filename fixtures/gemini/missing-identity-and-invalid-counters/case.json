@@ -1,0 +1,3 @@
+{
+  "description": "A message before any session metadata is skipped with missing_stable_identity; a negative counter is skipped with invalid_counters and the next message still counts."
+}

@@ -1,0 +1,1 @@
+UPDATE threads SET updated_at = '2026-10-22T10:00:00+00:00', data = CAST('{"title":"PRIVATE_TITLE","messages":[{"User":{"id":"u1","content":[{"Text":"PRIVATE_PROMPT"}]}}],"model":{"provider":"zed.dev","model":"claude-sonnet-4-6"},"cumulative_token_usage":{"input_tokens":150,"output_tokens":30}}' AS BLOB) WHERE id = 't1';

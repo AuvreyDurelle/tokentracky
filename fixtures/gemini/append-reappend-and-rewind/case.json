@@ -1,0 +1,3 @@
+{
+  "description": "A rescan does not double count; a re-appended message replaces its earlier usage, and removal, rewind and patch records never refund usage already seen."
+}

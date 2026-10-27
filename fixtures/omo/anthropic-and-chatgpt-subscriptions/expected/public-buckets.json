@@ -1,0 +1,386 @@
+{
+  "tools=off,cost=off,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 1738543,
+        "cacheWrite": 5119,
+        "input": 1207,
+        "output": 1642,
+        "reasoning": 729
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "revision": 5,
+      "tokens": 1746511,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 1738543,
+        "cacheWrite": 5119,
+        "input": 1207,
+        "output": 1642,
+        "reasoning": 729
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "revision": 6,
+      "tokens": 1746511,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 1730543,
+        "cacheWrite": 5119,
+        "input": 7,
+        "output": 1242,
+        "reasoning": 479
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-opus-4-6",
+      "revision": 8,
+      "tokens": 1736911,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 8000,
+        "cacheWrite": 0,
+        "input": 1200,
+        "output": 400,
+        "reasoning": 250
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "gpt-5.1-codex",
+      "revision": 7,
+      "tokens": 9600,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 1730543,
+        "cacheWrite": 5119,
+        "input": 7,
+        "output": 1242,
+        "reasoning": 479
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-opus-4-6",
+      "revision": 10,
+      "tokens": 1736911,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 8000,
+        "cacheWrite": 0,
+        "input": 1200,
+        "output": 400,
+        "reasoning": 250
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "gpt-5.1-codex",
+      "revision": 9,
+      "tokens": 9600,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 1738543,
+        "cacheWrite": 5119,
+        "input": 1207,
+        "output": 1642,
+        "reasoning": 729
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "revision": 11,
+      "tokens": 1746511,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 1738543,
+        "cacheWrite": 5119,
+        "input": 1207,
+        "output": 1642,
+        "reasoning": 729
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "revision": 12,
+      "tokens": 1746511,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 1730543,
+        "cacheWrite": 5119,
+        "input": 7,
+        "output": 1242,
+        "reasoning": 479
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-opus-4-6",
+      "revision": 14,
+      "tokens": 1736911,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 8000,
+        "cacheWrite": 0,
+        "input": 1200,
+        "output": 400,
+        "reasoning": 250
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "gpt-5.1-codex",
+      "revision": 13,
+      "tokens": 9600,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 1730543,
+        "cacheWrite": 5119,
+        "input": 7,
+        "output": 1242,
+        "reasoning": 479
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-opus-4-6",
+      "revision": 16,
+      "tokens": 1736911,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 8000,
+        "cacheWrite": 0,
+        "input": 1200,
+        "output": 400,
+        "reasoning": 250
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "gpt-5.1-codex",
+      "revision": 15,
+      "tokens": 9600,
+      "tool": "all"
+    }
+  ],
+  "tools=on,cost=off,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 1738543,
+        "cacheWrite": 5119,
+        "input": 1207,
+        "output": 1642,
+        "reasoning": 729
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "revision": 17,
+      "tokens": 1746511,
+      "tool": "omo"
+    }
+  ],
+  "tools=on,cost=off,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 1738543,
+        "cacheWrite": 5119,
+        "input": 1207,
+        "output": 1642,
+        "reasoning": 729
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "revision": 18,
+      "tokens": 1746511,
+      "tool": "omo"
+    }
+  ],
+  "tools=on,cost=off,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 1730543,
+        "cacheWrite": 5119,
+        "input": 7,
+        "output": 1242,
+        "reasoning": 479
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-opus-4-6",
+      "revision": 20,
+      "tokens": 1736911,
+      "tool": "omo"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 8000,
+        "cacheWrite": 0,
+        "input": 1200,
+        "output": 400,
+        "reasoning": 250
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "gpt-5.1-codex",
+      "revision": 19,
+      "tokens": 9600,
+      "tool": "omo"
+    }
+  ],
+  "tools=on,cost=off,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 1730543,
+        "cacheWrite": 5119,
+        "input": 7,
+        "output": 1242,
+        "reasoning": 479
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-opus-4-6",
+      "revision": 22,
+      "tokens": 1736911,
+      "tool": "omo"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 8000,
+        "cacheWrite": 0,
+        "input": 1200,
+        "output": 400,
+        "reasoning": 250
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "gpt-5.1-codex",
+      "revision": 21,
+      "tokens": 9600,
+      "tool": "omo"
+    }
+  ],
+  "tools=on,cost=on,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 1738543,
+        "cacheWrite": 5119,
+        "input": 1207,
+        "output": 1642,
+        "reasoning": 729
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "revision": 23,
+      "tokens": 1746511,
+      "tool": "omo"
+    }
+  ],
+  "tools=on,cost=on,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 1738543,
+        "cacheWrite": 5119,
+        "input": 1207,
+        "output": 1642,
+        "reasoning": 729
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "revision": 24,
+      "tokens": 1746511,
+      "tool": "omo"
+    }
+  ],
+  "tools=on,cost=on,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 1730543,
+        "cacheWrite": 5119,
+        "input": 7,
+        "output": 1242,
+        "reasoning": 479
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-opus-4-6",
+      "revision": 26,
+      "tokens": 1736911,
+      "tool": "omo"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 8000,
+        "cacheWrite": 0,
+        "input": 1200,
+        "output": 400,
+        "reasoning": 250
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "gpt-5.1-codex",
+      "revision": 25,
+      "tokens": 9600,
+      "tool": "omo"
+    }
+  ],
+  "tools=on,cost=on,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 1730543,
+        "cacheWrite": 5119,
+        "input": 7,
+        "output": 1242,
+        "reasoning": 479
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "claude-opus-4-6",
+      "revision": 28,
+      "tokens": 1736911,
+      "tool": "omo"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 8000,
+        "cacheWrite": 0,
+        "input": 1200,
+        "output": 400,
+        "reasoning": 250
+      },
+      "costMicrousd": null,
+      "day": "2026-10-22",
+      "model": "gpt-5.1-codex",
+      "revision": 27,
+      "tokens": 9600,
+      "tool": "omo"
+    }
+  ]
+}

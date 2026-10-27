@@ -1,0 +1,21 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 1000,
+      "cacheWrite": 100,
+      "input": 400,
+      "output": 250,
+      "reasoning": 50
+    },
+    "costMicrousd": null,
+    "id": "s_test",
+    "lastUsedAt": "2026-10-23T09:00:05.000Z",
+    "model": "claude-sonnet-4-6",
+    "models": [
+      "claude-sonnet-4-6"
+    ],
+    "project": null,
+    "tokens": 1750,
+    "tool": "cline"
+  }
+]

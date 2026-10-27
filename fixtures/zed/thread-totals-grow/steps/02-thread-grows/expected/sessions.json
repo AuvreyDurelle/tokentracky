@@ -1,0 +1,60 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 6000,
+      "cacheWrite": 500,
+      "input": 1500,
+      "output": 450,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "t1",
+    "lastUsedAt": "2026-10-23T10:00:00.000Z",
+    "model": "gpt-5.6-terra",
+    "models": [
+      "claude-sonnet-4-6",
+      "gpt-5.6-terra"
+    ],
+    "project": null,
+    "tokens": 8450,
+    "tool": "zed"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 0,
+      "output": 7,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "t4",
+    "lastUsedAt": "2026-10-22T11:00:00.000Z",
+    "model": "unknown",
+    "models": [
+      "unknown"
+    ],
+    "project": null,
+    "tokens": 7,
+    "tool": "zed"
+  },
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 100,
+      "output": 20,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "t2",
+    "lastUsedAt": "2026-10-22T10:00:00.000Z",
+    "model": "gemini-3-pro",
+    "models": [
+      "gemini-3-pro"
+    ],
+    "project": null,
+    "tokens": 120,
+    "tool": "zed"
+  }
+]

@@ -1,0 +1,4 @@
+"tool","model","timestamp","project","session","input","output","cache_read","cache_write","reasoning","total","cost_microusd"
+"kimi","unknown","2026-10-23T09:00:01.250Z","","session-a","1200","300","4000","0","0","5500",""
+"kimi","unknown","2026-10-23T09:01:00.000Z","","session-a","200","50","800","0","0","1050",""
+"kimi","unknown","2026-10-23T09:02:00.000Z","","session-a","100","20","0","30","0","150",""
