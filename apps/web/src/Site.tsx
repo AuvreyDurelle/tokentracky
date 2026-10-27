@@ -32,6 +32,7 @@ export function ConnectNav({ onHome, onBack }: { onHome: () => void; onBack: () 
 
 export function SiteFooter({ version, onJoin }: { version: string; onJoin: () => void }) {
   return <footer className="footer"><div className="footer-inner">
+    <span className="footer-note">Rankings are client-reported usage, not verified spending or productivity.</span>
     <span className="site-foot-links"><button type="button" className="link-quiet" onClick={onJoin}>Download</button><LegalLinks /></span>
     <span>v{version}</span>
   </div></footer>;

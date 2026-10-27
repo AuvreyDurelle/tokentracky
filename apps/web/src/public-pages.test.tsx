@@ -22,18 +22,18 @@ describe('shareable addresses', () => {
 });
 
 describe('leaderboard columns', () => {
-  it('gives the three largest shared tools a column, largest first', () => {
+  it('gives the four largest shared tools a column, largest first', () => {
     const ids = TOOLS.slice(0, 6).map((tool) => tool.id);
-    // Community totals grow down the list, so the last three are the largest.
+    // Community totals grow down the list, so the last four are the largest.
     const totals = Object.fromEntries(ids.map((id, index) => [id, (index + 1) * 1_000])) as Partial<Record<ToolId, number>>;
-    expect(TOOL_COLUMNS).toBe(3);
-    expect(toolColumns(totals, 'all')).toEqual(ids.slice(3).reverse());
+    expect(TOOL_COLUMNS).toBe(4);
+    expect(toolColumns(totals, 'all')).toEqual(ids.slice(2).reverse());
   });
-  it('keeps a column for the tool being ranked by, still three in all', () => {
-    const ids = TOOLS.slice(0, 5).map((tool) => tool.id);
+  it('keeps a column for the tool being ranked by, still four in all', () => {
+    const ids = TOOLS.slice(0, 6).map((tool) => tool.id);
     const totals = Object.fromEntries(ids.map((id, index) => [id, 100 - index])) as Partial<Record<ToolId, number>>;
-    expect(toolColumns(totals, ids[4]!)).toEqual([ids[0], ids[1], ids[4]]);
-    expect(toolColumns(totals, ids[1]!)).toEqual(ids.slice(0, 3));
+    expect(toolColumns(totals, ids[5]!)).toEqual([ids[0], ids[1], ids[2], ids[5]]);
+    expect(toolColumns(totals, ids[1]!)).toEqual(ids.slice(0, 4));
   });
   it('shows Claude Code and Codex until someone shares a tool', () => {
     expect(toolColumns({}, 'all')).toEqual(['claude', 'codex']);
