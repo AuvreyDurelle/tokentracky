@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import type { CostParts, TokenCounts, UsageBreakdownRow, UsageSummary } from '@tokentracky/core';
+import type { TokenCounts, UsageBreakdownRow } from '@tokentracky/core';
 import { dayRange, fillRange, previousLabel, previousRange, rangeLabel, rangeLength } from './ranges';
 import { Heatmap, heatLevels } from './Heatmap';
 import { costGroups } from './Insights';
 import { TrendChart, stackTops } from './TrendChart';
-import { TokenTypes, kindStacks } from './You';
+import { kindStacks } from './You';
 import { formatCostCompact, timeUntil } from './format';
 
 const now = new Date('2026-10-23T15:00:00.000Z');
@@ -71,52 +71,9 @@ describe('cost analysis', () => {
 
 describe('token types', () => {
   const total = (counts: TokenCounts) => counts.input + counts.output + counts.cacheRead + counts.cacheWrite;
-  const summary = (breakdown: TokenCounts, costParts: CostParts | null, daily: UsageSummary['daily'] = []): UsageSummary => ({
-    tokens: total(breakdown), breakdown, costMicrousd: costParts && costParts.input + costParts.output + costParts.cacheRead + costParts.cacheWrite, costParts, sessions: 1, cacheRate: 0,
-    activity: { activeDays: 0, currentStreak: 0, longestStreak: 0, bestDay: null, averagePerActiveDay: 0 }, byTool: [], byModel: [], daily,
-  });
   // Reasoning (30) is inside output (50); counting it again would make 1,030.
   const counts: TokenCounts = { input: 100, output: 50, cacheRead: 800, cacheWrite: 50, reasoning: 30 };
-  const parts: CostParts = { input: 300_000, output: 750_000, cacheRead: 240_000, cacheWrite: 187_500, cacheSavings: 2_160_000 };
-  const card = (value: UsageSummary, compare: UsageSummary | null = null) => renderToStaticMarkup(<TokenTypes summary={value} compare={compare} versus="vs previous 7 days" />);
 
-  it('gives each kind a share of the total, and the shares add up', () => {
-    const html = card(summary(counts, parts));
-    const shares = [...html.matchAll(/<small>([\d.]+)% of tokens<\/small>/g)].map((match) => Number(match[1]));
-    expect(shares).toEqual([10, 5, 80, 5]);
-    expect(shares.reduce((sum, share) => sum + share, 0)).toBe(100);
-    const widths = [...html.matchAll(/width:([\d.]+)%/g)].map((match) => Number(match[1]));
-    expect(widths.reduce((sum, width) => sum + width, 0)).toBeCloseTo(100);
-    expect(html).toContain('aria-label="Input 10%, Output 5.0%, Cache read 80%, Cache write 5.0%"');
-  });
-  it('shows reasoning inside output and never adds it to the total', () => {
-    const html = card(summary(counts, parts));
-    expect(html).toContain('Share of 1,000 tokens');
-    expect(html).not.toContain('1,030');
-    const output = html.slice(html.indexOf('Output</dt>'), html.indexOf('Cache read</dt>'));
-    expect(output).toContain('<dd title="50 tokens">50</dd>');
-    expect(output).toContain('Of which reasoning 30');
-    expect(html.match(/Of which reasoning/g)).toHaveLength(1);
-    // Absent reasoning reads as none, not as a missing kind.
-    expect(card(summary({ ...counts, reasoning: undefined }, parts))).toContain('Of which reasoning 0');
-  });
-  it('compares each kind with the previous period', () => {
-    const html = card(summary(counts, parts), summary({ input: 50, output: 50, cacheRead: 0, cacheWrite: 100 }, parts));
-    expect(html).toContain('<span class="delta">↑ 100%</span> vs previous 7 days');
-    expect(html).toContain('<span class="delta">± 0.0%</span> vs previous 7 days');
-    expect(html).toContain('<span class="delta">New</span> vs previous 7 days');
-    expect(html).toContain('<span class="delta">↓ 50%</span> vs previous 7 days');
-    expect(card(summary(counts, parts))).not.toContain('vs previous');
-  });
-  it('estimates cost by kind and the cache savings, or says the cost is unknown', () => {
-    const known = card(summary(counts, parts));
-    expect([...known.matchAll(/<small>Est\. ([^<]+)<\/small>/g)].map((match) => match[1])).toEqual(['$0.30', '$0.75', '$0.24', '$0.19']);
-    expect(known).toContain('Cache reads saved $2.16');
-    const unknown = card(summary(counts, null));
-    expect(unknown).toContain('Cost by type is unknown');
-    expect(unknown).not.toContain('$');
-    expect(unknown).not.toContain('Est.');
-  });
   it('stacks each day by kind so the layers add up to the day, leaving reasoning out', () => {
     const day = (date: string, breakdown: TokenCounts) => ({ day: date, tokens: total(breakdown), breakdown, costMicrousd: null, costParts: null });
     const daily = [day('2026-10-21', counts), day('2026-10-23', { input: 7, output: 3, cacheRead: 0, cacheWrite: 1, reasoning: 3 })];

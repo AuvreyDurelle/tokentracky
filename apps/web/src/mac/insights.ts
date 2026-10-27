@@ -1,4 +1,5 @@
 import type { SessionSummary, UsageBreakdownRow, UsageSummary } from '@tokentracky/core';
+import { addDays } from '../ranges';
 
 /** One series' tokens and known cost (micro-USD) per day, aligned to the chart's days. `other` marks the folded-in rest. */
 export interface DailySeries { key: string; other?: true; tokens: number[]; cost: number[] }
@@ -86,4 +87,18 @@ export function busiestWeekdayUtc(daily: Array<{ day: string; tokens: number }>)
 /** Percent change from the previous period; null when it had nothing to compare with. */
 export function changeVsPrevious(current: number, previous: number): number | null {
   return previous ? ((current - previous) / previous) * 100 : null;
+}
+
+/** Tokens and cost over the `days` UTC days ending `today`, and the percent change from the `days` before (null with nothing before).
+ *  Cost is null when a day in the window has no known price. */
+export function recentTotals(daily: Array<{ day: string; tokens: number; costMicrousd: number | null }>, today: string, days: number): { tokens: number; costMicrousd: number | null; change: number | null } {
+  const from = addDays(today, 1 - days), before = addDays(from, -days);
+  let tokens = 0, previous = 0, costMicrousd: number | null = 0;
+  for (const point of daily) {
+    if (point.day >= from && point.day <= today) {
+      tokens += point.tokens;
+      costMicrousd = costMicrousd === null || point.costMicrousd === null ? null : costMicrousd + point.costMicrousd;
+    } else if (point.day >= before && point.day < from) previous += point.tokens;
+  }
+  return { tokens, costMicrousd, change: changeVsPrevious(tokens, previous) };
 }

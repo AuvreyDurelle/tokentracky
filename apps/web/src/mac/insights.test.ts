@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { SessionSummary, UsageBreakdownRow } from '@tokentracky/core';
 import { addDays } from '../ranges';
-import { biggestSession, busiestWeekdayUtc, changeVsPrevious, dailyByModel, dailyByTool, favouriteModel, mostExpensiveDay, trendingModel } from './insights';
+import { biggestSession, busiestWeekdayUtc, changeVsPrevious, dailyByModel, dailyByTool, favouriteModel, mostExpensiveDay, recentTotals, trendingModel } from './insights';
 
 const row = (day: string, tool: UsageBreakdownRow['tool'], model: string, tokens: number, costMicrousd: number | null = tokens): UsageBreakdownRow => ({ day, tool, model, tokens, breakdown: NONE.breakdown, costMicrousd });
 const NONE = { breakdown: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, costParts: null };
@@ -101,5 +101,21 @@ describe('changeVsPrevious', () => {
     expect(changeVsPrevious(50, 100)).toBe(-50);
     expect(changeVsPrevious(5, 0)).toBeNull();
     expect(changeVsPrevious(0, 0)).toBeNull();
+  });
+});
+
+describe('recentTotals', () => {
+  // Ten days ending 2026-10-25, 10 tokens and 1 micro-USD each, 100 on the last.
+  const daily = Array.from({ length: 10 }, (_, index) => ({ day: addDays('2026-10-16', index), tokens: index === 9 ? 100 : 10, costMicrousd: index === 9 ? 10 : 1 }));
+  it('adds up the window ending today and compares it with the window before', () => {
+    expect(recentTotals(daily, '2026-10-25', 1)).toEqual({ tokens: 100, costMicrousd: 10, change: 900 });
+    expect(recentTotals(daily, '2026-10-25', 3)).toEqual({ tokens: 120, costMicrousd: 12, change: 300 });
+  });
+  it('has no change without a window before, and no cost when a day in the window has no price', () => {
+    expect(recentTotals(daily, '2026-10-25', 7).change).toBeCloseTo(((160 - 30) / 30) * 100);
+    expect(recentTotals(daily, '2026-10-25', 30).change).toBeNull();
+    const unpriced = daily.map((point) => point.day === '2026-10-24' ? { ...point, costMicrousd: null } : point);
+    expect(recentTotals(unpriced, '2026-10-25', 3).costMicrousd).toBeNull();
+    expect(recentTotals(unpriced, '2026-10-25', 1).costMicrousd).toBe(10);
   });
 });

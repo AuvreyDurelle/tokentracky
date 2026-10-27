@@ -1,16 +1,16 @@
 import { useEffect, useId, useMemo, useState, type MouseEvent, type ReactNode } from 'react';
-import type { MenuOverview, ProjectSummary, SessionSummary, ToolId, UsageBreakdownRow, UsageSummary } from '@tokentracky/core';
+import type { ProjectSummary, SessionSummary, TokenCounts, ToolId, UsageBreakdownRow, UsageSummary } from '@tokentracky/core';
 import type { ApiClient, LocalStatus } from '../api';
 import { TOOLS, errorText, formatCompact, formatCost, formatCostCompact, formatExact, formatShare, shortDay, timeAgo, toolLabel } from '../format';
 import { costGroups } from '../Insights';
 import { dayRange, fillRange, hourList, last24Hours, previousRange, previousWindow, rangeLabel, utcToday, type DayRange, type HourWindow } from '../ranges';
 import { usageRevision } from '../refresh';
 import { Loading, Notice, ToolIcon } from '../ui';
-import { TokenTypes, downloadCsv } from '../You';
+import { downloadCsv } from '../You';
 import { ActivityGrid } from './ActivityGrid';
 import { monotonePath } from './chart';
 import { ICONS } from './icons';
-import { biggestSession, busiestWeekdayUtc, changeVsPrevious, dailyByModel, dailyByTool, favouriteModel, mostExpensiveDay, trendingModel } from './insights';
+import { biggestSession, busiestWeekdayUtc, changeVsPrevious, dailyByModel, dailyByTool, favouriteModel, mostExpensiveDay, recentTotals, trendingModel } from './insights';
 import { OverviewStrip, StackedAreaChart, type ChartSeries } from './StackedAreaChart';
 import './personal.css';
 
@@ -90,7 +90,6 @@ export function TokensView({ api, status }: { api: ApiClient; status: LocalStatu
   const [tool, setTool] = useState<'all' | ToolId>('all');
   const [data, setData] = useState<TokensData | null>(null);
   const [year, setYear] = useState<UsageSummary | null>(null);
-  const [overview, setOverview] = useState<MenuOverview | null>(null);
   const [error, setError] = useState<string | null>(null);
   // The last 24 hours move on when an hour ends, at the next render.
   const range = days === '24h' ? last24Hours() : dayRange({ preset: days });
@@ -112,17 +111,12 @@ export function TokensView({ api, status }: { api: ApiClient; status: LocalStatu
     api.localSummary(dayRange({ preset: 365 }), tool).then((value) => { if (live) setYear(value); }).catch(() => { if (live) setYear(null); });
     return () => { live = false; };
   }, [api, tool, revision]);
-  useEffect(() => {
-    let live = true;
-    api.localOverview().then((value) => { if (live) setOverview(value); }).catch(() => {});
-    return () => { live = false; };
-  }, [api, revision]);
-  return <TokensPage data={data} year={year} overview={overview} status={status} range={range} days={days} metric={metric} tool={tool} error={error}
+  return <TokensPage data={data} year={year} status={status} range={range} days={days} metric={metric} tool={tool} error={error}
     onMetric={setMetric} onDays={setDays} onTool={setTool} onExport={() => { downloadCsv(api, range, tool).catch((value: unknown) => setError(errorText(value))); }} />;
 }
 
-export function TokensPage({ data: loaded, year, overview, status, range, days, metric, tool, error, onMetric, onDays, onTool, onExport }: {
-  data: TokensData | null; year: UsageSummary | null; overview: MenuOverview | null; status: LocalStatus | null; range: DayRange | HourWindow; days: Days; metric: Metric; tool: 'all' | ToolId; error: string | null;
+export function TokensPage({ data: loaded, year, status, range, days, metric, tool, error, onMetric, onDays, onTool, onExport }: {
+  data: TokensData | null; year: UsageSummary | null; status: LocalStatus | null; range: DayRange | HourWindow; days: Days; metric: Metric; tool: 'all' | ToolId; error: string | null;
   onMetric: (metric: Metric) => void; onDays: (days: Days) => void; onTool: (tool: 'all' | ToolId) => void; onExport: () => void;
 }) {
   // A new range or tool takes seconds to load; until it has, the last one's totals would sit under the new labels.
@@ -150,8 +144,8 @@ export function TokensPage({ data: loaded, year, overview, status, range, days, 
     {error && <Notice tone="error">Could not load your usage: {error}</Notice>}
     {!data ? !error && <Loading>Loading your usage…</Loading> : <>
       <Hero data={data} metric={metric} days={days} range={range} period={period} refreshedAt={status?.lastRefreshAt ?? null} />
-      <ChartCard data={data} year={yearDays} overview={overview} range={range} points={points} metric={metric} days={days} period={period} activeDays={year?.activity.activeDays ?? null} averagePerActiveDay={year?.activity.averagePerActiveDay ?? null} />
-      {data.summary.tokens > 0 && <TokenTypes summary={data.summary} compare={data.before} versus={`vs ${previousLabel(days)}`} />}
+      <ChartCard data={data} year={yearDays} recent={year?.daily ?? null} range={range} points={points} metric={metric} period={period} activeDays={year?.activity.activeDays ?? null} averagePerActiveDay={year?.activity.averagePerActiveDay ?? null} />
+      {data.summary.tokens > 0 && <div className="tk-row-2"><Totals summary={data.summary} period={period} /><CostByType summary={data.summary} /></div>}
       <ToolCards data={data} points={points} days={days} period={period} />
       <Insights data={data} year={year} yearDays={yearDays} range={range} days={days} />
       {yearDays && year && <>
@@ -215,13 +209,12 @@ function Hero({ data, metric, days, range, period, refreshedAt }: { data: Tokens
   </section>;
 }
 
-function ChartCard({ data, year, overview, range, points, metric, days, period, activeDays, averagePerActiveDay }: { data: TokensData; year: Array<{ day: string; tokens: number }> | null; overview: MenuOverview | null; range: DayRange | HourWindow; points: string[]; metric: Metric; days: Days; period: string; activeDays: number | null; averagePerActiveDay: number | null }) {
+function ChartCard({ data, year, recent, range, points, metric, period, activeDays, averagePerActiveDay }: { data: TokensData; year: Array<{ day: string; tokens: number }> | null; recent: UsageSummary['daily'] | null; range: DayRange | HourWindow; points: string[]; metric: Metric; period: string; activeDays: number | null; averagePerActiveDay: number | null }) {
   const [group, setGroup] = useState<Group>('tools');
   const [mode, setMode] = useState<'stacked' | 'lines'>('stacked');
   const series = useMemo(() => chartSeries(data.breakdown, points, group, metric), [data.breakdown, points, group, metric]);
   const total = sum(series.flatMap((item) => item.values));
   const format = metric === 'tokens' ? formatCompact : formatCostCompact;
-  const month = `${utcToday().slice(0, 8)}01`;
   const hours = 'since' in range;
   const title = `${hours ? 'Hourly' : 'Daily'} ${metric === 'tokens' ? 'tokens' : 'estimated cost'}`;
   return <section className="m-card tk-chart-card" aria-label={hours ? 'Hourly usage' : 'Daily usage'}>
@@ -243,19 +236,64 @@ function ChartCard({ data, year, overview, range, points, metric, days, period, 
     </div>
     {year && !hours && <div className="tk-strip-box"><OverviewStrip days={year} from={range.from} /></div>}
     <div className="m-stat-strip tk-kpis">
-      {/* Later: today, week and month costs with their change, from the overview's costs (the 5-minute refresh work). */}
-      <Kpi label="Today" value={overview ? formatCompact(overview.today) : '—'} sub="so far · UTC" />
-      <Kpi label="This week" value={overview ? formatCompact(overview.week) : '—'} sub="since Monday" />
-      <Kpi label="This month" value={overview ? formatCompact(overview.month) : '—'} sub={`since ${shortDay(month)}`} />
+      {[1, 7, 30].map((span) => {
+        const totals = recent && recentTotals(recent, utcToday(), span);
+        return <Kpi key={span} label={span === 1 ? 'Today' : `${span} days`} value={totals ? formatCompact(totals.tokens) : '—'}
+          sub={!totals ? '' : <>{money(totals.costMicrousd)} · {span === 1 ? 'so far · UTC' : <Delta compact value={totals.change} />}</>} />;
+      })}
       <Kpi label="Avg / active day" value={averagePerActiveDay !== null && activeDays ? formatCompact(averagePerActiveDay) : '—'} sub={activeDays !== null ? `last 12 months · ${formatExact(activeDays)} days` : ''} />
-      {/* Later: "6.6B of 6.8B input" under the cache rate needs summary.breakdown from the token types work. */}
-      <Kpi label="Cache hit rate" value={`${(data.summary.cacheRate * 100).toFixed(1)}%`} sub={`of input · ${spanOf(days)}`} />
+      <Kpi label="Cache hit rate" value={`${(data.summary.cacheRate * 100).toFixed(1)}%`} sub={`${formatCompact(data.summary.breakdown.cacheRead)} of ${formatCompact(inputOf(data.summary.breakdown))} input`} />
     </div>
   </section>;
 }
 
-function Kpi({ label, value, sub }: { label: string; value: string; sub: string }) {
+function Kpi({ label, value, sub }: { label: string; value: string; sub: ReactNode }) {
   return <div><div className="m-label">{label}</div><div className="m-stat-value">{value}</div><div className="tk-kpi-sub">{sub}</div></div>;
+}
+
+/** All input: plain, read from the cache and written to it. Cache hit rate is cache reads over this. */
+const inputOf = (counts: TokenCounts) => counts.input + counts.cacheRead + counts.cacheWrite;
+
+function Total({ label, value, title, sub, up }: { label: string; value: string; title?: string; sub: string; up?: boolean }) {
+  return <div><div className="m-label">{label}</div><div className={`m-stat-value${up ? ' tk-up' : ''}`} title={title}>{value}</div><div className="tk-t-sub">{sub}</div></div>;
+}
+
+/** The period's tokens by kind. Cache reads are the cached input; plain input and cache writes are the uncached rest. Reasoning is counted inside output, never added again. */
+export function Totals({ summary, period }: { summary: UsageSummary; period: string }) {
+  const { input, output, cacheRead, cacheWrite, reasoning = 0 } = summary.breakdown;
+  const all = inputOf(summary.breakdown);
+  const exact = (tokens: number) => `${formatExact(tokens)} tokens`;
+  return <section className="m-card" aria-label="Totals">
+    <div className="m-card-head"><span className="m-card-title">Totals</span><span className="tk-right">{period[0]!.toUpperCase() + period.slice(1)}</span></div>
+    <div className="tk-totals">
+      <Total label="Processed tokens" value={formatCompact(summary.tokens)} title={exact(summary.tokens)} sub="input, cache and output" />
+      <Total label="Cached input" value={formatCompact(cacheRead)} title={exact(cacheRead)} sub={`${formatShare(cacheRead, all)} of input`} />
+      <Total label="Uncached input" value={formatCompact(input + cacheWrite)} title={exact(input + cacheWrite)} sub={`${formatShare(input + cacheWrite, all)} of input`} />
+      <Total label="Output" value={formatCompact(output)} title={exact(output)} sub={`${formatShare(output, summary.tokens)} of tokens`} />
+      <Total label="Reasoning" value={formatCompact(reasoning)} title={exact(reasoning)} sub="counted inside output" />
+      <Total label="Cache savings" value={summary.costParts ? money(summary.costParts.cacheSavings) : '—'} sub={summary.costParts ? 'vs uncached pricing' : 'pricing unknown'} up={!!summary.costParts} />
+    </div>
+  </section>;
+}
+
+const COST_KINDS = [{ key: 'input', label: 'Input', color: 'var(--kind-input)' }, { key: 'cacheRead', label: 'Cache read', color: 'var(--kind-cache-read)' }, { key: 'cacheWrite', label: 'Cache write', color: 'var(--kind-cache-write)' }, { key: 'output', label: 'Output', color: 'var(--kind-output)' }] as const;
+
+/** The estimated cost split by token kind; unknown when a model in the period has no price. */
+export function CostByType({ summary }: { summary: UsageSummary }) {
+  const parts = summary.costParts, cost = summary.costMicrousd;
+  const models = summary.byModel.filter((model) => model.tokens > 0).length;
+  return <section className="m-card" aria-label="Cost by type">
+    <div className="m-card-head"><span className="m-card-title">Cost by type</span><span className="tk-right">API-price estimate</span></div>
+    <div className="m-card-body">{parts && cost ? <>
+      <div className="tk-cost-total"><span className="m-stat-value" title={formatCost(cost)}>{money(cost)}</span><span className="tk-faint">across {models} {models === 1 ? 'model' : 'models'}</span></div>
+      <div className="tk-costbar" role="img" aria-label={COST_KINDS.map((kind) => `${kind.label} ${formatShare(parts[kind.key], cost)}`).join(', ')}>
+        {COST_KINDS.filter((kind) => parts[kind.key] > 0).map((kind) => <span key={kind.key} style={{ flex: parts[kind.key], background: kind.color }} />)}
+      </div>
+      <div className="tk-cost-rows">{COST_KINDS.map((kind) => <div key={kind.key}>
+        <i style={{ background: kind.color }} /><span>{kind.label}</span><span>{formatShare(parts[kind.key], cost)}</span><b title={formatCost(parts[kind.key])}>{money(parts[kind.key])}</b>
+      </div>)}</div>
+    </> : <p className="tk-cost-unknown">Cost by type is unknown: a model in this period has no known price.</p>}</div>
+  </section>;
 }
 
 function ToolCards({ data, points, days, period }: { data: TokensData; points: string[]; days: Days; period: string }) {
@@ -372,6 +410,15 @@ function Breakdown({ data, range, onExport }: { data: TokensData; range: DayRang
   const toolOf = useMemo(() => mainTools(breakdown), [breakdown]);
   const byTokens = <T extends { tokens: number }>(items: T[]) => [...items].sort((a, b) => b.tokens - a.tokens).filter((item) => item.tokens > 0);
   const models = byTokens(costGroups(breakdown, (row) => row.model));
+  const kinds = useMemo(() => {
+    const totals = new Map<string, TokenCounts>();
+    for (const row of breakdown) {
+      const sum = totals.get(row.model) ?? { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
+      totals.set(row.model, { input: sum.input + row.breakdown.input, output: sum.output + row.breakdown.output, cacheRead: sum.cacheRead + row.breakdown.cacheRead, cacheWrite: sum.cacheWrite + row.breakdown.cacheWrite });
+    }
+    return totals;
+  }, [breakdown]);
+  const kind = (tokens: number) => <td title={`${formatExact(tokens)} tokens`}>{formatCompact(tokens)}</td>;
   const tools = byTokens(costGroups(breakdown, (row) => row.tool));
   const days = [...summary.daily].filter((point) => point.tokens > 0).sort((a, b) => b.day.localeCompare(a.day));
   const projectRows = byTokens(projects);
@@ -393,12 +440,13 @@ function Breakdown({ data, range, onExport }: { data: TokensData; range: DayRang
       <div className="tk-push"><Seg small label="Break down by" value={tab} options={tabs} onChange={setTab} /></div>
     </div>
     <table className="m-table tk-table">
-      {/* Later: Sessions, Input, Output and Cached columns per model need sessions per model (Task 1.4) and summary.breakdown (the token types work). */}
+      {/* Later: a Sessions column needs sessions per model (Task 1.4). Input is plain input and cache writes; Cached is cache reads. */}
       {tab === 'model' && <>
-        <thead><tr><th className="l">#</th><th className="l">Model</th><th>Cost</th><th>Share</th><th>Tokens</th></tr></thead>
+        <thead><tr><th className="l">#</th><th className="l">Model</th><th>Input</th><th>Output</th><th>Cached</th><th>Cost</th><th>Share</th><th>Tokens</th></tr></thead>
         <tbody>{models.map((item, index) => { const tool = toolOf.get(item.key); return <tr key={item.key}>
           <td className="l tk-rank">{index + 1}</td>
           <td className="l"><div className="tk-model-cell"><span className="tk-model-name">{tool && <ToolIcon id={tool} />}{item.key}</span><span className="tk-uline" style={{ ['--c' as string]: `var(--tool-${tool ?? 'cursor'})`, width: `${(item.tokens / top) * 72}%` }} /></div></td>
+          {kind(kinds.get(item.key)!.input + kinds.get(item.key)!.cacheWrite)}{kind(kinds.get(item.key)!.output)}{kind(kinds.get(item.key)!.cacheRead)}
           <td>{cost(item)}</td>{tail(item.tokens)}
         </tr>; })}</tbody>
       </>}

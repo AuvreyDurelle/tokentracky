@@ -302,7 +302,6 @@ td.c-total { font-weight: 500; }
 .types-bar { padding: 16px 24px; }
 .types-bar .mix-bar { margin: 0; }
 .stats dt .key { display: inline-block; margin-right: 6px; vertical-align: 1px; }
-.delta { color: var(--text); font-weight: 500; font-variant-numeric: tabular-nums; }
 .tool-claude { background: var(--tool-claude); }
 .tool-codex { background: var(--tool-codex); }
 .tool-cursor { background: var(--tool-cursor); }

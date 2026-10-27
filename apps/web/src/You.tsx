@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { SourceStatus, ToolId, UsageSummary } from '@tokentracky/core';
 import { ApiError, type ApiClient, type ConnectStart, type DetectedTool, type LocalStatus } from './api';
-import { KINDS, errorText, formatCompact, formatCost, formatExact, formatShare } from './format';
+import { KINDS, errorText, formatCompact } from './format';
 import { fillRange, type DayRange, type HourWindow } from './ranges';
 import { Modal, Notice } from './ui';
 
@@ -71,37 +71,6 @@ export function useConnectFlow(api: ApiClient, refresh: () => Promise<void>) {
 export const kindStacks = (daily: UsageSummary['daily'], range: DayRange) =>
   KINDS.map((kind) => ({ label: kind.label, className: `kind-${kind.key}`, values: fillRange(daily, range, (point) => point.breakdown[kind.key]).map((point) => point.tokens) }));
 const supported = (status: LocalStatus | null) => status?.sources.filter((source) => source.state !== 'unsupported') ?? [];
-
-const percentChange = (current: number, previous: number) => previous ? ((current - previous) / previous) * 100 : current ? null : 0;
-
-function Delta({ value, unit = '%' }: { value: number | null; unit?: string }) {
-  if (value === null) return <span className="delta">New</span>;
-  const size = Math.abs(value);
-  const shown = unit === '' ? formatExact(Math.round(size)) : size < 10 ? size.toFixed(1) : Math.round(size).toString();
-  return <span className="delta">{value > 0 ? '↑' : value < 0 ? '↓' : '±'} {shown}{unit}</span>;
-}
-
-/** Tokens by kind, each with its share of the total, change and estimated cost. Reasoning is shown inside output and never added to a total. */
-export function TokenTypes({ summary, compare, versus }: { summary: UsageSummary; compare: UsageSummary | null; versus: string }) {
-  const parts = summary.costParts;
-  const shown = KINDS.filter((kind) => summary.breakdown[kind.key] > 0);
-  return <section className="panel" aria-labelledby="types-title">
-    <header className="panel-head"><h2 id="types-title">Token types</h2><span className="push faint">Share of {formatExact(summary.tokens)} tokens</span></header>
-    <div className="types-bar"><div className="mix-bar" role="img" aria-label={shown.map((kind) => `${kind.label} ${formatShare(summary.breakdown[kind.key], summary.tokens)}`).join(', ')}>
-      {shown.map((kind) => <i key={kind.key} className={`kind-${kind.key}`} style={{ width: `${(summary.breakdown[kind.key] / summary.tokens) * 100}%` }} />)}
-    </div></div>
-    <dl className="stats">{KINDS.map((kind) => {
-      const tokens = summary.breakdown[kind.key];
-      return <div key={kind.key}><dt><span className={`key kind-${kind.key}`} aria-hidden="true" />{kind.label}</dt><dd title={`${formatExact(tokens)} tokens`}>{formatCompact(tokens)}</dd>
-        <small>{formatShare(tokens, summary.tokens)} of tokens</small>
-        {compare && <small><Delta value={percentChange(tokens, compare.breakdown[kind.key])} /> {versus}</small>}
-        {parts && <small>Est. {formatCost(parts[kind.key])}</small>}
-        {kind.key === 'output' && <small>Of which reasoning {formatCompact(summary.breakdown.reasoning ?? 0)}</small>}
-      </div>;
-    })}</dl>
-    <p className="panel-foot">{parts ? `Cache reads saved ${formatCost(parts.cacheSavings)} compared with the input price.` : 'Cost by type is unknown: some models have no known price.'} Reasoning is counted once, as part of output.</p>
-  </section>;
-}
 
 const names = (items: SourceStatus[]) => items.length > 1 ? `${items.slice(0, -1).map((item) => item.name).join(', ')} and ${items.at(-1)!.name}` : items[0]?.name ?? '';
 
