@@ -10,7 +10,7 @@ import { downloadCsv } from '../You';
 import { ActivityGrid } from './ActivityGrid';
 import { monotonePath } from './chart';
 import { ICONS } from './icons';
-import { biggestSession, busiestWeekdayUtc, changeVsPrevious, dailyByModel, dailyByTool, favouriteModel, mostExpensiveDay, recentTotals, trendingModel } from './insights';
+import { biggestSession, busiestHour, busiestWeekdayUtc, changeVsPrevious, dailyByModel, dailyByTool, favouriteModel, mostExpensiveDay, recentTotals, trendingModel } from './insights';
 import { ToolbarActions } from './Shell';
 import { OverviewStrip, StackedAreaChart, type ChartSeries } from './StackedAreaChart';
 import './personal.css';
@@ -18,9 +18,12 @@ import './personal.css';
 type Days = '24h' | 7 | 30 | 90 | 365;
 type Metric = 'tokens' | 'cost';
 type Group = 'tools' | 'models';
-/** A period's usage, with the range and tool it was loaded for. Over the last 24 hours `breakdown` is by hour: each row's `day` is its hour's first instant. */
-export interface TokensData { range: DayRange | HourWindow; tool: 'all' | ToolId; summary: UsageSummary; before: UsageSummary; breakdown: UsageBreakdownRow[]; projects: ProjectSummary[]; sessions: SessionSummary[] }
+/** A period's usage, with the range and tool it was loaded for. Over the last 24 hours `breakdown` is by hour: each row's `day` is its hour's first instant.
+ *  `hours` is its tokens by hour of day on this computer's clock. */
+export interface TokensData { range: DayRange | HourWindow; tool: 'all' | ToolId; summary: UsageSummary; before: UsageSummary; breakdown: UsageBreakdownRow[]; projects: ProjectSummary[]; sessions: SessionSummary[]; hours: number[] }
 
+/** This computer's time zone, for the hours of the day. */
+const ZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
 const RANGES: Array<{ value: Days; label: string }> = [{ value: '24h', label: '24h' }, { value: 7, label: '7d' }, { value: 30, label: '30d' }, { value: 90, label: '90d' }, { value: 365, label: '12m' }];
 const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const LONG = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
@@ -30,6 +33,8 @@ const utc = (day: string) => new Date(`${day}T00:00:00Z`);
 const sum = (values: number[]) => values.reduce((total, value) => total + value, 0);
 /** Dollars as the mockups write them: cents below $1,000, whole dollars above. Unknown pricing stays unknown. */
 const money = (micro: number | null) => micro === null ? '—' : micro >= 1e9 ? `$${formatExact(Math.round(micro / 1e6))}` : formatCost(micro);
+/** An hour of the day as a clock reads it: 22 is 22:00, 24 is 00:00. */
+const clock = (hour: number) => `${String(hour % 24).padStart(2, '0')}:00`;
 const projectName = (path: string | null) => path?.split(/[\\/]/).filter(Boolean).at(-1) ?? 'No project';
 /** How long a period is: "24 hours", "7 days", "12 months". */
 const spanOf = (days: Days) => days === '24h' ? '24 hours' : days === 365 ? '12 months' : `${days} days`;
@@ -102,8 +107,8 @@ export function TokensView({ api, status }: { api: ApiClient; status: LocalStatu
     const breakdown = 'since' in range
       ? api.localHours(range, tool).then(({ items }) => items.map(({ hour, ...row }) => ({ ...row, day: hour })))
       : api.localBreakdown(range, tool).then(({ items }) => items);
-    Promise.all([api.localSummary(range, tool), api.localSummary(before, tool), breakdown, api.localProjects(range, tool), api.localSessions(range, tool)])
-      .then(([summary, before, breakdown, projects, sessions]) => { if (live) setData({ range, tool, summary, before, breakdown, projects: projects.items, sessions: sessions.items }); })
+    Promise.all([api.localSummary(range, tool), api.localSummary(before, tool), breakdown, api.localProjects(range, tool), api.localSessions(range, tool), api.localSummary(range, tool, ZONE)])
+      .then(([summary, before, breakdown, projects, sessions, local]) => { if (live) setData({ range, tool, summary, before, breakdown, projects: projects.items, sessions: sessions.items, hours: local.byHour }); })
       .catch((value: unknown) => { if (live) setError(errorText(value)); });
     return () => { live = false; };
   }, [api, rangeKey(range), tool, revision]);
@@ -347,6 +352,8 @@ function Insights({ data, year, yearDays, range, days }: { data: TokensData; yea
   const toolOf = useMemo(() => mainTools(breakdown), [breakdown]);
   const favourite = favouriteModel(summary.byModel);
   const weekday = yearDays ? busiestWeekdayUtc(yearDays) : null;
+  const hour = busiestHour(data.hours);
+  const peak = Math.max(1, ...data.hours);
   // The most expensive day is one of the range's days; the last 24 hours have none whole.
   const daySpan = 'since' in range ? null : range;
   const expensive = mostExpensiveDay(summary.daily);
@@ -364,7 +371,13 @@ function Insights({ data, year, yearDays, range, days }: { data: TokensData; yea
         sub={favourite ? `${formatShare(favourite.tokens, summary.tokens)} of tokens · ${formatCompact(favourite.tokens)}` : 'No usage in this range yet'}>
         {favourite && <Meter share={favourite.share} color={`var(--tool-${toolOf.get(favourite.model) ?? 'cursor'})`} caption={[`${summary.byModel.filter((item) => item.tokens > 0).length} models used`, `last ${span}`]} />}
       </Insight>
-      {/* Later: the Busiest hour card needs hourly totals in local time (the local-time work). */}
+      <Insight icon={ICONS.clock} label="Busiest hour" value={hour ? `${clock(hour.hour)} – ${clock(hour.hour + 1)}` : '—'}
+        sub={hour ? `${formatShare(hour.share, 1)} of tokens · your local time` : 'No usage in this range yet'}>
+        {hour && <>
+          <div className="tk-mini-bars tk-hours" aria-hidden="true">{data.hours.map((tokens, index) => <span key={index} className={index === hour.hour ? 'hi' : undefined} style={{ height: `${Math.max(4, (tokens / peak) * 100)}%` }} />)}</div>
+          <div className="tk-mini-axis tk-hours-axis" aria-hidden="true">{['00', '06', '12', '18'].map((label) => <span key={label}>{label}</span>)}</div>
+        </>}
+      </Insight>
       <Insight icon={ICONS.calendar} label="Busiest weekday · UTC" value={weekday ? WEEKDAYS[weekday.weekday] : '—'}
         sub={weekday ? `${formatCompact(weekday.averages[weekday.weekday]!)} avg · ${weekday.ratio.toFixed(1)}× a typical day` : 'Not enough history yet'}>
         {weekday && <>

@@ -367,6 +367,14 @@ fn local_date(ms: i64, tz: &TimeZone) -> Option<time::Date> {
     // 1970-01-01 is Julian day 2,440,588.
     time::Date::from_julian_day(i32::try_from(days).ok()? + 2_440_588).ok()
 }
+/// The hour of day, 0 to 23, of an instant in milliseconds: UTC, or local in `tz`; `None` outside the years jiff holds.
+fn hour_of_day(ms: i64, tz: Option<&TimeZone>) -> Option<usize> {
+    let offset = match tz {
+        Some(tz) => i64::from(tz.to_offset(Timestamp::from_millisecond(ms).ok()?).seconds()) * 1000,
+        None => 0,
+    };
+    usize::try_from((ms + offset).div_euclid(3_600_000).rem_euclid(24)).ok()
+}
 fn local_today(now: OffsetDateTime, tz: &TimeZone) -> time::Date {
     let now = now.unix_timestamp_nanos().div_euclid(1_000_000) as i64;
     local_date(now, tz).expect("a clock reads a year jiff holds")
@@ -1232,6 +1240,13 @@ impl UsageStore {
             })
             .collect();
         let tz = options.tz.as_ref();
+        // Each slot is a quarter hour, so it falls within one hour in any zone.
+        let mut by_hour = vec![0u64; 24];
+        for row in &rows {
+            if let Some(hour) = row.slot.key.slot.and_then(|at| hour_of_day(at, options.tz.as_ref())) {
+                by_hour[hour] = sum([by_hour[hour], sum(row.slot.tokens[..4].iter().copied())?])?;
+            }
+        }
         let tool_sessions = sessions_by(&rows, |row| row.slot.key.tool);
         let model_sessions = sessions_by(&rows, |row| row.slot.key.model.clone());
         Ok(UsageSummary {
@@ -1273,6 +1288,7 @@ impl UsageStore {
                 })
                 .collect::<Result<_>>()?,
             daily,
+            by_hour,
         })
     }
     /// In UTC days, or local days in `tz` (the menu-bar title and `tokentracky status`). Cached until usage changes,

@@ -102,3 +102,11 @@ export function recentTotals(daily: Array<{ day: string; tokens: number; costMic
   }
   return { tokens, costMicrousd, change: changeVsPrevious(tokens, previous) };
 }
+
+/** The hour of day with the most tokens, 0 to 23, and its share of them; null without usage. `byHour` is the summary's 24 totals. */
+export function busiestHour(byHour: number[]): { hour: number; share: number } | null {
+  const sum = total(byHour);
+  if (!sum) return null;
+  const hour = byHour.indexOf(Math.max(...byHour));
+  return { hour, share: byHour[hour]! / sum };
+}

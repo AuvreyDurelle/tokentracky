@@ -162,7 +162,8 @@ export class ApiClient {
   approveDevice(code: string) { return this.request<void>(`/api/device-auth/${encodeURIComponent(code)}/approve`, { method: 'POST' }, true); }
 
   localStatus() { return this.request<LocalStatus>('/api/local/status'); }
-  localSummary(range: UsageRange, tool: 'all' | ToolId = 'all') { return this.request<UsageSummary>(`/api/local/summary?${query({ ...range, tool })}`); }
+  /** With an IANA zone `tz`, days and `byHour` are local there; UTC without one. */
+  localSummary(range: UsageRange, tool: 'all' | ToolId = 'all', tz?: string) { return this.request<UsageSummary>(`/api/local/summary?${query({ ...range, tool, tz })}`); }
   localProjects(range: UsageRange, tool: 'all' | ToolId = 'all') { return this.request<{ items: ProjectSummary[] }>(`/api/local/projects?${query({ ...range, tool })}`); }
   localSessions(range: UsageRange, tool: 'all' | ToolId = 'all', q = '') { return this.request<{ items: SessionSummary[] }>(`/api/local/sessions?${query({ ...range, tool, q })}`); }
   localBreakdown(range: UsageRange, tool: 'all' | ToolId = 'all') { return this.request<{ items: UsageBreakdownRow[] }>(`/api/local/breakdown?${query({ ...range, tool })}`); }

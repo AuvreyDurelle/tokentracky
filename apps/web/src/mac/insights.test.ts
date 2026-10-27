@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { SessionSummary, UsageBreakdownRow } from '@tokentracky/core';
 import { addDays } from '../ranges';
-import { biggestSession, busiestWeekdayUtc, changeVsPrevious, dailyByModel, dailyByTool, favouriteModel, mostExpensiveDay, recentTotals, trendingModel } from './insights';
+import { biggestSession, busiestHour, busiestWeekdayUtc, changeVsPrevious, dailyByModel, dailyByTool, favouriteModel, mostExpensiveDay, recentTotals, trendingModel } from './insights';
 
 const row = (day: string, tool: UsageBreakdownRow['tool'], model: string, tokens: number, costMicrousd: number | null = tokens): UsageBreakdownRow => ({ day, tool, model, tokens, breakdown: NONE.breakdown, costMicrousd });
 const NONE = { breakdown: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, costParts: null, sessions: 0 };
@@ -117,5 +117,18 @@ describe('recentTotals', () => {
     const unpriced = daily.map((point) => point.day === '2026-10-24' ? { ...point, costMicrousd: null } : point);
     expect(recentTotals(unpriced, '2026-10-25', 3).costMicrousd).toBeNull();
     expect(recentTotals(unpriced, '2026-10-25', 1).costMicrousd).toBe(10);
+  });
+});
+
+describe('busiestHour', () => {
+  it('picks the hour with the most tokens, the earliest on a tie, with its share', () => {
+    const hours = Array<number>(24).fill(0);
+    hours[22] = 30; hours[9] = 30; hours[14] = 40;
+    expect(busiestHour(hours)).toEqual({ hour: 14, share: 0.4 });
+    hours[14] = 0;
+    expect(busiestHour(hours)).toEqual({ hour: 9, share: 0.5 });
+  });
+  it('is null without usage', () => {
+    expect(busiestHour(Array(24).fill(0))).toBeNull();
   });
 });

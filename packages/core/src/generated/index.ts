@@ -85,6 +85,8 @@ sessions: number }>;
  */
 sessions: number }>;
   daily: Array<{ day: string, tokens: number, breakdown: TokenCounts, costMicrousd: number | null, costParts: CostParts | null }>;
+  /** Tokens by hour of day, 0 to 23, in the query's zone (UTC without one). */
+  byHour: Array<number>;
 };
 export type SessionSummary = {
   id: string;

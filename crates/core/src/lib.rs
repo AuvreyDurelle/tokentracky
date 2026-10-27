@@ -274,6 +274,9 @@ pub struct UsageSummary {
     pub by_model: Vec<ModelUsage>,
     #[ts(inline)]
     pub daily: Vec<DayUsage>,
+    /// Tokens by hour of day, 0 to 23, in the query's zone (UTC without one).
+    #[ts(type = "Array<number>")]
+    pub by_hour: Vec<u64>,
 }
 /// One tool's share of a summary (`UsageSummary.byTool`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]

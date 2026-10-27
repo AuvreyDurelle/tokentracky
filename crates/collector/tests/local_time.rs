@@ -275,3 +275,26 @@ fn a_day_series_refuses_a_day_that_is_not_a_date() {
         json!({"start": "2026-10-20T15:00:00.000Z", "halfHours": vec![0; 48]})
     );
 }
+
+#[test]
+fn a_summary_adds_its_tokens_up_by_hour_of_day_in_utc_or_the_zone() {
+    // 22:10 and 23:50 UTC on two days, and 06:00 UTC: in Kathmandu (+05:45) 03:55, 05:35 and 11:45.
+    let store = store(&[
+        event("late", "2026-10-20T22:10:00.000Z", 1),
+        event("later", "2026-10-21T23:50:00.000Z", 10),
+        event("late-again", "2026-10-21T22:59:59.999Z", 100),
+        event("morning", "2026-10-21T06:00:00.000Z", 1000),
+    ]);
+    let utc = store.summary(&days("2026-10-20", "2026-10-21", None)).unwrap().by_hour;
+    assert_eq!(utc.len(), 24);
+    assert_eq!((utc[22], utc[23], utc[6]), (101, 10, 1000));
+    assert_eq!(utc.iter().sum::<u64>(), 1111);
+    let kathmandu = store
+        .summary(&days("2026-10-20", "2026-10-22", Some("Asia/Kathmandu")))
+        .unwrap()
+        .by_hour;
+    assert_eq!(
+        (kathmandu[3], kathmandu[4], kathmandu[5], kathmandu[11]),
+        (1, 100, 10, 1000)
+    );
+}

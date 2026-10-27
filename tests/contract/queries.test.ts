@@ -87,7 +87,7 @@ describe('rolling and custom ranges', () => {
     expect((await getJson(server, '/api/local/sessions?days=90&tool=codex')).items).toHaveLength(1);
   });
   it('reports an empty range with null cost, zero activity and empty lists', async () => {
-    expect(await getJson(server, '/api/local/summary?days=90&q=no-such-text')).toEqual({tokens: 0, breakdown: {input: 0, output: 0, cacheRead: 0, cacheWrite: 0, reasoning: 0}, costMicrousd: null, costParts: null, sessions: 0, cacheRate: 0, byTool: [], byModel: [], daily: [],
+    expect(await getJson(server, '/api/local/summary?days=90&q=no-such-text')).toEqual({tokens: 0, breakdown: {input: 0, output: 0, cacheRead: 0, cacheWrite: 0, reasoning: 0}, costMicrousd: null, costParts: null, sessions: 0, cacheRate: 0, byTool: [], byModel: [], daily: [], byHour: Array(24).fill(0),
       activity: {activeDays: 0, currentStreak: 0, longestStreak: 0, bestDay: null, averagePerActiveDay: 0}});
   });
 });

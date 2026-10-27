@@ -14,6 +14,8 @@ const TOOLS: Array<{ tool: ToolId; tokens: number; models: Array<[string, number
 // A month of weekday rhythm with a big day ten days in, ending on today's 186.4M.
 const SHAPE = [0.62, 0.58, 1.05, 1.12, 1.08, 1.02, 0.94, 0.41, 0.38, 1.18, 2.6, 1.55, 1.3, 1.12, 0.47, 0.44, 1.21, 1.32, 1.27, 1.19, 1.08, 0.52, 0.5, 1.4, 1.66, 1.58, 1.49, 1.3, 0.58, 0];
 const TODAY = 186.4e6;
+// Each hour of the day's share of the tokens, peaking at 22:00 (11.7%).
+const HOURS = [0.03, 0.02, 0.01, 0.005, 0.005, 0.005, 0.01, 0.015, 0.03, 0.05, 0.06, 0.055, 0.04, 0.05, 0.06, 0.065, 0.06, 0.05, 0.04, 0.045, 0.06, 0.078, 0.117, 0.04];
 // Sessions per tool over the 30 days, as the mockup counts them (1,284 in all); each model gets its share of its tool's.
 const SESSIONS: Partial<Record<ToolId, number>> = { claude: 412, codex: 731, gemini: 74, opencode: 46, cline: 21 };
 const modelSessions = (model: string) => {
@@ -66,6 +68,8 @@ export function personalFixtures(now = new Date()) {
     byTool: group((row) => row.tool).map(([tool, value]) => ({ ...typed({ tool, ...value }), sessions: SESSIONS[tool] ?? 0 })),
     byModel: group((row) => row.model).map(([model, value]) => ({ ...typed({ model, ...value }), sessions: modelSessions(model) })),
     daily,
+    // An evening builder: the busiest hour is 22:00, with 11.7% of the tokens.
+    byHour: HOURS.map((share) => Math.round(tokens * share)),
   };
   const before: UsageSummary = {
     tokens: 5.0e9, breakdown: kinds(5.0e9), costParts: null, costMicrousd: 1_731e6, sessions: 1102, cacheRate: 0.962,
@@ -73,6 +77,7 @@ export function personalFixtures(now = new Date()) {
     byTool: toolRows([{ tool: 'claude', tokens: 3.26e9, costMicrousd: 1_204e6 }, { tool: 'codex', tokens: 1.39e9, costMicrousd: 441e6 }, { tool: 'opencode', tokens: 202e6, costMicrousd: 62e6 }, { tool: 'gemini', tokens: 117e6, costMicrousd: 23e6 }, { tool: 'cline', tokens: 71.6e6, costMicrousd: 19e6 }]),
     byModel: [{ model: 'claude-opus-5-5', tokens: 3.1e9, costMicrousd: 1_150e6 }, { model: 'gpt-6.1-sol', tokens: 640e6, costMicrousd: 198e6 }, { model: 'gpt-6-astra', tokens: 690e6, costMicrousd: 220e6 }, { model: 'claude-sonnet-5-5', tokens: 160e6, costMicrousd: 54e6 }, { model: 'qwen-4-coder', tokens: 202e6, costMicrousd: 62e6 }, { model: 'gemini-3.8-flash', tokens: 117e6, costMicrousd: 23e6 }, { model: 'deepseek-v4', tokens: 71.6e6, costMicrousd: 19e6 }].map((row) => ({ ...typed(row), sessions: modelSessions(row.model) })),
     daily: [],
+    byHour: Array(24).fill(0),
   };
   // A year: tracking began about 290 days ago with a few quiet days, then every day for the last 34.
   const yearDaily = Array.from({ length: 365 }, (_, index) => {

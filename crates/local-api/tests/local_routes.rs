@@ -789,7 +789,7 @@ async fn usage_queries_filter_by_range_tool_and_text_and_name_git_repositories()
         summary,
         json!({"tokens": 0, "breakdown": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0, "reasoning": 0},
             "costMicrousd": null, "costParts": null, "sessions": 0, "cacheRate": 0.0, "byTool": [], "byModel": [], "daily": [],
-            "activity": {"activeDays": 0, "currentStreak": 0, "longestStreak": 0, "bestDay": null, "averagePerActiveDay": 0}})
+            "byHour": [0; 24], "activity": {"activeDays": 0, "currentStreak": 0, "longestStreak": 0, "bestDay": null, "averagePerActiveDay": 0}})
     );
     let sessions = server.get("/api/local/sessions?days=30").await.json();
     let ids: Vec<&Value> = sessions["items"]

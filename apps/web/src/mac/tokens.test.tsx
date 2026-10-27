@@ -8,7 +8,7 @@ import { TokensPage, chartSeries, modelColors } from './TokensView';
 const f = personalFixtures();
 const noop = () => {};
 const page = (overrides: Partial<Parameters<typeof TokensPage>[0]> = {}) => renderToStaticMarkup(<TokensPage
-  data={{ range: f.range, tool: 'all', summary: f.summary, before: f.before, breakdown: f.breakdown, projects: f.projects, sessions: f.sessions }} year={f.year} status={f.status}
+  data={{ range: f.range, tool: 'all', summary: f.summary, before: f.before, breakdown: f.breakdown, projects: f.projects, sessions: f.sessions, hours: f.summary.byHour }} year={f.year} status={f.status}
   range={f.range} days={30} metric="tokens" tool="all" error={null} onMetric={noop} onDays={noop} onTool={noop} onExport={noop} {...overrides} />);
 const text = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
 
@@ -49,7 +49,7 @@ describe('TokensPage', () => {
     const counts = { input: 100, output: 50, cacheRead: 800, cacheWrite: 50, reasoning: 30 };
     const parts = { input: 300_000, output: 750_000, cacheRead: 240_000, cacheWrite: 210_000, cacheSavings: 2_160_000 };
     const summary = { ...f.summary, tokens: 1_000, breakdown: counts, costParts: parts, costMicrousd: 1_500_000 };
-    const html = text(page({ data: { range: f.range, tool: 'all', summary, before: f.before, breakdown: f.breakdown, projects: f.projects, sessions: f.sessions } }));
+    const html = text(page({ data: { range: f.range, tool: 'all', summary, before: f.before, breakdown: f.breakdown, projects: f.projects, sessions: f.sessions, hours: f.summary.byHour } }));
     for (const total of ['Processed tokens 1K', 'Cached input 800 84%', 'Uncached input 150 16%', 'Output 50 5.0% of tokens', 'Reasoning 30 counted inside output', 'Cache savings $2.16']) expect(html).toContain(total);
     expect(html).toContain('Cost by type API-price estimate $1.50 across 9 models');
     for (const row of ['Input 20% $0.30', 'Cache read 16% $0.24', 'Cache write 14% $0.21', 'Output 50% $0.75']) expect(html).toContain(row);
@@ -65,7 +65,8 @@ describe('TokensPage', () => {
     expect(html).toContain('Biggest session 184.2M');
     expect(html).toContain('Trending model gpt-6.1-sol');
     expect(html).toContain('+6.2 pts');
-    expect(html).not.toContain('Busiest hour');
+    expect(html).toContain('Busiest hour 22:00 – 23:00');
+    expect(html).toContain('12% of tokens · your local time');
   });
   it('breaks the period down by model, largest first, with its input, output and cached tokens', () => {
     const html = page();
@@ -80,7 +81,7 @@ describe('TokensPage', () => {
     const window = last24Hours();
     // Breakdown rows by hour: each row's day is its hour's first instant.
     const hours = hourList(window).map((day, index) => ({ ...f.breakdown[0]!, day, tokens: (index + 1) * 1e6 }));
-    const html = page({ days: '24h', range: window, data: { range: window, tool: 'all', summary: f.summary, before: f.before, breakdown: hours, projects: f.projects, sessions: f.sessions } });
+    const html = page({ days: '24h', range: window, data: { range: window, tool: 'all', summary: f.summary, before: f.before, breakdown: hours, projects: f.projects, sessions: f.sessions, hours: f.summary.byHour } });
     expect(html).toMatch(/<button type="button" class="on" aria-pressed="true">24h<\/button>/);
     expect(text(html)).toContain('Total tokens · last 24 hours');
     expect(text(html)).toContain('previous 24 hours');

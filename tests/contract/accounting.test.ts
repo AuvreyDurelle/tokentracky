@@ -75,13 +75,15 @@ describe('totals from synthetic Claude Code and Codex logs', () => {
   });
   it('reports exact summary totals: tokens, cost, sessions, cache rate, and the split by tool, model and day', async () => {
     const summary = await getJson(server, `/api/local/summary?${DAY}`);
-    expect(Object.keys(summary).sort()).toEqual(['activity', 'breakdown', 'byModel', 'byTool', 'cacheRate', 'costMicrousd', 'costParts', 'daily', 'sessions', 'tokens']);
+    expect(Object.keys(summary).sort()).toEqual(['activity', 'breakdown', 'byHour', 'byModel', 'byTool', 'cacheRate', 'costMicrousd', 'costParts', 'daily', 'sessions', 'tokens']);
     expect(summary).toEqual({
       tokens: 532, breakdown: KINDS.all, costMicrousd: 1780, costParts: PARTS.all, sessions: 2, cacheRate: expect.closeTo(220 / 426, 12),
       // 302 Claude Code tokens (161 + 141) and 230 Codex tokens (150 + 80). The current streak depends on today's date.
       byTool: expect.arrayContaining([{tool: 'claude', tokens: 302, breakdown: KINDS.claude, costMicrousd: 814, costParts: PARTS.claude, sessions: 1}, {tool: 'codex', tokens: 230, breakdown: KINDS.codex, costMicrousd: 966, costParts: PARTS.codex, sessions: 1}]),
       byModel: expect.arrayContaining([{model: MODELS.claude, tokens: 302, breakdown: KINDS.claude, costMicrousd: 814, costParts: PARTS.claude, sessions: 1}, {model: MODELS.codex, tokens: 230, breakdown: KINDS.codex, costMicrousd: 966, costParts: PARTS.codex, sessions: 1}]),
       daily: [{day: FIXTURE_DAY, tokens: 532, breakdown: KINDS.all, costMicrousd: 1780, costParts: PARTS.all}],
+      // Both logs' records are in the 12:00 UTC hour.
+      byHour: Array.from({length: 24}, (_, hour) => hour === 12 ? 532 : 0),
       activity: {activeDays: 1, currentStreak: expect.any(Number), longestStreak: 1, bestDay: {day: FIXTURE_DAY, tokens: 532}, averagePerActiveDay: 532},
     });
     expect(summary.byTool).toHaveLength(2);
@@ -158,7 +160,7 @@ describe('totals from synthetic Claude Code and Codex logs', () => {
   });
   it('reports nothing for a day outside the data, and the same totals through the CSV export', async () => {
     const empty = await everything('from=2026-10-19&to=2026-10-19');
-    expect(empty.summary).toEqual({tokens: 0, breakdown: NONE, costMicrousd: null, costParts: null, sessions: 0, cacheRate: 0, byTool: [], byModel: [], daily: [], activity: {activeDays: 0, currentStreak: 0, longestStreak: 0, bestDay: null, averagePerActiveDay: 0}});
+    expect(empty.summary).toEqual({tokens: 0, breakdown: NONE, costMicrousd: null, costParts: null, sessions: 0, cacheRate: 0, byTool: [], byModel: [], daily: [], byHour: Array(24).fill(0), activity: {activeDays: 0, currentStreak: 0, longestStreak: 0, bestDay: null, averagePerActiveDay: 0}});
     expect([empty.sessions, empty.breakdown, empty.projects]).toEqual([{items: []}, {items: []}, {items: []}]);
     const {summary} = await everything(DAY);
     const rows = (await server.request(`/api/local/export?${DAY}`)).text.trimEnd().split('\r\n').slice(1);

@@ -151,6 +151,10 @@
 .mac .tk-mini-axis { display: flex; margin-top: 5px; font-size: 10.5px; color: var(--text-4); }
 .mac .tk-mini-axis span { flex: 1; text-align: center; }
 .mac .tk-mini-axis .on { color: var(--text); }
+.mac .tk-mini-bars.tk-hours { gap: 2px; }
+.mac .tk-mini-bars.tk-hours span { border-radius: 1.5px; }
+.mac .tk-mini-axis.tk-hours-axis { justify-content: space-between; }
+.mac .tk-mini-axis.tk-hours-axis span { flex: none; }
 .mac .tk-meter { height: 6px; overflow: hidden; border-radius: 3px; background: var(--surface-3); }
 .mac .tk-meter i { display: block; height: 100%; border-radius: 3px; background: var(--c, var(--text)); }
 .mac .tk-meter-cap { display: flex; justify-content: space-between; gap: 8px; margin-top: 6px; font-size: 11.5px; color: var(--text-4); font-variant-numeric: tabular-nums; }
