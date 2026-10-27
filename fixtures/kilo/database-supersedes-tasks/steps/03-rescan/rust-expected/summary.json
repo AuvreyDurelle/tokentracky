@@ -28,6 +28,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "unknown",
+      "sessions": 1,
       "tokens": 1700
     },
     {
@@ -41,6 +42,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "claude-sonnet-4-6",
+      "sessions": 1,
       "tokens": 1700
     }
   ],
@@ -55,6 +57,7 @@
       },
       "costMicrousd": null,
       "costParts": null,
+      "sessions": 2,
       "tokens": 3400,
       "tool": "kilo"
     }

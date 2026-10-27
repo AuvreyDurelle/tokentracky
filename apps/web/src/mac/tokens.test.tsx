@@ -18,7 +18,7 @@ describe('TokensPage', () => {
     expect(html).toContain('Total tokens · last 30 days');
     expect(html).toMatch(/6\.9B 38%/);
     expect(html).toContain('$2,394 est. cost · 1,284 sessions · 5B previous 30 days');
-    for (const tool of ['Claude Code 4.6B 67%', 'Codex 1.8B 26%', 'Gemini CLI 248.4M 3.6%']) expect(html).toContain(tool);
+    for (const tool of ['Claude Code 412 sessions 4.6B 67%', 'Codex 731 sessions 1.8B 26%', 'Gemini CLI 74 sessions 248.4M 3.6%']) expect(html).toContain(tool);
   });
   it("waits for the chosen period's totals instead of showing the last period's under its labels", () => {
     const week = { from: addDays(f.range.to, -6), to: f.range.to };
@@ -71,9 +71,10 @@ describe('TokensPage', () => {
     const html = page();
     const table = /<table class="m-table tk-table">([\s\S]*?)<\/table>/.exec(html)?.[1] ?? '';
     expect(text(table)).toMatch(/1 claude-opus-5-5[\s\S]*2 gpt-6.1-sol/);
-    expect(text(table)).toContain('# Model Input Output Cached Cost Share Tokens');
+    expect(text(table)).toContain('# Model Sessions Input Output Cached Cost Share Tokens');
     // claude-opus-5-5: 4.2B, of which 7% plain input and cache writes, 3% output and 90% cache reads.
-    expect(text(table)).toContain('1 claude-opus-5-5 296.2M 127M 3.8B');
+    // 92% of Claude Code's 412 sessions.
+    expect(text(table)).toContain('1 claude-opus-5-5 379 296.2M 127M 3.8B');
   });
   it('shows the last 24 hours as stacked bars against the 24 before, without the views that need days', () => {
     const window = last24Hours();

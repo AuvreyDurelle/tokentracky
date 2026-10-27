@@ -330,6 +330,17 @@ fn sessions_of<'a>(rows: impl Iterator<Item = &'a slots::Dated>) -> u32 {
         .collect::<HashSet<_>>()
         .len() as u32
 }
+/// [`sessions_of`] for each group of slot rows that `key` gives.
+fn sessions_by<K: Eq + Hash>(rows: &[slots::Dated], key: impl Fn(&slots::Dated) -> K) -> HashMap<K, u32> {
+    let mut groups: HashMap<K, HashSet<(ToolId, &str)>> = HashMap::new();
+    for row in rows {
+        groups
+            .entry(key(row))
+            .or_default()
+            .insert((row.slot.key.tool, row.slot.key.session_id.as_str()));
+    }
+    groups.into_iter().map(|(key, sessions)| (key, sessions.len() as u32)).collect()
+}
 /// The UTC day of a timestamp (`occurredAt.slice(0, 10)`).
 fn day(event: &UsageEvent) -> Option<&str> {
     event.occurred_at.as_deref().map(|at| utf16_prefix(at, 10))
@@ -1217,6 +1228,8 @@ impl UsageStore {
             })
             .collect();
         let tz = options.tz.as_ref();
+        let tool_sessions = sessions_by(&rows, |row| row.slot.key.tool);
+        let model_sessions = sessions_by(&rows, |row| row.slot.key.model.clone());
         Ok(UsageSummary {
             tokens: all.tokens()?,
             breakdown: breakdown.clone(),
@@ -1233,6 +1246,7 @@ impl UsageStore {
                 .into_iter()
                 .map(|(tool, totals)| {
                     Ok(ToolUsage {
+                        sessions: tool_sessions.get(&tool).copied().unwrap_or(0),
                         tool,
                         tokens: totals.tokens()?,
                         breakdown: totals.breakdown(),
@@ -1245,6 +1259,7 @@ impl UsageStore {
                 .into_iter()
                 .map(|(model, totals)| {
                     Ok(ModelUsage {
+                        sessions: model_sessions.get(&model).copied().unwrap_or(0),
                         model,
                         tokens: totals.tokens()?,
                         breakdown: totals.breakdown(),

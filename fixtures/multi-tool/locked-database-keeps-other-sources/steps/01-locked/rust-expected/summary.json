@@ -1,0 +1,54 @@
+{
+  "activity": {
+    "activeDays": 0,
+    "averagePerActiveDay": 0,
+    "bestDay": null,
+    "currentStreak": 0,
+    "longestStreak": 0
+  },
+  "breakdown": {
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "input": 5,
+    "output": 5,
+    "reasoning": 0
+  },
+  "byModel": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 5,
+        "output": 5,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "unknown",
+      "sessions": 1,
+      "tokens": 10
+    }
+  ],
+  "byTool": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 5,
+        "output": 5,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "sessions": 1,
+      "tokens": 10,
+      "tool": "gemini"
+    }
+  ],
+  "cacheRate": 0,
+  "costMicrousd": null,
+  "costParts": null,
+  "daily": [],
+  "sessions": 1,
+  "tokens": 10
+}

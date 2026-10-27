@@ -28,6 +28,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "gpt-5",
+      "sessions": 1,
       "tokens": 3400
     },
     {
@@ -41,6 +42,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "claude-haiku-4.5",
+      "sessions": 1,
       "tokens": 650
     },
     {
@@ -54,6 +56,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "claude-sonnet-4.5",
+      "sessions": 1,
       "tokens": 12800
     }
   ],
@@ -68,6 +71,7 @@
       },
       "costMicrousd": null,
       "costParts": null,
+      "sessions": 2,
       "tokens": 16850,
       "tool": "copilot"
     }

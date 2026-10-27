@@ -1,0 +1,54 @@
+{
+  "activity": {
+    "activeDays": 0,
+    "averagePerActiveDay": 0,
+    "bestDay": null,
+    "currentStreak": 0,
+    "longestStreak": 0
+  },
+  "breakdown": {
+    "cacheRead": 2,
+    "cacheWrite": 0,
+    "input": 10,
+    "output": 3,
+    "reasoning": 1
+  },
+  "byModel": [
+    {
+      "breakdown": {
+        "cacheRead": 2,
+        "cacheWrite": 0,
+        "input": 10,
+        "output": 3,
+        "reasoning": 1
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "gpt-5-codex",
+      "sessions": 1,
+      "tokens": 15
+    }
+  ],
+  "byTool": [
+    {
+      "breakdown": {
+        "cacheRead": 2,
+        "cacheWrite": 0,
+        "input": 10,
+        "output": 3,
+        "reasoning": 1
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "sessions": 1,
+      "tokens": 15,
+      "tool": "codex"
+    }
+  ],
+  "cacheRate": 0.16666666666666666,
+  "costMicrousd": null,
+  "costParts": null,
+  "daily": [],
+  "sessions": 1,
+  "tokens": 15
+}

@@ -28,6 +28,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "deepseek-v4-flash",
+      "sessions": 2,
       "tokens": 1880
     },
     {
@@ -41,6 +42,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "deepseek-v4-pro",
+      "sessions": 1,
       "tokens": 220
     }
   ],
@@ -55,6 +57,7 @@
       },
       "costMicrousd": null,
       "costParts": null,
+      "sessions": 2,
       "tokens": 2100,
       "tool": "commandcode"
     }

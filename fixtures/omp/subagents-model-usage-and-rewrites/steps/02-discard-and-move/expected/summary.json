@@ -28,6 +28,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "gpt-5.1-codex",
+      "sessions": 1,
       "tokens": 2800
     },
     {
@@ -41,6 +42,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "gpt-5-mini",
+      "sessions": 1,
       "tokens": 220
     },
     {
@@ -54,6 +56,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "claude-opus-4-6",
+      "sessions": 2,
       "tokens": 14655
     },
     {
@@ -67,6 +70,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "claude-haiku-4-5",
+      "sessions": 1,
       "tokens": 1100
     }
   ],
@@ -81,6 +85,7 @@
       },
       "costMicrousd": null,
       "costParts": null,
+      "sessions": 3,
       "tokens": 18775,
       "tool": "omp"
     }

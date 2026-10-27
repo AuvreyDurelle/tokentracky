@@ -79,8 +79,8 @@ describe('totals from synthetic Claude Code and Codex logs', () => {
     expect(summary).toEqual({
       tokens: 532, breakdown: KINDS.all, costMicrousd: 1780, costParts: PARTS.all, sessions: 2, cacheRate: expect.closeTo(220 / 426, 12),
       // 302 Claude Code tokens (161 + 141) and 230 Codex tokens (150 + 80). The current streak depends on today's date.
-      byTool: expect.arrayContaining([{tool: 'claude', tokens: 302, breakdown: KINDS.claude, costMicrousd: 814, costParts: PARTS.claude}, {tool: 'codex', tokens: 230, breakdown: KINDS.codex, costMicrousd: 966, costParts: PARTS.codex}]),
-      byModel: expect.arrayContaining([{model: MODELS.claude, tokens: 302, breakdown: KINDS.claude, costMicrousd: 814, costParts: PARTS.claude}, {model: MODELS.codex, tokens: 230, breakdown: KINDS.codex, costMicrousd: 966, costParts: PARTS.codex}]),
+      byTool: expect.arrayContaining([{tool: 'claude', tokens: 302, breakdown: KINDS.claude, costMicrousd: 814, costParts: PARTS.claude, sessions: 1}, {tool: 'codex', tokens: 230, breakdown: KINDS.codex, costMicrousd: 966, costParts: PARTS.codex, sessions: 1}]),
+      byModel: expect.arrayContaining([{model: MODELS.claude, tokens: 302, breakdown: KINDS.claude, costMicrousd: 814, costParts: PARTS.claude, sessions: 1}, {model: MODELS.codex, tokens: 230, breakdown: KINDS.codex, costMicrousd: 966, costParts: PARTS.codex, sessions: 1}]),
       daily: [{day: FIXTURE_DAY, tokens: 532, breakdown: KINDS.all, costMicrousd: 1780, costParts: PARTS.all}],
       activity: {activeDays: 1, currentStreak: expect.any(Number), longestStreak: 1, bestDay: {day: FIXTURE_DAY, tokens: 532}, averagePerActiveDay: 532},
     });

@@ -1,8 +1,9 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import type { ProfileStats, SourceStatus } from '@tokentracky/core';
+import type { ProfileStats, SourceStatus, ToolId } from '@tokentracky/core';
 import type { ApiClient, DetectedTool, Health, LocalStatus, ShellState } from '../api';
 import { TOOLS, errorText, formatExact, timeAgo, timeUntil } from '../format';
 import { utcToday } from '../ranges';
+import { usageRevision } from '../refresh';
 import { Avatar, Loading, Notice, Spinner, ToolIcon } from '../ui';
 import { FolderModal, downloadCsv, setupHeading, useConnectFlow } from '../You';
 import { useLoad } from './load';
@@ -13,16 +14,16 @@ import './personal.css';
 type Tone = 'ok' | 'off' | 'warn';
 const ATTENTION: Partial<Record<SourceStatus['state'], string>> = { permission_required: 'Needs folder access', error: 'Needs attention', stale: 'Needs a scan' };
 
-/** One source's status line: whether its records were found, or what it needs. `note` carries the collector's own message. */
-export function sourceLine(source: SourceStatus, detected: boolean): { tone: Tone; text: string; found: boolean; note?: string } {
+/** One source's status line: whether its records were found, with its sessions in all history when known, or what it needs. `note` carries the collector's own message. */
+export function sourceLine(source: SourceStatus, detected: boolean, sessions?: number): { tone: Tone; text: string; found: boolean; note?: string } {
   const note = source.message || undefined;
   if (source.state === 'unsupported') return { tone: 'off', text: 'Not supported here', found: false, note };
   if (source.enabled && ATTENTION[source.state]) return { tone: 'warn', text: ATTENTION[source.state]!, found: true, note };
   if (source.enabled && source.state === 'paused') return { tone: 'off', text: 'Paused', found: true, note };
   if (source.enabled && source.state === 'importing') return { tone: 'ok', text: 'Importing…', found: true, note };
   if (!detected && !source.eventCount && !(source.enabled && source.state === 'current')) return { tone: 'off', text: 'Not found', found: false, note };
-  // Later: "N sessions" per source needs sessions per tool (Task 1.4); `eventCount` counts usage records.
-  return { tone: source.enabled ? 'ok' : 'off', text: source.eventCount ? `Detected · ${formatExact(source.eventCount)} records` : 'Detected', found: true, note };
+  const count = sessions ? `${formatExact(sessions)} ${sessions === 1 ? 'session' : 'sessions'}` : source.eventCount ? `${formatExact(source.eventCount)} records` : null;
+  return { tone: source.enabled ? 'ok' : 'off', text: count ? `Detected · ${count}` : 'Detected', found: true, note };
 }
 
 /** The Mac app checks automatically; its native prompts and gear menu let the user update and restart. */
@@ -44,6 +45,9 @@ export function SettingsView({ api, health, status, refresh }: { api: ApiClient;
   const [shell, setShell] = useState<ShellState | null | undefined>(undefined);
   const [detected, setDetected] = useState<DetectedTool[] | null>(null);
   const [paused, setPaused] = useState<boolean | null>(null);
+  // Each source's sessions in all history, read again when usage changes.
+  const history = useLoad(() => api.localSummary({ from: '2000-01-01', to: utcToday() }), [api, usageRevision(status)]);
+  const sessions = history.value ? new Map(history.value.byTool.map((item) => [item.tool, item.sessions])) : null;
   useEffect(() => {
     let live = true;
     api.shellState().then((value) => { if (live) setShell(value); }).catch(() => { if (live) setShell(null); });
@@ -56,7 +60,7 @@ export function SettingsView({ api, health, status, refresh }: { api: ApiClient;
     api.localOverview().then((value) => { if (live) setPaused(value.paused); }).catch(() => {});
     return () => { live = false; };
   }, [api, status?.collecting]);
-  return <SettingsPage api={api} health={health} status={status} refresh={refresh} shell={shell ?? null} onShell={setShell} detected={detected} paused={paused} onPaused={setPaused} />;
+  return <SettingsPage api={api} health={health} status={status} refresh={refresh} shell={shell ?? null} onShell={setShell} detected={detected} paused={paused} onPaused={setPaused} sessions={sessions} />;
 }
 
 const SECTIONS = [
@@ -69,9 +73,10 @@ const SECTIONS = [
 ] as const;
 const JOINED = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeZone: 'UTC' });
 
-export function SettingsPage({ api, health, status, refresh, shell, onShell, detected, paused, onPaused }: {
+export function SettingsPage({ api, health, status, refresh, shell, onShell, detected, paused, onPaused, sessions = null }: {
   api: ApiClient; health: Health; status: LocalStatus | null; refresh: () => Promise<void>;
   shell: ShellState | null; onShell: (shell: ShellState) => void; detected: DetectedTool[] | null; paused: boolean | null; onPaused: (paused: boolean) => void;
+  sessions?: Map<ToolId, number> | null;
 }) {
   const [chosen, setCurrent] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -112,7 +117,7 @@ export function SettingsPage({ api, health, status, refresh, shell, onShell, det
           </Row>
         </div>
       </Section>}
-      {status ? <Sources api={api} status={status} sources={sources} detected={detected} paused={paused} busy={busy} act={act} refresh={refresh} onPaused={onPaused} /> : <Loading>Loading sources…</Loading>}
+      {status ? <Sources api={api} status={status} sources={sources} detected={detected} sessions={sessions} paused={paused} busy={busy} act={act} refresh={refresh} onPaused={onPaused} /> : <Loading>Loading sources…</Loading>}
       <Section id="privacy" title="Leaderboard & privacy" note="Ranks are client-reported usage, not verified spending.">
         <Leaderboard api={api} health={health} status={status} profile={profile.value} refresh={refresh} busy={busy} act={act} />
       </Section>
@@ -155,12 +160,13 @@ function Toggle({ label, on, disabled, onChange }: { label: string; on: boolean;
   return <button type="button" role="switch" aria-checked={on} aria-label={label} className={`m-toggle${on ? ' on' : ''}`} disabled={disabled} onClick={onChange} />;
 }
 
-function Sources({ api, status, sources, detected, paused, busy, act, refresh, onPaused }: {
-  api: ApiClient; status: LocalStatus; sources: SourceStatus[]; detected: DetectedTool[] | null; paused: boolean | null; busy: string | null;
+function Sources({ api, status, sources, detected, sessions, paused, busy, act, refresh, onPaused }: {
+  api: ApiClient; status: LocalStatus; sources: SourceStatus[]; detected: DetectedTool[] | null; sessions: Map<ToolId, number> | null; paused: boolean | null; busy: string | null;
   act: (name: string, action: () => Promise<unknown>) => Promise<void>; refresh: () => Promise<void>; onPaused: (paused: boolean) => void;
 }) {
   const [editing, setEditing] = useState<SourceStatus | null>(null);
-  const lines = new Map(sources.map((source) => [source.id, sourceLine(source, detected?.some((tool) => tool.id === source.id) ?? false)]));
+  const lines = new Map(sources.map((source) => [source.id, sourceLine(source, detected?.some((tool) => tool.id === source.id) ?? false, sessions?.get(source.id))]));
+  const total = sessions ? [...sessions.values()].reduce((sum, count) => sum + count, 0) : null;
   const found = sources.filter((source) => lines.get(source.id)!.found);
   const choosable = sources.filter((source) => source.state !== 'unsupported');
   const isPaused = paused ?? status.sources.some((source) => source.state === 'paused');
@@ -180,7 +186,7 @@ function Sources({ api, status, sources, detected, paused, busy, act, refresh, o
         </Row>;
       })}
       <div className="st-group-foot">
-        <span className="st-grow">{found.length} of {sources.length} found · {sources.filter((source) => source.enabled).length} on</span>
+        <span className="st-grow">{found.length} of {sources.length} found · {sources.filter((source) => source.enabled).length} on{total !== null && ` · ${formatExact(total)} ${total === 1 ? 'session' : 'sessions'}`}</span>
         {choosable.length > 0 && <button type="button" className="m-btn st-sm" onClick={() => setEditing(choosable.find((source) => !lines.get(source.id)!.found) ?? choosable[0]!)}>{ICONS.folderPlus}Grant folder access…</button>}
       </div>
     </div>

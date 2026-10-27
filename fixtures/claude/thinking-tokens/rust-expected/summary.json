@@ -28,6 +28,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "claude-sonnet-4-6",
+      "sessions": 1,
       "tokens": 227
     }
   ],
@@ -42,6 +43,7 @@
       },
       "costMicrousd": null,
       "costParts": null,
+      "sessions": 1,
       "tokens": 227,
       "tool": "claude"
     }

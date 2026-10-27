@@ -4,7 +4,7 @@ import { addDays } from '../ranges';
 import { biggestSession, busiestWeekdayUtc, changeVsPrevious, dailyByModel, dailyByTool, favouriteModel, mostExpensiveDay, recentTotals, trendingModel } from './insights';
 
 const row = (day: string, tool: UsageBreakdownRow['tool'], model: string, tokens: number, costMicrousd: number | null = tokens): UsageBreakdownRow => ({ day, tool, model, tokens, breakdown: NONE.breakdown, costMicrousd });
-const NONE = { breakdown: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, costParts: null };
+const NONE = { breakdown: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, costParts: null, sessions: 0 };
 const DAYS = ['2026-10-23', '2026-10-24', '2026-10-25'];
 
 describe('dailyByTool', () => {

@@ -28,6 +28,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "MiniMax-M2",
+      "sessions": 1,
       "tokens": 15220
     }
   ],
@@ -42,6 +43,7 @@
       },
       "costMicrousd": null,
       "costParts": null,
+      "sessions": 1,
       "tokens": 15220,
       "tool": "minimax"
     }

@@ -28,6 +28,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "deepseek-v4",
+      "sessions": 1,
       "tokens": 6040
     },
     {
@@ -41,6 +42,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "unknown",
+      "sessions": 1,
       "tokens": 110
     },
     {
@@ -54,6 +56,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "claude-sonnet-4-6",
+      "sessions": 1,
       "tokens": 3100
     },
     {
@@ -67,6 +70,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "glm-5.3",
+      "sessions": 1,
       "tokens": 880
     }
   ],
@@ -81,6 +85,7 @@
       },
       "costMicrousd": null,
       "costParts": null,
+      "sessions": 1,
       "tokens": 10130,
       "tool": "codebuddy"
     }

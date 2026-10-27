@@ -30,6 +30,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "claude-sonnet-4-6",
+      "sessions": 2,
       "tokens": 4259
     },
     {
@@ -43,6 +44,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "unknown",
+      "sessions": 1,
       "tokens": 10
     },
     {
@@ -56,6 +58,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "gemini-2.5-pro",
+      "sessions": 1,
       "tokens": 450
     },
     {
@@ -69,6 +72,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "glm-4.6",
+      "sessions": 1,
       "tokens": 50
     }
   ],
@@ -84,6 +88,7 @@
       },
       "costMicrousd": null,
       "costParts": null,
+      "sessions": 3,
       "tokens": 4769,
       "tool": "pi"
     }

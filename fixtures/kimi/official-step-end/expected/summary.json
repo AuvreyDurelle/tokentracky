@@ -28,6 +28,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "k3",
+      "sessions": 1,
       "tokens": 10000
     },
     {
@@ -41,6 +42,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "kimi-code/kimi-for-coding",
+      "sessions": 1,
       "tokens": 9400
     },
     {
@@ -54,6 +56,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "kimi-for-coding",
+      "sessions": 2,
       "tokens": 10210
     }
   ],
@@ -68,6 +71,7 @@
       },
       "costMicrousd": null,
       "costParts": null,
+      "sessions": 2,
       "tokens": 29610,
       "tool": "kimi"
     }

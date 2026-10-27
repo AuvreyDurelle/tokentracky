@@ -28,6 +28,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "mimo-v2.5-pro",
+      "sessions": 2,
       "tokens": 900
     }
   ],
@@ -42,6 +43,7 @@
       },
       "costMicrousd": null,
       "costParts": null,
+      "sessions": 2,
       "tokens": 900,
       "tool": "mimo"
     }

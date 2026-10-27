@@ -1,0 +1,201 @@
+{
+  "activity": {
+    "activeDays": 4,
+    "averagePerActiveDay": 161,
+    "bestDay": {
+      "day": "2026-09-01",
+      "tokens": 161
+    },
+    "currentStreak": 3,
+    "longestStreak": 3
+  },
+  "breakdown": {
+    "cacheRead": 500,
+    "cacheWrite": 150,
+    "cacheWrite1h": 100,
+    "input": 55,
+    "output": 100,
+    "reasoning": 35
+  },
+  "byModel": [
+    {
+      "breakdown": {
+        "cacheRead": 100,
+        "cacheWrite": 30,
+        "cacheWrite1h": 20,
+        "input": 11,
+        "output": 20,
+        "reasoning": 7
+      },
+      "costMicrousd": 161,
+      "costParts": {
+        "cacheRead": 100,
+        "cacheSavings": 0,
+        "cacheWrite": 30,
+        "input": 11,
+        "output": 20
+      },
+      "model": "claude-haiku-4-5",
+      "sessions": 1,
+      "tokens": 161
+    },
+    {
+      "breakdown": {
+        "cacheRead": 300,
+        "cacheWrite": 90,
+        "cacheWrite1h": 60,
+        "input": 33,
+        "output": 60,
+        "reasoning": 21
+      },
+      "costMicrousd": 483,
+      "costParts": {
+        "cacheRead": 300,
+        "cacheSavings": 0,
+        "cacheWrite": 90,
+        "input": 33,
+        "output": 60
+      },
+      "model": "claude-sonnet-4-6",
+      "sessions": 1,
+      "tokens": 483
+    },
+    {
+      "breakdown": {
+        "cacheRead": 100,
+        "cacheWrite": 30,
+        "cacheWrite1h": 20,
+        "input": 11,
+        "output": 20,
+        "reasoning": 7
+      },
+      "costMicrousd": 161,
+      "costParts": {
+        "cacheRead": 100,
+        "cacheSavings": 0,
+        "cacheWrite": 30,
+        "input": 11,
+        "output": 20
+      },
+      "model": "claude-opus-4-7",
+      "sessions": 1,
+      "tokens": 161
+    }
+  ],
+  "byTool": [
+    {
+      "breakdown": {
+        "cacheRead": 500,
+        "cacheWrite": 150,
+        "cacheWrite1h": 100,
+        "input": 55,
+        "output": 100,
+        "reasoning": 35
+      },
+      "costMicrousd": 805,
+      "costParts": {
+        "cacheRead": 500,
+        "cacheSavings": 0,
+        "cacheWrite": 150,
+        "input": 55,
+        "output": 100
+      },
+      "sessions": 2,
+      "tokens": 805,
+      "tool": "claude"
+    }
+  ],
+  "cacheRate": 0.7092198581560284,
+  "costMicrousd": 805,
+  "costParts": {
+    "cacheRead": 500,
+    "cacheSavings": 0,
+    "cacheWrite": 150,
+    "input": 55,
+    "output": 100
+  },
+  "daily": [
+    {
+      "breakdown": {
+        "cacheRead": 100,
+        "cacheWrite": 30,
+        "cacheWrite1h": 20,
+        "input": 11,
+        "output": 20,
+        "reasoning": 7
+      },
+      "costMicrousd": 161,
+      "costParts": {
+        "cacheRead": 100,
+        "cacheSavings": 0,
+        "cacheWrite": 30,
+        "input": 11,
+        "output": 20
+      },
+      "day": "2026-09-01",
+      "tokens": 161
+    },
+    {
+      "breakdown": {
+        "cacheRead": 100,
+        "cacheWrite": 30,
+        "cacheWrite1h": 20,
+        "input": 11,
+        "output": 20,
+        "reasoning": 7
+      },
+      "costMicrousd": 161,
+      "costParts": {
+        "cacheRead": 100,
+        "cacheSavings": 0,
+        "cacheWrite": 30,
+        "input": 11,
+        "output": 20
+      },
+      "day": "2026-10-21",
+      "tokens": 161
+    },
+    {
+      "breakdown": {
+        "cacheRead": 100,
+        "cacheWrite": 30,
+        "cacheWrite1h": 20,
+        "input": 11,
+        "output": 20,
+        "reasoning": 7
+      },
+      "costMicrousd": 161,
+      "costParts": {
+        "cacheRead": 100,
+        "cacheSavings": 0,
+        "cacheWrite": 30,
+        "input": 11,
+        "output": 20
+      },
+      "day": "2026-10-22",
+      "tokens": 161
+    },
+    {
+      "breakdown": {
+        "cacheRead": 100,
+        "cacheWrite": 30,
+        "cacheWrite1h": 20,
+        "input": 11,
+        "output": 20,
+        "reasoning": 7
+      },
+      "costMicrousd": 161,
+      "costParts": {
+        "cacheRead": 100,
+        "cacheSavings": 0,
+        "cacheWrite": 30,
+        "input": 11,
+        "output": 20
+      },
+      "day": "2026-10-23",
+      "tokens": 161
+    }
+  ],
+  "sessions": 2,
+  "tokens": 805
+}

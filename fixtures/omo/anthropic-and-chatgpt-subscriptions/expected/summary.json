@@ -29,6 +29,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "gpt-5.1-codex",
+      "sessions": 1,
       "tokens": 9600
     },
     {
@@ -43,6 +44,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "claude-opus-4-6",
+      "sessions": 1,
       "tokens": 1736911
     }
   ],
@@ -58,6 +60,7 @@
       },
       "costMicrousd": null,
       "costParts": null,
+      "sessions": 1,
       "tokens": 1746511,
       "tool": "omo"
     }

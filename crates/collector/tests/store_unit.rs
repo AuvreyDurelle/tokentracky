@@ -260,6 +260,44 @@ mod source_statuses {
         assert_eq!((count(ToolId::Claude), count(ToolId::Codex)), (1, 1));
     }
     #[test]
+    fn counts_each_tool_and_model_sessions_in_a_summary() {
+        let mut store = store();
+        let original = event();
+        // Two Claude Code sessions, one using two models; one Codex session whose id repeats a Claude one.
+        let events = [
+            ("a", ToolId::Claude, "s1", "model-a"),
+            ("b", ToolId::Claude, "s1", "model-b"),
+            ("c", ToolId::Claude, "s2", "model-a"),
+            ("d", ToolId::Codex, "s1", "model-a"),
+        ]
+        .map(|(id, tool, session, model)| UsageEvent {
+            event_id: id.to_owned(),
+            tool,
+            session_id: session.to_owned(),
+            model: model.to_owned(),
+            ..original.clone()
+        });
+        for (index, event) in events.iter().enumerate() {
+            store
+                .commit_file(
+                    &FileCheckpoint {
+                        tool: event.tool,
+                        ..at(&format!("/{index}.jsonl"))
+                    },
+                    std::slice::from_ref(event),
+                    true,
+                )
+                .unwrap();
+        }
+        let summary = store.summary(&all()).unwrap();
+        assert_eq!(summary.sessions, 3);
+        let tool = |id| summary.by_tool.iter().find(|row| row.tool == id).unwrap().sessions;
+        assert_eq!((tool(ToolId::Claude), tool(ToolId::Codex)), (2, 1));
+        let model = |name: &str| summary.by_model.iter().find(|row| row.model == name).unwrap().sessions;
+        // model-a ran in Claude's s1 and s2 and in Codex's s1: three sessions, each tool's own.
+        assert_eq!((model("model-a"), model("model-b")), (3, 1));
+    }
+    #[test]
     fn publishes_the_same_capabilities_as_the_readme_matrix_for_every_tool() {
         let readme = std::fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("../../README.md")).unwrap();
         let rows: Vec<Vec<&str>> = readme

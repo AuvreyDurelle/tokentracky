@@ -28,6 +28,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "gpt-5.6-terra",
+      "sessions": 1,
       "tokens": 4250
     },
     {
@@ -41,6 +42,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "unknown",
+      "sessions": 1,
       "tokens": 10
     },
     {
@@ -54,6 +56,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "claude-haiku-4-5",
+      "sessions": 1,
       "tokens": 600
     },
     {
@@ -67,6 +70,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "claude-sonnet-4-6",
+      "sessions": 1,
       "tokens": 9620
     }
   ],
@@ -81,6 +85,7 @@
       },
       "costMicrousd": null,
       "costParts": null,
+      "sessions": 3,
       "tokens": 14480,
       "tool": "openclaw"
     }

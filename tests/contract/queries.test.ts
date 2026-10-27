@@ -83,7 +83,7 @@ describe('rolling and custom ranges', () => {
     expect(await tokens('days=90&q=claude-session')).toBe(TOKENS.today + TOKENS.tenDays);
     expect(await tokens('days=90&q=no-such-text')).toBe(0);
     expect(await tokens('days=90&tool=codex&q=sonnet')).toBe(0);
-    expect((await getJson(server, '/api/local/summary?days=90&tool=codex')).byTool).toEqual([{tool: 'codex', tokens: TOKENS.fortyDays, breakdown: expect.any(Object), costMicrousd: expect.any(Number), costParts: expect.any(Object)}]);
+    expect((await getJson(server, '/api/local/summary?days=90&tool=codex')).byTool).toEqual([{tool: 'codex', tokens: TOKENS.fortyDays, breakdown: expect.any(Object), costMicrousd: expect.any(Number), costParts: expect.any(Object), sessions: 1}]);
     expect((await getJson(server, '/api/local/sessions?days=90&tool=codex')).items).toHaveLength(1);
   });
   it('reports an empty range with null cost, zero activity and empty lists', async () => {

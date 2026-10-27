@@ -200,7 +200,7 @@ function Hero({ data, metric, days, range, period, refreshedAt }: { data: Tokens
     {tools.length > 0 && <table className="tk-tools">
       <thead><tr><th scope="col">Tool</th><th scope="col">Share</th><th scope="col">Tokens</th><th scope="col">%</th><th scope="col">Cost</th></tr></thead>
       <tbody>{tools.map((item) => <tr key={item.tool} style={{ ['--c' as string]: `var(--tool-${item.tool})` }}>
-        <th scope="row"><ToolIcon id={item.tool} />{toolLabel(item.tool)}</th>
+        <th scope="row"><ToolIcon id={item.tool} />{toolLabel(item.tool)} <small>{formatExact(item.sessions)} {item.sessions === 1 ? 'session' : 'sessions'}</small></th>
         <td><span className="tk-share"><i style={{ width: `${(item.tokens / (summary.tokens || 1)) * 100}%` }} /></span></td>
         <td className="tk-v" title={`${formatExact(item.tokens)} tokens`}>{formatCompact(item.tokens)}</td>
         <td>{formatShare(item.tokens, summary.tokens)}</td>
@@ -420,6 +420,7 @@ function Breakdown({ data, range, onExport }: { data: TokensData; range: DayRang
     return totals;
   }, [breakdown]);
   const kind = (tokens: number) => <td title={`${formatExact(tokens)} tokens`}>{formatCompact(tokens)}</td>;
+  const sessions = new Map(summary.byModel.map((item) => [item.model, item.sessions]));
   const tools = byTokens(costGroups(breakdown, (row) => row.tool));
   const days = [...summary.daily].filter((point) => point.tokens > 0).sort((a, b) => b.day.localeCompare(a.day));
   const projectRows = byTokens(projects);
@@ -441,13 +442,13 @@ function Breakdown({ data, range, onExport }: { data: TokensData; range: DayRang
       <div className="tk-push"><Seg small label="Break down by" value={tab} options={tabs} onChange={setTab} /></div>
     </div>
     <table className="m-table tk-table">
-      {/* Later: a Sessions column needs sessions per model (Task 1.4). Input is plain input and cache writes; Cached is cache reads. */}
+      {/* Input is plain input and cache writes; Cached is cache reads. */}
       {tab === 'model' && <>
-        <thead><tr><th className="l">#</th><th className="l">Model</th><th>Input</th><th>Output</th><th>Cached</th><th>Cost</th><th>Share</th><th>Tokens</th></tr></thead>
+        <thead><tr><th className="l">#</th><th className="l">Model</th><th>Sessions</th><th>Input</th><th>Output</th><th>Cached</th><th>Cost</th><th>Share</th><th>Tokens</th></tr></thead>
         <tbody>{models.map((item, index) => { const tool = toolOf.get(item.key); return <tr key={item.key}>
           <td className="l tk-rank">{index + 1}</td>
           <td className="l"><div className="tk-model-cell"><span className="tk-model-name">{tool && <ToolIcon id={tool} />}{item.key}</span><span className="tk-uline" style={{ ['--c' as string]: `var(--tool-${tool ?? 'cursor'})`, width: `${(item.tokens / top) * 72}%` }} /></div></td>
-          {kind(kinds.get(item.key)!.input + kinds.get(item.key)!.cacheWrite)}{kind(kinds.get(item.key)!.output)}{kind(kinds.get(item.key)!.cacheRead)}
+          <td>{formatExact(sessions.get(item.key) ?? 0)}</td>{kind(kinds.get(item.key)!.input + kinds.get(item.key)!.cacheWrite)}{kind(kinds.get(item.key)!.output)}{kind(kinds.get(item.key)!.cacheRead)}
           <td>{cost(item)}</td>{tail(item.tokens)}
         </tr>; })}</tbody>
       </>}

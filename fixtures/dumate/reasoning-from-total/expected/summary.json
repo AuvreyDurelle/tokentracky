@@ -28,6 +28,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "glm-5",
+      "sessions": 1,
       "tokens": 2911
     }
   ],
@@ -42,6 +43,7 @@
       },
       "costMicrousd": null,
       "costParts": null,
+      "sessions": 1,
       "tokens": 2911,
       "tool": "dumate"
     }

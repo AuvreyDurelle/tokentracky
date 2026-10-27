@@ -28,6 +28,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "glm-4.5",
+      "sessions": 1,
       "tokens": 2300
     },
     {
@@ -41,6 +42,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "mimo-v2.5-pro",
+      "sessions": 1,
       "tokens": 500
     }
   ],
@@ -55,6 +57,7 @@
       },
       "costMicrousd": null,
       "costParts": null,
+      "sessions": 1,
       "tokens": 2800,
       "tool": "zcode"
     }

@@ -86,6 +86,7 @@
 .mac .tk-tools tr > :first-child { padding-left: 0; text-align: left; }
 .mac .tk-tools tbody th { overflow: hidden; text-overflow: ellipsis; font-weight: 500; color: var(--text); }
 .mac .tk-tools tbody th .tool-ic { margin-right: 9px; vertical-align: -2px; }
+.mac .tk-tools tbody th small { margin-left: 4px; font-size: 12px; font-weight: 400; color: var(--text-4); }
 .mac .tk-tools tbody tr:last-child > * { border-bottom: 0; }
 .mac .tk-tools .tk-v { color: var(--text); }
 .mac .tk-share { display: block; height: 4px; overflow: hidden; border-radius: 2px; background: var(--surface-3); }

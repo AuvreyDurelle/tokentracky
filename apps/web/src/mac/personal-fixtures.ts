@@ -14,6 +14,13 @@ const TOOLS: Array<{ tool: ToolId; tokens: number; models: Array<[string, number
 // A month of weekday rhythm with a big day ten days in, ending on today's 186.4M.
 const SHAPE = [0.62, 0.58, 1.05, 1.12, 1.08, 1.02, 0.94, 0.41, 0.38, 1.18, 2.6, 1.55, 1.3, 1.12, 0.47, 0.44, 1.21, 1.32, 1.27, 1.19, 1.08, 0.52, 0.5, 1.4, 1.66, 1.58, 1.49, 1.3, 0.58, 0];
 const TODAY = 186.4e6;
+// Sessions per tool over the 30 days, as the mockup counts them (1,284 in all); each model gets its share of its tool's.
+const SESSIONS: Partial<Record<ToolId, number>> = { claude: 412, codex: 731, gemini: 74, opencode: 46, cline: 21 };
+const modelSessions = (model: string) => {
+  const tool = TOOLS.find((item) => item.models.some(([name]) => name === model));
+  const part = tool?.models.find(([name]) => name === model)?.[1] ?? 0;
+  return tool ? Math.max(1, Math.round((SESSIONS[tool.tool] ?? 0) * part)) : 0;
+};
 
 const sum = (values: number[]) => values.reduce((total, value) => total + value, 0);
 // Mostly cache reads, as the 97% cache rate says; output takes the rounding, so the kinds add up to the tokens.
@@ -23,7 +30,7 @@ const kinds = (tokens: number): TokenCounts => {
 };
 /** A total with its split by kind; cost by type stays unknown in these fixtures. */
 const typed = <T extends { tokens: number }>(item: T) => ({ ...item, breakdown: kinds(item.tokens), costParts: null });
-const toolRows = (rows: Array<{ tool: ToolId; tokens: number; costMicrousd: number }>) => rows.map(typed);
+const toolRows = (rows: Array<{ tool: ToolId; tokens: number; costMicrousd: number }>) => rows.map((row) => ({ ...typed(row), sessions: Math.round((SESSIONS[row.tool] ?? 0) * 0.86) }));
 
 export function personalFixtures(now = new Date()) {
   const today = utcToday(now);
@@ -56,15 +63,15 @@ export function personalFixtures(now = new Date()) {
     sessions: 1284,
     cacheRate: 0.971,
     activity: { activeDays: 30, currentStreak: 30, longestStreak: 30, bestDay: { day: day(19), tokens: 612.3e6 }, averagePerActiveDay: 229.7e6 },
-    byTool: group((row) => row.tool).map(([tool, value]) => typed({ tool, ...value })),
-    byModel: group((row) => row.model).map(([model, value]) => typed({ model, ...value })),
+    byTool: group((row) => row.tool).map(([tool, value]) => ({ ...typed({ tool, ...value }), sessions: SESSIONS[tool] ?? 0 })),
+    byModel: group((row) => row.model).map(([model, value]) => ({ ...typed({ model, ...value }), sessions: modelSessions(model) })),
     daily,
   };
   const before: UsageSummary = {
     tokens: 5.0e9, breakdown: kinds(5.0e9), costParts: null, costMicrousd: 1_731e6, sessions: 1102, cacheRate: 0.962,
     activity: { activeDays: 28, currentStreak: 4, longestStreak: 24, bestDay: null, averagePerActiveDay: 178e6 },
     byTool: toolRows([{ tool: 'claude', tokens: 3.26e9, costMicrousd: 1_204e6 }, { tool: 'codex', tokens: 1.39e9, costMicrousd: 441e6 }, { tool: 'opencode', tokens: 202e6, costMicrousd: 62e6 }, { tool: 'gemini', tokens: 117e6, costMicrousd: 23e6 }, { tool: 'cline', tokens: 71.6e6, costMicrousd: 19e6 }]),
-    byModel: [{ model: 'claude-opus-5-5', tokens: 3.1e9, costMicrousd: 1_150e6 }, { model: 'gpt-6.1-sol', tokens: 640e6, costMicrousd: 198e6 }, { model: 'gpt-6-astra', tokens: 690e6, costMicrousd: 220e6 }, { model: 'claude-sonnet-5-5', tokens: 160e6, costMicrousd: 54e6 }, { model: 'qwen-4-coder', tokens: 202e6, costMicrousd: 62e6 }, { model: 'gemini-3.8-flash', tokens: 117e6, costMicrousd: 23e6 }, { model: 'deepseek-v4', tokens: 71.6e6, costMicrousd: 19e6 }].map(typed),
+    byModel: [{ model: 'claude-opus-5-5', tokens: 3.1e9, costMicrousd: 1_150e6 }, { model: 'gpt-6.1-sol', tokens: 640e6, costMicrousd: 198e6 }, { model: 'gpt-6-astra', tokens: 690e6, costMicrousd: 220e6 }, { model: 'claude-sonnet-5-5', tokens: 160e6, costMicrousd: 54e6 }, { model: 'qwen-4-coder', tokens: 202e6, costMicrousd: 62e6 }, { model: 'gemini-3.8-flash', tokens: 117e6, costMicrousd: 23e6 }, { model: 'deepseek-v4', tokens: 71.6e6, costMicrousd: 19e6 }].map((row) => ({ ...typed(row), sessions: modelSessions(row.model) })),
     daily: [],
   };
   // A year: tracking began about 290 days ago with a few quiet days, then every day for the last 34.

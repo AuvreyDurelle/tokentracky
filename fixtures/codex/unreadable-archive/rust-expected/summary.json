@@ -28,6 +28,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "gpt-5-codex",
+      "sessions": 1,
       "tokens": 330
     }
   ],
@@ -42,6 +43,7 @@
       },
       "costMicrousd": null,
       "costParts": null,
+      "sessions": 1,
       "tokens": 330,
       "tool": "codex"
     }

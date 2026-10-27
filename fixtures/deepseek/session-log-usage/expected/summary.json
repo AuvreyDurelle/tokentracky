@@ -28,6 +28,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "deepseek-v4-flash",
+      "sessions": 1,
       "tokens": 9500
     },
     {
@@ -41,6 +42,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "deepseek-v4-pro",
+      "sessions": 1,
       "tokens": 70
     }
   ],
@@ -55,6 +57,7 @@
       },
       "costMicrousd": null,
       "costParts": null,
+      "sessions": 1,
       "tokens": 9570,
       "tool": "deepseek"
     }

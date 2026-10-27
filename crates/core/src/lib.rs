@@ -287,6 +287,8 @@ pub struct ToolUsage {
     pub cost_microusd: Option<u64>,
     #[ts(type = "CostParts | null")]
     pub cost_parts: Option<CostParts>,
+    /// Distinct sessions, each tool's own, that used it.
+    pub sessions: u32,
 }
 /// One model's share of a summary (`UsageSummary.byModel`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -300,6 +302,8 @@ pub struct ModelUsage {
     pub cost_microusd: Option<u64>,
     #[ts(type = "CostParts | null")]
     pub cost_parts: Option<CostParts>,
+    /// Distinct sessions, each tool's own, that used it.
+    pub sessions: u32,
 }
 /// One UTC day of a summary (`UsageSummary.daily`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]

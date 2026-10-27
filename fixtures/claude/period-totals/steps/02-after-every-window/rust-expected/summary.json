@@ -1,0 +1,117 @@
+{
+  "activity": {
+    "activeDays": 4,
+    "averagePerActiveDay": 408,
+    "bestDay": {
+      "day": "2026-10-21",
+      "tokens": 1130
+    },
+    "currentStreak": 0,
+    "longestStreak": 1
+  },
+  "breakdown": {
+    "cacheRead": 500,
+    "cacheWrite": 150,
+    "cacheWrite1h": 100,
+    "input": 1116,
+    "output": 0,
+    "reasoning": 0
+  },
+  "byModel": [
+    {
+      "breakdown": {
+        "cacheRead": 500,
+        "cacheWrite": 150,
+        "cacheWrite1h": 100,
+        "input": 1116,
+        "output": 0,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "claude-sonnet-4-6",
+      "sessions": 1,
+      "tokens": 1766
+    }
+  ],
+  "byTool": [
+    {
+      "breakdown": {
+        "cacheRead": 500,
+        "cacheWrite": 150,
+        "cacheWrite1h": 100,
+        "input": 1116,
+        "output": 0,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "sessions": 1,
+      "tokens": 1766,
+      "tool": "claude"
+    }
+  ],
+  "cacheRate": 0.28312570781426954,
+  "costMicrousd": null,
+  "costParts": null,
+  "daily": [
+    {
+      "breakdown": {
+        "cacheRead": 100,
+        "cacheWrite": 30,
+        "cacheWrite1h": 20,
+        "input": 1,
+        "output": 0,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "day": "2026-09-30",
+      "tokens": 131
+    },
+    {
+      "breakdown": {
+        "cacheRead": 100,
+        "cacheWrite": 30,
+        "cacheWrite1h": 20,
+        "input": 10,
+        "output": 0,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "day": "2026-10-02",
+      "tokens": 140
+    },
+    {
+      "breakdown": {
+        "cacheRead": 100,
+        "cacheWrite": 30,
+        "cacheWrite1h": 20,
+        "input": 100,
+        "output": 0,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "day": "2026-10-19",
+      "tokens": 230
+    },
+    {
+      "breakdown": {
+        "cacheRead": 100,
+        "cacheWrite": 30,
+        "cacheWrite1h": 20,
+        "input": 1000,
+        "output": 0,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "day": "2026-10-21",
+      "tokens": 1130
+    }
+  ],
+  "sessions": 1,
+  "tokens": 1766
+}

@@ -78,6 +78,12 @@ describe('sourceLine', () => {
     expect(sourceLine(source({ enabled: false, eventCount: 0, state: 'detected' }), false)).toEqual({ tone: 'off', text: 'Not found', found: false });
     expect(sourceLine(source({ enabled: false, eventCount: 0, state: 'detected' }), true)).toEqual({ tone: 'off', text: 'Detected', found: true });
   });
+  it('counts its sessions in all history when they are known', () => {
+    expect(sourceLine(source({}), true, 1284).text).toBe('Detected · 1,284 sessions');
+    expect(sourceLine(source({}), true, 1).text).toBe('Detected · 1 session');
+    expect(sourceLine(source({}), true, 0).text).toBe('Detected · 48,210 records');
+    expect(text(page({ sessions: new Map([['claude', 1284], ['codex', 807]]) }))).toContain('5 of 7 found · 5 on · 2,091 sessions');
+  });
   it('passes on what needs attention, and says when collection is paused', () => {
     expect(sourceLine(source({ state: 'permission_required', message: 'Grant access to ~/.claude' }), true)).toMatchObject({ tone: 'warn', text: 'Needs folder access', note: 'Grant access to ~/.claude' });
     expect(sourceLine(source({ state: 'error', message: '' }), true)).toMatchObject({ tone: 'warn', text: 'Needs attention' });

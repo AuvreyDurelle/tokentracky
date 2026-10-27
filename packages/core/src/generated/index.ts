@@ -74,8 +74,16 @@ export type UsageSummary = {
   costParts: CostParts | null;
   sessions: number;
   cacheRate: number;
-  byTool: Array<{ tool: ToolId, tokens: number, breakdown: TokenCounts, costMicrousd: number | null, costParts: CostParts | null }>;
-  byModel: Array<{ model: string, tokens: number, breakdown: TokenCounts, costMicrousd: number | null, costParts: CostParts | null }>;
+  byTool: Array<{ tool: ToolId, tokens: number, breakdown: TokenCounts, costMicrousd: number | null, costParts: CostParts | null, 
+/**
+ * Distinct sessions, each tool's own, that used it.
+ */
+sessions: number }>;
+  byModel: Array<{ model: string, tokens: number, breakdown: TokenCounts, costMicrousd: number | null, costParts: CostParts | null, 
+/**
+ * Distinct sessions, each tool's own, that used it.
+ */
+sessions: number }>;
   daily: Array<{ day: string, tokens: number, breakdown: TokenCounts, costMicrousd: number | null, costParts: CostParts | null }>;
 };
 export type SessionSummary = {
