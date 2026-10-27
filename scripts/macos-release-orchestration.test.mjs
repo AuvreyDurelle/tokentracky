@@ -133,7 +133,7 @@ for (const [name, change] of [['a missing signing mode', (env) => delete env.TOK
   });
 }
 
-for (const failure of ['gate', 'gate-pending', 'gate-failed', 'notary', 'finder', 'signature', 'key-mismatch', 'restore', 'import', 'standalone', 'dirty', 'tag', 'tag-head']) {
+for (const failure of ['gate', 'gate-pending', 'gate-failed', 'notary', 'finder', 'background', 'signature', 'key-mismatch', 'restore', 'import', 'standalone', 'dirty', 'tag', 'tag-head']) {
   test(`release fails closed for ${failure}`, async () => {
     const f = await fixture();
     try {
@@ -149,7 +149,7 @@ for (const failure of ['gate', 'gate-pending', 'gate-failed', 'notary', 'finder'
       assert.notEqual(result.status, 0, result.stdout + result.stderr);
       await assert.rejects(readFile(join(f.root, 'dist/macos-release/verified-candidate-manifest.json')), /ENOENT/);
       const log = await readFile(f.env.STUB_LOG, 'utf8').catch(() => '');
-      if (['notary', 'finder', 'signature', 'key-mismatch', 'restore', 'import', 'standalone'].includes(failure)) {
+      if (['notary', 'finder', 'background', 'signature', 'key-mismatch', 'restore', 'import', 'standalone'].includes(failure)) {
         const calls = log.trim().split('\n').map(JSON.parse);
         const lists = calls.filter((call) => call.tool === 'security' && call.args[0] === 'list-keychains');
         assert.deepEqual(lists.at(-1).args, ['list-keychains', '-d', 'user', '-s', '/Users/test/Library/Keychains/login.keychain-db', '/Users/test/custom keychain.keychain-db']);
@@ -157,6 +157,7 @@ for (const failure of ['gate', 'gate-pending', 'gate-failed', 'notary', 'finder'
         assert.equal(calls.at(-1).args[0], 'delete-keychain');
       }
       if (failure === 'finder') assert.match(result.stderr, /-1743/);
+      if (failure === 'background') assert.match(result.stderr, /Finder did not save the DMG background/);
     } finally { await rm(f.root, { recursive: true, force: true }); }
   });
 }
