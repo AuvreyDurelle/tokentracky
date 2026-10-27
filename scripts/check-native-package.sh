@@ -9,7 +9,7 @@ TARGET=${CARGO_TARGET_DIR:-"$ROOT/target"}
 (cd apps/mac && cargo tauri build --no-bundle -- --locked && cargo tauri bundle --bundles app)
 cargo build --locked --release -p tokentracky-cli --features embed-web
 APP="$TARGET/release/bundle/macos/Tokentracky.app"
-[[ "$("$TARGET/release/tokentracky" --version)" == "tokentracky $VERSION" ]]
+[[ "$("$TARGET/release/tokentracky" --version)" == "$VERSION" ]]
 [[ "$(lipo -archs "$TARGET/release/tokentracky")" == arm64 ]]
 [[ "$(plutil -extract CFBundleShortVersionString raw "$APP/Contents/Info.plist")" == "$VERSION" ]]
 BINARY=$(plutil -extract CFBundleExecutable raw "$APP/Contents/Info.plist")

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type { PublicProfile } from '@tokentracky/core';
-import { CommunityTypes, PodiumCard, ghostSlot, weekOverWeek } from './Leaderboard';
+import { CommunityTypes, PodiumCard, ghostSlot, mergeRows, weekOverWeek } from './Leaderboard';
 
 const builder = (rank: number, daily = Array<number>(14).fill(0)): PublicProfile => ({ alias: `builder-${rank}`, rank, tokens: 1000 - rank, previousRank: rank, daily });
 // Wednesday: three days of this week so far.
@@ -33,6 +33,15 @@ describe('ghost row', () => {
   });
   it('is hidden for members', () => {
     expect(ghostSlot(rows, 'token-wizard')).toBeNull();
+  });
+});
+
+describe('loading more builders', () => {
+  it('appends later pages in order', () => {
+    expect(mergeRows([builder(1), builder(2)], [[builder(3)], [builder(4)]]).map((item) => item.rank)).toEqual([1, 2, 3, 4]);
+  });
+  it('skips a builder already listed when rankings moved between loads', () => {
+    expect(mergeRows([builder(1), builder(2)], [[builder(2), builder(3)]]).map((item) => item.alias)).toEqual(['builder-1', 'builder-2', 'builder-3']);
   });
 });
 

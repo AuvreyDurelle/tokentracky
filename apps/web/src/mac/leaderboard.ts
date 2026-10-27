@@ -3,10 +3,10 @@ import type { PublicProfile, ToolId } from '@tokentracky/core';
 /** The tools with a column of their own; every other tool adds up into Other. */
 export const MAIN_TOOLS = ['claude', 'codex', 'gemini', 'opencode'] as const satisfies readonly ToolId[];
 
-/** Tokens from tools outside the main columns; null when the builder doesn't share a tool split. */
-export function otherTokens(toolTokens: Partial<Record<ToolId, number>> | undefined): number | null {
+/** Tokens from tools outside the columns, the main ones unless given; null when the builder doesn't share a tool split. */
+export function otherTokens(toolTokens: Partial<Record<ToolId, number>> | undefined, columns: readonly ToolId[] = MAIN_TOOLS): number | null {
   if (!toolTokens) return null;
-  return Object.entries(toolTokens).reduce((sum, [tool, tokens]) => (MAIN_TOOLS as readonly string[]).includes(tool) ? sum : sum + (tokens ?? 0), 0);
+  return Object.entries(toolTokens).reduce((sum, [tool, tokens]) => (columns as readonly string[]).includes(tool) ? sum : sum + (tokens ?? 0), 0);
 }
 
 /** The builder one rank above `me` and the tokens between you; null when `me` leads or either is missing. */

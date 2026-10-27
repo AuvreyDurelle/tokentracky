@@ -73,7 +73,7 @@ elif name == 'cargo':
     elif args[0] == 'build':
         assert args == ['build', '--locked', '--release', '-p', 'tokentracky-cli', '--features', 'embed-web']
         binary = target / 'tokentracky'
-        binary.write_text('#!/bin/sh\necho "tokentracky 0.1.0"\n')
+        binary.write_text('#!/bin/sh\necho "0.1.0"\n')  # what crates/cli prints for --version
         binary.chmod(0o755)
     elif args[:3] == ['tauri', 'signer', 'sign']:
         assert args[3:5] == ['--app-version', '0.1.0']

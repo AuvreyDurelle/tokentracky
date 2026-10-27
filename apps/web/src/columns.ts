@@ -2,7 +2,7 @@ import type { ToolId } from '@tokentracky/core';
 import { TOOLS } from './format';
 
 /** At most this many tools get a leaderboard column of their own. */
-export const TOOL_COLUMNS = 3;
+export const TOOL_COLUMNS = 4;
 
 /**
  * Tools with a leaderboard column: the ones with the most community tokens, largest first, at most `TOOL_COLUMNS`; a tool being ranked by keeps one.

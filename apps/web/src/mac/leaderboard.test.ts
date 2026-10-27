@@ -12,6 +12,7 @@ describe('leaderboard helpers', () => {
     expect(otherTokens({ claude: 5, codex: 4, gemini: 3, opencode: 2, cline: 1, kilo: 6 })).toBe(7);
     expect(otherTokens({ claude: 5 })).toBe(0);
     expect(otherTokens(undefined)).toBeNull();
+    expect(otherTokens({ claude: 50, codex: 30, cline: 15, roo: 5 }, ['claude', 'codex'])).toBe(20);
   });
   it('measures the gap to the builder one rank up', () => {
     const rows = [row('a', 41, 19_700_000_000), row('me', 42, 18_400_000_000), row('b', 43, 1)];

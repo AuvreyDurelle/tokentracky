@@ -1,6 +1,6 @@
 import { BADGE_IDS, badgeInputs, badgeProgress, type BadgeId, type BadgeProgress, type UsageSummary } from '@tokentracky/core';
 import { formatCompact } from '../format';
-import { ACHIEVEMENT_COPY, formatBadgeValue } from './achievement-copy';
+import { ACHIEVEMENT_COPY, TIER_NAMES, formatBadgeValue } from './achievement-copy';
 
 /** The page's sections (achievements.html), each badge in one. */
 export const GROUPS: Array<{ title: string; note: string; ids: BadgeId[] }> = [
@@ -65,4 +65,11 @@ export function progressOf(badge: BadgeProgress): string {
   if (unit === 'tokens') return `${formatCompact(badge.value)} of ${formatCompact(badge.next)}`;
   if (unit === 'growth' || unit === 'rank') return `${formatBadgeValue(badge.id, badge.value)} · needs ${formatBadgeValue(badge.id, badge.next)}`;
   return `${badge.value} of ${formatBadgeValue(badge.id, badge.next)}`;
+}
+
+/** A badge tile's line: the value, and how far it is to the next tier ("18.4B · 64% to Gold"), or "Top tier" at diamond. */
+export function tierProgress(badge: BadgeProgress): string {
+  const ratio = nextRatio(badge);
+  const value = formatBadgeValue(badge.id, badge.value);
+  return ratio === null ? `${value} · Top tier` : `${value} · ${Math.floor(ratio * 100)}% to ${TIER_NAMES[badge.tier + 1]}`;
 }

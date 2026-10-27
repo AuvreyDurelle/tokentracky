@@ -1,22 +1,30 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { type ExactTokenCounts, type CommunityStats, type LeaderboardResponse, type Period, type PublicProfile, type TokenCounts, type ToolId } from '@tokentracky/core';
 import { ApiError, type ApiClient } from './api';
 import { KINDS, TOOLS, errorText, formatCompact, formatCost, formatExact, formatShare, shortDay, timeAgo, toolLabel, topPercent } from './format';
 import { toolColumns } from './columns';
-import { Avatar, Empty, Loading, Notice, SearchIcon, Segmented, ToolIcon } from './ui';
+import { INSTALL_COMMAND, MAC_DOWNLOAD } from './download-config';
+import { AppleIcon, Avatar, CopyCommand, Empty, Loading, Notice, SearchIcon, Segmented, ToolIcon } from './ui';
 import { Sparkline } from './TrendChart';
 import {countShare, publicKinds, sharedCounts, sumCounts} from './public-counts';
+import { lastSeven, otherTokens } from './mac/leaderboard';
 
 const PERIODS: Array<{ value: Period; label: string }> = [{ value: 'week', label: 'Week' }, { value: 'month', label: 'Month' }, { value: 'all', label: 'All time' }];
 const PHRASE: Record<Period, string> = { week: 'this week', month: 'this month', all: 'all time' };
-const PAGE_SIZES = [20, 50, 100] as const;
-type PageSize = (typeof PAGE_SIZES)[number];
+/** Builders per load; reaching the end of the list loads the next page. */
+const PAGE_SIZE = 50;
+const STEPS = [
+  { title: 'Install', text: `The Mac app or one terminal command. It finds Claude Code, Codex and ${TOOLS.length - 2} more tools on its own.` },
+  { title: 'Approve the code in your browser', text: 'Sign in, check the short code matches, done. Nothing to copy or paste.' },
+  { title: 'You’re ranked', text: 'The history already on your computer counts right away. Daily totals sync on their own.' },
+];
 
 /** `all` and a tool rank by tokens; `cost` reorders by estimated cost while ranks keep following tokens. */
 type RankBy = 'all' | ToolId | 'cost';
-/** Columns after rank, move and builder. `lifetime` is all-time tokens, shown beside a week or month total; `last24h` is
- * the last 24 whole hours. */
-type ColumnId = 'tokens' | 'lifetime' | 'cost' | 'last24h' | `tool:${ToolId}`;
+/** Columns after rank and builder. `lifetime` is all-time tokens, shown beside a week or month total; `last24h` is
+ * the last 24 whole hours; `other` adds up the tools without a column; `last7` is the last 7 days' daily tokens. */
+type ColumnId = 'tokens' | 'lifetime' | 'cost' | 'last24h' | `tool:${ToolId}` | 'other' | 'last7';
+type Join = { label: string; onClick: () => void };
 interface Standing { mine: PublicProfile; ahead: PublicProfile | null }
 
 const toolSum = (item: PublicProfile) => item.toolTokens ? Object.values(item.toolTokens).reduce((sum, value) => sum + (value ?? 0), 0) : item.tokens;
@@ -55,14 +63,22 @@ export function ghostSlot(rows: PublicProfile[], me: string | null): number | nu
   return after === -1 ? rows.length : after;
 }
 
+/** The first page, then each page loaded since. A builder already listed is skipped, as rankings can move between loads. */
+export function mergeRows(first: PublicProfile[], more: PublicProfile[][]): PublicProfile[] {
+  const rows = [...first];
+  const seen = new Set(first.map((item) => item.alias));
+  for (const item of more.flat()) if (!seen.has(item.alias)) { seen.add(item.alias); rows.push(item); }
+  return rows;
+}
+
 /** When the current window resets: Monday 00:00 UTC for the week, the 1st for the month. */
-function resetText(period: Period, windowStart: string | null, now = Date.now()): string | null {
+function resetText(period: Period, windowStart: string | null, now = Date.now()): { window: string; left: string } | null {
   if (period === 'all' || !windowStart) return null;
   const start = new Date(windowStart);
   const end = period === 'week' ? start.getTime() + 7 * 86_400_000 : Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, 1);
   const minutes = Math.max(0, Math.round((end - now) / 60_000));
   const left = minutes >= 1440 ? `${Math.floor(minutes / 1440)}d ${Math.floor((minutes % 1440) / 60)}h` : `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
-  return `${period === 'week' ? 'Week' : 'Month'} of ${shortDay(windowStart.slice(0, 10))} · resets in ${left}`;
+  return { window: `${period === 'week' ? 'Week' : 'Month'} of ${shortDay(windowStart.slice(0, 10))}`, left };
 }
 
 /** Community tokens by type, all time, from every upload that reports types; reasoning is part of output. */
@@ -75,24 +91,26 @@ export function CommunityTypes({ breakdown, exact }: { breakdown: TokenCounts; e
   </span>)}</p>;
 }
 
-export function Leaderboard({ api, me, join, onProfile }: { api: ApiClient; me: string | null; join: { label: string; onClick: () => void } | null; onProfile: (alias: string) => void }) {
+export function Leaderboard({ api, me, join, onProfile, onGuide }: { api: ApiClient; me: string | null; join: Join | null; onProfile: (alias: string) => void; onGuide: () => void }) {
   const [period, setPeriodState] = useState<Period>(periodFromUrl);
   const setPeriod = (next: Period) => { setPeriodState(next); periodToUrl(next); };
   const [community, setCommunity] = useState<CommunityStats | null>(null);
   const [rankBy, setRankBy] = useState<RankBy>('all');
   const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState<PageSize>(20);
   // `overview` is the all-tools first page: community totals, the trend and the default rankings.
   const [overview, setOverview] = useState<LeaderboardResponse | null>(null);
   const [list, setList] = useState<LeaderboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<unknown>(null);
   const [standing, setStanding] = useState<Standing | null>(null);
+  // Pages loaded by scrolling, kept with the first page they continue: a new period, tool or search starts over.
+  const [more, setMore] = useState<{ base: LeaderboardResponse; pages: PublicProfile[][]; failed: boolean } | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const busy = useRef(false);
+  const foot = useRef<HTMLElement>(null);
   const query = search.trim();
-  const custom = rankBy !== 'all' || query !== '' || page > 1 || pageSize !== 20;
+  const custom = rankBy !== 'all' || query !== '';
 
-  useEffect(() => { setPage(1); }, [period, rankBy, query, pageSize]);
   // The headline counts every member.
   useEffect(() => {
     let live = true;
@@ -101,7 +119,7 @@ export function Leaderboard({ api, me, join, onProfile }: { api: ApiClient; me: 
   }, [api]);
   useEffect(() => {
     let live = true; setLoading(true);
-    api.leaderboard(period, 'all', '', 1)
+    api.leaderboard(period, 'all', '', 1, PAGE_SIZE)
       .then((next) => { if (live) { setOverview(next); setError(null); } })
       .catch((value: unknown) => { if (live) { setOverview(null); setError(value); } })
       .finally(() => { if (live) setLoading(false); });
@@ -110,12 +128,12 @@ export function Leaderboard({ api, me, join, onProfile }: { api: ApiClient; me: 
   useEffect(() => {
     if (!custom) { setList(null); return; }
     let live = true; setLoading(true);
-    const timer = window.setTimeout(() => api.leaderboard(period, rankBy === 'cost' ? 'all' : rankBy, query, page, pageSize, rankBy === 'cost' ? 'cost' : 'tokens')
+    const timer = window.setTimeout(() => api.leaderboard(period, rankBy === 'cost' ? 'all' : rankBy, query, 1, PAGE_SIZE, rankBy === 'cost' ? 'cost' : 'tokens')
       .then((next) => { if (live) { setList(next); setError(null); } })
       .catch((value: unknown) => { if (live) setError(value); })
       .finally(() => { if (live) setLoading(false); }), query ? 250 : 0);
     return () => { live = false; window.clearTimeout(timer); };
-  }, [api, period, rankBy, query, page, pageSize, custom]);
+  }, [api, period, rankBy, query, custom]);
   useEffect(() => {
     if (!me) { setStanding(null); return; }
     let live = true;
@@ -131,8 +149,31 @@ export function Leaderboard({ api, me, join, onProfile }: { api: ApiClient; me: 
   }, [api, me, period, overview?.updatedAt]);
 
   const shown = custom ? list : overview;
-  const rows = shown?.items ?? [];
-  const pages = shown ? Math.max(1, Math.ceil(shown.total / shown.pageSize)) : 1;
+  const extra = more && more.base === shown ? more.pages : [];
+  const rows = shown ? mergeRows(shown.items, extra) : [];
+  const hasMore = shown !== null && (extra.length + 1) * shown.pageSize < shown.total;
+  const failed = more !== null && more.base === shown && more.failed;
+  const loadMore = () => {
+    if (!shown || !hasMore || loading || busy.current) return;
+    busy.current = true; setLoadingMore(true);
+    const base = shown;
+    const kept = (current: typeof more) => current?.base === base ? current.pages : [];
+    api.leaderboard(period, rankBy === 'cost' ? 'all' : rankBy, query, extra.length + 2, PAGE_SIZE, rankBy === 'cost' ? 'cost' : 'tokens')
+      .then((next) => setMore((current) => ({ base, pages: [...kept(current), next.items], failed: false })))
+      .catch(() => setMore((current) => ({ base, pages: kept(current), failed: true })))
+      .finally(() => { busy.current = false; setLoadingMore(false); });
+  };
+  const loadLatest = useRef(loadMore);
+  loadLatest.current = loadMore;
+  // Reaching the foot of the list loads the next page. Observing again after each load re-checks a foot that is still in view;
+  // after a failure it waits for "Try again".
+  useEffect(() => {
+    const node = foot.current;
+    if (!node || !hasMore || loading || loadingMore || failed || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver((entries) => { if (entries.some((entry) => entry.isIntersecting)) loadLatest.current(); }, { rootMargin: '600px 0px' });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [shown, extra.length, hasMore, loading, loadingMore, failed]);
   const unavailable = error instanceof ApiError && error.code === 'CLOUD_UNAVAILABLE';
   // Your all-tools standing, pinned above the list when you are not already on this page.
   const pinned = standing && !custom && !rows.some((item) => item.alias === me) ? standing.mine : null;
@@ -143,10 +184,15 @@ export function Leaderboard({ api, me, join, onProfile }: { api: ApiClient; me: 
   const tools = toolColumns(overviewCounts?.toolTotals ?? {}, rankBy);
   // Every shared tool can be ranked by, in the fixed tool order.
   const rankable = TOOLS.filter((tool) => (overviewCounts?.toolTotals[tool.id] ?? 0n) > 0 || tools.includes(tool.id));
-  const columns: ColumnId[] = ['tokens', ...(period === 'all' ? [] : ['lifetime' as const]), 'cost', 'last24h', ...tools.map((id) => `tool:${id}` as const)];
+  // Shared tools without a column of their own add up in Other.
+  const others = rankable.filter((tool) => !tools.includes(tool.id));
+  const columns: ColumnId[] = ['tokens', ...(period === 'all' ? [] : ['lifetime' as const]), 'cost', 'last24h', ...tools.map((id) => `tool:${id}` as const), ...(others.length ? ['other' as const] : []), 'last7'];
+  const end = shown?.updatedAt ?? new Date().toISOString();
   const th = (id: ColumnId) => {
     if (id === 'lifetime') return <th key={id} scope="col" className="c-num c-life" title="All-time tokens across every tool">Lifetime</th>;
     if (id === 'last24h') return <th key={id} scope="col" className="c-num c-24h" title="Tokens in the last 24 whole hours across every tool, UTC">24h</th>;
+    if (id === 'other') return <th key={id} scope="col" className="c-num c-tool" title={others.map((tool) => tool.label).join(', ')}><span className="th-others">{others.slice(0, 3).map((tool) => <ToolIcon key={tool.id} id={tool.id} />)}</span>Other</th>;
+    if (id === 'last7') return <th key={id} scope="col" className="c-num c-days" title="Daily tokens over the last 7 days, UTC">7 days</th>;
     const tool = id.startsWith('tool:') ? id.slice(5) as ToolId : null;
     const sort: RankBy = id === 'tokens' ? 'all' : id === 'cost' ? 'cost' : tool!;
     const label = id === 'tokens' ? 'Tokens' : id === 'cost' ? 'Est. cost' : toolLabel(tool!);
@@ -158,8 +204,10 @@ export function Leaderboard({ api, me, join, onProfile }: { api: ApiClient; me: 
     if (id === 'tokens') return <td key={id} className={`c-num c-total${rankBy === 'all' || rankBy === 'cost' ? ' sorted' : ''}`} title={`${formatExact(allTools(item, rankBy))} tokens`}>{formatCompact(allTools(item, rankBy))}</td>;
     if (id === 'lifetime') return <td key={id} className="c-num c-life" title={item.lifetimeTokens === undefined ? undefined : `${formatExact(item.lifetimeTokens)} tokens all time`}>{item.lifetimeTokens === undefined ? <span className="none">—</span> : formatCompact(item.lifetimeTokens)}</td>;
     if (id === 'last24h') return <td key={id} className="c-num c-24h" title={item.last24hTokens === undefined ? undefined : `${formatExact(item.last24hTokens)} tokens in the last 24 hours`}>{item.last24hTokens === undefined ? <span className="none" title="Not sent by this builder’s app yet">—</span> : formatCompact(item.last24hTokens)}</td>;
-    const tool = id.slice(5) as ToolId;
-    return <td key={id} className={`c-num c-tool${rankBy === tool ? ' sorted' : ''}`}>{item.toolTokens ? formatCompact(item.toolTokens[tool] ?? 0) : <span className="none" title="Not shared">—</span>}</td>;
+    if (id === 'last7') return <td key={id} className="c-days"><Sparkline values={lastSeven(item.daily)} end={end} mine={item.alias === me} /></td>;
+    const tool = id === 'other' ? null : id.slice(5) as ToolId;
+    const value = item.toolTokens ? tool ? item.toolTokens[tool] ?? 0 : otherTokens(item.toolTokens, tools)! : null;
+    return <td key={id} className={`c-num c-tool${tool && rankBy === tool ? ' sorted' : ''}`}>{value ? formatCompact(value) : <span className="none" title={value === null ? 'Not shared' : undefined}>—</span>}</td>;
   };
   const row = (item: PublicProfile, extra?: string) => {
     const mine = item.alias === me;
@@ -167,8 +215,7 @@ export function Leaderboard({ api, me, join, onProfile }: { api: ApiClient; me: 
     const top = mine ? topPercent(item.rank, (extra === 'pinned' ? overview : shown)?.builders ?? 0) : null;
     const used = usedTools(item);
     return <tr key={`${extra ?? ''}${item.alias}`} className={[mine ? 'mine' : '', extra ?? ''].join(' ').trim() || undefined} onClick={() => onProfile(item.alias)}>
-      <td className="c-rank num">{item.rank <= 3 ? <span className={`medal g${item.rank}`}>{item.rank}</span> : item.rank}</td>
-      <td className="c-move num"><Move item={item} /></td>
+      <td className="c-rank num"><span className="rk">{item.rank <= 3 ? <span className={`medal g${item.rank}`}>{item.rank}</span> : item.rank}<Move item={item} /></span></td>
       <td className="c-who"><div className="who"><Avatar alias={item.alias} />
         <div className="who-text"><span className="who-line"><button type="button" onClick={(event) => { event.stopPropagation(); onProfile(item.alias); }}>{item.alias}</button>{mine && <span className="badge">You</span>}
             {used.length > 0 && <span className="tstack" title={used.map((tool) => tool.label).join(', ')}>{used.slice(0, 5).map((tool) => <ToolIcon key={tool.id} id={tool.id} />)}</span>}</span>
@@ -177,7 +224,7 @@ export function Leaderboard({ api, me, join, onProfile }: { api: ApiClient; me: 
     </tr>;
   };
   // Page one of a ranking shows its top three as a podium; search, cost order and later pages are plain lists.
-  const podium = !custom || (page === 1 && query === '' && rankBy !== 'cost') ? rows.slice(0, 3) : [];
+  const podium = query === '' && rankBy !== 'cost' ? rows.slice(0, 3) : [];
   const listed = rows.slice(podium.length);
   const slot = !custom && join ? ghostSlot(listed, me) : null;
   const builders = community?.builders ?? overview?.total ?? null;
@@ -197,19 +244,17 @@ export function Leaderboard({ api, me, join, onProfile }: { api: ApiClient; me: 
           : unavailable ? 'Leaderboard not connected' : error ? 'Rankings unavailable' : 'Loading…'}</p>
         {overview && community?.breakdown && <CommunityTypes breakdown={community.breakdown} exact={community.exactAggregates?.breakdown} />}
       </div>
-      {join && <button type="button" className="btn primary join-cta" onClick={join.onClick}>Sign up and start tracking</button>}
+      <Segmented label="Period" value={period} options={PERIODS} onChange={setPeriod} />
     </header>
 
+    {join && <JoinStrip join={join} />}
+
     <div className="board-filters">
-      <div className="board-controls">
-        <Segmented label="Period" value={period} options={PERIODS} onChange={setPeriod} />
-        <label className="rank-by"><span className="sr-only">Rank by tool</span>
-          <select className="input select" value={rankBy === 'cost' ? 'all' : rankBy} onChange={(event) => setRankBy(event.target.value as RankBy)}>
-            <option value="all">All tools</option>
-            {rankable.map((tool) => <option key={tool.id} value={tool.id}>{tool.label}</option>)}
-          </select></label>
+      <div className="chips" role="group" aria-label="Rank by tool">
+        <button type="button" className="chip" aria-pressed={rankBy === 'all' || rankBy === 'cost'} onClick={() => setRankBy('all')}>All tools</button>
+        {rankable.map((tool) => <button key={tool.id} type="button" className="chip" aria-pressed={rankBy === tool.id} onClick={() => setRankBy(tool.id)}><ToolIcon id={tool.id} />{tool.label}</button>)}
       </div>
-      {reset && <p className="faint reset">{reset}</p>}
+      {reset && <p className="reset"><ClockIcon />{reset.window} · resets in <b>{reset.left}</b></p>}
     </div>
 
     {podium.length > 0 && <ol className="podium" aria-label={`Top ${podium.length}`}>
@@ -230,24 +275,45 @@ export function Leaderboard({ api, me, join, onProfile }: { api: ApiClient; me: 
         : <Empty title="No one’s on the board yet" action={join && <button type="button" className="btn primary" onClick={join.onClick}>{join.label}</button>}>Be the first to put your tokens up.</Empty>)}
       {shown && (listed.length > 0 || pinned || slot !== null) && shown.total > 0 && <div className="table-wrap" style={{ opacity: loading ? 0.6 : 1 }}><table className="table">
         <thead><tr>
-          <th scope="col" className="c-rank">#</th>
-          <th scope="col" className="c-move" title="Rank change since the end of yesterday, UTC">Move</th>
+          <th scope="col" className="c-rank" title="▲ ▼ rank change since the end of yesterday, UTC">Rank</th>
           <th scope="col" className="c-who">Builder</th>
           {columns.map(th)}
         </tr></thead>
         <tbody>
           {pinned && row(pinned, 'pinned')}
-          {listed.flatMap((item, index) => index === slot && join ? [<GhostRow key="ghost" span={columns.length + 3} onJoin={join.onClick} />, row(item)] : [row(item)])}
-          {slot === listed.length && join && <GhostRow key="ghost" span={columns.length + 3} onJoin={join.onClick} />}
+          {listed.flatMap((item, index) => index === slot && join ? [<GhostRow key="ghost" span={columns.length + 2} onJoin={join.onClick} />, row(item)] : [row(item)])}
+          {slot === listed.length && join && <GhostRow key="ghost" span={columns.length + 2} onJoin={join.onClick} />}
         </tbody>
       </table></div>}
-      {shown && shown.total > PAGE_SIZES[0] && <footer className="pager">
-        <span className="num">{formatExact((page - 1) * shown.pageSize + 1)}–{formatExact(Math.min(page * shown.pageSize, shown.total))} of {formatExact(shown.total)}</span>
-        <label className="rows-label">Rows<select className="input select" value={pageSize} onChange={(event) => setPageSize(Number(event.target.value) as PageSize)}>{PAGE_SIZES.map((size) => <option key={size} value={size}>{size}</option>)}</select></label>
-        <span className="actions"><button type="button" className="btn sm" disabled={page <= 1} onClick={() => setPage((value) => value - 1)}>Previous</button><button type="button" className="btn sm" disabled={page >= pages} onClick={() => setPage((value) => value + 1)}>Next</button></span>
+      {shown && shown.total > 0 && <footer className="board-foot" ref={foot}>
+        <span className="num">Showing 1–{formatExact(rows.length)} of {formatExact(shown.total)} {shown.total === 1 ? 'builder' : 'builders'}</span>
+        {hasMore && <span className="actions">{failed && !loadingMore && <span>Couldn’t load more.</span>}
+          <button type="button" className="btn sm" disabled={loadingMore} onClick={loadMore}>{loadingMore ? 'Loading…' : failed ? 'Try again' : 'Load more'}</button></span>}
       </footer>}
     </section>
+
+    {join && <section className="how" aria-labelledby="how-title">
+      <header className="how-head"><h2 id="how-title">How joining works</h2><button type="button" className="link-quiet" onClick={onGuide}>Full guide →</button></header>
+      <ol className="how-steps">{STEPS.map((step, index) => <li key={step.title}><span className="step-num">{index + 1}</span><div><strong>{step.title}</strong><p>{step.text}</p></div></li>)}</ol>
+    </section>}
   </div>;
+}
+
+/** For visitors: how to get on the board, with the install command and the Mac app when this deploy offers them. */
+function JoinStrip({ join }: { join: Join }) {
+  return <section className="join-strip" aria-label="Join the leaderboard">
+    <div className="join-q"><span className="join-ic" aria-hidden="true"><TrophyIcon /></span>
+      <div><strong>Where would you rank?</strong><small>{INSTALL_COMMAND ? 'One command, about a minute.' : 'It takes about a minute.'}</small></div></div>
+    <div>
+      {INSTALL_COMMAND && <CopyCommand text={INSTALL_COMMAND} />}
+      <p className="join-cap"><LockIcon />Prompts, code and project names never leave your computer.</p>
+    </div>
+    <div className="join-actions">
+      {MAC_DOWNLOAD
+        ? <>{INSTALL_COMMAND && <span className="faint">or</span>}<a className="btn" href={MAC_DOWNLOAD}><AppleIcon />Download for Mac</a></>
+        : <button type="button" className="btn primary" onClick={join.onClick}>{join.label}</button>}
+    </div>
+  </section>;
 }
 
 /** One of the top three. The gap is to the builder above; first place shows its lead. Week-over-week appears only for the week, where 14 days cover both. */
@@ -288,11 +354,24 @@ const moveText = (item: PublicProfile) => {
 
 function Move({ item }: { item: PublicProfile }) {
   const text = moveText(item);
-  if (item.previousRank === null) return item.tokens > 0 ? <span className="move new" title={text ?? undefined}>New</span> : <span className="move">–</span>;
+  if (item.previousRank === null) return item.tokens > 0 ? <span className="move new" title={text ?? undefined}>New</span> : null;
   const change = item.previousRank - item.rank;
-  return <span className={`move${change > 0 ? ' up' : change < 0 ? ' down' : ''}`} title={text ?? undefined}>{change > 0 ? '↑' : change < 0 ? '↓' : '–'}{change ? Math.abs(change) : ''}</span>;
+  return change ? <span className={`move ${change > 0 ? 'up' : 'down'}`} title={text ?? undefined}>{change > 0 ? '▲' : '▼'}{Math.abs(change)}</span> : null;
 }
 
 function SortIcon() {
   return <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2.5 4 5 6.5 7.5 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>;
+}
+
+function ClockIcon() {
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>;
+}
+
+function LockIcon() {
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>;
+}
+
+function TrophyIcon() {
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" /><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" /><path d="M4 22h16" /><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" /><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" /><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" /></svg>;
 }
