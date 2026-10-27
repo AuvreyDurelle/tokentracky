@@ -2,12 +2,16 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { addDays } from '../ranges';
 import { personalFixtures } from './personal-fixtures';
-import { PopoverPanel, latestSessions, streakOf } from './Popover';
+import { PopoverPanel, hourBars, latestSessions, sameTimeYesterday, streakOf } from './Popover';
 
 const f = personalFixtures();
 const noop = () => {};
-const panel = (overrides: Partial<Parameters<typeof PopoverPanel>[0]> = {}) => renderToStaticMarkup(<PopoverPanel overview={f.overview} recent={f.recent} month={f.month} sessions={f.sessions} status={f.status}
-  today={f.today} busy={null} error={null} onGear={noop} onOpen={noop} onSessions={noop} onRefresh={noop} onPause={noop} {...overrides} />);
+// 10:20 UTC: hours 00 to 09 have passed, 10 is under way and 11 to 23 are to come.
+const now = Date.parse(`${f.today}T10:20:00Z`);
+const hour = (index: number, tokens: number) => ({ hour: new Date(Date.parse(`${f.today}T00:00:00Z`) + index * 3_600_000).toISOString(), tool: 'claude' as const, model: 'claude-opus-5-5', tokens, breakdown: { input: 0, output: tokens, cacheRead: 0, cacheWrite: 0 }, costMicrousd: null });
+const hours = [hour(3, 4e6), hour(8, 10e6), hour(8, 2e6), hour(10, 6e6)];
+const panel = (overrides: Partial<Parameters<typeof PopoverPanel>[0]> = {}) => renderToStaticMarkup(<PopoverPanel overview={f.overview} recent={f.recent} month={f.month} sessions={f.sessions} hours={hours} yesterday={11e6} status={f.status}
+  today={f.today} now={now} busy={null} error={null} onGear={noop} onOpen={noop} onSessions={noop} onRefresh={noop} onPause={noop} {...overrides} />);
 const text = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 
 describe('PopoverPanel', () => {
@@ -17,15 +21,26 @@ describe('PopoverPanel', () => {
     expect(html).toContain('186.4M tokens');
     expect(html).toMatch(/\$\d[\d,.]* est\. cost/);
   });
-  it('charts the last 14 days with today lit', () => {
+  it("charts today's 24 UTC hours, the hour under way lit and the ones to come faint", () => {
     const bars = [.../<div class="po-bars"[^>]*>([\s\S]*?)<\/div>/.exec(panel())![1]!.matchAll(/<i[^>]*>/g)].map((match) => match[0]);
-    expect(bars).toHaveLength(14);
-    expect(bars.at(-1)).toContain('class="now"');
-    expect(bars.slice(0, -1).some((bar) => bar.includes('now'))).toBe(false);
+    expect(bars).toHaveLength(24);
+    expect(bars[10]).toContain('class="now"');
+    expect(bars.filter((bar) => bar.includes('class="f"'))).toHaveLength(13);
+    expect(bars[8]).toContain('height:100%');
+    expect(bars[0]).toContain('class="z"');
+    expect(text(panel())).toMatch(/10:00 · 6M so far/);
   });
-  it('lists this week, this month and all time from the overview', () => {
+  it('compares today so far with yesterday up to this time', () => {
+    // 22M so far against 11M: up 100%.
+    expect(text(panel())).toContain('+100% vs this time yesterday');
+    expect(text(panel({ yesterday: 44e6 }))).toContain('−50% vs this time yesterday');
+    expect(text(panel({ yesterday: 0 }))).not.toContain('vs this time yesterday');
+  });
+  it('lists this week, this month and all time from the overview, with the week and month costs', () => {
     const rows = [...panel().matchAll(/<div class="po-prow">([\s\S]*?)<\/div>/g)].map((match) => text(match[1]!));
-    expect(rows).toEqual(['This week 2.1B', 'This month 6.9B', 'All time 18.4B']);
+    expect(rows.map((row) => row.replace(/ \$[\d,.]+$/, ''))).toEqual(['This week 2.1B', 'This month 6.9B', 'All time 18.4B']);
+    // Whole dollars from $100.
+    expect(rows[1]).toMatch(/ \$2,39\d$/);
   });
   it("shows this month's tool mix, the streak and its seven weeks", () => {
     const html = panel();
@@ -68,5 +83,23 @@ describe('latestSessions', () => {
   it('keeps the most recently used, newest first', () => {
     expect(latestSessions(f.sessions, 3).map((session) => session.id)).toEqual(['s1', 's2', 's3']);
     expect(latestSessions([...f.sessions].reverse(), 2).map((session) => session.id)).toEqual(['s1', 's2']);
+  });
+});
+
+describe('hourBars', () => {
+  it("adds each hour's rows and marks the hours passed, under way and to come", () => {
+    const bars = hourBars(hours, f.today, now);
+    expect(bars.map((bar) => bar.tokens).filter(Boolean)).toEqual([4e6, 12e6, 6e6]);
+    expect(bars.filter((bar) => bar.when === 'past')).toHaveLength(10);
+    expect(bars[10]!.when).toBe('now');
+    expect(bars.filter((bar) => bar.when === 'later')).toHaveLength(13);
+  });
+});
+
+describe('sameTimeYesterday', () => {
+  it("runs from yesterday's UTC midnight to this time of day, up to the next quarter hour", () => {
+    const midnight = Date.parse(`${f.today}T00:00:00Z`);
+    expect(sameTimeYesterday(f.today, now)).toEqual({ since: midnight - 86_400_000, until: midnight + 10.5 * 3_600_000 - 86_400_000 });
+    expect(sameTimeYesterday(f.today, midnight + 15 * 60_000).until).toBe(midnight + 15 * 60_000 - 86_400_000);
   });
 });
