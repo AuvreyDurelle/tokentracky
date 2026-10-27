@@ -4728,7 +4728,7 @@ checksum = "fd3ca314f692efd6c868f8408f53fe444634a845f96c028b97d35f6a1f79f0ee"
 
 [[package]]
 name = "tokentracky-cli"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "axum",
  "clap",
@@ -4748,7 +4748,7 @@ dependencies = [
 
 [[package]]
 name = "tokentracky-collector"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "hex",
  "jiff",
@@ -4770,7 +4770,7 @@ dependencies = [
 
 [[package]]
 name = "tokentracky-core"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "serde",
  "serde_json",
@@ -4781,7 +4781,7 @@ dependencies = [
 
 [[package]]
 name = "tokentracky-local-api"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "axum",
  "base64 0.23.1",
@@ -4813,7 +4813,7 @@ dependencies = [
 
 [[package]]
 name = "tokentracky-mac"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "axum",
  "block2",
@@ -4843,7 +4843,7 @@ dependencies = [
 
 [[package]]
 name = "tokentracky-pricing"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "hex",
  "ryu-js",
@@ -4858,7 +4858,7 @@ dependencies = [
 
 [[package]]
 name = "tokentracky-secrets"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "base64 0.23.1",
  "libc",
