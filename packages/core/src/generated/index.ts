@@ -311,3 +311,12 @@ export type PeriodCosts = {
   month: number | null;
   allTime: number | null;
 };
+/** What the menu bar item shows beside its icon (`LocalSettings.menuBar`). */
+export type MenuBarShows = "tokens" | "cost" | "icon";
+/** Which total the menu bar item shows (`LocalSettings.menuBarPeriod`): local days in the computer's zone. */
+export type MenuBarPeriod = "today" | "week" | "month" | "all";
+/** The app's own settings, kept with the local history (`GET`/`PUT /api/local/settings`). */
+export type LocalSettings = {
+  menuBar: MenuBarShows;
+  menuBarPeriod: MenuBarPeriod;
+};

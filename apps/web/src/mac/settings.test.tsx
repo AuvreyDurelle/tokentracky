@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { ProfileStats, SourceStatus } from '@tokentracky/core';
 import type { ApiClient, Health, LocalStatus } from '../api';
 import { personalFixtures } from './personal-fixtures';
-import { Account, SettingsPage, sourceLine, updateLine } from './SettingsView';
+import { Account, SettingsPage, menuBarTitle, sourceLine, updateLine } from './SettingsView';
 
 const f = personalFixtures();
 const health: Health = { mode: 'local', authConfigured: false, version: '1.0.0', cloudUrl: 'https://tokentracky.example', supabaseUrl: null, supabaseAnonKey: null };
@@ -47,7 +47,7 @@ describe('SettingsPage', () => {
   });
   it("names its sections as the mockup does, with Account only for a linked Mac", () => {
     const nav = (html: string) => [...html.matchAll(/<button type="button" class="st-nav-item[^"]*"[^>]*><svg[\s\S]*?<\/svg>([^<]+)/g)].map((match) => match[1]!.replaceAll('&amp;', '&'));
-    expect(nav(page())).toEqual(['General', 'Sources', 'Leaderboard & privacy', 'Pricing & data', 'Updates', 'Account']);
+    expect(nav(page())).toEqual(['General', 'Sources', 'Leaderboard & privacy', 'Menu bar', 'Pricing & data', 'Updates', 'Account']);
     expect(nav(page({ status: { ...f.status, cloudLinked: false, alias: null } }))).not.toContain('Account');
     expect(nav(page({ shell: null }))).toEqual(['Sources', 'Leaderboard & privacy', 'Pricing & data', 'Account']);
   });
@@ -98,5 +98,26 @@ describe('updateLine', () => {
     expect(updateLine({ state: 'available', version: null })).toBe('A new version is available. Choose Download from the gear menu in the menu bar.');
     expect(updateLine({ state: 'ready', version: '1.1.0' })).toBe('Version 1.1.0 is downloaded. Choose Restart to install v1.1.0 from the gear menu in the menu bar.');
     expect(updateLine({ state: 'disabled', version: null })).toBe('Updates are off in this build.');
+  });
+});
+
+describe('menuBarTitle', () => {
+  // The same cases as apps/mac/src/menu.rs, so the preview shows what the menu bar will.
+  const overview = { ...f.overview, today: 1_234_567, week: 8_400_000, month: 20_149_999, allTime: 120e9, costs: { today: 64_800_000, week: 729_000_000, month: 2_394_000_000, allTime: null } };
+  it("titles the chosen period with its tokens or cost, or just the icon", () => {
+    expect(menuBarTitle(overview, { menuBar: 'tokens', menuBarPeriod: 'today' })).toBe('1.2M');
+    expect(menuBarTitle(overview, { menuBar: 'tokens', menuBarPeriod: 'week' })).toBe('8.4M');
+    expect(menuBarTitle(overview, { menuBar: 'tokens', menuBarPeriod: 'all' })).toBe('120B');
+    expect(menuBarTitle(overview, { menuBar: 'cost', menuBarPeriod: 'today' })).toBe('$64.80');
+    expect(menuBarTitle(overview, { menuBar: 'cost', menuBarPeriod: 'month' })).toBe('$2.4K');
+    expect(menuBarTitle(overview, { menuBar: 'icon', menuBarPeriod: 'today' })).toBe('');
+    expect(menuBarTitle(overview, { menuBar: 'cost', menuBarPeriod: 'all' })).toBe('120B');
+    expect(menuBarTitle({ ...overview, costs: { ...overview.costs, today: 999_995_000 } }, { menuBar: 'cost', menuBarPeriod: 'today' })).toBe('$1K');
+  });
+  it('shows the choices and the item as it looks now, only in the Mac app', () => {
+    const html = page({ overview, settings: { menuBar: 'cost', menuBarPeriod: 'today' } });
+    expect(html).toMatch(/<button type="button" class="on" aria-pressed="true">Cost<\/button>/);
+    expect(html).toContain('<span class="st-mb-item"><span class="brand-mark"></span>$64.80</span>');
+    expect(page({ overview, settings: { menuBar: 'cost', menuBarPeriod: 'today' }, shell: null })).not.toContain('st-mb-item');
   });
 });

@@ -89,3 +89,5 @@ pub use tokentracky_collector::detect::{DetectedTool, detect_tools};
 pub use tokentracky_collector::limits::claude_config_file;
 #[doc(no_inline)]
 pub use tokentracky_collector::store::UsageStore;
+#[doc(no_inline)]
+pub use tokentracky_core::{LocalSettings, MenuBarPeriod, MenuBarShows};

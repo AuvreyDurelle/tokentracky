@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import type { ProfileStats, SourceStatus, ToolId } from '@tokentracky/core';
+import type { LocalSettings, MenuBarPeriod, MenuBarShows, MenuOverview, ProfileStats, SourceStatus, ToolId } from '@tokentracky/core';
 import type { ApiClient, DetectedTool, Health, LocalStatus, ShellState } from '../api';
-import { TOOLS, errorText, formatExact, timeAgo, timeUntil } from '../format';
+import { TOOLS, errorText, formatCompact, formatCost, formatExact, timeAgo, timeUntil } from '../format';
 import { utcToday } from '../ranges';
 import { usageRevision } from '../refresh';
 import { Avatar, Loading, Notice, Spinner, ToolIcon } from '../ui';
@@ -40,11 +40,27 @@ export function updateLine(update: ShellState['update']): string {
   }
 }
 
+/** What the menu bar item shows under `settings`, as the app titles it (`apps/mac/src/menu.rs` `title`): the period's tokens
+ *  or cost, or nothing beside the icon. A period with an unpriced model shows its tokens rather than a made-up amount. */
+export function menuBarTitle(overview: MenuOverview, settings: LocalSettings): string {
+  const periods: Record<MenuBarPeriod, [number, number | null]> = {
+    today: [overview.today, overview.costs.today], week: [overview.week, overview.costs.week],
+    month: [overview.month, overview.costs.month], all: [overview.allTime, overview.costs.allTime],
+  };
+  const [tokens, cost] = periods[settings.menuBarPeriod];
+  if (settings.menuBar === 'icon') return '';
+  if (settings.menuBar === 'tokens' || cost === null) return formatCompact(tokens);
+  // Cents below $1,000, then K, M, B and T as for tokens.
+  return cost < 999_995_000 ? formatCost(cost) : `$${formatCompact(Math.round(cost / 1e6))}`;
+}
+
 /** Settings: the app's own switches where there is an app shell, the sources it reads, the leaderboard link, export and version. */
 export function SettingsView({ api, health, status, refresh }: { api: ApiClient; health: Health; status: LocalStatus | null; refresh: () => Promise<void> }) {
   const [shell, setShell] = useState<ShellState | null | undefined>(undefined);
   const [detected, setDetected] = useState<DetectedTool[] | null>(null);
   const [paused, setPaused] = useState<boolean | null>(null);
+  const [overview, setOverview] = useState<MenuOverview | null>(null);
+  const [settings, setSettings] = useState<LocalSettings | null>(null);
   // Each source's sessions in all history, read again when usage changes.
   const history = useLoad(() => api.localSummary({ from: '2000-01-01', to: utcToday() }), [api, usageRevision(status)]);
   const sessions = history.value ? new Map(history.value.byTool.map((item) => [item.tool, item.sessions])) : null;
@@ -52,31 +68,34 @@ export function SettingsView({ api, health, status, refresh }: { api: ApiClient;
     let live = true;
     api.shellState().then((value) => { if (live) setShell(value); }).catch(() => { if (live) setShell(null); });
     api.localDetect().then((value) => { if (live) setDetected(value.tools); }).catch(() => { if (live) setDetected([]); });
+    api.localSettings().then((value) => { if (live) setSettings(value); }).catch(() => {});
     return () => { live = false; };
   }, [api]);
-  // The overview knows whether collection is paused even when no source is on to show it.
+  // The overview knows whether collection is paused even when no source is on to show it, and gives the menu bar preview its totals.
   useEffect(() => {
     let live = true;
-    api.localOverview().then((value) => { if (live) setPaused(value.paused); }).catch(() => {});
+    api.localOverview().then((value) => { if (live) { setOverview(value); setPaused(value.paused); } }).catch(() => {});
     return () => { live = false; };
-  }, [api, status?.collecting]);
-  return <SettingsPage api={api} health={health} status={status} refresh={refresh} shell={shell ?? null} onShell={setShell} detected={detected} paused={paused} onPaused={setPaused} sessions={sessions} />;
+  }, [api, status?.collecting, usageRevision(status)]);
+  return <SettingsPage api={api} health={health} status={status} refresh={refresh} shell={shell ?? null} onShell={setShell} detected={detected} paused={paused} onPaused={setPaused} sessions={sessions}
+    overview={overview} settings={settings} onSettings={setSettings} />;
 }
 
 const SECTIONS = [
   { id: 'general', label: 'General', icon: ICONS.gear, shell: true },
   { id: 'sources', label: 'Sources', icon: ICONS.folder },
   { id: 'privacy', label: 'Leaderboard & privacy', icon: ICONS.shield },
+  { id: 'menubar', label: 'Menu bar', icon: ICONS.panelTop, shell: true },
   { id: 'pricing', label: 'Pricing & data', icon: ICONS.database },
   { id: 'updates', label: 'Updates', icon: ICONS.refresh, shell: true },
   { id: 'account', label: 'Account', icon: ICONS.user, linked: true },
 ] as const;
 const JOINED = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeZone: 'UTC' });
 
-export function SettingsPage({ api, health, status, refresh, shell, onShell, detected, paused, onPaused, sessions = null }: {
+export function SettingsPage({ api, health, status, refresh, shell, onShell, detected, paused, onPaused, sessions = null, overview = null, settings = null, onSettings = () => {} }: {
   api: ApiClient; health: Health; status: LocalStatus | null; refresh: () => Promise<void>;
   shell: ShellState | null; onShell: (shell: ShellState) => void; detected: DetectedTool[] | null; paused: boolean | null; onPaused: (paused: boolean) => void;
-  sessions?: Map<ToolId, number> | null;
+  sessions?: Map<ToolId, number> | null; overview?: MenuOverview | null; settings?: LocalSettings | null; onSettings?: (settings: LocalSettings) => void;
 }) {
   const [chosen, setCurrent] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -121,6 +140,7 @@ export function SettingsPage({ api, health, status, refresh, shell, onShell, det
       <Section id="privacy" title="Leaderboard & privacy" note="Ranks are client-reported usage, not verified spending.">
         <Leaderboard api={api} health={health} status={status} profile={profile.value} refresh={refresh} busy={busy} act={act} />
       </Section>
+      {shell && settings && <MenuBar settings={settings} overview={overview} busy={busy} change={(next) => void act('menubar', async () => onSettings(await api.setLocalSettings(next)))} />}
       <Section id="pricing" title="Pricing & data" note="Costs are estimates from a public price table. Models without a known price show as unknown, never $0.">
         <div className="st-group">
           {status?.pricingVersion && <Row label="Price table" desc="LiteLLM’s public table of API list prices, applied to every model it lists." meta={`Version ${status.pricingVersion.replace(/^litellm:/, '')}`} />}
@@ -272,6 +292,30 @@ export function Account({ health, status, profile, busy, unlink }: { health: Hea
       <Row label="Delete leaderboard profile" desc="Removes your public profile, rank and achievements from the website. Usage on this Mac is kept.">
         <a className="m-btn danger st-sm" href={`${health.cloudUrl}/you#danger`} target="_blank" rel="noopener noreferrer">Delete on the web{ICONS.external}</a>
       </Row>
+    </div>
+  </Section>;
+}
+
+const SHOWS: Array<{ value: MenuBarShows; label: string }> = [{ value: 'tokens', label: 'Tokens' }, { value: 'cost', label: 'Cost' }, { value: 'icon', label: 'Icon only' }];
+const PERIODS: Array<{ value: MenuBarPeriod; label: string }> = [{ value: 'today', label: 'Today' }, { value: 'week', label: 'Week' }, { value: 'month', label: 'Month' }, { value: 'all', label: 'All time' }];
+
+function Choice<T extends string>({ label, value, options, disabled, onChange }: { label: string; value: T; options: Array<{ value: T; label: string }>; disabled?: boolean; onChange: (value: T) => void }) {
+  return <div className="m-seg" role="group" aria-label={label}>{options.map((option) => <button key={option.value} type="button" className={option.value === value ? 'on' : undefined}
+    aria-pressed={option.value === value} disabled={disabled} onClick={() => onChange(option.value)}>{option.label}</button>)}</div>;
+}
+
+/** What the menu bar item shows, with the item as it looks now. */
+function MenuBar({ settings, overview, busy, change }: { settings: LocalSettings; overview: MenuOverview | null; busy: string | null; change: (settings: LocalSettings) => void }) {
+  const shown = overview ? menuBarTitle(overview, settings) : '';
+  return <Section id="menubar" title="Menu bar">
+    <div className="st-group">
+      <Row label="Show in the menu bar" desc="Beside the Tokentracky icon. Large numbers are shortened to K, M, B and T.">
+        <Choice label="Show in the menu bar" value={settings.menuBar} options={SHOWS} disabled={busy === 'menubar'} onChange={(menuBar) => change({ ...settings, menuBar })} />
+      </Row>
+      <Row label="Period" desc="Which total it shows, in your computer’s time zone.">
+        <Choice label="Period" value={settings.menuBarPeriod} options={PERIODS} disabled={busy === 'menubar' || settings.menuBar === 'icon'} onChange={(menuBarPeriod) => change({ ...settings, menuBarPeriod })} />
+      </Row>
+      <div className="st-mb-preview" aria-hidden="true"><span className="st-mb-item"><span className="brand-mark" />{shown}</span></div>
     </div>
   </Section>;
 }

@@ -11,7 +11,8 @@ use tokentracky_collector::store::{
     FileCheckpoint, PricedCost, PublicationOptions, QueryOptions, SourceConfiguration, StoreError, UsageStore,
 };
 use tokentracky_core::{
-    CostParts, MAX_SAFE_INTEGER, SourceState, TOOL_IDS, TokenCounts, ToolId, UsageEvent, total_tokens,
+    CostParts, LocalSettings, MAX_SAFE_INTEGER, MenuBarPeriod, MenuBarShows, SourceState, TOOL_IDS, TokenCounts,
+    ToolId, UsageEvent, total_tokens,
 };
 
 /// `digest('')`: the prefix hash of an empty file.
@@ -296,6 +297,40 @@ mod source_statuses {
         let model = |name: &str| summary.by_model.iter().find(|row| row.model == name).unwrap().sessions;
         // model-a ran in Claude's s1 and s2 and in Codex's s1: three sessions, each tool's own.
         assert_eq!((model("model-a"), model("model-b")), (3, 1));
+    }
+    #[test]
+    fn keeps_the_app_settings_with_the_history_and_reads_defaults_until_they_change() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("usage.sqlite");
+        let mut store = UsageStore::open(&path).unwrap();
+        assert_eq!(store.settings().unwrap(), LocalSettings::default());
+        assert_eq!(
+            (
+                LocalSettings::default().menu_bar,
+                LocalSettings::default().menu_bar_period
+            ),
+            (MenuBarShows::Tokens, MenuBarPeriod::Today)
+        );
+        let chosen = LocalSettings {
+            menu_bar: MenuBarShows::Cost,
+            menu_bar_period: MenuBarPeriod::Week,
+        };
+        store.set_settings(&chosen).unwrap();
+        assert_eq!(store.settings().unwrap(), chosen);
+        store.close().unwrap();
+        assert_eq!(UsageStore::open(&path).unwrap().settings().unwrap(), chosen);
+        // A value this version cannot read falls back to the defaults rather than failing the app.
+        let raw = Connection::open(&path).unwrap();
+        raw.execute(
+            "UPDATE metadata SET value='{\"menuBar\":\"sparkles\"}' WHERE key='settings'",
+            [],
+        )
+        .unwrap();
+        raw.close().unwrap();
+        assert_eq!(
+            UsageStore::open(&path).unwrap().settings().unwrap(),
+            LocalSettings::default()
+        );
     }
     #[test]
     fn publishes_the_same_capabilities_as_the_readme_matrix_for_every_tool() {

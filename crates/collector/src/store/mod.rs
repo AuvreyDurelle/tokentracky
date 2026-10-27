@@ -23,10 +23,10 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 use time::{OffsetDateTime, UtcOffset};
 use tokentracky_core::{
-    BucketTool, CostParts, DayTokens, DayUsage, HourBreakdownRow, MAX_SAFE_INTEGER, ModelUsage, Period, PeriodCosts,
-    ProjectSummary, PublicBucket, PublicHour, SessionSummary, SourceCapabilities, SourceState, SourceStatus, TOOL_IDS,
-    TokenCounts, ToolId, ToolUsage, UsageBreakdownRow, UsageEvent, UsageSummary, activity_stats, checked_sum,
-    is_public_model, is_utc_day, ranking_window, total_tokens,
+    BucketTool, CostParts, DayTokens, DayUsage, HourBreakdownRow, LocalSettings, MAX_SAFE_INTEGER, ModelUsage, Period,
+    PeriodCosts, ProjectSummary, PublicBucket, PublicHour, SessionSummary, SourceCapabilities, SourceState,
+    SourceStatus, TOOL_IDS, TokenCounts, ToolId, ToolUsage, UsageBreakdownRow, UsageEvent, UsageSummary,
+    activity_stats, checked_sum, is_public_model, is_utc_day, ranking_window, total_tokens,
 };
 
 /// `days` is a rolling window, which `offset` shifts back by that many days (e.g. the previous period); `from`/`to` are
@@ -812,6 +812,23 @@ impl UsageStore {
         self.db.execute(
             "INSERT OR IGNORE INTO metadata(key,value) VALUES('setup_completed','true')",
             [],
+        )?;
+        Ok(())
+    }
+    /// The app's settings: the defaults until they are changed, and when the saved value can't be read.
+    pub fn settings(&self) -> Result<LocalSettings> {
+        let value: Option<String> = self
+            .db
+            .query_row("SELECT value FROM metadata WHERE key='settings'", [], |row| row.get(0))
+            .optional()?;
+        Ok(value
+            .and_then(|value| serde_json::from_str(&value).ok())
+            .unwrap_or_default())
+    }
+    pub fn set_settings(&mut self, settings: &LocalSettings) -> Result<()> {
+        self.db.execute(
+            "INSERT INTO metadata(key,value) VALUES('settings',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+            [serde_json::to_string(settings)?],
         )?;
         Ok(())
     }

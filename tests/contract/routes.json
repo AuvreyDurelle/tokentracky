@@ -8,6 +8,8 @@
     {"method": "POST", "path": "/api/local/refresh"},
     {"method": "POST", "path": "/api/local/scan"},
     {"method": "PUT", "path": "/api/local/collection"},
+    {"method": "GET", "path": "/api/local/settings"},
+    {"method": "PUT", "path": "/api/local/settings"},
     {"method": "GET", "path": "/api/local/summary"},
     {"method": "GET", "path": "/api/local/sessions"},
     {"method": "GET", "path": "/api/local/breakdown"},

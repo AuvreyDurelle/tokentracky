@@ -14,7 +14,7 @@ use time::OffsetDateTime;
 use time::format_description::well_known::Rfc3339;
 use tokentracky_collector::detect::{default_source_paths, detect_tools};
 use tokentracky_collector::readers::is_supported;
-use tokentracky_core::{TOOL_IDS, ToolId, UsageEvent};
+use tokentracky_core::{LocalSettings, MenuBarPeriod, MenuBarShows, TOOL_IDS, ToolId, UsageEvent};
 use tokentracky_local_api::{
     BoxFuture, CloudLink, LocalApp, LocalOverview, SecretError, SecretStore, UsageStore, serve_tcp,
 };
@@ -1276,4 +1276,50 @@ async fn serve_tcp_serves_loopback_behind_the_session_and_closes_gracefully() {
         .close()
         .await
         .unwrap();
+}
+
+/// Rust only. The app's settings start at their defaults, save exactly as given, and reach the menu bar at once.
+#[tokio::test]
+async fn settings_save_what_the_menu_bar_shows_and_give_it_the_overview_again() {
+    let published: Arc<Mutex<Vec<LocalOverview>>> = Arc::default();
+    let sink = published.clone();
+    let (server, app) = Server::local(|options| {
+        options.on_refresh = Some(Arc::new(move |overview| sink.lock().unwrap().push(overview)));
+    })
+    .await;
+    let put = |body: Value| server.request("/api/local/settings", Init::method("PUT").json(body));
+
+    let reply = server.get("/api/local/settings").await;
+    assert_eq!(reply.status, 200, "{}", reply.text);
+    assert_eq!(reply.json(), json!({"menuBar": "tokens", "menuBarPeriod": "today"}));
+    assert_eq!(server.get("/api/local/settings?x=1").await.status, 400);
+
+    let chosen = json!({"menuBar": "cost", "menuBarPeriod": "week"});
+    let reply = put(chosen.clone()).await;
+    assert_eq!((reply.status, reply.json()), (200, chosen.clone()));
+    assert_eq!(server.get("/api/local/settings").await.json(), chosen);
+    let shown = published.lock().unwrap().last().cloned().unwrap();
+    assert_eq!(
+        shown.settings,
+        LocalSettings {
+            menu_bar: MenuBarShows::Cost,
+            menu_bar_period: MenuBarPeriod::Week
+        }
+    );
+    // The overview route serves the totals, not the settings.
+    assert_eq!(keys(&server.get("/api/local/overview").await.json()), OVERVIEW_KEYS);
+
+    for body in [
+        json!({"menuBar": "cost"}),
+        json!({"menuBar": "sparkles", "menuBarPeriod": "week"}),
+        json!({"menuBar": "icon", "menuBarPeriod": "week", "extra": true}),
+        json!(["icon", "week"]),
+    ] {
+        let reply = put(body.clone()).await;
+        assert_eq!(reply.status, 400, "{body}");
+        assert_eq!(reply.json()["error"]["code"], "INVALID_REQUEST");
+    }
+    assert_eq!(server.get("/api/local/settings").await.json(), chosen);
+    drop(server);
+    app.close().await.unwrap();
 }

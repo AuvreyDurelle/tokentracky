@@ -8,6 +8,7 @@ const routes: Array<{method: string; path: string; static?: boolean}> = inventor
 const SAMPLES: Record<string, {path?: string; json?: unknown}> = {
   'PUT /api/local/sources/:id': {path: '/api/local/sources/claude', json: {enabled: false, paths: []}},
   'PUT /api/local/collection': {json: {paused: false}},
+  'PUT /api/local/settings': {json: {menuBar: 'tokens', menuBarPeriod: 'today'}},
   // A well-formed link to a non-loopback http origin is refused before any network access.
   'PUT /api/local/cloud': {json: {url: 'http://example.com', deviceToken: 'x'.repeat(32), historyStart: null, shareTools: false, shareCost: false}},
   'GET /api/profiles/:alias': {path: '/api/profiles/someone'},
@@ -80,7 +81,7 @@ describe('unknown routes and the uniform error shape', () => {
   });
   it('answers 400 INVALID_REQUEST for a body that is not JSON', async () => {
     const headers = {'content-type': 'application/json'};
-    for (const path of ['/api/local/collection', '/api/local/sources/claude', '/api/local/cloud']) {
+    for (const path of ['/api/local/collection', '/api/local/settings', '/api/local/sources/claude', '/api/local/cloud']) {
       for (const body of ['{"paused":', 'not json', '{']) expectError(await server.request(path, {method: 'PUT', body, headers}), 400, 'INVALID_REQUEST');
     }
   });

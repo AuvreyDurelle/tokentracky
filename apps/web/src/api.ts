@@ -4,6 +4,7 @@ import type {
   HourBreakdownRow,
   LeaderboardNeighbours,
   LeaderboardResponse,
+  LocalSettings,
   MenuOverview,
   Period,
   ProfileStats,
@@ -179,6 +180,9 @@ export class ApiClient {
   sync() { return this.request<{ syncedAt: string }>('/api/local/sync', { method: 'POST' }); }
   /** The menu bar's totals and rank from the last refresh cycle. */
   localOverview() { return this.request<MenuOverview>('/api/local/overview'); }
+  /** The app's own settings, kept with the local history. */
+  localSettings() { return this.request<LocalSettings>('/api/local/settings'); }
+  setLocalSettings(settings: LocalSettings) { return this.request<LocalSettings>('/api/local/settings', { method: 'PUT', body: JSON.stringify(settings) }); }
   /** Likes go through the linked device's credential, never an account token. */
   likeStatus(alias: string) { return this.request<{ liked: boolean }>(`/api/local/likes/${encodeURIComponent(alias)}`); }
   like(alias: string) { return this.request<void>(`/api/local/likes/${encodeURIComponent(alias)}`, { method: 'PUT' }); }

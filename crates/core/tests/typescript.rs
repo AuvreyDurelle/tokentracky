@@ -63,6 +63,9 @@ fn generates_typescript_types() {
         (ActivityStats::docs(), ActivityStats::decl(&cfg)),
         (MenuOverview::docs(), MenuOverview::decl(&cfg)),
         (PeriodCosts::docs(), PeriodCosts::decl(&cfg)),
+        (MenuBarShows::docs(), MenuBarShows::decl(&cfg)),
+        (MenuBarPeriod::docs(), MenuBarPeriod::decl(&cfg)),
+        (LocalSettings::docs(), LocalSettings::decl(&cfg)),
     ] {
         out += &render(docs, decl);
     }

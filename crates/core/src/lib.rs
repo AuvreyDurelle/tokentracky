@@ -707,6 +707,32 @@ pub struct MenuOverview {
     /// Each total's estimated cost.
     pub costs: PeriodCosts,
 }
+/// What the menu bar item shows beside its icon (`LocalSettings.menuBar`).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "lowercase")]
+pub enum MenuBarShows {
+    #[default]
+    Tokens,
+    Cost,
+    Icon,
+}
+/// Which total the menu bar item shows (`LocalSettings.menuBarPeriod`): local days in the computer's zone.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "lowercase")]
+pub enum MenuBarPeriod {
+    #[default]
+    Today,
+    Week,
+    Month,
+    All,
+}
+/// The app's own settings, kept with the local history (`GET`/`PUT /api/local/settings`).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct LocalSettings {
+    pub menu_bar: MenuBarShows,
+    pub menu_bar_period: MenuBarPeriod,
+}
 /// Each period's estimated cost in micro-USD at the current prices: zero without usage, null when a model used in it
 /// has no price.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
