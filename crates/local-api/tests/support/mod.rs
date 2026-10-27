@@ -340,8 +340,8 @@ impl Stub {
 pub const ORIGIN: &str = "http://127.0.0.1:4771";
 pub const HOST: &str = "127.0.0.1:4771";
 
-/// The collector-backed routes, reduced to what the session and header tests need: a private read, refreshes that
-/// refuse while collection is paused, the pause switch, a query filter and a CSV download.
+/// The collector-backed routes, reduced to what the session and header tests need: a private read, a refresh that
+/// refuses while collection is paused, the pause switch, a query filter and a CSV download.
 fn stand_ins() -> Router<LocalState> {
     let paused = Arc::new(AtomicBool::new(false));
     let refresh = {
@@ -374,8 +374,7 @@ fn stand_ins() -> Router<LocalState> {
             "/api/local/status",
             get(|| async { axum::Json(json!({"private": true})) }),
         )
-        .route("/api/local/refresh", post(refresh.clone()))
-        .route("/api/local/scan", post(refresh))
+        .route("/api/local/refresh", post(refresh))
         .route("/api/local/collection", put(collection))
         .route(
             "/api/local/summary",

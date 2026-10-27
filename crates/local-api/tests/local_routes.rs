@@ -1,7 +1,7 @@
 //! The collector-backed routes, after `tests/contract/{health,sources,refresh,collection,queries,export}.test.ts`:
 //! the status composition, detection, the first run, source authorisation, refresh, the pause and refresh
-//! interaction, the usage queries and their filters, and the CSV export; then the Rust-only local days (`tz` and
-//! `GET /api/local/day`), the weekly rank of the cycle, the cached overview (Rust only) and the TCP transport.
+//! interaction, the usage queries and their filters, and the CSV export; then the Rust-only local days (`tz`), the
+//! weekly rank of the cycle, the cached overview (Rust only) and the TCP transport.
 mod support;
 
 use serde_json::{Value, json};
@@ -547,28 +547,24 @@ async fn sources_refuse_unknown_tools_bad_bodies_and_unusable_paths() {
 }
 
 #[tokio::test]
-async fn refresh_and_scan_run_one_cycle_and_answer_the_status() {
+async fn refresh_runs_one_cycle_and_answers_the_status() {
     let (server, _app) = Server::local(|_| {}).await;
-    for route in ["/api/local/refresh", "/api/local/scan"] {
-        let started = now();
-        let reply = post(&server, route).await;
-        assert_eq!(reply.status, 200, "{route}: {}", reply.text);
-        let body = reply.json();
-        assert_eq!(keys(&body), STATUS_KEYS);
-        assert_eq!(body["refreshing"], false);
-        // Even with nothing to read the cycle counts.
-        let last = millis(&body["lastRefreshAt"]);
-        assert!(last >= started - 1000 && last <= now() + 1000);
-        assert!(millis(&body["lastScanAt"]) >= started - 1000);
-        let next = millis(&body["nextRefreshAt"]) - last;
-        assert!((INTERVAL - 1000..=INTERVAL + 60_000).contains(&next), "{next}");
-        assert_eq!(status(&server).await["lastRefreshAt"], body["lastRefreshAt"]);
-    }
+    let started = now();
+    let reply = post(&server, "/api/local/refresh").await;
+    assert_eq!(reply.status, 200, "{}", reply.text);
+    let body = reply.json();
+    assert_eq!(keys(&body), STATUS_KEYS);
+    assert_eq!(body["refreshing"], false);
+    // Even with nothing to read the cycle counts.
+    let last = millis(&body["lastRefreshAt"]);
+    assert!(last >= started - 1000 && last <= now() + 1000);
+    assert!(millis(&body["lastScanAt"]) >= started - 1000);
+    let next = millis(&body["nextRefreshAt"]) - last;
+    assert!((INTERVAL - 1000..=INTERVAL + 60_000).contains(&next), "{next}");
+    assert_eq!(status(&server).await["lastRefreshAt"], body["lastRefreshAt"]);
     let replies = concurrent_refreshes(&server).await;
     assert!(replies.iter().all(|reply| reply.status == 200));
-    for route in ["/api/local/refresh", "/api/local/scan"] {
-        expect_error(&server.get(route).await, 404, "NOT_FOUND");
-    }
+    expect_error(&server.get("/api/local/refresh").await, 404, "NOT_FOUND");
 }
 
 /// Four concurrent refreshes, which share a cycle.
@@ -614,9 +610,7 @@ async fn pausing_refuses_refreshes_reports_enabled_sources_paused_and_resuming_r
     );
     // A source that is not enabled is not reported as paused.
     assert_eq!(source(&body, "codex")["state"], "permission_required");
-    for route in ["/api/local/refresh", "/api/local/scan"] {
-        expect_error(&post(&server, route).await, 409, "COLLECTION_PAUSED");
-    }
+    expect_error(&post(&server, "/api/local/refresh").await, 409, "COLLECTION_PAUSED");
     assert!(app.overview().await.unwrap().paused);
 
     // Nothing is read while paused, even a source authorised meanwhile.
@@ -919,7 +913,7 @@ async fn usage_queries_refuse_invalid_filters_on_every_route() {
 }
 
 #[tokio::test]
-async fn usage_queries_count_local_days_in_a_time_zone_and_the_day_route_gives_its_half_hours() {
+async fn usage_queries_count_local_days_in_a_time_zone() {
     let (server, _app) = Server::local(|_| {}).await;
     let root = scratch(&server).join(".claude").join("projects");
     let mut late = claude("late", 10, 0);
@@ -946,37 +940,6 @@ async fn usage_queries_count_local_days_in_a_time_zone_and_the_day_route_gives_i
     // The CSV keeps its UTC timestamps.
     let csv = server.get(&format!("/api/local/export?{range}")).await.text;
     assert!(csv.contains("\"2026-10-20T23:30:00.000Z\""), "{csv}");
-
-    // 08:30 in Tokyo is the eighteenth half hour of the 21st, which starts at 15:00 UTC on the 20th.
-    let reply = server.get("/api/local/day?date=2026-10-21&tz=Asia/Tokyo").await;
-    assert_eq!(reply.status, 200, "{}", reply.text);
-    let mut half_hours = vec![0; 48];
-    half_hours[17] = 140;
-    assert_eq!(
-        reply.json(),
-        json!({"start": "2026-10-20T15:00:00.000Z", "halfHours": half_hours})
-    );
-    let reply = server.get("/api/local/day?date=2026-10-20&tz=Asia/Tokyo").await;
-    assert_eq!(reply.json()["halfHours"], json!(vec![0; 48]));
-    for query in [
-        "",
-        "date=2026-10-21",
-        "tz=Asia/Tokyo",
-        "date=2026-02-30&tz=Asia/Tokyo",
-        "date=today&tz=Asia/Tokyo",
-        "date=2026-10-21&tz=Not/A_Zone",
-        "date=2026-10-21&date=2026-10-21&tz=Asia/Tokyo",
-    ] {
-        let reply = server.get(&format!("/api/local/day?{query}")).await;
-        expect_error(&reply, 400, "INVALID_FILTER");
-    }
-    expect_error(
-        &server
-            .get("/api/local/day?date=2026-10-21&tz=Asia/Tokyo&tool=claude")
-            .await,
-        400,
-        "INVALID_REQUEST",
-    );
 }
 
 #[tokio::test]

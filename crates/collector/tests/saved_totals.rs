@@ -92,7 +92,6 @@ fn read(store: &UsageStore) -> Value {
         "breakdown": store.breakdown(&local).unwrap(),
         "projects": store.projects(&all).unwrap(),
         "period": store.period_totals(NOW, Some(&kathmandu)).unwrap(),
-        "day": store.day_series("2026-10-25", &kathmandu).unwrap(),
         "counts": counts,
     })
 }

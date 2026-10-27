@@ -32,9 +32,9 @@ describe('refresh cycle and the status times', () => {
     expect(iso(before.nextRefreshAt) - Date.now()).toBeGreaterThan(HOUR - 120_000);
     expect(iso(before.nextRefreshAt) - Date.now()).toBeLessThanOrEqual(HOUR + 60_000);
   });
-  it.each(['refresh', 'scan'])('POST /api/local/%s runs one cycle and answers with the status after it', async route => {
+  it('POST /api/local/refresh runs one cycle and answers with the status after it', async () => {
     const started = Date.now();
-    const reply = await server.request(`/api/local/${route}`, {method: 'POST'});
+    const reply = await server.request('/api/local/refresh', {method: 'POST'});
     expect(reply.status).toBe(200);
     expect(reply.headers['content-type']).toMatch(/^application\/json/);
     const body = reply.json();
@@ -91,7 +91,7 @@ describe('refresh cycle and the status times', () => {
     await refresh(server);
     expect((await status()).sources.find((item: {id: string}) => item.id === 'claude')).toMatchObject({state: 'current', eventCount: 2});
   });
-  it('has no GET form of either refresh route', async () => {
-    for (const route of ['refresh', 'scan']) expectError(await server.request(`/api/local/${route}`), 404, 'NOT_FOUND');
+  it('has no GET form of the refresh route', async () => {
+    expectError(await server.request('/api/local/refresh'), 404, 'NOT_FOUND');
   });
 });

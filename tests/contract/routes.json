@@ -6,7 +6,6 @@
     {"method": "GET", "path": "/api/local/detect"},
     {"method": "PUT", "path": "/api/local/sources/:id"},
     {"method": "POST", "path": "/api/local/refresh"},
-    {"method": "POST", "path": "/api/local/scan"},
     {"method": "PUT", "path": "/api/local/collection"},
     {"method": "GET", "path": "/api/local/summary"},
     {"method": "GET", "path": "/api/local/sessions"},

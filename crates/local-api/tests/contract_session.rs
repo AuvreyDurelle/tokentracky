@@ -246,11 +246,7 @@ async fn launch_link_session_protection_and_response_headers() {
     }
 
     // Requires the workspace Origin for every change, and changes nothing without it.
-    for (method, path) in [
-        ("POST", "/api/local/refresh"),
-        ("POST", "/api/local/scan"),
-        ("DELETE", "/api/local/cloud"),
-    ] {
+    for (method, path) in [("POST", "/api/local/refresh"), ("DELETE", "/api/local/cloud")] {
         let write = Init::method(method).header("origin", None);
         expect_error(&server.request(path, write).await, 403, "ORIGIN_REQUIRED");
     }

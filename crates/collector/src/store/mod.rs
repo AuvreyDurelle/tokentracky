@@ -10,7 +10,6 @@ use crate::limits::{LimitReading, LimitWindow, window_names};
 use allowlist::{allowlisted_checkpoint, allowlisted_event, allowlisted_limits, timestamp_ms, utf16_prefix};
 use collate::locale_cmp;
 use jiff::Timestamp;
-use jiff::civil::{Date, Time};
 use jiff::tz::TimeZone;
 use rusqlite::{Connection, OpenFlags, OptionalExtension, TransactionBehavior, params};
 use serde::{Deserialize, Serialize};
@@ -103,16 +102,6 @@ pub struct PeriodTotals {
 pub struct TopTool {
     pub tool: ToolId,
     pub tokens: u64,
-}
-/// A local day's tokens by half hour from its first instant (F3's chart of today): 48 slots, or 46 or 50 on a day the
-/// clocks change by an hour (47 or 49 by half an hour). A slot is 30 minutes of elapsed time, so on the day the clocks
-/// go back the repeated hour has its own two slots. A day whose length is not whole half hours ends with a shorter slot.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct DaySeries {
-    /// The day's first instant (`toISOString`).
-    pub start: String,
-    pub half_hours: Vec<u64>,
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -1318,47 +1307,6 @@ impl UsageStore {
             cache.borrow_mut().period = Some((self.epoch, tz.cloned(), today, totals.clone()));
         }
         Ok(totals)
-    }
-    /// The events of `day` in `tz` by half hour; they sum to that day's [`Self::summary`] total in the zone.
-    pub fn day_series(&self, day: &str, tz: &TimeZone) -> Result<DaySeries> {
-        const SLOT: i64 = 30 * 60_000;
-        let options = QueryOptions {
-            from: Some(day.to_owned()),
-            to: Some(day.to_owned()),
-            tz: Some(tz.clone()),
-            ..QueryOptions::default()
-        };
-        // First, so a `day` that is not a date is refused as a range is.
-        let rows = self.slots(&options, false)?;
-        // A local date's first instant: its midnight (the first, where the clocks repeat it), or the end of a gap that
-        // skips it.
-        let first = |date: Date| {
-            tz.to_ambiguous_timestamp(date.to_datetime(Time::midnight()))
-                .compatible()
-        };
-        // `rows` has accepted `day`, so it is a `YYYY-MM-DD` date.
-        let number = |at: usize, width: usize| day[at..at + width].parse::<i16>().unwrap_or_default();
-        let range = Date::new(number(0, 4), number(5, 2) as i8, number(8, 2) as i8)
-            .and_then(|date| Ok((first(date)?, first(date.tomorrow()?)?)));
-        let Ok((start, end)) = range else {
-            return Err(StoreError::InvalidQueryRange);
-        };
-        let (from, to) = (start.as_millisecond(), end.as_millisecond());
-        let mut half_hours = vec![0; ((to - from + SLOT - 1) / SLOT) as usize];
-        let last = half_hours.len() - 1;
-        for row in &rows {
-            // A quarter hour lies in one half hour: the day starts on a quarter hour in every zone in use.
-            let Some(at) = row.slot.key.slot else {
-                continue;
-            };
-            // A day that the clocks leave and re-enter across midnight runs on past the next day's start.
-            let slot = &mut half_hours[(((at - from) / SLOT) as usize).min(last)];
-            *slot = sum([*slot, sum(row.slot.tokens[..4].iter().copied())?])?;
-        }
-        Ok(DaySeries {
-            start: format!("{start:.3}"),
-            half_hours,
-        })
     }
     /// Sessions, most recently used first.
     pub fn sessions(&self, options: &QueryOptions) -> Result<Vec<SessionSummary>> {

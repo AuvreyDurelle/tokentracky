@@ -41,7 +41,7 @@ describe('PUT /api/local/collection', () => {
     expect(await claudeSource()).toMatchObject({enabled: true, state: 'paused', eventCount: 1});
     // A source that is not enabled is not reported as paused.
     expect((await status()).sources.find((item: {id: string}) => item.id === 'codex')).toMatchObject({enabled: false, state: 'permission_required'});
-    for (const route of ['refresh', 'scan']) expectError(await server.request(`/api/local/${route}`, {method: 'POST'}), 409, 'COLLECTION_PAUSED');
+    expectError(await server.request('/api/local/refresh', {method: 'POST'}), 409, 'COLLECTION_PAUSED');
   });
   it('keeps what was collected while paused, and reads nothing new, even when a source is authorised meanwhile', async () => {
     await writeLog(file, claude('msg-1', 11, 20), claude('msg-2', 5, 6));

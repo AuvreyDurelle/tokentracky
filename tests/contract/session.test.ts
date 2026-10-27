@@ -114,7 +114,6 @@ describe('session protection', () => {
   });
   it('requires the workspace Origin for every change, and changes nothing without it', async () => {
     expectError(await server.request('/api/local/refresh', {method: 'POST', headers: {origin: null}}), 403, 'ORIGIN_REQUIRED');
-    expectError(await server.request('/api/local/scan', {method: 'POST', headers: {origin: null}}), 403, 'ORIGIN_REQUIRED');
     expectError(await server.request('/api/local/collection', {method: 'PUT', json: {paused: true}, headers: {origin: null}}), 403, 'ORIGIN_REQUIRED');
     expectError(await server.request('/api/local/cloud', {method: 'DELETE', headers: {origin: null}}), 403, 'ORIGIN_REQUIRED');
     // The rejected pause had no effect: a refresh still runs (it would answer 409 if collection were paused).

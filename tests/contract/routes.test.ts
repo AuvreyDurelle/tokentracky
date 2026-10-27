@@ -74,7 +74,7 @@ describe('unknown routes and the uniform error shape', () => {
     if (server.webRoot) expectError(await server.request('/assets/missing.js'), 404, 'NOT_FOUND');
   });
   it('answers 404 NOT_FOUND, not 405, when a known path is used with another method', async () => {
-    for (const [method, path] of [['GET', '/api/local/refresh'], ['GET', '/api/local/scan'], ['POST', '/api/local/status'], ['DELETE', '/api/local/summary'], ['PUT', '/api/health'], ['POST', '/api/leaderboard'], ['GET', '/api/local/cloud'], ['GET', '/api/local/sync']] as const) {
+    for (const [method, path] of [['GET', '/api/local/refresh'], ['POST', '/api/local/status'], ['DELETE', '/api/local/summary'], ['PUT', '/api/health'], ['POST', '/api/leaderboard'], ['GET', '/api/local/cloud'], ['GET', '/api/local/sync']] as const) {
       expectError(await server.request(path, {method}), 404, 'NOT_FOUND');
     }
   });
