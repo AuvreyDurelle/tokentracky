@@ -246,6 +246,8 @@
 .mac .st-yes li svg { color: var(--accent); }
 .mac .st-no li svg { color: var(--green); }
 
+.mac .st-value { display: inline-flex; align-items: center; gap: 6px; color: var(--text); font-weight: 500; }
+.mac .st-value svg { width: 14px; height: 14px; color: var(--text-3); }
 .mac .st-acct { display: flex; align-items: center; gap: 12px; }
 .mac .st-acct .avatar { width: 36px; height: 36px; font-size: 13px; }
 .mac .st-acct b { display: block; font-size: 13px; font-weight: 600; }

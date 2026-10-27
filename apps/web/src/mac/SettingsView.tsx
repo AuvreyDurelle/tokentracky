@@ -1,10 +1,12 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import type { SourceStatus } from '@tokentracky/core';
+import type { ProfileStats, SourceStatus } from '@tokentracky/core';
 import type { ApiClient, DetectedTool, Health, LocalStatus, ShellState } from '../api';
 import { TOOLS, errorText, formatExact, timeAgo, timeUntil } from '../format';
 import { utcToday } from '../ranges';
 import { Avatar, Loading, Notice, Spinner, ToolIcon } from '../ui';
 import { FolderModal, downloadCsv, setupHeading, useConnectFlow } from '../You';
+import { useLoad } from './load';
+import { GITHUB } from './ProfileModal';
 import { ICONS } from './icons';
 import './personal.css';
 
@@ -60,11 +62,12 @@ export function SettingsView({ api, health, status, refresh }: { api: ApiClient;
 const SECTIONS = [
   { id: 'general', label: 'General', icon: ICONS.gear, shell: true },
   { id: 'sources', label: 'Sources', icon: ICONS.folder },
-  { id: 'leaderboard', label: 'Leaderboard', icon: ICONS.shield },
-  { id: 'data', label: 'Data', icon: ICONS.database },
+  { id: 'privacy', label: 'Leaderboard & privacy', icon: ICONS.shield },
+  { id: 'pricing', label: 'Pricing & data', icon: ICONS.database },
   { id: 'updates', label: 'Updates', icon: ICONS.refresh, shell: true },
-  { id: 'about', label: 'About', icon: ICONS.info },
+  { id: 'account', label: 'Account', icon: ICONS.user, linked: true },
 ] as const;
+const JOINED = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeZone: 'UTC' });
 
 export function SettingsPage({ api, health, status, refresh, shell, onShell, detected, paused, onPaused }: {
   api: ApiClient; health: Health; status: LocalStatus | null; refresh: () => Promise<void>;
@@ -73,7 +76,11 @@ export function SettingsPage({ api, health, status, refresh, shell, onShell, det
   const [chosen, setCurrent] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const sections = SECTIONS.filter((section) => !('shell' in section) || shell);
+  const needsReconnect = status?.syncError === 'RELINK_REQUIRED' || status?.syncError === 'LOCAL_STATE_RESET';
+  const linked = !!health.cloudUrl && !!status?.cloudLinked && !needsReconnect;
+  // GitHub login and join date come from your public profile.
+  const profile = useLoad(linked && status?.alias ? () => api.profileStats(status.alias!) : null, [api, linked, status?.alias]);
+  const sections = SECTIONS.filter((section) => (!('shell' in section) || shell) && (!('linked' in section) || linked));
   // The first section is current until one is chosen; General appears once the shell answers.
   const current = chosen ?? sections[0]!.id;
   const sources = TOOLS.flatMap((tool) => status?.sources.filter((source) => source.id === tool.id) ?? []);
@@ -100,14 +107,18 @@ export function SettingsPage({ api, health, status, refresh, shell, onShell, det
           <Row label="Launch at login" desc="Start Tokentracky in the menu bar when you sign in to your Mac.">
             <Toggle label="Launch at login" on={shell.launchAtLogin} disabled={busy === 'login'} onChange={() => void act('login', async () => onShell(await api.setLaunchAtLogin(!shell.launchAtLogin)))} />
           </Row>
+          <Row label="Quit Tokentracky" desc="Stops reading your tools until you open the app again.">
+            <button type="button" className="m-btn st-sm" onClick={() => void act('quit', () => api.quitApp())}>{ICONS.power}Quit</button>
+          </Row>
         </div>
       </Section>}
       {status ? <Sources api={api} status={status} sources={sources} detected={detected} paused={paused} busy={busy} act={act} refresh={refresh} onPaused={onPaused} /> : <Loading>Loading sources…</Loading>}
-      <Section id="leaderboard" title="Leaderboard">
-        <Leaderboard api={api} health={health} status={status} refresh={refresh} busy={busy} act={act} />
+      <Section id="privacy" title="Leaderboard & privacy" note="Ranks are client-reported usage, not verified spending.">
+        <Leaderboard api={api} health={health} status={status} profile={profile.value} refresh={refresh} busy={busy} act={act} />
       </Section>
-      <Section id="data" title="Data">
+      <Section id="pricing" title="Pricing & data" note="Costs are estimates from a public price table. Models without a known price show as unknown, never $0.">
         <div className="st-group">
+          {status?.pricingVersion && <Row label="Price table" desc="LiteLLM’s public table of API list prices, applied to every model it lists." meta={`Version ${status.pricingVersion.replace(/^litellm:/, '')}`} />}
           <Row label="Export data" desc="Every usage record with its tool, model, project and token counts, for all your history. The file is saved on this Mac.">
             <button type="button" className="m-btn st-sm" disabled={busy === 'export'} onClick={() => void act('export', () => downloadCsv(api, { from: '2000-01-01', to: utcToday() }, 'all', `tokentracky-usage-${utcToday()}.csv`))}>{ICONS.download}Export CSV</button>
           </Row>
@@ -121,13 +132,7 @@ export function SettingsPage({ api, health, status, refresh, shell, onShell, det
           </Row>
         </div>
       </Section>}
-      <Section id="about" title="About">
-        <div className="st-group">
-          <Row label={`Tokentracky ${shell?.version ?? health.version}`} desc="Reads the logs your AI coding tools already keep, and ranks your usage on the public leaderboard if you join.">
-            {shell && <button type="button" className="m-btn st-sm" onClick={() => void act('quit', () => api.quitApp())}>{ICONS.power}Quit Tokentracky</button>}
-          </Row>
-        </div>
-      </Section>
+      {linked && <Account health={health} status={status!} profile={profile.value} busy={busy} unlink={() => { if (window.confirm(UNLINK)) void act('unlink', async () => { await api.unlinkCloud(); await refresh(); }); }} />}
     </div>
   </div>;
 }
@@ -206,24 +211,23 @@ function Privacy({ joined }: { joined: boolean }) {
   </div>;
 }
 
-function Leaderboard({ api, health, status, refresh, busy, act }: { api: ApiClient; health: Health; status: LocalStatus | null; refresh: () => Promise<void>; busy: string | null; act: (name: string, action: () => Promise<unknown>) => Promise<void> }) {
+const UNLINK = 'Unlink this Mac from the leaderboard? Uploads from this Mac stop. What is already published stays until you delete your account on the web.';
+
+function Leaderboard({ api, health, status, profile, refresh, busy, act }: { api: ApiClient; health: Health; status: LocalStatus | null; profile: ProfileStats | null; refresh: () => Promise<void>; busy: string | null; act: (name: string, action: () => Promise<unknown>) => Promise<void> }) {
   const { flow, setFlow, error, start } = useConnectFlow(api, refresh);
   const needsReconnect = status?.syncError === 'RELINK_REQUIRED' || status?.syncError === 'LOCAL_STATE_RESET';
   const linked = !!status?.cloudLinked && !needsReconnect;
   if (!health.cloudUrl) return <div className="st-group"><Row label="Leaderboard" desc="This build isn’t connected to a leaderboard server. Your usage is still tracked on this Mac." /></div>;
   const unlink = () => {
-    if (!window.confirm('Unlink this Mac from the leaderboard? Uploads from this Mac stop. What is already published stays until you delete your account on the web.')) return;
+    if (!window.confirm(UNLINK)) return;
     void act('unlink', async () => { await api.unlinkCloud(); await refresh(); });
   };
   if (linked) return <div className="st-group">
-    <Row label={<span className="st-acct">{status.alias ? <Avatar alias={status.alias} /> : <span className="avatar" aria-hidden="true" />}<span><b>{status.alias ?? 'Linked'}</b><span>Public on the leaderboard · synced {timeAgo(status.lastSyncAt)}</span></span></span>}
-      meta={status.syncError ? 'The last sync failed. Tracking continues on this Mac and sync retries on its own.' : undefined}>
-      <a className="m-btn st-sm" href={`${health.cloudUrl}/you`} target="_blank" rel="noopener noreferrer">Manage on the web{ICONS.external}</a>
+    <Row label="Display name" desc="Shown on the leaderboard and your profile card."><span className="st-value">{status.alias ?? '—'}</span></Row>
+    <Row label="GitHub" desc={profile?.githubLogin ? 'Shown on your profile, with a link to it.' : 'Shown on your profile when you sign in with GitHub.'}>
+      {profile?.githubLogin && <span className="st-value">{GITHUB}@{profile.githubLogin}</span>}
     </Row>
     <Privacy joined />
-    <Row label="Unlink this Mac" desc="Stops uploads from this Mac. What is already published stays on the leaderboard until you delete your account on the web.">
-      <button type="button" className="m-btn danger st-sm" disabled={busy === 'unlink'} onClick={unlink}>Unlink…</button>
-    </Row>
   </div>;
   return <div className="st-group">
     {flow.step === 'waiting'
@@ -244,4 +248,24 @@ function Leaderboard({ api, health, status, refresh, busy, act }: { api: ApiClie
       <button type="button" className="m-btn danger st-sm" disabled={busy === 'unlink'} onClick={unlink}>Unlink…</button>
     </Row>}
   </div>;
+}
+
+/** The linked account: who you are on the board, unlinking this Mac, and deleting the profile, which is done on the website. */
+export function Account({ health, status, profile, busy, unlink }: { health: Health; status: LocalStatus; profile: ProfileStats | null; busy: string | null; unlink: () => void }) {
+  const joined = profile ? `joined ${JOINED.format(new Date(`${profile.memberSince}T00:00:00Z`))}` : null;
+  const how = profile?.githubLogin ? `Signed in with GitHub${joined ? ` · ${joined}` : ''}` : joined && joined[0]!.toUpperCase() + joined.slice(1);
+  return <Section id="account" title="Account">
+    <div className="st-group">
+      <Row label={<span className="st-acct">{status.alias ? <Avatar alias={status.alias} /> : <span className="avatar" aria-hidden="true" />}<span><b>{status.alias ?? 'Linked'}</b><span>{[how, `synced ${timeAgo(status.lastSyncAt)}`].filter(Boolean).join(' · ')}</span></span></span>}
+        meta={status.syncError ? 'The last sync failed. Tracking continues on this Mac and sync retries on its own.' : undefined}>
+        <a className="m-btn st-sm" href={`${health.cloudUrl}/you`} target="_blank" rel="noopener noreferrer">Manage on the web{ICONS.external}</a>
+      </Row>
+      <Row label="Unlink this Mac" desc="Stops uploads from this Mac. What is already published stays on the leaderboard until you delete your account on the web.">
+        <button type="button" className="m-btn st-sm" disabled={busy === 'unlink'} onClick={unlink}>Unlink…</button>
+      </Row>
+      <Row label="Delete leaderboard profile" desc="Removes your public profile, rank and achievements from the website. Usage on this Mac is kept.">
+        <a className="m-btn danger st-sm" href={`${health.cloudUrl}/you#danger`} target="_blank" rel="noopener noreferrer">Delete on the web{ICONS.external}</a>
+      </Row>
+    </div>
+  </Section>;
 }

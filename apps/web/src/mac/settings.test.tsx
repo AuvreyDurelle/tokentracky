@@ -1,9 +1,9 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import type { SourceStatus } from '@tokentracky/core';
+import type { ProfileStats, SourceStatus } from '@tokentracky/core';
 import type { ApiClient, Health, LocalStatus } from '../api';
 import { personalFixtures } from './personal-fixtures';
-import { SettingsPage, sourceLine, updateLine } from './SettingsView';
+import { Account, SettingsPage, sourceLine, updateLine } from './SettingsView';
 
 const f = personalFixtures();
 const health: Health = { mode: 'local', authConfigured: false, version: '1.0.0', cloudUrl: 'https://tokentracky.example', supabaseUrl: null, supabaseAnonKey: null };
@@ -44,6 +44,24 @@ describe('SettingsPage', () => {
     expect(html).toMatch(/href="https:\/\/tokentracky.example\/you" target="_blank" rel="noopener noreferrer"[^>]*>[\s\S]*?Manage on the web/);
     expect(text(html)).toContain('Unlink this Mac');
     expect(text(html)).not.toMatch(/Leave the leaderboard/i);
+  });
+  it("names its sections as the mockup does, with Account only for a linked Mac", () => {
+    const nav = (html: string) => [...html.matchAll(/<button type="button" class="st-nav-item[^"]*"[^>]*><svg[\s\S]*?<\/svg>([^<]+)/g)].map((match) => match[1]!.replaceAll('&amp;', '&'));
+    expect(nav(page())).toEqual(['General', 'Sources', 'Leaderboard & privacy', 'Pricing & data', 'Updates', 'Account']);
+    expect(nav(page({ status: { ...f.status, cloudLinked: false, alias: null } }))).not.toContain('Account');
+    expect(nav(page({ shell: null }))).toEqual(['Sources', 'Leaderboard & privacy', 'Pricing & data', 'Account']);
+  });
+  it('names the price table it prices with', () => {
+    expect(text(page())).toContain('Price table');
+    expect(text(page())).toContain('Version litellm-2026-10-25');
+    expect(text(page({ status: { ...f.status, pricingVersion: 'litellm:3f2a9c01be44' } }))).toContain('Version 3f2a9c01be44');
+  });
+  it('says how the account signed in and when it joined, and sends deleting to the website', () => {
+    const account = (githubLogin?: string) => text(renderToStaticMarkup(<Account health={health} status={f.status} busy={null} unlink={() => {}}
+      profile={{ ...({} as ProfileStats), alias: 'example-builder', memberSince: '2026-01-12', githubLogin }} />));
+    expect(account('example')).toMatch(/example-builder Signed in with GitHub · joined Jan 12, 2026 · synced/);
+    expect(account()).toMatch(/example-builder Joined Jan 12, 2026 · synced/);
+    expect(renderToStaticMarkup(<Account health={health} status={f.status} profile={null} busy={null} unlink={() => {}} />)).toContain('href="https://tokentracky.example/you#danger"');
   });
   it('offers joining when this Mac is not linked, or no leaderboard when the build has none', () => {
     const unlinked: LocalStatus = { ...f.status, cloudLinked: false, alias: null };
