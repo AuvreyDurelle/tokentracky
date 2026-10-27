@@ -10,7 +10,9 @@ const now = new Date('2026-10-26T12:00:00.000Z');
 const MAX = Number.MAX_SAFE_INTEGER;
 const beyond = (BigInt(MAX) + 1n).toString();
 const day = '2026-10-26';
-const bucket = (tokens: number, costMicrousd: number | null, extra = {}) => ({day, tool: 'claude', tokens, costMicrousd, ...extra});
+/** Enough Claude Opus 4.1 tokens, at most $75 per million, for a cost at the safe-integer limit to pass the cost check. */
+const LOTS = 200_000_000_000_000;
+const bucket = (tokens: number, costMicrousd: number | null, extra = {}) => ({day, tool: 'claude', model: 'claude-opus-4-1', tokens, costMicrousd, ...extra});
 const healthyRoutes = [
   '/api/leaderboard?period=all', '/api/leaderboard?period=week', '/api/leaderboard?period=month',
   '/api/leaderboard?period=all&q=normal', '/api/leaderboard?period=all&tool=codex',
@@ -80,10 +82,10 @@ describe.skipIf(!databaseUrl)('public counters with isolated PostgreSQL', () => 
   it('serves healthy profiles, filters and embeds after an accepted extreme cost, and recovers exact totals after correction', async () => {
     const normal = await member('normal'), extreme = await member('extreme');
     expect((await upload(normal, [bucket(10, 1)])).statusCode).toBe(200);
-    expect((await upload(extreme, [bucket(1, MAX)])).statusCode).toBe(200);
+    expect((await upload(extreme, [bucket(LOTS, MAX)])).statusCode).toBe(200);
     await assertHealthy();
     const board = (await get('/api/leaderboard?period=all')).json();
-    expect(board).toMatchObject({totalTokens: 11, totalCostMicrousd: MAX, exactAggregates: {totalCostMicrousd: beyond}});
+    expect(board).toMatchObject({totalTokens: LOTS + 10, totalCostMicrousd: MAX, exactAggregates: {totalCostMicrousd: beyond}});
     expect((await get('/api/profiles/normal/stats')).json().costMicrousd).toBe(1);
     expect((await get('/api/leaderboard?period=all&sort=cost&pageSize=1')).json().items[0].alias).toBe('extreme');
     expect((await upload(extreme, [bucket(1, 0)])).statusCode).toBe(200);
@@ -94,7 +96,7 @@ describe.skipIf(!databaseUrl)('public counters with isolated PostgreSQL', () => 
   it('accepts concurrent independent uploads whose combined cost exceeds the safe range', async () => {
     const members = await Promise.all(['normal', 'second', 'third'].map(member));
     const amount = Math.floor(MAX / 2);
-    const responses = await Promise.all(members.map(m => upload(m, [bucket(1, amount)])));
+    const responses = await Promise.all(members.map(m => upload(m, [bucket(LOTS, amount)])));
     expect(responses.map(r => r.statusCode)).toEqual([200, 200, 200]);
     const response = await get('/api/community');
     expect(response.statusCode).toBe(200);
@@ -104,10 +106,10 @@ describe.skipIf(!databaseUrl)('public counters with isolated PostgreSQL', () => 
   it('keeps cohort totals through search, empty pagination and mixed known costs', async () => {
     const normal = await member('normal'), extreme = await member('extreme'), unknown = await member('unknown');
     await upload(normal, [bucket(1, 0)]);
-    await upload(extreme, [bucket(2, MAX)]);
+    await upload(extreme, [bucket(LOTS, MAX)]);
     await upload(unknown, [bucket(3, 1), bucket(1, null, {day: '2026-10-25'})]);
     for (const suffix of ['&q=normal', '&q=nobody', '&page=10&pageSize=1']) {
-      expect((await get('/api/leaderboard?period=all' + suffix)).json()).toMatchObject({builders: 3, totalTokens: 7, totalCostMicrousd: MAX});
+      expect((await get('/api/leaderboard?period=all' + suffix)).json()).toMatchObject({builders: 3, totalTokens: LOTS + 5, totalCostMicrousd: MAX});
     }
     expect((await get('/api/leaderboard?period=all&q=nobody')).json().items).toEqual([]);
     expect((await get('/api/profiles/normal')).json().costMicrousd).toBe(0);
@@ -199,8 +201,8 @@ describe.skipIf(!databaseUrl)('public counters with isolated PostgreSQL', () => 
     const approved = await repository.pollDeviceAuthorization(auth.pollToken);
     if (approved.status !== 'approved') throw new Error('Computer not approved');
     const masking = {...normal, device: {id: '', token: approved.deviceToken}, collectorId: randomUUID()};
-    expect((await upload(masking, [bucket(1, null)])).statusCode).toBe(200);
-    expect((await upload(normal, [bucket(1, MAX), bucket(1, 1, {day: '2026-10-25'})])).statusCode).toBe(200);
+    expect((await upload(masking, [bucket(LOTS, null)])).statusCode).toBe(200);
+    expect((await upload(normal, [bucket(LOTS, MAX), bucket(1, 1, {day: '2026-10-25'})])).statusCode).toBe(200);
     const next = await start();
     const before = (await pool.query('SELECT * FROM cloud_devices ORDER BY id')).rows;
     const beforeBuckets = (await pool.query('SELECT * FROM cloud_buckets ORDER BY device_id, day_key')).rows;
