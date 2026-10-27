@@ -16,6 +16,32 @@
     "output": 195,
     "reasoning": 60
   },
+  "byHour": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1050,
+    2630,
+    310,
+    45,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
   "byModel": [
     {
       "breakdown": {
@@ -34,6 +60,7 @@
         "output": 857
       },
       "model": "grok-4.7-build",
+      "sessions": 1,
       "tokens": 3460
     },
     {
@@ -53,6 +80,7 @@
         "output": 24
       },
       "model": "grok-4.6-build",
+      "sessions": 1,
       "tokens": 530
     },
     {
@@ -72,6 +100,7 @@
         "output": 0
       },
       "model": "grok-build",
+      "sessions": 1,
       "tokens": 45
     }
   ],
@@ -92,6 +121,7 @@
         "input": 2087,
         "output": 881
       },
+      "sessions": 1,
       "tokens": 4035,
       "tool": "grok"
     }

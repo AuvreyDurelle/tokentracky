@@ -16,6 +16,32 @@
     "output": 410,
     "reasoning": 0
   },
+  "byHour": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    9970,
+    5250,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
   "byModel": [
     {
       "breakdown": {
@@ -28,6 +54,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "MiniMax-M2",
+      "sessions": 1,
       "tokens": 15220
     }
   ],
@@ -42,6 +69,7 @@
       },
       "costMicrousd": null,
       "costParts": null,
+      "sessions": 1,
       "tokens": 15220,
       "tool": "minimax"
     }

@@ -42,7 +42,6 @@
 
 /* ---------- tokens page (tokens.html) ---------- */
 .mac .tk-page { padding-top: 24px; }
-.mac .tk-bar { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-bottom: 8px; }
 /* Overrides of m- primitives name both classes: this file can load before mac.css. */
 .mac .tk-seg-sm.m-seg button { height: 22px; padding: 0 9px; font-size: 12px; }
 .mac .tk-select.m-btn { position: relative; padding: 0; }
@@ -87,6 +86,7 @@
 .mac .tk-tools tr > :first-child { padding-left: 0; text-align: left; }
 .mac .tk-tools tbody th { overflow: hidden; text-overflow: ellipsis; font-weight: 500; color: var(--text); }
 .mac .tk-tools tbody th .tool-ic { margin-right: 9px; vertical-align: -2px; }
+.mac .tk-tools tbody th small { margin-left: 4px; font-size: 12px; font-weight: 400; color: var(--text-4); }
 .mac .tk-tools tbody tr:last-child > * { border-bottom: 0; }
 .mac .tk-tools .tk-v { color: var(--text); }
 .mac .tk-share { display: block; height: 4px; overflow: hidden; border-radius: 2px; background: var(--surface-3); }
@@ -151,6 +151,10 @@
 .mac .tk-mini-axis { display: flex; margin-top: 5px; font-size: 10.5px; color: var(--text-4); }
 .mac .tk-mini-axis span { flex: 1; text-align: center; }
 .mac .tk-mini-axis .on { color: var(--text); }
+.mac .tk-mini-bars.tk-hours { gap: 2px; }
+.mac .tk-mini-bars.tk-hours span { border-radius: 1.5px; }
+.mac .tk-mini-axis.tk-hours-axis { justify-content: space-between; }
+.mac .tk-mini-axis.tk-hours-axis span { flex: none; }
 .mac .tk-meter { height: 6px; overflow: hidden; border-radius: 3px; background: var(--surface-3); }
 .mac .tk-meter i { display: block; height: 100%; border-radius: 3px; background: var(--c, var(--text)); }
 .mac .tk-meter-cap { display: flex; justify-content: space-between; gap: 8px; margin-top: 6px; font-size: 11.5px; color: var(--text-4); font-variant-numeric: tabular-nums; }
@@ -247,6 +251,11 @@
 .mac .st-yes li svg { color: var(--accent); }
 .mac .st-no li svg { color: var(--green); }
 
+.mac .st-mb-preview { display: flex; justify-content: flex-end; padding: 10px 16px; border-top: 1px solid var(--border); background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)); }
+.mac .st-mb-item { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px; border-radius: 5px; background: rgba(255, 255, 255, 0.1); color: var(--text); font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.mac .st-mb-item .brand-mark { width: 14px; height: 14px; }
+.mac .st-value { display: inline-flex; align-items: center; gap: 6px; color: var(--text); font-weight: 500; }
+.mac .st-value svg { width: 14px; height: 14px; color: var(--text-3); }
 .mac .st-acct { display: flex; align-items: center; gap: 12px; }
 .mac .st-acct .avatar { width: 36px; height: 36px; font-size: 13px; }
 .mac .st-acct b { display: block; font-size: 13px; font-weight: 600; }

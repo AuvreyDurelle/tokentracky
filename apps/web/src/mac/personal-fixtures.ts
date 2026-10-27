@@ -14,6 +14,15 @@ const TOOLS: Array<{ tool: ToolId; tokens: number; models: Array<[string, number
 // A month of weekday rhythm with a big day ten days in, ending on today's 186.4M.
 const SHAPE = [0.62, 0.58, 1.05, 1.12, 1.08, 1.02, 0.94, 0.41, 0.38, 1.18, 2.6, 1.55, 1.3, 1.12, 0.47, 0.44, 1.21, 1.32, 1.27, 1.19, 1.08, 0.52, 0.5, 1.4, 1.66, 1.58, 1.49, 1.3, 0.58, 0];
 const TODAY = 186.4e6;
+// Each hour of the day's share of the tokens, peaking at 22:00 (11.7%).
+const HOURS = [0.03, 0.02, 0.01, 0.005, 0.005, 0.005, 0.01, 0.015, 0.03, 0.05, 0.06, 0.055, 0.04, 0.05, 0.06, 0.065, 0.06, 0.05, 0.04, 0.045, 0.06, 0.078, 0.117, 0.04];
+// Sessions per tool over the 30 days, as the mockup counts them (1,284 in all); each model gets its share of its tool's.
+const SESSIONS: Partial<Record<ToolId, number>> = { claude: 412, codex: 731, gemini: 74, opencode: 46, cline: 21 };
+const modelSessions = (model: string) => {
+  const tool = TOOLS.find((item) => item.models.some(([name]) => name === model));
+  const part = tool?.models.find(([name]) => name === model)?.[1] ?? 0;
+  return tool ? Math.max(1, Math.round((SESSIONS[tool.tool] ?? 0) * part)) : 0;
+};
 
 const sum = (values: number[]) => values.reduce((total, value) => total + value, 0);
 // Mostly cache reads, as the 97% cache rate says; output takes the rounding, so the kinds add up to the tokens.
@@ -23,7 +32,7 @@ const kinds = (tokens: number): TokenCounts => {
 };
 /** A total with its split by kind; cost by type stays unknown in these fixtures. */
 const typed = <T extends { tokens: number }>(item: T) => ({ ...item, breakdown: kinds(item.tokens), costParts: null });
-const toolRows = (rows: Array<{ tool: ToolId; tokens: number; costMicrousd: number }>) => rows.map(typed);
+const toolRows = (rows: Array<{ tool: ToolId; tokens: number; costMicrousd: number }>) => rows.map((row) => ({ ...typed(row), sessions: Math.round((SESSIONS[row.tool] ?? 0) * 0.86) }));
 
 export function personalFixtures(now = new Date()) {
   const today = utcToday(now);
@@ -56,16 +65,19 @@ export function personalFixtures(now = new Date()) {
     sessions: 1284,
     cacheRate: 0.971,
     activity: { activeDays: 30, currentStreak: 30, longestStreak: 30, bestDay: { day: day(19), tokens: 612.3e6 }, averagePerActiveDay: 229.7e6 },
-    byTool: group((row) => row.tool).map(([tool, value]) => typed({ tool, ...value })),
-    byModel: group((row) => row.model).map(([model, value]) => typed({ model, ...value })),
+    byTool: group((row) => row.tool).map(([tool, value]) => ({ ...typed({ tool, ...value }), sessions: SESSIONS[tool] ?? 0 })),
+    byModel: group((row) => row.model).map(([model, value]) => ({ ...typed({ model, ...value }), sessions: modelSessions(model) })),
     daily,
+    // An evening builder: the busiest hour is 22:00, with 11.7% of the tokens.
+    byHour: HOURS.map((share) => Math.round(tokens * share)),
   };
   const before: UsageSummary = {
     tokens: 5.0e9, breakdown: kinds(5.0e9), costParts: null, costMicrousd: 1_731e6, sessions: 1102, cacheRate: 0.962,
     activity: { activeDays: 28, currentStreak: 4, longestStreak: 24, bestDay: null, averagePerActiveDay: 178e6 },
     byTool: toolRows([{ tool: 'claude', tokens: 3.26e9, costMicrousd: 1_204e6 }, { tool: 'codex', tokens: 1.39e9, costMicrousd: 441e6 }, { tool: 'opencode', tokens: 202e6, costMicrousd: 62e6 }, { tool: 'gemini', tokens: 117e6, costMicrousd: 23e6 }, { tool: 'cline', tokens: 71.6e6, costMicrousd: 19e6 }]),
-    byModel: [{ model: 'claude-opus-5-5', tokens: 3.1e9, costMicrousd: 1_150e6 }, { model: 'gpt-6.1-sol', tokens: 640e6, costMicrousd: 198e6 }, { model: 'gpt-6-astra', tokens: 690e6, costMicrousd: 220e6 }, { model: 'claude-sonnet-5-5', tokens: 160e6, costMicrousd: 54e6 }, { model: 'qwen-4-coder', tokens: 202e6, costMicrousd: 62e6 }, { model: 'gemini-3.8-flash', tokens: 117e6, costMicrousd: 23e6 }, { model: 'deepseek-v4', tokens: 71.6e6, costMicrousd: 19e6 }].map(typed),
+    byModel: [{ model: 'claude-opus-5-5', tokens: 3.1e9, costMicrousd: 1_150e6 }, { model: 'gpt-6.1-sol', tokens: 640e6, costMicrousd: 198e6 }, { model: 'gpt-6-astra', tokens: 690e6, costMicrousd: 220e6 }, { model: 'claude-sonnet-5-5', tokens: 160e6, costMicrousd: 54e6 }, { model: 'qwen-4-coder', tokens: 202e6, costMicrousd: 62e6 }, { model: 'gemini-3.8-flash', tokens: 117e6, costMicrousd: 23e6 }, { model: 'deepseek-v4', tokens: 71.6e6, costMicrousd: 19e6 }].map((row) => ({ ...typed(row), sessions: modelSessions(row.model) })),
     daily: [],
+    byHour: Array(24).fill(0),
   };
   // A year: tracking began about 290 days ago with a few quiet days, then every day for the last 34.
   const yearDaily = Array.from({ length: 365 }, (_, index) => {
@@ -81,13 +93,16 @@ export function personalFixtures(now = new Date()) {
   };
   const project = (name: string, tokens: number, sessions: number, repository: string | null): ProjectSummary => ({ name: `/Users/example/Projects/${name}`, repository, tokens, breakdown: kinds(tokens), costMicrousd: Math.round(tokens * 0.35), sessions });
   const projects = [project('usage-dashboard', 2.4e9, 412, 'example/usage-dashboard'), project('api-gateway', 1.6e9, 233, null), project('sample-editor', 1.1e9, 301, 'example/sample-editor'), project('dotfiles', 620e6, 120, null), project('notes', 330e6, 64, null)];
+  // A session ran about a minute per million tokens, starting on a quarter hour.
+  const start = (minutes: number, tokens: number) => new Date(Math.floor((now.getTime() - minutes * 60_000 - tokens / 1e6 * 60_000) / 900_000) * 900_000).toISOString();
   const session = (id: string, name: string, tool: ToolId, model: string, tokens: number, minutes: number): SessionSummary => ({
     id, project: `/Users/example/Projects/${name}`, tool, model, models: [model], tokens,
     breakdown: { input: Math.round(tokens * 0.02), output: Math.round(tokens * 0.01), cacheRead: Math.round(tokens * 0.9), cacheWrite: Math.round(tokens * 0.07) },
-    costMicrousd: Math.round(tokens * 0.35), lastUsedAt: iso(minutes),
+    costMicrousd: Math.round(tokens * 0.35), lastUsedAt: iso(minutes), startedAt: start(minutes, tokens),
   });
   const sessions = [session('s1', 'usage-dashboard', 'claude', 'claude-opus-5-5', 38.2e6, 4), session('s2', 'api-gateway', 'codex', 'gpt-6.1-sol', 21.7e6, 26), session('s3', 'sample-editor', 'claude', 'claude-sonnet-5-5', 9.8e6, 64), session('s4', 'usage-dashboard', 'claude', 'claude-opus-5-5', 184.2e6, 4 * 1440 + 200), session('s5', 'dotfiles', 'gemini', 'gemini-3.8-flash', 3.1e6, 2 * 1440)];
-  const overview: MenuOverview = { today: TODAY, week: 2.1e9, month: 6.9e9, allTime: 18.4e9, topTool: { tool: 'claude', tokens: 1.4e9 }, rank: 42, alias: 'example-builder', paused: false, refreshing: false, refreshedAt: iso(2), nextRefreshAt: iso(-58) };
+  const overview: MenuOverview = { today: TODAY, week: 2.1e9, month: 6.9e9, allTime: 18.4e9, topTool: { tool: 'claude', tokens: 1.4e9 }, rank: 42, alias: 'example-builder', paused: false, refreshing: false, refreshedAt: iso(2), nextRefreshAt: iso(-58),
+    costs: { today: 64.8e6, week: 729e6, month: 2_394e6, allTime: 6_412e6 } };
   const source = (id: ToolId, name: string, enabled: boolean, paths: string[], eventCount: number, state: SourceStatus['state'] = enabled ? 'current' : 'detected'): SourceStatus => ({
     id, name, enabled, state, paths, lastImportedAt: enabled ? iso(2) : null, eventCount, message: '', capabilities: { tokens: true, models: true, projects: true, costs: true, quotas: false },
   });
@@ -98,7 +113,7 @@ export function personalFixtures(now = new Date()) {
       source('cline', 'Cline', true, ['~/.cline/data/sessions'], 1_408), source('roo', 'Roo Code', false, ['~/Library/Application Support/Code/User/globalStorage/rooveterinaryinc.roo-cline'], 0),
       source('kilo', 'Kilo Code', false, ['~/.local/share/kilo/kilo.db'], 0), source('opencode', 'OpenCode', true, ['~/.local/share/opencode/opencode.db'], 2_216),
     ],
-    collecting: true, lastScanAt: iso(2), cloudLinked: true, syncError: null, lastSyncAt: iso(2), alias: 'example-builder', lastRefreshAt: iso(2), nextRefreshAt: iso(-58), refreshing: false, pricingVersion: 'litellm-2026-10-25',
+    collecting: true, lastScanAt: iso(2), cloudLinked: true, syncError: null, lastSyncAt: iso(2), alias: 'example-builder', lastRefreshAt: iso(2), nextRefreshAt: iso(-58), refreshing: false, pricingVersion: 'litellm-2026-10-25', pricingUpdatedAt: iso(228),
   };
   const detected = status.sources.filter((item) => item.enabled).map((item) => ({ id: item.id, name: item.name, paths: item.paths }));
   const shell: ShellState = { launchAtLogin: true, update: { state: 'idle', version: null }, version: '1.0.0' };

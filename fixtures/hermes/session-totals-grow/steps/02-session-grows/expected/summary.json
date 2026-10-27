@@ -16,6 +16,32 @@
     "output": 690,
     "reasoning": 180
   },
+  "byHour": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    280,
+    10700,
+    0,
+    60,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
   "byModel": [
     {
       "breakdown": {
@@ -28,6 +54,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "claude-sonnet-4-6",
+      "sessions": 1,
       "tokens": 10700
     },
     {
@@ -41,6 +68,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "gpt-5.6-terra",
+      "sessions": 1,
       "tokens": 280
     },
     {
@@ -54,6 +82,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "unknown",
+      "sessions": 1,
       "tokens": 60
     }
   ],
@@ -68,6 +97,7 @@
       },
       "costMicrousd": null,
       "costParts": null,
+      "sessions": 3,
       "tokens": 11040,
       "tool": "hermes"
     }

@@ -57,7 +57,6 @@ with timeout of 30 seconds
     if (position of item "Tokentracky.app" of diskFolder) is not {180, 240} then error "App layout did not persist"
     if (position of item "Applications" of diskFolder) is not {480, 240} then error "Applications layout did not persist"
     if (icon size of opts) is not 96 then error "Icon size did not persist"
-    if (name of (background picture of opts)) is not "background.png" then error "Background did not persist"
     if (bounds of w) is not {100, 100, 760, 540} then error "Window size did not persist"
     close w
   end tell
@@ -73,6 +72,11 @@ end run'''
                 time.sleep(0.25)
             if not (mount / ".DS_Store").is_file():
                 raise RuntimeError("Finder failed to persist .DS_Store; enable Finder automation on the release runner")
+            # Finder sets the background but cannot return it to AppleScript (error -1728), so check what it
+            # saved instead: the window's background alias, which names the file.
+            saved = (mount / ".DS_Store").read_bytes()
+            if b"backgroundImageAlias" not in saved or b"background.png" not in saved:
+                raise RuntimeError("Finder did not save the DMG background")
             if os.environ.get("TOKENTRACKY_SIGNING") != "adhoc":
                 run("xcrun", "stapler", "validate", str(mount / "Tokentracky.app"))
             run("codesign", "--verify", "--deep", "--strict", str(mount / "Tokentracky.app"))

@@ -16,6 +16,32 @@
     "output": 1350,
     "reasoning": 350
   },
+  "byHour": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    2100,
+    16200,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
   "byModel": [
     {
       "breakdown": {
@@ -28,6 +54,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "gpt-5",
+      "sessions": 1,
       "tokens": 3400
     },
     {
@@ -41,6 +68,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "claude-sonnet-4.5",
+      "sessions": 2,
       "tokens": 14900
     },
     {
@@ -54,6 +82,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "claude-haiku-4.5",
+      "sessions": 1,
       "tokens": 650
     }
   ],
@@ -68,6 +97,7 @@
       },
       "costMicrousd": null,
       "costParts": null,
+      "sessions": 2,
       "tokens": 18950,
       "tool": "copilot"
     }

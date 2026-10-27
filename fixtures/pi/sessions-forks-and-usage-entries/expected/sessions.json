@@ -16,6 +16,7 @@
       "unknown"
     ],
     "project": "/synthetic/beta",
+    "startedAt": "2026-10-21T09:00:00.000Z",
     "tokens": 60,
     "tool": "pi"
   },
@@ -37,6 +38,7 @@
       "gemini-2.5-pro"
     ],
     "project": "/synthetic/alpha",
+    "startedAt": "2026-10-20T10:00:00.000Z",
     "tokens": 3385,
     "tool": "pi"
   },
@@ -56,6 +58,7 @@
       "claude-sonnet-4-6"
     ],
     "project": "/synthetic/alpha",
+    "startedAt": "2026-10-20T10:00:00.000Z",
     "tokens": 1324,
     "tool": "pi"
   }

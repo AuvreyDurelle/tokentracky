@@ -16,6 +16,32 @@
     "output": 300,
     "reasoning": 50
   },
+  "byHour": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    900,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
   "byModel": [
     {
       "breakdown": {
@@ -28,6 +54,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "mimo-v2.5-pro",
+      "sessions": 2,
       "tokens": 900
     }
   ],
@@ -42,6 +69,7 @@
       },
       "costMicrousd": null,
       "costParts": null,
+      "sessions": 2,
       "tokens": 900,
       "tool": "mimo"
     }

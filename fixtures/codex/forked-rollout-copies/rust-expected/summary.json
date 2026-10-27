@@ -16,6 +16,32 @@
     "output": 55,
     "reasoning": 0
   },
+  "byHour": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    330,
+    220,
+    55,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
   "byModel": [
     {
       "breakdown": {
@@ -28,6 +54,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "gpt-5-codex",
+      "sessions": 3,
       "tokens": 605
     }
   ],
@@ -42,6 +69,7 @@
       },
       "costMicrousd": null,
       "costParts": null,
+      "sessions": 3,
       "tokens": 605,
       "tool": "codex"
     }

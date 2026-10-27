@@ -307,6 +307,24 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
     }
   });
 
+  it('adds up the community by month for a year and finds the middle builder', async () => {
+    const empty = await repository.community();
+    expect(empty.monthly).toHaveLength(12);
+    expect(empty.monthly!.every(point => point.tokens === 0)).toBe(true);
+    expect(empty.medianTokens).toBe(0);
+    const [alice, bob, carol] = [await joined('alice', 'alice'), await joined('bob', 'bob'), await joined('carol', 'carol')];
+    expect((await upload(alice, [bucket(100, {day: '2026-10-20'}), bucket(40, {day: '2026-09-02'})])).statusCode).toBe(200);
+    expect((await upload(bob, [bucket(10, {day: '2026-10-21'})])).statusCode).toBe(200);
+    expect((await upload(carol, [bucket(30, {day: '2026-10-22'})])).statusCode).toBe(200);
+    const community = await repository.community();
+    const month = (key: string) => community.monthly!.find(point => point.month === key)?.tokens;
+    // The test's clock reads 2026-10-23: November 2025 to October 2026.
+    expect([community.monthly![0]!.month, community.monthly!.at(-1)!.month]).toEqual(['2025-11', '2026-10']);
+    expect([month('2026-09'), month('2026-10')]).toEqual([40, 140]);
+    // 140, 10 and 30: the middle one is 30.
+    expect(community.medianTokens).toBe(30);
+  });
+
   it('splits profiles and the community by token type, only where every bucket carries types', async () => {
     expect((await repository.community()).breakdown).toBeNull();
     const alice = await joined('alice', 'alice');

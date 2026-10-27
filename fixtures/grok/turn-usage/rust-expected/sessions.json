@@ -17,6 +17,7 @@
       "grok-build"
     ],
     "project": "/synthetic/grok-project",
+    "startedAt": "2026-10-22T10:00:00.000Z",
     "tokens": 4035,
     "tool": "grok"
   }

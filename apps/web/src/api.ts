@@ -4,6 +4,7 @@ import type {
   HourBreakdownRow,
   LeaderboardNeighbours,
   LeaderboardResponse,
+  LocalSettings,
   MenuOverview,
   Period,
   ProfileStats,
@@ -54,6 +55,8 @@ export interface LocalStatus {
   refreshing?: boolean;
   /** The price table applied to costs; it can change after a cycle's scan. */
   pricingVersion?: string;
+  /** When that table was fetched: the bundled snapshot's time until a download replaces it. */
+  pricingUpdatedAt?: string;
   /** Only in the launch that turned on the tools it found (the Rust app's first run): every token counted so far. */
   firstRun?: { tokens: number };
 }
@@ -162,7 +165,8 @@ export class ApiClient {
   approveDevice(code: string) { return this.request<void>(`/api/device-auth/${encodeURIComponent(code)}/approve`, { method: 'POST' }, true); }
 
   localStatus() { return this.request<LocalStatus>('/api/local/status'); }
-  localSummary(range: UsageRange, tool: 'all' | ToolId = 'all') { return this.request<UsageSummary>(`/api/local/summary?${query({ ...range, tool })}`); }
+  /** With an IANA zone `tz`, days and `byHour` are local there; UTC without one. */
+  localSummary(range: UsageRange, tool: 'all' | ToolId = 'all', tz?: string) { return this.request<UsageSummary>(`/api/local/summary?${query({ ...range, tool, tz })}`); }
   localProjects(range: UsageRange, tool: 'all' | ToolId = 'all') { return this.request<{ items: ProjectSummary[] }>(`/api/local/projects?${query({ ...range, tool })}`); }
   localSessions(range: UsageRange, tool: 'all' | ToolId = 'all', q = '') { return this.request<{ items: SessionSummary[] }>(`/api/local/sessions?${query({ ...range, tool, q })}`); }
   localBreakdown(range: UsageRange, tool: 'all' | ToolId = 'all') { return this.request<{ items: UsageBreakdownRow[] }>(`/api/local/breakdown?${query({ ...range, tool })}`); }
@@ -177,6 +181,9 @@ export class ApiClient {
   unlinkCloud() { return this.request<void>('/api/local/cloud', { method: 'DELETE' }); }
   /** The menu bar's totals and rank from the last refresh cycle. */
   localOverview() { return this.request<MenuOverview>('/api/local/overview'); }
+  /** The app's own settings, kept with the local history. */
+  localSettings() { return this.request<LocalSettings>('/api/local/settings'); }
+  setLocalSettings(settings: LocalSettings) { return this.request<LocalSettings>('/api/local/settings', { method: 'PUT', body: JSON.stringify(settings) }); }
   /** Likes go through the linked device's credential, never an account token. */
   likeStatus(alias: string) { return this.request<{ liked: boolean }>(`/api/local/likes/${encodeURIComponent(alias)}`); }
   like(alias: string) { return this.request<void>(`/api/local/likes/${encodeURIComponent(alias)}`, { method: 'PUT' }); }

@@ -1,0 +1,16 @@
+{
+  "allTime": 1050,
+  "costs": {
+    "allTime": null,
+    "month": null,
+    "today": 0,
+    "week": null
+  },
+  "month": 1050,
+  "today": 0,
+  "topTool": {
+    "tokens": 1050,
+    "tool": "codex"
+  },
+  "week": 1050
+}

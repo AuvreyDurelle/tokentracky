@@ -1,0 +1,97 @@
+{
+  "activity": {
+    "activeDays": 1,
+    "averagePerActiveDay": 565,
+    "bestDay": {
+      "day": "2026-10-23",
+      "tokens": 565
+    },
+    "currentStreak": 1,
+    "longestStreak": 1
+  },
+  "breakdown": {
+    "cacheRead": 100,
+    "cacheWrite": 0,
+    "input": 440,
+    "output": 25,
+    "reasoning": 0
+  },
+  "byHour": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    565,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "byModel": [
+    {
+      "breakdown": {
+        "cacheRead": 100,
+        "cacheWrite": 0,
+        "input": 440,
+        "output": 25,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "gemini-3-pro",
+      "sessions": 1,
+      "tokens": 565
+    }
+  ],
+  "byTool": [
+    {
+      "breakdown": {
+        "cacheRead": 100,
+        "cacheWrite": 0,
+        "input": 440,
+        "output": 25,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "sessions": 1,
+      "tokens": 565,
+      "tool": "gemini"
+    }
+  ],
+  "cacheRate": 0.18518518518518517,
+  "costMicrousd": null,
+  "costParts": null,
+  "daily": [
+    {
+      "breakdown": {
+        "cacheRead": 100,
+        "cacheWrite": 0,
+        "input": 440,
+        "output": 25,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "day": "2026-10-23",
+      "tokens": 565
+    }
+  ],
+  "sessions": 1,
+  "tokens": 565
+}

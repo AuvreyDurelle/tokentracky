@@ -1,0 +1,22 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 5,
+      "output": 5,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "g",
+    "lastUsedAt": null,
+    "model": "unknown",
+    "models": [
+      "unknown"
+    ],
+    "project": null,
+    "startedAt": null,
+    "tokens": 10,
+    "tool": "gemini"
+  }
+]

@@ -16,6 +16,32 @@
     "output": 710,
     "reasoning": 100
   },
+  "byHour": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    2860,
+    1800,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
   "byModel": [
     {
       "breakdown": {
@@ -28,6 +54,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "glm-4.5",
+      "sessions": 1,
       "tokens": 2360
     },
     {
@@ -41,6 +68,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "glm-4.6",
+      "sessions": 1,
       "tokens": 1800
     },
     {
@@ -54,6 +82,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "mimo-v2.5-pro",
+      "sessions": 1,
       "tokens": 500
     }
   ],
@@ -68,6 +97,7 @@
       },
       "costMicrousd": null,
       "costParts": null,
+      "sessions": 2,
       "tokens": 4660,
       "tool": "zcode"
     }

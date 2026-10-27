@@ -26,6 +26,7 @@ use tokentracky_collector::limits::claude_config_file;
 use tokentracky_collector::scheduler::{IntervalError, refresh_interval};
 use tokentracky_collector::store::{PeriodTotals, StoreError};
 use tokentracky_collector::{LocalCollector, LocalCollectorOptions, RefreshStatus, ServiceError};
+use tokentracky_core::LocalSettings;
 use tokentracky_pricing::{MAX_DOWNLOAD_BYTES, Transport, TransportError, pricing_refresh_enabled};
 use tokio::net::TcpListener;
 use tokio::task::JoinHandle;
@@ -71,6 +72,9 @@ pub struct LocalOverview {
     pub paused: bool,
     #[serde(flatten)]
     pub refresh: RefreshStatus,
+    /// What the menu bar item shows; read by the app, not served (`GET /api/local/settings` serves it).
+    #[serde(skip)]
+    pub settings: LocalSettings,
 }
 
 /// Why the local app could not open.

@@ -311,6 +311,9 @@ pub struct UsageSummary {
     pub by_model: Vec<ModelUsage>,
     #[ts(inline)]
     pub daily: Vec<DayUsage>,
+    /// Tokens by hour of day, 0 to 23, in the query's zone (UTC without one).
+    #[ts(type = "Array<number>")]
+    pub by_hour: Vec<u64>,
 }
 /// One tool's share of a summary (`UsageSummary.byTool`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -324,6 +327,8 @@ pub struct ToolUsage {
     pub cost_microusd: Option<u64>,
     #[ts(type = "CostParts | null")]
     pub cost_parts: Option<CostParts>,
+    /// Distinct sessions, each tool's own, that used it.
+    pub sessions: u32,
 }
 /// One model's share of a summary (`UsageSummary.byModel`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -337,6 +342,8 @@ pub struct ModelUsage {
     pub cost_microusd: Option<u64>,
     #[ts(type = "CostParts | null")]
     pub cost_parts: Option<CostParts>,
+    /// Distinct sessions, each tool's own, that used it.
+    pub sessions: u32,
 }
 /// One UTC day of a summary (`UsageSummary.daily`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -368,6 +375,9 @@ pub struct SessionSummary {
     #[ts(type = "number | null")]
     pub cost_microusd: Option<u64>,
     pub last_used_at: Option<String>,
+    /// The start of the 15-minute slot of its first event in the query, so at most 15 minutes before that event;
+    /// null when undated.
+    pub started_at: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -468,6 +478,12 @@ pub struct ExactAggregates {
     #[ts(optional, inline)]
     pub trend: Option<Vec<ExactDayTokens>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional, inline)]
+    pub monthly: Option<Vec<ExactMonthTokens>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub median_tokens: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub breakdown: Option<ExactTokenCounts>,
 }
@@ -475,6 +491,12 @@ pub struct ExactAggregates {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct ExactDayTokens {
     pub day: String,
+    pub tokens: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+pub struct ExactMonthTokens {
+    pub month: String,
     pub tokens: String,
 }
 
@@ -654,6 +676,22 @@ pub struct CommunityStats {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub exact_aggregates: Option<ExactAggregates>,
+    /// Community tokens per UTC calendar month for the 12 months ending this one (this one so far), oldest first;
+    /// absent from servers that predate it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional, inline)]
+    pub monthly: Option<Vec<MonthTokens>>,
+    /// The middle builder's all-time tokens, the lower middle one for an even count; absent likewise.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional, type = "number")]
+    pub median_tokens: Option<u64>,
+}
+/// One UTC calendar month's tokens (`YYYY-MM`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+pub struct MonthTokens {
+    pub month: String,
+    #[ts(type = "number")]
+    pub tokens: u64,
 }
 
 /// Achievements (F7), computed on the hosted side from published data only.
@@ -734,6 +772,59 @@ pub struct MenuOverview {
     /// When the cycle behind these totals finished; null before the first.
     pub refreshed_at: Option<String>,
     pub next_refresh_at: Option<String>,
+    /// Each total's estimated cost.
+    pub costs: PeriodCosts,
+}
+/// What the menu bar item shows beside its icon (`LocalSettings.menuBar`).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "lowercase")]
+pub enum MenuBarShows {
+    #[default]
+    Tokens,
+    Cost,
+    Icon,
+}
+/// Which total the menu bar item shows (`LocalSettings.menuBarPeriod`): local days in the computer's zone.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "lowercase")]
+pub enum MenuBarPeriod {
+    #[default]
+    Today,
+    Week,
+    Month,
+    All,
+}
+/// The app's own settings, kept with the local history (`GET`/`PUT /api/local/settings`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct LocalSettings {
+    pub menu_bar: MenuBarShows,
+    pub menu_bar_period: MenuBarPeriod,
+    /// The daily LiteLLM price-table download; off keeps the bundled snapshot.
+    pub price_refresh: bool,
+}
+impl Default for LocalSettings {
+    fn default() -> Self {
+        Self {
+            menu_bar: MenuBarShows::default(),
+            menu_bar_period: MenuBarPeriod::default(),
+            price_refresh: true,
+        }
+    }
+}
+/// Each period's estimated cost in micro-USD at the current prices: zero without usage, null when a model used in it
+/// has no price.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+pub struct PeriodCosts {
+    #[ts(type = "number | null")]
+    pub today: Option<u64>,
+    #[ts(type = "number | null")]
+    pub week: Option<u64>,
+    #[ts(type = "number | null")]
+    pub month: Option<u64>,
+    #[ts(type = "number | null")]
+    pub all_time: Option<u64>,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct TopTool {

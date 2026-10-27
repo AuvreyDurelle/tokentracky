@@ -16,6 +16,32 @@
     "output": 300,
     "reasoning": 80
   },
+  "byHour": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    2100,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
   "byModel": [
     {
       "breakdown": {
@@ -28,6 +54,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "gpt-5.1-codex",
+      "sessions": 1,
       "tokens": 900
     },
     {
@@ -41,6 +68,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "gpt-5.1-codex-max",
+      "sessions": 1,
       "tokens": 1200
     }
   ],
@@ -55,6 +83,7 @@
       },
       "costMicrousd": null,
       "costParts": null,
+      "sessions": 1,
       "tokens": 2100,
       "tool": "everycode"
     }

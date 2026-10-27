@@ -1,0 +1,97 @@
+{
+  "activity": {
+    "activeDays": 1,
+    "averagePerActiveDay": 135,
+    "bestDay": {
+      "day": "2026-10-20",
+      "tokens": 135
+    },
+    "currentStreak": 0,
+    "longestStreak": 1
+  },
+  "breakdown": {
+    "cacheRead": 35,
+    "cacheWrite": 0,
+    "input": 85,
+    "output": 15,
+    "reasoning": 7
+  },
+  "byHour": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    135,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "byModel": [
+    {
+      "breakdown": {
+        "cacheRead": 35,
+        "cacheWrite": 0,
+        "input": 85,
+        "output": 15,
+        "reasoning": 7
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "gpt-5-codex",
+      "sessions": 1,
+      "tokens": 135
+    }
+  ],
+  "byTool": [
+    {
+      "breakdown": {
+        "cacheRead": 35,
+        "cacheWrite": 0,
+        "input": 85,
+        "output": 15,
+        "reasoning": 7
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "sessions": 1,
+      "tokens": 135,
+      "tool": "codex"
+    }
+  ],
+  "cacheRate": 0.2916666666666667,
+  "costMicrousd": null,
+  "costParts": null,
+  "daily": [
+    {
+      "breakdown": {
+        "cacheRead": 35,
+        "cacheWrite": 0,
+        "input": 85,
+        "output": 15,
+        "reasoning": 7
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "day": "2026-10-20",
+      "tokens": 135
+    }
+  ],
+  "sessions": 1,
+  "tokens": 135
+}

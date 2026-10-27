@@ -1,0 +1,16 @@
+{
+  "allTime": 565,
+  "costs": {
+    "allTime": null,
+    "month": null,
+    "today": null,
+    "week": null
+  },
+  "month": 565,
+  "today": 565,
+  "topTool": {
+    "tokens": 565,
+    "tool": "gemini"
+  },
+  "week": 565
+}

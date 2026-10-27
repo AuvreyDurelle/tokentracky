@@ -23,15 +23,22 @@ pub struct LocalCollector<T> {
     store: Arc<Mutex<UsageStore>>,
     service: Arc<IngestionService>,
     pricing: Arc<tokio::sync::Mutex<PricingRefresher<T>>>,
-    table: Arc<Mutex<Arc<PricingTable>>>,
+    table: Arc<Mutex<Active>>,
+    /// The options allow the download; the app's setting decides within that.
+    pricing_allowed: bool,
+}
+/// The price table events are priced with, and when it was fetched (milliseconds since the Unix epoch).
+struct Active {
+    table: Arc<PricingTable>,
+    fetched_at: i64,
 }
 
 fn lock<T>(mutex: &Mutex<T>) -> MutexGuard<'_, T> {
     mutex.lock().unwrap_or_else(PoisonError::into_inner)
 }
 /// Prices the store's events with `table` from now on.
-fn apply(store: &Mutex<UsageStore>, current: &Mutex<Arc<PricingTable>>, table: Arc<PricingTable>) {
-    *lock(current) = table.clone();
+fn apply(store: &Mutex<UsageStore>, current: &Mutex<Active>, table: Arc<PricingTable>) {
+    lock(current).table = table.clone();
     let version = table.version().to_owned();
     lock(store).set_pricer(
         Some(Box::new(move |event| {
@@ -50,10 +57,12 @@ fn has_enabled_source(store: &Mutex<UsageStore>) -> bool {
 async fn refresh_pricing<T: Transport>(
     pricing: &tokio::sync::Mutex<PricingRefresher<T>>,
     store: &Mutex<UsageStore>,
-    current: &Mutex<Arc<PricingTable>>,
+    current: &Mutex<Active>,
 ) -> Result<(), PricingError> {
     let mut pricing = pricing.lock().await;
-    if pricing.refresh().await? {
+    let changed = pricing.refresh().await?;
+    lock(current).fetched_at = pricing.fetched_at();
+    if changed {
         apply(store, current, pricing.current());
     }
     Ok(())
@@ -69,20 +78,25 @@ impl<T: Transport + 'static> LocalCollector<T> {
         };
         let service = Arc::new(IngestionService::new(store.clone(), ingestion)?);
         let directory = options.database_path.parent().unwrap_or(Path::new(""));
+        let price_refresh = lock(&store).settings()?.price_refresh;
         let pricing = PricingRefresher::new(RefresherOptions {
             cache_path: directory.join("pricing").join("litellm.json"),
-            enabled: options.pricing_refresh,
+            enabled: options.pricing_refresh && price_refresh,
             url: None,
             transport: options.transport,
             now: None,
         });
-        let table = Arc::new(Mutex::new(pricing.current()));
+        let table = Arc::new(Mutex::new(Active {
+            table: pricing.current(),
+            fetched_at: pricing.fetched_at(),
+        }));
         apply(&store, &table, pricing.current());
         Ok(Self {
             store,
             service,
             pricing: Arc::new(tokio::sync::Mutex::new(pricing)),
             table,
+            pricing_allowed: options.pricing_refresh,
         })
     }
     pub fn store(&self) -> &Arc<Mutex<UsageStore>> {
@@ -93,7 +107,20 @@ impl<T: Transport + 'static> LocalCollector<T> {
     }
     /// The table events are priced with.
     pub fn pricing_table(&self) -> Arc<PricingTable> {
-        lock(&self.table).clone()
+        lock(&self.table).table.clone()
+    }
+    /// When the table events are priced with was fetched, in milliseconds since the Unix epoch.
+    pub fn pricing_fetched_at(&self) -> i64 {
+        lock(&self.table).fetched_at
+    }
+    /// The app's daily-download setting, where the options allow downloads: off goes back to the bundled snapshot,
+    /// on to the cached download. A changed table re-prices every event.
+    pub async fn set_pricing_refresh(&self, on: bool) {
+        let mut pricing = self.pricing.lock().await;
+        if pricing.set_enabled(on && self.pricing_allowed) {
+            apply(&self.store, &self.table, pricing.current());
+        }
+        lock(&self.table).fetched_at = pricing.fetched_at();
     }
     pub fn has_enabled_source(&self) -> bool {
         has_enabled_source(&self.store)

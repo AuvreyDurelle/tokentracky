@@ -22,10 +22,10 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 use time::{OffsetDateTime, UtcOffset};
 use tokentracky_core::{
-    BucketTool, CostParts, DayTokens, DayUsage, HourBreakdownRow, MAX_SAFE_INTEGER, ModelUsage, Period, ProjectSummary,
-    PublicBucket, PublicHour, SessionSummary, SourceCapabilities, SourceState, SourceStatus, TOOL_IDS, TokenCounts,
-    ToolId, ToolUsage, UsageBreakdownRow, UsageEvent, UsageSummary, activity_stats, checked_sum, is_js_space,
-    is_public_model, is_utc_day, ranking_window, total_tokens,
+    BucketTool, CostParts, DayTokens, DayUsage, HourBreakdownRow, LocalSettings, MAX_SAFE_INTEGER, ModelUsage, Period,
+    PeriodCosts, ProjectSummary, PublicBucket, PublicHour, SessionSummary, SourceCapabilities, SourceState,
+    SourceStatus, TOOL_IDS, TokenCounts, ToolId, ToolUsage, UsageBreakdownRow, UsageEvent, UsageSummary,
+    activity_stats, checked_sum, is_js_space, is_public_model, is_utc_day, ranking_window, total_tokens,
 };
 
 /// `days` is a rolling window, which `offset` shifts back by that many days (e.g. the previous period); `from`/`to` are
@@ -96,6 +96,7 @@ pub struct PeriodTotals {
     pub month: u64,
     pub all_time: u64,
     pub top_tool: Option<TopTool>,
+    pub costs: PeriodCosts,
 }
 /// The tool with the most tokens this week.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -319,6 +320,20 @@ fn sessions_of<'a>(rows: impl Iterator<Item = &'a slots::Dated>) -> u32 {
         .collect::<HashSet<_>>()
         .len() as u32
 }
+/// [`sessions_of`] for each group of slot rows that `key` gives.
+fn sessions_by<K: Eq + Hash>(rows: &[slots::Dated], key: impl Fn(&slots::Dated) -> K) -> HashMap<K, u32> {
+    let mut groups: HashMap<K, HashSet<(ToolId, &str)>> = HashMap::new();
+    for row in rows {
+        groups
+            .entry(key(row))
+            .or_default()
+            .insert((row.slot.key.tool, row.slot.key.session_id.as_str()));
+    }
+    groups
+        .into_iter()
+        .map(|(key, sessions)| (key, sessions.len() as u32))
+        .collect()
+}
 /// The UTC day of a timestamp (`occurredAt.slice(0, 10)`).
 fn day(event: &UsageEvent) -> Option<&str> {
     event.occurred_at.as_deref().map(|at| utf16_prefix(at, 10))
@@ -340,6 +355,14 @@ fn local_date(ms: i64, tz: &TimeZone) -> Option<time::Date> {
     let days = (ms + i64::from(offset) * 1000).div_euclid(86_400_000);
     // 1970-01-01 is Julian day 2,440,588.
     time::Date::from_julian_day(i32::try_from(days).ok()? + 2_440_588).ok()
+}
+/// The hour of day, 0 to 23, of an instant in milliseconds: UTC, or local in `tz`; `None` outside the years jiff holds.
+fn hour_of_day(ms: i64, tz: Option<&TimeZone>) -> Option<usize> {
+    let offset = match tz {
+        Some(tz) => i64::from(tz.to_offset(Timestamp::from_millisecond(ms).ok()?).seconds()) * 1000,
+        None => 0,
+    };
+    usize::try_from((ms + offset).div_euclid(3_600_000).rem_euclid(24)).ok()
 }
 fn local_today(now: OffsetDateTime, tz: &TimeZone) -> time::Date {
     let now = now.unix_timestamp_nanos().div_euclid(1_000_000) as i64;
@@ -781,6 +804,23 @@ impl UsageStore {
         )?;
         Ok(())
     }
+    /// The app's settings: the defaults until they are changed, and when the saved value can't be read.
+    pub fn settings(&self) -> Result<LocalSettings> {
+        let value: Option<String> = self
+            .db
+            .query_row("SELECT value FROM metadata WHERE key='settings'", [], |row| row.get(0))
+            .optional()?;
+        Ok(value
+            .and_then(|value| serde_json::from_str(&value).ok())
+            .unwrap_or_default())
+    }
+    pub fn set_settings(&mut self, settings: &LocalSettings) -> Result<()> {
+        self.db.execute(
+            "INSERT INTO metadata(key,value) VALUES('settings',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+            [serde_json::to_string(settings)?],
+        )?;
+        Ok(())
+    }
     /// Folders detection has given an enabled source, so one removed by hand is not given again.
     pub fn offered_folders(&self) -> Result<Vec<String>> {
         let value: Option<String> = self
@@ -1206,6 +1246,15 @@ impl UsageStore {
             })
             .collect();
         let tz = options.tz.as_ref();
+        // Each slot is a quarter hour, so it falls within one hour in any zone.
+        let mut by_hour = vec![0u64; 24];
+        for row in &rows {
+            if let Some(hour) = row.slot.key.slot.and_then(|at| hour_of_day(at, options.tz.as_ref())) {
+                by_hour[hour] = sum([by_hour[hour], sum(row.slot.tokens[..4].iter().copied())?])?;
+            }
+        }
+        let tool_sessions = sessions_by(&rows, |row| row.slot.key.tool);
+        let model_sessions = sessions_by(&rows, |row| row.slot.key.model.clone());
         Ok(UsageSummary {
             tokens: all.tokens()?,
             breakdown: breakdown.clone(),
@@ -1222,6 +1271,7 @@ impl UsageStore {
                 .into_iter()
                 .map(|(tool, totals)| {
                     Ok(ToolUsage {
+                        sessions: tool_sessions.get(&tool).copied().unwrap_or(0),
                         tool,
                         tokens: totals.tokens()?,
                         breakdown: totals.breakdown(),
@@ -1234,6 +1284,7 @@ impl UsageStore {
                 .into_iter()
                 .map(|(model, totals)| {
                     Ok(ModelUsage {
+                        sessions: model_sessions.get(&model).copied().unwrap_or(0),
                         model,
                         tokens: totals.tokens()?,
                         breakdown: totals.breakdown(),
@@ -1243,6 +1294,7 @@ impl UsageStore {
                 })
                 .collect::<Result<_>>()?,
             daily,
+            by_hour,
         })
     }
     /// In UTC days, or local days in `tz` (the menu-bar title and `tokentracky status`). Cached until usage changes,
@@ -1270,36 +1322,50 @@ impl UsageStore {
                 (start(date.weekday().number_days_from_monday()), start(date.day() - 1))
             }
         };
-        let mut totals = PeriodTotals {
-            today: 0,
-            week: 0,
-            month: 0,
-            all_time: 0,
-            top_tool: None,
-        };
+        // Today, this week, this month and all time.
+        let mut periods: [slots::Totals; 4] = Default::default();
         let mut tools: Vec<(ToolId, u64)> = Vec::new();
         let everything = QueryOptions {
             tz: tz.cloned(),
             ..QueryOptions::default()
         };
-        for row in self.slots(&everything, false)? {
-            let tokens = sum(row.slot.tokens[..4].iter().copied())?;
-            totals.all_time = sum([totals.all_time, tokens])?;
+        for row in self.slots(&everything, true)? {
+            periods[3].add(&row.slot)?;
             let Some(day) = row.day else { continue };
             if day >= month {
-                totals.month = sum([totals.month, tokens])?;
+                periods[2].add(&row.slot)?;
             }
             if day >= week {
-                totals.week = sum([totals.week, tokens])?;
+                periods[1].add(&row.slot)?;
+                let tokens = sum(row.slot.tokens[..4].iter().copied())?;
                 match tools.iter_mut().find(|(tool, _)| *tool == row.slot.key.tool) {
                     Some((_, total)) => *total = sum([*total, tokens])?,
                     None => tools.push((row.slot.key.tool, tokens)),
                 }
             }
             if day == today {
-                totals.today = sum([totals.today, tokens])?;
+                periods[0].add(&row.slot)?;
             }
         }
+        let cost = |totals: &slots::Totals| -> Result<Option<u64>> {
+            Ok(match totals.cost() {
+                None if totals.tokens()? == 0 => Some(0),
+                cost => cost,
+            })
+        };
+        let mut totals = PeriodTotals {
+            today: periods[0].tokens()?,
+            week: periods[1].tokens()?,
+            month: periods[2].tokens()?,
+            all_time: periods[3].tokens()?,
+            top_tool: None,
+            costs: PeriodCosts {
+                today: cost(&periods[0])?,
+                week: cost(&periods[1])?,
+                month: cost(&periods[2])?,
+                all_time: cost(&periods[3])?,
+            },
+        };
         tools.retain(|&(_, tokens)| tokens > 0);
         tools.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| locale_cmp(&text(a.0), &text(b.0))));
         totals.top_tool = tools.first().map(|&(tool, tokens)| TopTool { tool, tokens });
@@ -1345,6 +1411,12 @@ impl UsageStore {
                         breakdown: totals.breakdown(),
                         cost_microusd: totals.cost(),
                         last_used_at: last.last_at.clone(),
+                        started_at: session
+                            .iter()
+                            .filter_map(|slot| slot.key.slot)
+                            .min()
+                            .and_then(|at| Timestamp::from_millisecond(at).ok())
+                            .map(|at| format!("{at:.3}")),
                     },
                 ))
             })

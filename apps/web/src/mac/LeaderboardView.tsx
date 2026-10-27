@@ -8,13 +8,15 @@ import { monotonePath } from './chart';
 import { Emblem } from './Emblem';
 import { MAIN_TOOLS, gapToNext, lastSeven, otherTokens, pagerItems } from './leaderboard';
 import { useLoad } from './load';
-import {averageCount, countRatio, countShare, sharedCounts, sumCounts} from '../public-counts';
+import { ToolbarActions } from './Shell';
+import {averageCount, countRatio, countShare, cumulativeMonths, sharedCounts, sumCounts} from '../public-counts';
 
 const PAGE_SIZE = 12;
 const PERIODS: Array<{ value: Period; label: string }> = [{ value: 'week', label: 'Week' }, { value: 'month', label: 'Month' }, { value: 'all', label: 'All' }];
 const PHRASE: Record<Period, string> = { week: 'This week', month: 'This month', all: 'All time' };
 const SHORT: Record<(typeof MAIN_TOOLS)[number], string> = { claude: 'Claude', codex: 'Codex', gemini: 'Gemini', opencode: 'OpenCode' };
 const UPDATED = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+const MONTH = new Intl.DateTimeFormat(undefined, { month: 'short', timeZone: 'UTC' });
 const tokensTitle = (tokens: number | bigint) => `${formatExact(tokens)} tokens`;
 const round = (value: number) => Math.round(value * 10) / 10;
 
@@ -43,13 +45,13 @@ export function LeaderboardView({ api, me, canJoin, syncedAt, onProfile, onJoin 
         <h1 className="m-page-title">Leaderboard</h1>
         <p className="m-page-sub">{PHRASE[period]}{board && <><span className="sep" />Updated {UPDATED.format(new Date(board.updatedAt))}</>}</p>
       </div>
-      <div className="lb-controls">
+      <ToolbarActions>
         <label className="lb-search"><SearchIcon /><span className="sr-only">Search builders</span>
           <input type="search" placeholder="Search builders" value={search} maxLength={30} onChange={(event) => setSearch(event.target.value)} /></label>
         <div className="m-seg" role="group" aria-label="Period">
           {PERIODS.map((option) => <button key={option.value} type="button" className={option.value === period ? 'on' : undefined} aria-pressed={option.value === period} onClick={() => setPeriod(option.value)}>{option.label}</button>)}
         </div>
-      </div>
+      </ToolbarActions>
     </div>
 
     {unavailable ? <section className="m-card lb-empty"><Empty title="Leaderboard not connected">This app has no leaderboard server configured. Your usage is still tracked privately on the Tokens page.</Empty></section> : <>
@@ -84,14 +86,20 @@ export function CommunityHero({ stats }: { stats: CommunityStats }) {
         </div>
         <ToolShare totals={counts.toolTotals} />
       </div>
-      <TrendArea trend={counts.trend} />
+      {counts.monthly ? <TrendArea points={cumulativeMonths(counts.totalTokens, counts.monthly)} title="Community tokens, cumulative" note="Last 12 months"
+        labels={counts.monthly.map((point, index) => ({ at: index + 0.5, text: MONTH.format(new Date(`${point.month}-01T00:00:00Z`)) }))}
+        aria={`Community tokens to date over the last 12 months, now ${formatExact(counts.totalTokens)}`} />
+        : <TrendArea points={counts.trend.map((point) => point.tokens)} title="Community tokens per day" note={`Last ${counts.trend.length} days · UTC`}
+          labels={counts.trend.flatMap((point, index) => (counts.trend.length - 1 - index) % 7 === 0 ? [{ at: index, text: shortDay(point.day) }] : [])}
+          aria={`Community tokens per UTC day, last ${counts.trend.length} days, ending at ${formatExact(counts.trend.at(-1)?.tokens ?? 0n)}`} />}
     </div>
     <div className="m-stat-strip hero-stats">
       <div><div className="m-label">Added this week</div><div className="m-stat-value" title={tokensTitle(week)}>+{formatCompact(week)}</div>
         <div className={`sub${change !== null && change >= 0n ? ' up' : ''}`}>{change === null ? 'last 7 days' : `${change >= 0n ? '↑' : '↓'} ${countShare(change < 0n ? -change : change, before)} vs last week`}</div></div>
       <div><div className="m-label">New builders</div><div className="m-stat-value">+{formatExact(stats.newBuilders)}</div><div className="sub">joined this week</div></div>
       <div><div className="m-label">Est. community spend</div><div className="m-stat-value" title={formatCost(counts.totalCostMicrousd)}>{counts.totalCostMicrousd === null ? '—' : formatCostCompact(counts.totalCostMicrousd)}</div><div className="sub">at API list prices</div></div>
-      <div><div className="m-label">Average per builder</div><div className="m-stat-value" title={stats.builders ? tokensTitle(averageCount(counts.totalTokens, stats.builders)) : undefined}>{stats.builders ? formatCompact(averageCount(counts.totalTokens, stats.builders)) : '—'}</div><div className="sub">all time</div></div>
+      <div><div className="m-label">Average per builder</div><div className="m-stat-value" title={stats.builders ? tokensTitle(averageCount(counts.totalTokens, stats.builders)) : undefined}>{stats.builders ? formatCompact(averageCount(counts.totalTokens, stats.builders)) : '—'}</div>
+        <div className="sub" title={counts.medianTokens === null ? undefined : `The middle builder: ${tokensTitle(counts.medianTokens)}`}>{counts.medianTokens === null ? 'all time' : `median ${formatCompact(counts.medianTokens)}`}</div></div>
     </div>
   </section>;
 }
@@ -111,19 +119,20 @@ function ToolShare({ totals }: { totals: Partial<Record<ToolId, bigint>> }) {
 
 // The hero chart's frame (viewBox units): the plot runs from x 4 to 512 and from y 18 down to the baseline at 158.
 const W = 520, H = 188, LEFT = 4, RIGHT = 512, TOP = 18, BASE = 158;
-function TrendArea({ trend }: { trend: Array<{day: string; tokens: bigint}> }) {
-  if (trend.length < 2) return <div className="hero-chart" />;
-  const maximum = trend.reduce((max, point) => point.tokens > max ? point.tokens : max, 1n);
+/** An area over evenly spaced points, with `labels` at fractional point positions under it. */
+function TrendArea({ points: values, title, note, labels, aria }: { points: bigint[]; title: string; note: string; labels: Array<{ at: number; text: string }>; aria: string }) {
+  if (values.length < 2) return <div className="hero-chart" />;
+  const maximum = values.reduce((max, value) => value > max ? value : max, 1n);
   const top = ((maximum + 3n) / 4n) * 4n;
   const ticks = [0n, top / 4n, top / 2n, top * 3n / 4n, top];
   const y = (tokens: bigint) => BASE - countRatio(tokens, top) * (BASE - TOP);
-  const points = trend.map((point, index) => [round(LEFT + (index / (trend.length - 1)) * (RIGHT - LEFT)), round(y(point.tokens))] as [number, number]);
+  const x = (at: number) => round(LEFT + (at / (values.length - 1)) * (RIGHT - LEFT));
+  const points = values.map((value, index) => [x(index), round(y(value))] as [number, number]);
   const line = monotonePath(points);
   const [endX, endY] = points.at(-1)!;
-  const labels = trend.flatMap((point, index) => (trend.length - 1 - index) % 7 === 0 ? [{ x: points[index]![0], day: point.day }] : []);
   return <div className="hero-chart">
-    <div className="hero-chart-head"><span className="m-label">Community tokens per day</span><span className="hero-note">Last {trend.length} days · UTC</span></div>
-    <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Community tokens per UTC day, last ${trend.length} days, ending at ${formatExact(trend.at(-1)!.tokens)}`}>
+    <div className="hero-chart-head"><span className="m-label">{title}</span><span className="hero-note">{note}</span></div>
+    <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={aria}>
       <defs>
         <linearGradient id="lb-hero-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#eceef0" stopOpacity=".22" /><stop offset=".7" stopColor="#eceef0" stopOpacity=".035" /><stop offset="1" stopColor="#eceef0" stopOpacity="0" /></linearGradient>
         <linearGradient id="lb-hero-line" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#eceef0" stopOpacity=".3" /><stop offset="1" stopColor="#eceef0" /></linearGradient>
@@ -135,7 +144,7 @@ function TrendArea({ trend }: { trend: Array<{day: string; tokens: bigint}> }) {
       <line x1={endX} x2={endX} y1={endY} y2={BASE} stroke="rgba(255,255,255,.22)" strokeDasharray="2 3" />
       <circle cx={endX} cy={endY} r="8" fill="#eceef0" opacity=".1" />
       <circle cx={endX} cy={endY} r="3.5" fill="#f7f8f8" stroke="#0f1011" strokeWidth="1.5" />
-      {labels.map((label, index) => <text key={label.day} className="axis" x={label.x} y="180" textAnchor={index === labels.length - 1 ? 'end' : 'middle'}>{shortDay(label.day)}</text>)}
+      {labels.map((label, index) => <text key={`${label.at}${label.text}`} className="axis" x={x(label.at)} y="180" textAnchor={label.at >= values.length - 1 && index === labels.length - 1 ? 'end' : 'middle'}>{label.text}</text>)}
     </svg>
   </div>;
 }

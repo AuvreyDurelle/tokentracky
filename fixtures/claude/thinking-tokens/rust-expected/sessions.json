@@ -15,6 +15,7 @@
       "claude-sonnet-4-6"
     ],
     "project": "/synthetic/project",
+    "startedAt": "2026-10-20T12:00:00.000Z",
     "tokens": 227,
     "tool": "claude"
   }

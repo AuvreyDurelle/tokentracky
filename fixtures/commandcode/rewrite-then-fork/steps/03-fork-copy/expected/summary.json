@@ -16,6 +16,32 @@
     "output": 200,
     "reasoning": 0
   },
+  "byHour": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1880,
+    220,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
   "byModel": [
     {
       "breakdown": {
@@ -28,6 +54,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "deepseek-v4-flash",
+      "sessions": 2,
       "tokens": 1880
     },
     {
@@ -41,6 +68,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "deepseek-v4-pro",
+      "sessions": 1,
       "tokens": 220
     }
   ],
@@ -55,6 +83,7 @@
       },
       "costMicrousd": null,
       "costParts": null,
+      "sessions": 2,
       "tokens": 2100,
       "tool": "commandcode"
     }

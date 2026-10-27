@@ -1,9 +1,9 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import type { SourceStatus } from '@tokentracky/core';
+import type { ProfileStats, SourceStatus } from '@tokentracky/core';
 import type { ApiClient, Health, LocalStatus } from '../api';
 import { personalFixtures } from './personal-fixtures';
-import { SettingsPage, sourceLine, updateLine } from './SettingsView';
+import { Account, SettingsPage, menuBarTitle, sourceLine, updateLine } from './SettingsView';
 
 const f = personalFixtures();
 const health: Health = { mode: 'local', authConfigured: false, version: '1.0.0', cloudUrl: 'https://tokentracky.example', supabaseUrl: null, supabaseAnonKey: null };
@@ -45,6 +45,24 @@ describe('SettingsPage', () => {
     expect(text(html)).toContain('Unlink this Mac');
     expect(text(html)).not.toMatch(/Leave the leaderboard/i);
   });
+  it("names its sections as the mockup does, with Account only for a linked Mac", () => {
+    const nav = (html: string) => [...html.matchAll(/<button type="button" class="st-nav-item[^"]*"[^>]*><svg[\s\S]*?<\/svg>([^<]+)/g)].map((match) => match[1]!.replaceAll('&amp;', '&'));
+    expect(nav(page())).toEqual(['General', 'Sources', 'Leaderboard & privacy', 'Menu bar', 'Pricing & data', 'Updates', 'Account']);
+    expect(nav(page({ status: { ...f.status, cloudLinked: false, alias: null } }))).not.toContain('Account');
+    expect(nav(page({ shell: null }))).toEqual(['Sources', 'Leaderboard & privacy', 'Pricing & data', 'Account']);
+  });
+  it('names the price table it prices with', () => {
+    expect(text(page())).toContain('Price table');
+    expect(text(page())).toContain('Version litellm-2026-10-25');
+    expect(text(page({ status: { ...f.status, pricingVersion: 'litellm:3f2a9c01be44' } }))).toContain('Version 3f2a9c01be44');
+  });
+  it('says how the account signed in and when it joined, and sends deleting to the website', () => {
+    const account = (githubLogin?: string) => text(renderToStaticMarkup(<Account health={health} status={f.status} busy={null} unlink={() => {}}
+      profile={{ ...({} as ProfileStats), alias: 'example-builder', memberSince: '2026-01-12', githubLogin }} />));
+    expect(account('example')).toMatch(/example-builder Signed in with GitHub · joined Jan 12, 2026 · synced/);
+    expect(account()).toMatch(/example-builder Joined Jan 12, 2026 · synced/);
+    expect(renderToStaticMarkup(<Account health={health} status={f.status} profile={null} busy={null} unlink={() => {}} />)).toContain('href="https://tokentracky.example/you#danger"');
+  });
   it('offers joining when this Mac is not linked, or no leaderboard when the build has none', () => {
     const unlinked: LocalStatus = { ...f.status, cloudLinked: false, alias: null };
     expect(text(page({ status: unlinked }))).toContain('Join the leaderboard');
@@ -60,6 +78,12 @@ describe('sourceLine', () => {
     expect(sourceLine(source({ enabled: false, eventCount: 0, state: 'detected' }), false)).toEqual({ tone: 'off', text: 'Not found', found: false });
     expect(sourceLine(source({ enabled: false, eventCount: 0, state: 'detected' }), true)).toEqual({ tone: 'off', text: 'Detected', found: true });
   });
+  it('counts its sessions in all history when they are known', () => {
+    expect(sourceLine(source({}), true, 1284).text).toBe('Detected · 1,284 sessions');
+    expect(sourceLine(source({}), true, 1).text).toBe('Detected · 1 session');
+    expect(sourceLine(source({}), true, 0).text).toBe('Detected · 48,210 records');
+    expect(text(page({ sessions: new Map([['claude', 1284], ['codex', 807]]) }))).toContain('5 of 7 found · 5 on · 2,091 sessions');
+  });
   it('passes on what needs attention, and says when collection is paused', () => {
     expect(sourceLine(source({ state: 'permission_required', message: 'Grant access to ~/.claude' }), true)).toMatchObject({ tone: 'warn', text: 'Needs folder access', note: 'Grant access to ~/.claude' });
     expect(sourceLine(source({ state: 'error', message: '' }), true)).toMatchObject({ tone: 'warn', text: 'Needs attention' });
@@ -74,5 +98,32 @@ describe('updateLine', () => {
     expect(updateLine({ state: 'available', version: null })).toBe('A new version is available. Choose Download from the gear menu in the menu bar.');
     expect(updateLine({ state: 'ready', version: '1.1.0' })).toBe('Version 1.1.0 is downloaded. Choose Restart to install v1.1.0 from the gear menu in the menu bar.');
     expect(updateLine({ state: 'disabled', version: null })).toBe('Updates are off in this build.');
+  });
+});
+
+describe('menuBarTitle', () => {
+  // The same cases as apps/mac/src/menu.rs, so the preview shows what the menu bar will.
+  const overview = { ...f.overview, today: 1_234_567, week: 8_400_000, month: 20_149_999, allTime: 120e9, costs: { today: 64_800_000, week: 729_000_000, month: 2_394_000_000, allTime: null } };
+  it("titles the chosen period with its tokens or cost, or just the icon", () => {
+    expect(menuBarTitle(overview, { menuBar: 'tokens', menuBarPeriod: 'today', priceRefresh: true })).toBe('1.2M');
+    expect(menuBarTitle(overview, { menuBar: 'tokens', menuBarPeriod: 'week', priceRefresh: true })).toBe('8.4M');
+    expect(menuBarTitle(overview, { menuBar: 'tokens', menuBarPeriod: 'all', priceRefresh: true })).toBe('120B');
+    expect(menuBarTitle(overview, { menuBar: 'cost', menuBarPeriod: 'today', priceRefresh: true })).toBe('$64.80');
+    expect(menuBarTitle(overview, { menuBar: 'cost', menuBarPeriod: 'month', priceRefresh: true })).toBe('$2.4K');
+    expect(menuBarTitle(overview, { menuBar: 'icon', menuBarPeriod: 'today', priceRefresh: true })).toBe('');
+    expect(menuBarTitle(overview, { menuBar: 'cost', menuBarPeriod: 'all', priceRefresh: true })).toBe('120B');
+    expect(menuBarTitle({ ...overview, costs: { ...overview.costs, today: 999_995_000 } }, { menuBar: 'cost', menuBarPeriod: 'today', priceRefresh: true })).toBe('$1K');
+  });
+  it('switches the daily price download and says when the table in use was fetched', () => {
+    const html = text(page({ settings: { menuBar: 'tokens', menuBarPeriod: 'today', priceRefresh: false } }));
+    expect(html).toContain('Refresh price table daily');
+    expect(html).toMatch(/Updated \d+h ago · version litellm-2026-10-25/);
+    expect(page({ settings: { menuBar: 'tokens', menuBarPeriod: 'today', priceRefresh: false } })).toMatch(/role="switch" aria-checked="false" aria-label="Refresh price table daily"/);
+  });
+  it('shows the choices and the item as it looks now, only in the Mac app', () => {
+    const html = page({ overview, settings: { menuBar: 'cost', menuBarPeriod: 'today', priceRefresh: true } });
+    expect(html).toMatch(/<button type="button" class="on" aria-pressed="true">Cost<\/button>/);
+    expect(html).toContain('<span class="st-mb-item"><span class="brand-mark"></span>$64.80</span>');
+    expect(page({ overview, settings: { menuBar: 'cost', menuBarPeriod: 'today', priceRefresh: true }, shell: null })).not.toContain('st-mb-item');
   });
 });

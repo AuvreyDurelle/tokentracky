@@ -16,6 +16,7 @@
       "gpt-5"
     ],
     "project": null,
+    "startedAt": "2026-10-20T10:00:00.000Z",
     "tokens": 16200,
     "tool": "copilot"
   },
@@ -35,6 +36,7 @@
       "claude-haiku-4.5"
     ],
     "project": null,
+    "startedAt": null,
     "tokens": 650,
     "tool": "copilot"
   }

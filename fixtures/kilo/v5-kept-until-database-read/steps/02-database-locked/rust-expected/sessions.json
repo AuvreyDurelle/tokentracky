@@ -1,0 +1,22 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 1000,
+      "cacheWrite": 100,
+      "input": 400,
+      "output": 200,
+      "reasoning": 0
+    },
+    "costMicrousd": null,
+    "id": "t1",
+    "lastUsedAt": "2026-10-23T09:00:01.000Z",
+    "model": "unknown",
+    "models": [
+      "unknown"
+    ],
+    "project": null,
+    "startedAt": "2026-10-23T09:00:00.000Z",
+    "tokens": 1700,
+    "tool": "kilo"
+  }
+]

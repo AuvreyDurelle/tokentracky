@@ -133,7 +133,9 @@ elif name == 'osascript':
     if os.getenv('STUB_FAIL') == 'finder':
         print('Not authorized to send Apple events to Finder. (-1743)', file=sys.stderr)
         sys.exit(1)
-    Path(args[-1], '.DS_Store').write_text('layout')
+    # Finder saves the background as an alias in .DS_Store, naming the file; 'background' saves the layout without it.
+    background = b'' if os.getenv('STUB_FAIL') == 'background' else b'backgroundImageAlias background.png'
+    Path(args[-1], '.DS_Store').write_bytes(b'layout ' + background)
     print('styled')
 elif name == 'minisign':
     if os.getenv('STUB_FAIL') == 'signature':

@@ -29,7 +29,8 @@ use tokentracky_collector::scheduler::{BoxFuture, RetryAfter, Step, StepError};
 use tokentracky_collector::store::{QueryOptions, SourceConfiguration, StoreError, UsageStore};
 use tokentracky_collector::{LocalCollector, RefreshError, RefreshScheduler, RefreshStatus, ServiceError};
 use tokentracky_core::{
-    MAX_SAFE_INTEGER, MenuOverview, ProjectSummary, SourceState, SourceStatus, ToolId, TopTool, is_js_space, is_utc_day,
+    LocalSettings, MAX_SAFE_INTEGER, MenuOverview, ProjectSummary, SourceState, SourceStatus, ToolId, TopTool,
+    is_js_space, is_utc_day,
 };
 use tokio::sync::watch;
 
@@ -48,6 +49,11 @@ const COLLECTION_PAUSED: LocalError = LocalError::new(
 /// The scheduler's own refusal, for a pause that lands after the route's check.
 const CYCLE_PAUSED: LocalError = LocalError::new(409, "COLLECTION_PAUSED", "Resume collection before refreshing.");
 const INVALID_PAUSE: LocalError = LocalError::new(400, "INVALID_REQUEST", "Choose whether collection is paused.");
+const INVALID_SETTINGS: LocalError = LocalError::new(
+    400,
+    "INVALID_REQUEST",
+    "Choose what the menu bar shows and for which period.",
+);
 const INVALID_FILTER: LocalError =
     LocalError::new(400, "INVALID_FILTER", "Choose a supported reporting period and tool.");
 const RANGE_DAYS: [f64; 4] = [7.0, 30.0, 90.0, 365.0];
@@ -69,6 +75,8 @@ pub(crate) struct Collection {
     /// The overview of the last cycle, or of the first request since one when nothing listens to the cycle, with the
     /// UTC day it was computed on.
     cached_overview: Mutex<Option<(Date, LocalOverview)>>,
+    /// Given each new overview (the menu bar), when something listens.
+    on_overview: Option<Arc<dyn Fn(LocalOverview) + Send + Sync>>,
     /// This launch turned on the tools it found (the first run).
     first_run: bool,
 }
@@ -134,6 +142,7 @@ impl LocalState {
         });
         // The scheduler exists before its collection does, so its hook finds the collection here.
         let published: Arc<OnceLock<Weak<Collection>>> = Arc::default();
+        let on_overview = options.on_refresh.clone();
         let (slot, base, callback, ended) = (published.clone(), state.clone(), options.on_refresh, cycling.clone());
         refresh.on_refresh = Some(Box::new(move || -> BoxFuture<()> {
             ended.send_replace(false);
@@ -167,6 +176,7 @@ impl LocalState {
             change: Mutex::new(watch::channel(true).1),
             rank: Mutex::new(None),
             cached_overview: Mutex::new(None),
+            on_overview,
             first_run,
         });
         let _ = published.set(Arc::downgrade(&collection));
@@ -318,15 +328,22 @@ impl Collection {
     /// `overview()`, its totals in local days in the computer's zone (F3).
     pub(crate) async fn overview(&self, sync: &CloudSync) -> Result<LocalOverview, LocalError> {
         let store = self.collector.store().clone();
-        let totals = blocking(move || lock(&store).period_totals(OffsetDateTime::now_utc(), Some(&TimeZone::system())))
-            .await?
-            .map_err(|_| LocalError::internal())?;
+        let (totals, settings) = blocking(move || {
+            let store = lock(&store);
+            Ok::<_, StoreError>((
+                store.period_totals(OffsetDateTime::now_utc(), Some(&TimeZone::system()))?,
+                store.settings()?,
+            ))
+        })
+        .await?
+        .map_err(|_| LocalError::internal())?;
         Ok(LocalOverview {
             totals,
             rank: *lock(&self.rank),
             alias: sync.status().alias,
             paused: self.paused(),
             refresh: self.scheduler.status(),
+            settings,
         })
     }
 }
@@ -342,6 +359,7 @@ pub(crate) fn local_routes() -> Router<LocalState> {
         )
         .route("/api/local/refresh", post(refresh))
         .route("/api/local/collection", put(collection))
+        .route("/api/local/settings", get(get_settings).put(put_settings))
         .route("/api/local/summary", get(summary))
         .route("/api/local/sessions", get(sessions))
         .route("/api/local/breakdown", get(breakdown))
@@ -365,6 +383,8 @@ struct Status {
     #[serde(flatten)]
     refresh: RefreshStatus,
     pricing_version: String,
+    /// When the price table in use was fetched: the bundled snapshot's time until a download replaces it.
+    pricing_updated_at: String,
     /// Only in the launch that turned tools on: TypeScript has no first run, so its status keeps the shape it shares.
     #[serde(skip_serializing_if = "Option::is_none")]
     first_run: Option<FirstRun>,
@@ -449,6 +469,9 @@ async fn status(state: &LocalState) -> Result<Status, LocalError> {
         sync,
         refresh: local.scheduler.status(),
         pricing_version: local.collector.pricing_table().version().to_owned(),
+        pricing_updated_at: jiff::Timestamp::from_millisecond(local.collector.pricing_fetched_at())
+            .map(|at| format!("{at:.3}"))
+            .unwrap_or_default(),
         first_run,
     })
 }
@@ -526,6 +549,39 @@ async fn collection(State(state): State<LocalState>, JsonBody(body): JsonBody) -
     let local = state.collection();
     local.set_paused(paused).await;
     Ok(json(StatusCode::OK, &serde_json::json!({ "paused": local.paused() })))
+}
+
+/// `GET /api/local/settings`, with no parameters: the app's settings, the defaults until they change.
+async fn get_settings(State(state): State<LocalState>, uri: Uri) -> Result<Response, LocalError> {
+    object(Some(&params(uri.query())), &[])?;
+    let store = state.collection().collector.store().clone();
+    let settings = blocking(move || lock(&store).settings())
+        .await?
+        .map_err(|_| LocalError::internal())?;
+    Ok(json(StatusCode::OK, &settings))
+}
+
+/// `PUT /api/local/settings`: exactly `{menuBar, menuBarPeriod, priceRefresh}`. Answers with the settings saved, once the menu bar
+/// has its overview again under them.
+async fn put_settings(State(state): State<LocalState>, JsonBody(body): JsonBody) -> Result<Response, LocalError> {
+    // An object only: serde would also read the two values as an array.
+    let settings: LocalSettings = body
+        .filter(Value::is_object)
+        .and_then(|body| serde_json::from_value(body).ok())
+        .ok_or(INVALID_SETTINGS)?;
+    let local = state.collection();
+    let store = local.collector.store().clone();
+    blocking(move || lock(&store).set_settings(&settings))
+        .await?
+        .map_err(|_| LocalError::internal())?;
+    // A change re-prices every event before the menu bar's totals are read again.
+    local.collector.set_pricing_refresh(settings.price_refresh).await;
+    if let Some(callback) = &local.on_overview {
+        let overview = local.overview(&state.sync).await?;
+        *lock(&local.cached_overview) = Some((OffsetDateTime::now_utc().date(), overview.clone()));
+        callback(overview);
+    }
+    Ok(json(StatusCode::OK, &settings))
 }
 
 /// `Number(text)`: decimal literals and `Infinity` with an optional sign, or `0x`, `0o` and `0b` integers, between
@@ -733,6 +789,7 @@ async fn overview(State(state): State<LocalState>) -> Result<Response, LocalErro
         refreshing: refresh.refreshing,
         refreshed_at: last.refresh.last_refresh_at,
         next_refresh_at: refresh.next_refresh_at,
+        costs: totals.costs,
     };
     Ok(json(StatusCode::OK, &overview))
 }
@@ -802,6 +859,7 @@ mod tests {
             month: 3,
             all_time: 4,
             top_tool: None,
+            costs: Default::default(),
         };
         let refresh = RefreshStatus {
             last_refresh_at: None,
@@ -814,6 +872,7 @@ mod tests {
             alias: None,
             paused: false,
             refresh,
+            settings: Default::default(),
         };
         let today = OffsetDateTime::UNIX_EPOCH.date();
         let yesterday = today.previous_day().unwrap();

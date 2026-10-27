@@ -221,3 +221,41 @@ fn summaries_count_streaks_and_today_in_the_zone() {
     };
     assert_eq!((previous(None), previous(Some("Asia/Tokyo"))), (7, 7));
 }
+
+#[test]
+fn a_summary_adds_its_tokens_up_by_hour_of_day_in_utc_or_the_zone() {
+    // 22:10 and 23:50 UTC on two days, and 06:00 UTC: in Kathmandu (+05:45) 03:55, 05:35 and 11:45.
+    let store = store(&[
+        event("late", "2026-10-20T22:10:00.000Z", 1),
+        event("later", "2026-10-21T23:50:00.000Z", 10),
+        event("late-again", "2026-10-21T22:59:59.999Z", 100),
+        event("morning", "2026-10-21T06:00:00.000Z", 1000),
+    ]);
+    let utc = store.summary(&days("2026-10-20", "2026-10-21", None)).unwrap().by_hour;
+    assert_eq!(utc.len(), 24);
+    assert_eq!((utc[22], utc[23], utc[6]), (101, 10, 1000));
+    assert_eq!(utc.iter().sum::<u64>(), 1111);
+    let kathmandu = store
+        .summary(&days("2026-10-20", "2026-10-22", Some("Asia/Kathmandu")))
+        .unwrap()
+        .by_hour;
+    assert_eq!(
+        (kathmandu[3], kathmandu[4], kathmandu[5], kathmandu[11]),
+        (1, 100, 10, 1000)
+    );
+}
+
+#[test]
+fn a_session_starts_at_the_quarter_hour_of_its_first_event_in_the_query() {
+    let store = store(&[
+        event("first", "2026-10-20T09:07:00.000Z", 1),
+        event("middle", "2026-10-20T12:30:00.000Z", 1),
+        event("last", "2026-10-20T15:49:00.000Z", 1),
+    ]);
+    let sessions = store.sessions(&days("2026-10-20", "2026-10-20", None)).unwrap();
+    assert_eq!(sessions.len(), 1);
+    assert_eq!(
+        (sessions[0].started_at.as_deref(), sessions[0].last_used_at.as_deref()),
+        (Some("2026-10-20T09:00:00.000Z"), Some("2026-10-20T15:49:00.000Z"))
+    );
+}

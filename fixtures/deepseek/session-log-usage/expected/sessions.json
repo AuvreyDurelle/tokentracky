@@ -16,6 +16,7 @@
       "deepseek-v4-pro"
     ],
     "project": "/synthetic/dsh-project",
+    "startedAt": "2026-10-20T10:00:00.000Z",
     "tokens": 9570,
     "tool": "deepseek"
   }

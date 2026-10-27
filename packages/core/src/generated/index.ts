@@ -74,9 +74,19 @@ export type UsageSummary = {
   costParts: CostParts | null;
   sessions: number;
   cacheRate: number;
-  byTool: Array<{ tool: ToolId, tokens: number, breakdown: TokenCounts, costMicrousd: number | null, costParts: CostParts | null }>;
-  byModel: Array<{ model: string, tokens: number, breakdown: TokenCounts, costMicrousd: number | null, costParts: CostParts | null }>;
+  byTool: Array<{ tool: ToolId, tokens: number, breakdown: TokenCounts, costMicrousd: number | null, costParts: CostParts | null, 
+/**
+ * Distinct sessions, each tool's own, that used it.
+ */
+sessions: number }>;
+  byModel: Array<{ model: string, tokens: number, breakdown: TokenCounts, costMicrousd: number | null, costParts: CostParts | null, 
+/**
+ * Distinct sessions, each tool's own, that used it.
+ */
+sessions: number }>;
   daily: Array<{ day: string, tokens: number, breakdown: TokenCounts, costMicrousd: number | null, costParts: CostParts | null }>;
+  /** Tokens by hour of day, 0 to 23, in the query's zone (UTC without one). */
+  byHour: Array<number>;
 };
 export type SessionSummary = {
   id: string;
@@ -90,6 +100,8 @@ export type SessionSummary = {
   breakdown: TokenCounts;
   costMicrousd: number | null;
   lastUsedAt: string | null;
+  /** The start of the 15-minute slot of its first event in the query, so at most 15 minutes before that event; null when undated. */
+  startedAt: string | null;
 };
 export type ProjectSummary = {
   name: string;
@@ -211,6 +223,10 @@ export type CommunityStats = {
   breakdown: TokenCounts | null;
   /** Exact shared values beyond JavaScript's safe integer range. Corresponding numeric fields are lower bounds. */
   exactAggregates?: ExactAggregates;
+  /** Community tokens per UTC calendar month for the 12 months ending this one (this one so far), oldest first; absent from servers that predate it. */
+  monthly?: Array<{ month: string, tokens: number }>;
+  /** The middle builder's all-time tokens, the lower middle one for an even count; absent likewise. */
+  medianTokens?: number;
 };
 /** Decimal integer companions for shared aggregates. Maps and series are complete when present; null costs stay unknown. */
 export type ExactAggregates = {
@@ -218,6 +234,8 @@ export type ExactAggregates = {
   totalCostMicrousd?: string;
   toolTotals?: Partial<Record<ToolId, string>>;
   trend?: Array<{ day: string, tokens: string }>;
+  monthly?: Array<{ month: string, tokens: string }>;
+  medianTokens?: string;
   breakdown?: ExactTokenCounts;
 };
 /** Community token kinds as decimal integers. Reasoning is part of output and is never added to the total again. */
@@ -291,4 +309,24 @@ export type MenuOverview = {
   /** When the cycle behind these totals finished; null before the first. */
   refreshedAt: string | null;
   nextRefreshAt: string | null;
+  /** Each total's estimated cost. */
+  costs: PeriodCosts;
+};
+/** Each period's estimated cost in micro-USD at the current prices: zero without usage, null when a model used in it has no price. */
+export type PeriodCosts = {
+  today: number | null;
+  week: number | null;
+  month: number | null;
+  allTime: number | null;
+};
+/** What the menu bar item shows beside its icon (`LocalSettings.menuBar`). */
+export type MenuBarShows = "tokens" | "cost" | "icon";
+/** Which total the menu bar item shows (`LocalSettings.menuBarPeriod`): local days in the computer's zone. */
+export type MenuBarPeriod = "today" | "week" | "month" | "all";
+/** The app's own settings, kept with the local history (`GET`/`PUT /api/local/settings`). */
+export type LocalSettings = {
+  menuBar: MenuBarShows;
+  menuBarPeriod: MenuBarPeriod;
+  /** The daily LiteLLM price-table download; off keeps the bundled snapshot. */
+  priceRefresh: boolean;
 };

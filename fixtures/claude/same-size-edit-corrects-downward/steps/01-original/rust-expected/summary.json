@@ -1,0 +1,101 @@
+{
+  "activity": {
+    "activeDays": 1,
+    "averagePerActiveDay": 487,
+    "bestDay": {
+      "day": "2026-10-20",
+      "tokens": 487
+    },
+    "currentStreak": 0,
+    "longestStreak": 1
+  },
+  "breakdown": {
+    "cacheRead": 200,
+    "cacheWrite": 60,
+    "cacheWrite1h": 40,
+    "input": 187,
+    "output": 40,
+    "reasoning": 14
+  },
+  "byHour": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    487,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "byModel": [
+    {
+      "breakdown": {
+        "cacheRead": 200,
+        "cacheWrite": 60,
+        "cacheWrite1h": 40,
+        "input": 187,
+        "output": 40,
+        "reasoning": 14
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "model": "claude-sonnet-4-6",
+      "sessions": 1,
+      "tokens": 487
+    }
+  ],
+  "byTool": [
+    {
+      "breakdown": {
+        "cacheRead": 200,
+        "cacheWrite": 60,
+        "cacheWrite1h": 40,
+        "input": 187,
+        "output": 40,
+        "reasoning": 14
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "sessions": 1,
+      "tokens": 487,
+      "tool": "claude"
+    }
+  ],
+  "cacheRate": 0.44742729306487694,
+  "costMicrousd": null,
+  "costParts": null,
+  "daily": [
+    {
+      "breakdown": {
+        "cacheRead": 200,
+        "cacheWrite": 60,
+        "cacheWrite1h": 40,
+        "input": 187,
+        "output": 40,
+        "reasoning": 14
+      },
+      "costMicrousd": null,
+      "costParts": null,
+      "day": "2026-10-20",
+      "tokens": 487
+    }
+  ],
+  "sessions": 1,
+  "tokens": 487
+}

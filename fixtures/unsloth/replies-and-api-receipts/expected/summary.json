@@ -16,6 +16,32 @@
     "output": 1550,
     "reasoning": 0
   },
+  "byHour": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    7350,
+    2500,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
   "byModel": [
     {
       "breakdown": {
@@ -28,6 +54,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "local/Qwen3-8B-Q4_K_M",
+      "sessions": 1,
       "tokens": 1500
     },
     {
@@ -41,6 +68,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "gpt-5.6-terra",
+      "sessions": 1,
       "tokens": 5700
     },
     {
@@ -54,6 +82,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "unsloth/Qwen3-8B-GGUF",
+      "sessions": 1,
       "tokens": 2500
     },
     {
@@ -67,6 +96,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "local/unsloth/Qwen3-8B-GGUF",
+      "sessions": 1,
       "tokens": 150
     }
   ],
@@ -81,6 +111,7 @@
       },
       "costMicrousd": null,
       "costParts": null,
+      "sessions": 3,
       "tokens": 9850,
       "tool": "unsloth"
     }

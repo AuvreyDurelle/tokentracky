@@ -11,7 +11,8 @@ use tokentracky_collector::store::{
     FileCheckpoint, PricedCost, PublicationOptions, QueryOptions, SourceConfiguration, StoreError, UsageStore,
 };
 use tokentracky_core::{
-    CostParts, MAX_SAFE_INTEGER, SourceState, TOOL_IDS, TokenCounts, ToolId, UsageEvent, total_tokens,
+    CostParts, LocalSettings, MAX_SAFE_INTEGER, MenuBarPeriod, MenuBarShows, SourceState, TOOL_IDS, TokenCounts,
+    ToolId, UsageEvent, total_tokens,
 };
 
 /// `digest('')`: the prefix hash of an empty file.
@@ -266,6 +267,77 @@ mod source_statuses {
         let statuses = store.source_statuses().unwrap();
         let count = |tool| statuses.iter().find(|status| status.id == tool).unwrap().event_count;
         assert_eq!((count(ToolId::Claude), count(ToolId::Codex)), (1, 1));
+    }
+    #[test]
+    fn counts_each_tool_and_model_sessions_in_a_summary() {
+        let mut store = store();
+        let original = event();
+        // Two Claude Code sessions, one using two models; one Codex session whose id repeats a Claude one.
+        let events = [
+            ("a", ToolId::Claude, "s1", "model-a"),
+            ("b", ToolId::Claude, "s1", "model-b"),
+            ("c", ToolId::Claude, "s2", "model-a"),
+            ("d", ToolId::Codex, "s1", "model-a"),
+        ]
+        .map(|(id, tool, session, model)| UsageEvent {
+            event_id: id.to_owned(),
+            tool,
+            session_id: session.to_owned(),
+            model: model.to_owned(),
+            ..original.clone()
+        });
+        for (index, event) in events.iter().enumerate() {
+            store
+                .commit_file(
+                    &FileCheckpoint {
+                        tool: event.tool,
+                        ..at(&format!("/{index}.jsonl"))
+                    },
+                    std::slice::from_ref(event),
+                    true,
+                )
+                .unwrap();
+        }
+        let summary = store.summary(&all()).unwrap();
+        assert_eq!(summary.sessions, 3);
+        let tool = |id| summary.by_tool.iter().find(|row| row.tool == id).unwrap().sessions;
+        assert_eq!((tool(ToolId::Claude), tool(ToolId::Codex)), (2, 1));
+        let model = |name: &str| summary.by_model.iter().find(|row| row.model == name).unwrap().sessions;
+        // model-a ran in Claude's s1 and s2 and in Codex's s1: three sessions, each tool's own.
+        assert_eq!((model("model-a"), model("model-b")), (3, 1));
+    }
+    #[test]
+    fn keeps_the_app_settings_with_the_history_and_reads_defaults_until_they_change() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("usage.sqlite");
+        let mut store = UsageStore::open(&path).unwrap();
+        assert_eq!(store.settings().unwrap(), LocalSettings::default());
+        let defaults = LocalSettings::default();
+        assert_eq!(
+            (defaults.menu_bar, defaults.menu_bar_period, defaults.price_refresh),
+            (MenuBarShows::Tokens, MenuBarPeriod::Today, true)
+        );
+        let chosen = LocalSettings {
+            menu_bar: MenuBarShows::Cost,
+            menu_bar_period: MenuBarPeriod::Week,
+            price_refresh: false,
+        };
+        store.set_settings(&chosen).unwrap();
+        assert_eq!(store.settings().unwrap(), chosen);
+        store.close().unwrap();
+        assert_eq!(UsageStore::open(&path).unwrap().settings().unwrap(), chosen);
+        // A value this version cannot read falls back to the defaults rather than failing the app.
+        let raw = Connection::open(&path).unwrap();
+        raw.execute(
+            "UPDATE metadata SET value='{\"menuBar\":\"sparkles\"}' WHERE key='settings'",
+            [],
+        )
+        .unwrap();
+        raw.close().unwrap();
+        assert_eq!(
+            UsageStore::open(&path).unwrap().settings().unwrap(),
+            LocalSettings::default()
+        );
     }
     #[test]
     fn publishes_the_same_capabilities_as_the_readme_matrix_for_every_tool() {
@@ -1056,6 +1128,48 @@ mod read_time_pricing {
         assert_eq!(store.summary(&all()).unwrap().cost_microusd, Some(43));
         // A reported cost has no split by kind, so the summary has none either.
         assert_eq!(store.summary(&all()).unwrap().cost_parts, None);
+    }
+    #[test]
+    fn prices_each_period_of_the_totals_and_says_when_a_used_model_has_no_price() {
+        let mut store = store();
+        // The fixture event is on 2026-10-20, and so is "now": it counts today, this week, this month and all time.
+        let now = time::macros::datetime!(2026-10-20 18:00 UTC);
+        let older = UsageEvent {
+            event_id: "older".to_owned(),
+            occurred_at: Some("2026-09-01T12:00:00.000Z".to_owned()),
+            ..event()
+        };
+        store.commit_file(&checkpoint(), &[event(), older], true).unwrap();
+        let price = |item: &UsageEvent| PricedCost {
+            cost_microusd: if item.event_id == "older" { 5 } else { 2 },
+            parts: input_cost(1),
+            pricing_version: "v1".to_owned(),
+        };
+        store.set_pricer(Some(Box::new(move |item: &UsageEvent| Some(price(item)))), Some("v1"));
+        let costs = store.period_totals(now, None).unwrap().costs;
+        assert_eq!(
+            (costs.today, costs.week, costs.month, costs.all_time),
+            (Some(2), Some(2), Some(2), Some(7))
+        );
+        // Without a price for the older event, all time is unknown; the periods without it keep theirs.
+        store.set_pricer(
+            Some(Box::new(|item: &UsageEvent| {
+                (item.event_id != "older").then(|| PricedCost {
+                    cost_microusd: 2,
+                    parts: input_cost(1),
+                    pricing_version: "v2".to_owned(),
+                })
+            })),
+            Some("v2"),
+        );
+        let costs = store.period_totals(now, None).unwrap().costs;
+        assert_eq!((costs.today, costs.all_time), (Some(2), None));
+        // A period with no usage costs nothing.
+        let later = store
+            .period_totals(time::macros::datetime!(2026-12-01 12:00 UTC), None)
+            .unwrap()
+            .costs;
+        assert_eq!((later.today, later.week, later.month), (Some(0), Some(0), Some(0)));
     }
 }
 

@@ -16,6 +16,32 @@
     "output": 520,
     "reasoning": 120
   },
+  "byHour": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    11335,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
   "byModel": [
     {
       "breakdown": {
@@ -28,6 +54,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "gpt-5.1-codex",
+      "sessions": 1,
       "tokens": 2800
     },
     {
@@ -41,6 +68,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "gpt-5-mini",
+      "sessions": 1,
       "tokens": 220
     },
     {
@@ -54,6 +82,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "claude-haiku-4-5",
+      "sessions": 1,
       "tokens": 1100
     },
     {
@@ -67,6 +96,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "claude-opus-4-6",
+      "sessions": 1,
       "tokens": 7215
     }
   ],
@@ -81,6 +111,7 @@
       },
       "costMicrousd": null,
       "costParts": null,
+      "sessions": 2,
       "tokens": 11335,
       "tool": "omp"
     }

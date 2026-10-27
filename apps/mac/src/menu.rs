@@ -1,6 +1,6 @@
 //! The menu-bar title and dropdown. Pure functions let tests run without a menu bar.
 use tokentracky_core::compact_count;
-use tokentracky_local_api::LocalOverview;
+use tokentracky_local_api::{LocalOverview, MenuBarPeriod, MenuBarShows};
 
 pub const REFRESH: &str = "refresh";
 pub const OPEN: &str = "open";
@@ -68,11 +68,36 @@ pub fn summary_lines(overview: Option<&LocalOverview>, time: impl Fn(&str) -> St
     lines
 }
 
-/// The menu-bar title: today's tokens, empty until the first overview.
+/// The menu-bar title: the chosen period's tokens or cost (Settings › Menu bar), or nothing beside the icon; empty
+/// until the first overview. A period with an unpriced model shows its tokens rather than a made-up amount.
 pub fn title(overview: Option<&LocalOverview>) -> String {
-    overview
-        .map(|overview| compact_count(overview.totals.today))
-        .unwrap_or_default()
+    let Some(overview) = overview else {
+        return String::new();
+    };
+    let (totals, costs) = (&overview.totals, &overview.totals.costs);
+    let (tokens, cost) = match overview.settings.menu_bar_period {
+        MenuBarPeriod::Today => (totals.today, costs.today),
+        MenuBarPeriod::Week => (totals.week, costs.week),
+        MenuBarPeriod::Month => (totals.month, costs.month),
+        MenuBarPeriod::All => (totals.all_time, costs.all_time),
+    };
+    match overview.settings.menu_bar {
+        MenuBarShows::Tokens => compact_count(tokens),
+        MenuBarShows::Cost => cost.map_or_else(|| compact_count(tokens), compact_cost),
+        MenuBarShows::Icon => String::new(),
+    }
+}
+
+/// A cost in micro-USD for the menu bar: cents below $1,000, then K, M, B and T as for tokens.
+pub fn compact_cost(micro: u64) -> String {
+    let cents = (u128::from(micro) + 5_000) / 10_000;
+    if cents < 100_000 {
+        return format!("${}.{:02}", cents / 100, cents % 100);
+    }
+    format!(
+        "${}",
+        compact_count(u64::try_from((u128::from(micro) + 500_000) / 1_000_000).unwrap_or(u64::MAX))
+    )
 }
 
 pub fn tooltip(overview: Option<&LocalOverview>) -> String {
@@ -199,7 +224,8 @@ mod tests {
     use super::*;
     use tokentracky_collector::RefreshStatus;
     use tokentracky_collector::store::{PeriodTotals, TopTool};
-    use tokentracky_core::ToolId;
+    use tokentracky_core::{PeriodCosts, ToolId};
+    use tokentracky_local_api::LocalSettings;
 
     fn overview() -> LocalOverview {
         LocalOverview {
@@ -212,6 +238,12 @@ mod tests {
                     tool: ToolId::Claude,
                     tokens: 8_400_000,
                 }),
+                costs: PeriodCosts {
+                    today: Some(64_800_000),
+                    week: Some(729_000_000),
+                    month: Some(2_394_000_000),
+                    all_time: None,
+                },
             },
             rank: Some(10),
             alias: Some("ada".into()),
@@ -221,6 +253,7 @@ mod tests {
                 next_refresh_at: Some("2026-10-23T15:05:00.000Z".into()),
                 refreshing: false,
             },
+            settings: LocalSettings::default(),
         }
     }
     fn time(iso: &str) -> String {
@@ -236,6 +269,30 @@ mod tests {
             alias: None,
             ..overview()
         }
+    }
+
+    #[test]
+    fn titles_the_chosen_period_with_its_tokens_or_cost_or_just_the_icon() {
+        let shows = |menu_bar, menu_bar_period| {
+            title(Some(&LocalOverview {
+                settings: LocalSettings {
+                    menu_bar,
+                    menu_bar_period,
+                    ..LocalSettings::default()
+                },
+                ..overview()
+            }))
+        };
+        assert_eq!(shows(MenuBarShows::Tokens, MenuBarPeriod::Today), "1.2M");
+        assert_eq!(shows(MenuBarShows::Tokens, MenuBarPeriod::Week), "8.4M");
+        assert_eq!(shows(MenuBarShows::Tokens, MenuBarPeriod::All), "120B");
+        assert_eq!(shows(MenuBarShows::Cost, MenuBarPeriod::Today), "$64.80");
+        assert_eq!(shows(MenuBarShows::Cost, MenuBarPeriod::Month), "$2.4K");
+        assert_eq!(shows(MenuBarShows::Icon, MenuBarPeriod::Today), "");
+        // A period with an unpriced model shows its tokens rather than a made-up amount.
+        assert_eq!(shows(MenuBarShows::Cost, MenuBarPeriod::All), "120B");
+        let cases = [0, 9_994_999, 999_994_999, 999_995_000, 1_250_000_000].map(compact_cost);
+        assert_eq!(cases, ["$0.00", "$9.99", "$999.99", "$1K", "$1.3K"]);
     }
 
     #[test]

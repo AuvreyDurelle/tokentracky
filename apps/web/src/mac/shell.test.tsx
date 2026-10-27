@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import type { ApiClient } from '../api';
 import { JUMP_KEYS } from '../ui';
-import { MacShell, Sidebar, todayOf } from './Shell';
+import { MacShell, Sidebar, ToolbarActions, todayOf } from './Shell';
 
 // The current-page button is Tokens itself: one icon, then the label.
 const NONE = { breakdown: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, costParts: null };
@@ -49,6 +49,9 @@ describe('MacShell', () => {
     // A profile opens over the leaderboard.
     expect(shell('profile')).toContain('<span class="toolbar-title">Leaderboard</span>');
   });
+  it("keeps a place in the toolbar for the page's controls, before the jump button", () => {
+    expect(shell('join')).toMatch(/<div class="toolbar-right"><div class="toolbar-actions"><\/div><button[^>]*aria-label="Jump to a page or project"/);
+  });
 });
 
 describe('todayOf', () => {
@@ -57,5 +60,11 @@ describe('todayOf', () => {
     const today = todayOf([{ day: '2026-10-11', tokens: 9, costMicrousd: 1, ...NONE }, { day: '2026-10-12', tokens: 5, costMicrousd: 1, ...NONE }, { day: '2026-10-25', tokens: 7, costMicrousd: 3, ...NONE }], now);
     expect(today).toEqual({ tokens: 7, costMicrousd: 3, spark: [5, ...new Array<number>(12).fill(0), 7] });
     expect(todayOf([{ day: '2026-10-24', tokens: 4, costMicrousd: null, ...NONE }], now)).toMatchObject({ tokens: 0, costMicrousd: 0 });
+  });
+});
+
+describe('ToolbarActions', () => {
+  it("keeps a page's controls at its top when there is no window toolbar to hold them", () => {
+    expect(renderToStaticMarkup(<ToolbarActions><button type="button">7d</button></ToolbarActions>)).toBe('<div class="m-page-actions"><button type="button">7d</button></div>');
   });
 });

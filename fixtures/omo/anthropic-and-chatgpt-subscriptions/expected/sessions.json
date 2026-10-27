@@ -17,6 +17,7 @@
       "gpt-5.1-codex"
     ],
     "project": "/synthetic/delta",
+    "startedAt": "2026-10-22T07:00:00.000Z",
     "tokens": 1746511,
     "tool": "omo"
   }

@@ -1,0 +1,16 @@
+{
+  "allTime": 3500,
+  "costs": {
+    "allTime": null,
+    "month": null,
+    "today": null,
+    "week": null
+  },
+  "month": 3500,
+  "today": 3500,
+  "topTool": {
+    "tokens": 3500,
+    "tool": "cline"
+  },
+  "week": 3500
+}

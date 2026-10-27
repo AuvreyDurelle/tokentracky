@@ -15,12 +15,12 @@ use time::OffsetDateTime;
 use time::format_description::well_known::Rfc3339;
 use tokentracky_collector::detect::{default_source_paths, detect_tools};
 use tokentracky_collector::readers::is_supported;
-use tokentracky_core::{TOOL_IDS, ToolId, UsageEvent};
+use tokentracky_core::{LocalSettings, MenuBarPeriod, MenuBarShows, TOOL_IDS, ToolId, UsageEvent};
 use tokentracky_local_api::{
     BoxFuture, CloudLink, LocalApp, LocalOverview, SecretError, SecretStore, UsageStore, serve_tcp,
 };
 
-const STATUS_KEYS: [&str; 11] = [
+const STATUS_KEYS: [&str; 12] = [
     "alias",
     "cloudLinked",
     "collecting",
@@ -28,6 +28,7 @@ const STATUS_KEYS: [&str; 11] = [
     "lastScanAt",
     "lastSyncAt",
     "nextRefreshAt",
+    "pricingUpdatedAt",
     "pricingVersion",
     "refreshing",
     "sources",
@@ -182,13 +183,15 @@ fn source_name(id: &str) -> &'static str {
     tool_of(id).name()
 }
 
-/// The collector-backed routes; the last three are Rust only.
-const LOCAL_ROUTES: [(&str, &str); 13] = [
+/// The collector-backed routes.
+const LOCAL_ROUTES: [(&str, &str); 15] = [
     ("GET", "/api/local/status"),
     ("GET", "/api/local/detect"),
     ("PUT", "/api/local/sources/claude"),
     ("POST", "/api/local/refresh"),
     ("PUT", "/api/local/collection"),
+    ("GET", "/api/local/settings"),
+    ("PUT", "/api/local/settings"),
     ("GET", "/api/local/summary"),
     ("GET", "/api/local/sessions"),
     ("GET", "/api/local/breakdown"),
@@ -205,6 +208,9 @@ fn sample(method: &'static str, path: &str) -> Init {
     match path {
         "/api/local/sources/claude" => init.json(json!({"enabled": false, "paths": []})),
         "/api/local/collection" => init.json(json!({"paused": false})),
+        "/api/local/settings" if method == "PUT" => {
+            init.json(json!({"menuBar": "tokens", "menuBarPeriod": "today", "priceRefresh": true}))
+        }
         _ => init,
     }
 }
@@ -229,7 +235,11 @@ async fn answers_every_collector_route_behind_the_session_and_nothing_else() {
         assert_eq!(reply.header("allow"), None);
     }
     // A body that is not JSON is 400 INVALID_REQUEST.
-    for path in ["/api/local/collection", "/api/local/sources/claude"] {
+    for path in [
+        "/api/local/collection",
+        "/api/local/settings",
+        "/api/local/sources/claude",
+    ] {
         for body in [r#"{"paused":"#, "not json", "{"] {
             let put = Init::method("PUT")
                 .header("content-type", Some("application/json"))
@@ -1209,8 +1219,14 @@ async fn usage_queries_filter_by_range_tool_and_text_and_name_git_repositories()
     let by_tool = get_json(&server, "/api/local/summary?days=90&tool=codex").await["byTool"].clone();
     assert_eq!(by_tool.as_array().unwrap().len(), 1);
     let row = &by_tool[0];
-    assert_eq!(keys(row), ["breakdown", "costMicrousd", "costParts", "tokens", "tool"]);
-    assert_eq!((&row["tool"], &row["tokens"]), (&json!("codex"), &json!(200)));
+    assert_eq!(
+        keys(row),
+        ["breakdown", "costMicrousd", "costParts", "sessions", "tokens", "tool"]
+    );
+    assert_eq!(
+        (&row["tool"], &row["tokens"], &row["sessions"]),
+        (&json!("codex"), &json!(200), &json!(1))
+    );
     assert!(row["breakdown"].is_object() && row["costMicrousd"].is_u64() && row["costParts"].is_object());
     let sessions = get_json(&server, "/api/local/sessions?days=90&tool=codex").await;
     assert_eq!(sessions["items"].as_array().unwrap().len(), 1);
@@ -1221,7 +1237,7 @@ async fn usage_queries_filter_by_range_tool_and_text_and_name_git_repositories()
         summary,
         json!({"tokens": 0, "breakdown": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0, "reasoning": 0},
             "costMicrousd": null, "costParts": null, "sessions": 0, "cacheRate": 0.0, "byTool": [], "byModel": [], "daily": [],
-            "activity": {"activeDays": 0, "currentStreak": 0, "longestStreak": 0, "bestDay": null, "averagePerActiveDay": 0}})
+            "byHour": vec![0; 24], "activity": {"activeDays": 0, "currentStreak": 0, "longestStreak": 0, "bestDay": null, "averagePerActiveDay": 0}})
     );
     let sessions = server.get("/api/local/sessions?days=30").await.json();
     let ids: Vec<&Value> = sessions["items"]
@@ -1490,10 +1506,8 @@ async fn reports_exact_totals_and_costs_from_synthetic_claude_code_and_codex_log
     );
     assert!((rate.as_f64().unwrap() - 220.0 / 426.0).abs() < 5e-13, "{rate}");
     assert!(streak.is_u64());
-    let claude_total =
-        json!({"tokens": 302, "breakdown": kinds["claude"], "costMicrousd": 814, "costParts": parts["claude"]});
-    let codex_total =
-        json!({"tokens": 230, "breakdown": kinds["codex"], "costMicrousd": 966, "costParts": parts["codex"]});
+    let claude_total = json!({"tokens": 302, "breakdown": kinds["claude"], "costMicrousd": 814, "costParts": parts["claude"], "sessions": 1});
+    let codex_total = json!({"tokens": 230, "breakdown": kinds["codex"], "costMicrousd": 966, "costParts": parts["codex"], "sessions": 1});
     let with = |total: &Value, key: &str, name: &str| {
         let mut row = total.clone();
         row[key] = json!(name);
@@ -1507,6 +1521,7 @@ async fn reports_exact_totals_and_costs_from_synthetic_claude_code_and_codex_log
             "byTool": [with(&claude_total, "tool", "claude"), with(&codex_total, "tool", "codex")],
             "byModel": [with(&claude_total, "model", "claude-sonnet-4-6"), with(&codex_total, "model", "gpt-5-codex")],
             "daily": [{"day": FIXTURE_DAY, "tokens": 532, "breakdown": kinds["all"], "costMicrousd": 1780, "costParts": parts["all"]}],
+            "byHour": (0..24).map(|hour| if hour == 12 { 532 } else { 0 }).collect::<Vec<u64>>(),
             "activity": {"activeDays": 1, "currentStreak": streak, "longestStreak": 1, "bestDay": {"day": FIXTURE_DAY, "tokens": 532},
                 "averagePerActiveDay": 532},
         })
@@ -1519,10 +1534,10 @@ async fn reports_exact_totals_and_costs_from_synthetic_claude_code_and_codex_log
         json!({"items": [
             {"id": "codex-session", "project": "/synthetic/codex-project", "tool": "codex", "model": "gpt-5-codex",
                 "models": ["gpt-5-codex"], "tokens": 230, "breakdown": kinds["codex"], "costMicrousd": 966,
-                "lastUsedAt": "2026-10-20T12:00:01.000Z"},
+                "lastUsedAt": "2026-10-20T12:00:01.000Z", "startedAt": "2026-10-20T12:00:00.000Z"},
             {"id": "claude-session", "project": "/synthetic/private-project", "tool": "claude", "model": "claude-sonnet-4-6",
                 "models": ["claude-sonnet-4-6"], "tokens": 302, "breakdown": kinds["claude"], "costMicrousd": 814,
-                "lastUsedAt": "2026-10-20T12:00:00.000Z"},
+                "lastUsedAt": "2026-10-20T12:00:00.000Z", "startedAt": "2026-10-20T12:00:00.000Z"},
         ]})
     );
     assert_eq!(
@@ -1646,6 +1661,7 @@ async fn reports_exact_totals_and_costs_from_synthetic_claude_code_and_codex_log
         get_json(&server, &empty("summary")).await,
         json!({"tokens": 0, "breakdown": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0, "reasoning": 0},
             "costMicrousd": null, "costParts": null, "sessions": 0, "cacheRate": 0.0, "byTool": [], "byModel": [], "daily": [],
+            "byHour": vec![0; 24],
             "activity": {"activeDays": 0, "currentStreak": 0, "longestStreak": 0, "bestDay": null, "averagePerActiveDay": 0}})
     );
     for route in ["sessions", "breakdown", "projects"] {
@@ -2033,9 +2049,10 @@ async fn the_cycle_looks_up_the_weekly_rank_and_publishes_the_overview() {
     app.close().await.unwrap();
 }
 
-const OVERVIEW_KEYS: [&str; 11] = [
+const OVERVIEW_KEYS: [&str; 12] = [
     "alias",
     "allTime",
+    "costs",
     "month",
     "nextRefreshAt",
     "paused",
@@ -2181,4 +2198,55 @@ async fn serve_tcp_serves_loopback_behind_the_session_and_closes_gracefully() {
         .close()
         .await
         .unwrap();
+}
+
+/// Rust only. The app's settings start at their defaults, save exactly as given, and reach the menu bar at once.
+#[tokio::test]
+async fn settings_save_what_the_menu_bar_shows_and_give_it_the_overview_again() {
+    let published: Arc<Mutex<Vec<LocalOverview>>> = Arc::default();
+    let sink = published.clone();
+    let (server, app) = Server::local(|options| {
+        options.on_refresh = Some(Arc::new(move |overview| sink.lock().unwrap().push(overview)));
+    })
+    .await;
+    let put = |body: Value| server.request("/api/local/settings", Init::method("PUT").json(body));
+
+    let reply = server.get("/api/local/settings").await;
+    assert_eq!(reply.status, 200, "{}", reply.text);
+    assert_eq!(
+        reply.json(),
+        json!({"menuBar": "tokens", "menuBarPeriod": "today", "priceRefresh": true})
+    );
+    assert_eq!(server.get("/api/local/settings?x=1").await.status, 400);
+
+    let chosen = json!({"menuBar": "cost", "menuBarPeriod": "week", "priceRefresh": true});
+    let reply = put(chosen.clone()).await;
+    assert_eq!((reply.status, reply.json()), (200, chosen.clone()));
+    assert_eq!(server.get("/api/local/settings").await.json(), chosen);
+    let shown = published.lock().unwrap().last().cloned().unwrap();
+    assert_eq!(
+        shown.settings,
+        LocalSettings {
+            menu_bar: MenuBarShows::Cost,
+            menu_bar_period: MenuBarPeriod::Week,
+            price_refresh: true,
+        }
+    );
+    // The overview route serves the totals, not the settings.
+    assert_eq!(keys(&server.get("/api/local/overview").await.json()), OVERVIEW_KEYS);
+
+    for body in [
+        json!({"menuBar": "cost", "menuBarPeriod": "week"}),
+        json!({"menuBar": "sparkles", "menuBarPeriod": "week", "priceRefresh": true}),
+        json!({"menuBar": "icon", "menuBarPeriod": "week", "priceRefresh": "yes"}),
+        json!({"menuBar": "icon", "menuBarPeriod": "week", "priceRefresh": true, "extra": true}),
+        json!(["icon", "week", true]),
+    ] {
+        let reply = put(body.clone()).await;
+        assert_eq!(reply.status, 400, "{body}");
+        assert_eq!(reply.json()["error"]["code"], "INVALID_REQUEST");
+    }
+    assert_eq!(server.get("/api/local/settings").await.json(), chosen);
+    drop(server);
+    app.close().await.unwrap();
 }

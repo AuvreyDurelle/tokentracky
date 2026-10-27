@@ -17,6 +17,7 @@
       "gpt-5-mini"
     ],
     "project": "/synthetic/gamma",
+    "startedAt": "2026-10-20T11:00:00.000Z",
     "tokens": 10235,
     "tool": "omp"
   },
@@ -36,6 +37,7 @@
       "claude-haiku-4-5"
     ],
     "project": "/synthetic/gamma",
+    "startedAt": "2026-10-20T11:00:00.000Z",
     "tokens": 1100,
     "tool": "omp"
   }

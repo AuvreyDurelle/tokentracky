@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import type { UsageSummary } from '@tokentracky/core';
 import type { ApiClient, LocalStatus } from '../api';
 import { formatCompact, formatCost, formatExact, timeAgo } from '../format';
@@ -14,6 +15,15 @@ export interface Today { tokens: number; costMicrousd: number | null; spark: num
 // A profile opens as a dialog over the leaderboard, so the frame still shows the leaderboard.
 const TITLES: Partial<Record<Page, string>> = { leaderboard: 'Leaderboard', tokens: 'Tokens', you: 'Tokens', achievements: 'Achievements', settings: 'Settings', profile: 'Leaderboard', join: 'How it works', missing: 'Page not found' };
 
+/** Where a page's controls go: the window toolbar, before the jump button. */
+const ToolbarSlot = createContext<HTMLElement | null>(null);
+
+/** A page's controls, placed in the window toolbar as the mockups have them. A page rendered outside the frame keeps them at its top. */
+export function ToolbarActions({ children }: { children: ReactNode }) {
+  const slot = useContext(ToolbarSlot);
+  return slot ? createPortal(children, slot) : <div className="m-page-actions">{children}</div>;
+}
+
 /** Today's UTC totals and the last 14 days for the sidebar, quiet days as zero. */
 export function todayOf(daily: UsageSummary['daily'], now = new Date()): Today {
   const day = utcToday(now);
@@ -26,6 +36,8 @@ export function MacShell({ api, status, me, page, path, go, onPalette, children 
   const [today, setToday] = useState<Today | null>(null);
   const rank = useRank(api, me);
   const content = useRef<HTMLDivElement>(null);
+  // Set as the toolbar mounts, before the first paint, so a page's controls never show at its top first.
+  const [slot, setSlot] = useState<HTMLElement | null>(null);
   // Today moves with each scan, refresh cycle and price table, like the pages' own totals. It waits for the first status, and a failed reload keeps the last card.
   const loaded = status !== null;
   const revision = usageRevision(status);
@@ -45,10 +57,11 @@ export function MacShell({ api, status, me, page, path, go, onPalette, children 
       <header className="toolbar">
         <span className="toolbar-title">{TITLES[page]}</span>
         <div className="toolbar-right">
+          <div className="toolbar-actions" ref={setSlot} />
           <button type="button" className="btn ghost sm" aria-label="Jump to a page or project" aria-keyshortcuts="Meta+K Control+K" onClick={onPalette}><SearchIcon /><span className="kbd">{JUMP_KEYS}</span></button>
         </div>
       </header>
-      <div className="content" ref={content}>{children}</div>
+      <div className="content" ref={content}><ToolbarSlot.Provider value={slot}>{children}</ToolbarSlot.Provider></div>
     </div>
   </div>;
 }

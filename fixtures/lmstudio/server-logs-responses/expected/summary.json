@@ -16,6 +16,32 @@
     "output": 442,
     "reasoning": 120
   },
+  "byHour": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    500,
+    3635,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
   "byModel": [
     {
       "breakdown": {
@@ -28,6 +54,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "lmstudio-community/llama-3.2-3b-instruct",
+      "sessions": 1,
       "tokens": 500
     },
     {
@@ -41,6 +68,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "qwen2.5-7b-instruct",
+      "sessions": 1,
       "tokens": 2300
     },
     {
@@ -54,6 +82,7 @@
       "costMicrousd": null,
       "costParts": null,
       "model": "google/gemma-3-12b",
+      "sessions": 1,
       "tokens": 1335
     }
   ],
@@ -68,6 +97,7 @@
       },
       "costMicrousd": null,
       "costParts": null,
+      "sessions": 2,
       "tokens": 4135,
       "tool": "lmstudio"
     }
