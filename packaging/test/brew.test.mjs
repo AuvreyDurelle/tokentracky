@@ -40,6 +40,10 @@ test('generates arm64 Homebrew definitions only from verified manifest artifacts
     // The app updates itself, so Homebrew must not try to replace it on brew upgrade.
     assert.match(cask, /\n {2}auto_updates true\n/);
     assert.match(cask, new RegExp(manifest.releases[version].macos.arm64.app.sha256));
+    // brew audit reads the url line as written and fails a pinned sha256 unless it interpolates the version.
+    assert.match(cask, /\n {2}url "https:\/\/github\.com\/AuvreyDurelle\/tokentracky\/releases\/download\/v#\{version\}\/tokentracky-#\{version\}-macos-arm64\.dmg"\n/);
+    // Homebrew reads the version from the release URL, and brew audit fails a version line that repeats it.
+    assert.doesNotMatch(formula, /^\s*version "/m);
   } finally { await rm(temp, { recursive: true, force: true }); }
 });
 
