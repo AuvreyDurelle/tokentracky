@@ -13,9 +13,11 @@ import { installVerifiedBinary, platformError, download } from '../bin/tokentrac
 const { Response } = globalThis;
 const bytes = Buffer.from('#!/bin/sh\nprintf "synthetic cli\\n"\nexit 7\n');
 const digest = createHash('sha256').update(bytes).digest('hex');
-const file = 'tokentracky-0.1.0-macos-arm64';
-const url = `https://github.com/AuvreyDurelle/tokentracky/releases/download/v0.1.0/${file}`;
-const manifest = { schemaVersion: 1, latest: '0.1.0', releases: { '0.1.0': { verified: true, macos: { arm64: { cli: { file, url, sha256: digest } } } } } };
+// The launcher installs the version in its own package.json, so the synthetic release uses that version.
+const version = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8')).version;
+const file = `tokentracky-${version}-macos-arm64`;
+const url = `https://github.com/AuvreyDurelle/tokentracky/releases/download/v${version}/${file}`;
+const manifest = { schemaVersion: 1, latest: version, releases: { [version]: { verified: true, macos: { arm64: { cli: { file, url, sha256: digest } } } } } };
 
 test('rejects unsupported operating systems, architectures, and macOS versions clearly', () => {
   assert.match(platformError('linux', 'arm64', '6.1'), /supports macOS 13 or later/);
@@ -54,7 +56,7 @@ test('rejects absent and path-traversing manifest entries', async () => {
   const root = await mkdtemp(join(tmpdir(), 'tokentracky-launcher-'));
   try {
     await assert.rejects(installVerifiedBinary({ manifest: { schemaVersion: 1, latest: null, releases: {} }, cacheRoot: root, platform: 'darwin', arch: 'arm64', osVersion: '22.0.0' }), /No verified Tokentracky/);
-    const unsafe = { schemaVersion: 1, latest: '0.1.0', releases: { '0.1.0': { verified: true, macos: { arm64: { cli: { ...manifest.releases['0.1.0'].macos.arm64.cli, file: '../escape' } } } } } };
+    const unsafe = { schemaVersion: 1, latest: version, releases: { [version]: { verified: true, macos: { arm64: { cli: { ...manifest.releases[version].macos.arm64.cli, file: '../escape' } } } } } };
     await assert.rejects(installVerifiedBinary({ manifest: unsafe, cacheRoot: root, platform: 'darwin', arch: 'arm64', osVersion: '22.0.0' }), /manifest.*invalid/);
   } finally { await rm(root, { recursive: true, force: true }); }
 });
