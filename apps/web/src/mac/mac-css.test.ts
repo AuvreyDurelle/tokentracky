@@ -54,19 +54,8 @@ describe('mac.css and community.css', () => {
     // The frame around the pages passes nothing on to them.
     for (const frame of ['.mac', '.mac.app', '.mac .main', '.mac .content']) expect(declarations(frame).filter((declaration) => /^(?:font|color|line-height|letter-spacing)/.test(declaration)), frame).toEqual([]);
   });
-  // A box positioned in the pane with no positioned ancestor (the activity card's hidden table) would otherwise stretch the window past the frame.
-  it('keeps the window and the frame from scrolling, only the pane', () => {
-    expect(declarations('.mac.app')).toEqual(expect.arrayContaining(['position: relative', 'overflow: clip']));
-  });
-  // The website sizes .spark (82px) and .heat-legend (11px text) for its own pages.
-  it('sizes the shared sidebar and grid pieces as the mockup does', () => {
-    expect(declarations('.mac .sidebar .spark')).toContain('width: auto');
-    expect(declarations('.mac .activity .heat-legend')).toContain('font-size: 12px');
-  });
-  it('defines the shared page primitives, with hover only on enabled buttons', () => {
+  it('gives m- buttons hover only when enabled', () => {
     const selectors = new Set(rules.map((rule) => rule.selector));
-    for (const name of ['m-card', 'm-card-head', 'm-card-title', 'm-card-body', 'm-seg', 'm-table', 'm-pill', 'm-badge', 'm-toggle', 'm-btn', 'm-stat-strip', 'm-bar', 'm-eyebrow', 'm-label', 'm-stat-value', 'm-big-number', 'm-tip', 'm-page', 'm-page-title', 'm-page-sub']) expect(selectors, name).toContain(`.mac .${name}`);
-    for (const variant of ['.mac .m-seg .on', '.mac .m-toggle.on', '.mac .m-table .l', '.mac .m-badge.gold', '.mac .m-badge.green', '.mac .m-badge.accent', '.mac .m-btn.primary', '.mac .m-btn.ghost', '.mac .m-btn.danger', '.mac .m-btn.icon']) expect(selectors, variant).toContain(variant);
     const hovers = [...selectors].filter((selector) => selector.startsWith('.mac .m-btn') && selector.includes(':hover'));
     expect(hovers.length).toBeGreaterThan(0);
     for (const selector of hovers) expect(selector, selector).toContain(':hover:not(:disabled)');

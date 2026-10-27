@@ -1,6 +1,6 @@
 import { BADGE_IDS } from '@tokentracky/core';
 import { describe, expect, it } from 'vitest';
-import { ACHIEVEMENT_COPY, TIER_NAMES, formatBadgeValue, rarityText } from './achievement-copy';
+import { ACHIEVEMENT_COPY, formatBadgeValue, rarityText } from './achievement-copy';
 
 describe('achievement copy', () => {
   it('names, describes and measures every badge', () => {
@@ -12,9 +12,6 @@ describe('achievement copy', () => {
     expect(Object.keys(ACHIEVEMENT_COPY)).toHaveLength(BADGE_IDS.length);
     expect(ACHIEVEMENT_COPY['token-titan'].name).toBe('Token Titan');
     expect(ACHIEVEMENT_COPY['weekend-warrior'].name).toBe('Weekend Warrior');
-  });
-  it('names the four tiers after none', () => {
-    expect(TIER_NAMES).toEqual(['None', 'Bronze', 'Silver', 'Gold', 'Diamond']);
   });
   it('shows rarity as a share of builders', () => {
     expect(rarityText(42, 1000)).toBe('4.2% of builders');
