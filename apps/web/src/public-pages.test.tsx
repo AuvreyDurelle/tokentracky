@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { parseRoute, routePath, takeLinkTag } from './route';
 import { toolColumns, TOOL_COLUMNS } from './columns';
 import { TOOL_IDS, TOOL_NAMES, type ToolId, type ProfileStats } from '@tokentracky/core';
-import { badgeMarkdown, ProfileView, ProfileTypes, xShareUrl } from './Profile';
+import { badgeMarkdown, fitFacts, ProfileView, ProfileTypes, windowActivity, xShareUrl } from './Profile';
 import { TOOLS, toolLabel, topPercent } from './format';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { Join } from './Join';
@@ -120,6 +120,18 @@ describe('public profile', () => {
   });
   it('leaves out what has no backend yet: real name, likes, achievements, member since and last active', () => {
     expect(view(null)).not.toMatch(/Member since|Active \d|Like|Achievements/);
+  });
+  it('counts the share card window’s own active days and longest run, not the year’s', () => {
+    const daily = [{ day: '2026-10-19', tokens: 5 }, { day: '2026-10-20', tokens: 0 }, { day: '2026-10-21', tokens: 3 }, { day: '2026-10-22', tokens: 4 }, { day: '2026-10-23', tokens: 0 }, { day: '2026-10-24', tokens: 1 }];
+    expect(windowActivity(daily, '2026-10-21')).toEqual({ activeDays: 3, longestStreak: 2 });
+    expect(windowActivity(daily, '2026-10-01')).toEqual({ activeDays: 4, longestStreak: 2 });
+    expect(windowActivity(daily, '2026-10-25')).toEqual({ activeDays: 0, longestStreak: 0 });
+  });
+  it('drops the share card’s trailing facts until the line fits, keeping at least the first', () => {
+    const facts = ['tokens this month', '3 active days', 'favourite claude-opus-5-5'];
+    expect(fitFacts(facts, (text) => text.length <= 80)).toBe('tokens this month · 3 active days · favourite claude-opus-5-5');
+    expect(fitFacts(facts, (text) => text.length <= 40)).toBe('tokens this month · 3 active days');
+    expect(fitFacts(facts, () => false)).toBe('tokens this month');
   });
 });
 

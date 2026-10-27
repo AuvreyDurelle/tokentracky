@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { totalTokens, type Period, type ProfileStats, type TokenCounts } from '@tokentracky/core';
+import { rankingWindow, totalTokens, type Period, type ProfileStats, type TokenCounts } from '@tokentracky/core';
 import { ApiError, type ApiClient } from './api';
 import { INSTALL_COMMAND, MAC_DOWNLOAD } from './download-config';
 import { KINDS, errorText, formatCompact, formatCost, formatExact, formatShare, shortDay, topPercent } from './format';
@@ -173,6 +173,23 @@ function ShareCard({ stats, origin }: { stats: ProfileStats; origin: string | nu
   </section>;
 }
 
+/** Active days and the longest run of consecutive active days in `daily` from the UTC day `from` on. */
+export function windowActivity(daily: ProfileStats['daily'], from: string): { activeDays: number; longestStreak: number } {
+  let activeDays = 0, run = 0, longestStreak = 0;
+  for (const { day, tokens } of daily) {
+    if (day < from) continue;
+    if (tokens > 0) { activeDays += 1; run += 1; longestStreak = Math.max(longestStreak, run); } else run = 0;
+  }
+  return { activeDays, longestStreak };
+}
+
+/** The facts joined by middots, dropping trailing ones until the line fits. */
+export function fitFacts(facts: string[], fits: (text: string) => boolean): string {
+  let shown = facts;
+  while (shown.length > 1 && !fits(shown.join(' · '))) shown = shown.slice(0, -1);
+  return shown.join(' · ');
+}
+
 /** 1200×630 Open Graph-sized card in the graphite theme: name, rank and tokens in the chosen window, and a year of activity. */
 async function drawShareCard(canvas: HTMLCanvasElement, stats: ProfileStats, origin: string | null, period: Period) {
   await document.fonts?.ready;
@@ -186,8 +203,11 @@ async function drawShareCard(canvas: HTMLCanvasElement, stats: ProfileStats, ori
   context.fillStyle = '#ededef'; context.font = font(600, 56); context.fillText(stats.alias, 88, 205);
   context.font = font(600, 120); context.fillText(formatCompact(stats.periods[period].tokens), 82, 340);
   context.fillStyle = '#a1a1a8'; context.font = font(500, 26);
-  const facts = [`tokens ${WINDOWS[period]}`, `${stats.activity.activeDays} active days`, `longest streak ${stats.activity.longestStreak} days`, ...(stats.models?.[0] ? [`favourite ${stats.models[0].model}`] : [])];
-  context.fillText(facts.join(' · '), 88, 390);
+  // Week and month count their own days; all time matches the profile's last 12 months.
+  const from = rankingWindow(period)?.slice(0, 10);
+  const { activeDays, longestStreak } = from ? windowActivity(stats.daily, from) : stats.activity;
+  const facts = [`tokens ${WINDOWS[period]}`, plural(activeDays, 'active day'), `longest streak ${plural(longestStreak, 'day')}`, ...(stats.models?.[0] ? [`favourite ${stats.models[0].model}`] : [])];
+  context.fillText(fitFacts(facts, (text) => context.measureText(text).width <= 1024), 88, 390);
   // A year of daily activity as thin columns, brightness by volume.
   const max = Math.max(1, ...stats.daily.map((day) => day.tokens));
   const width = 1024 / stats.daily.length;
