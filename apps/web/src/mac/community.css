@@ -19,7 +19,7 @@
     radial-gradient(420px 200px at 0% 0%, rgba(217, 119, 87, 0.07), transparent 70%);
 }
 .mac .m-lb .lb-hero > .notice { margin: 18px; }
-.mac .m-lb .hero-main { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 520px; gap: 32px; padding: 26px 28px 22px; }
+.mac .m-lb .hero-main { position: relative; display: grid; grid-template-columns: minmax(440px, 1fr) minmax(0, 520px); gap: 32px; padding: 26px 28px 22px; }
 .mac .m-lb .lb-hero .m-eyebrow { display: flex; align-items: center; gap: 8px; }
 .mac .m-lb .hero-figures { display: flex; align-items: flex-end; gap: 28px; margin-top: 18px; }
 .mac .m-lb .hero-num { font-size: 64px; font-weight: 600; letter-spacing: -0.05em; line-height: 0.95; font-variant-numeric: tabular-nums; }
@@ -68,13 +68,13 @@
 .mac .m-lb .lb-board { margin-top: 16px; overflow: hidden; }
 .mac .m-lb .lb-note { padding: 0 18px; }
 .mac .m-lb .lb-table { table-layout: fixed; transition: opacity 0.15s; }
-.mac .m-lb .lb-table .lbc-rank { width: 78px; }
+.mac .m-lb .lb-table .lbc-rank { width: 64px; }
 .mac .m-lb .lb-table .lbc-total { width: 88px; }
 .mac .m-lb .lb-table .lbc-cost { width: 92px; }
 .mac .m-lb .lb-table .lbc-claude, .mac .m-lb .lb-table .lbc-other { width: 96px; }
 .mac .m-lb .lb-table .lbc-codex, .mac .m-lb .lb-table .lbc-gemini { width: 84px; }
 .mac .m-lb .lb-table .lbc-opencode { width: 104px; }
-.mac .m-lb .lb-table .lbc-spark { width: 108px; }
+.mac .m-lb .lb-table .lbc-spark { width: 96px; }
 .mac .m-lb .lb-table .lbc-24h { width: 72px; }
 .mac .m-lb .lb-table th { height: 40px; padding: 0 9px; border-bottom: 0; }
 .mac .m-lb .lb-table th:first-child, .mac .m-lb .lb-table td:first-child { padding-left: 18px; }
@@ -93,13 +93,16 @@
 .mac .m-lb .lb-table .medal.g1 { color: var(--gold); background: radial-gradient(circle at 30% 25%, rgba(232, 182, 76, 0.28), rgba(232, 182, 76, 0.08)); box-shadow: inset 0 0 0 1px rgba(232, 182, 76, 0.42), 0 0 18px -4px rgba(232, 182, 76, 0.45); }
 .mac .m-lb .lb-table .medal.g2 { color: var(--silver); background: radial-gradient(circle at 30% 25%, rgba(185, 192, 203, 0.24), rgba(185, 192, 203, 0.06)); box-shadow: inset 0 0 0 1px rgba(185, 192, 203, 0.36); }
 .mac .m-lb .lb-table .medal.g3 { color: var(--bronze); background: radial-gradient(circle at 30% 25%, rgba(201, 138, 91, 0.26), rgba(201, 138, 91, 0.07)); box-shadow: inset 0 0 0 1px rgba(201, 138, 91, 0.4); }
-.mac .m-lb .lb-user { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.mac .m-lb .lb-user { display: grid; grid-template-columns: auto minmax(0, max-content) minmax(0, 1fr); align-items: center; gap: 12px; min-width: 0; }
 .mac .m-lb .lb-user .avatar { width: 32px; height: 32px; font-size: 11.5px; }
 .mac .m-lb .lb-name { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .mac .m-lb .lb-name a { overflow: hidden; color: var(--text); font-size: 13.5px; font-weight: 500; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
 .mac .m-lb .lb-table tbody tr:hover .lb-name a { color: #fff; }
 .mac .m-lb .lb-name .m-badge { font-size: 10.5px; }
-.mac .m-lb .lb-badges { display: inline-flex; flex: none; margin-left: 4px; }
+/* The name comes first and the badges take what is left: those that don't fit wrap onto a second line, out of sight.
+   The empty first item lets even the first one go; the padding, taken back by the margins, keeps their glow inside the clip. */
+.mac .m-lb .lb-badges { display: flex; flex-wrap: wrap; row-gap: 60px; height: 50px; margin: -14px -14px -14px -10px; padding: 14px; overflow: hidden; }
+.mac .m-lb .lb-badges::before { content: ""; }
 .mac .m-lb .lb-badges .ts { display: grid; place-items: center; width: 22px; height: 22px; margin-left: -4px; }
 .mac .m-lb .lb-badges .ts:first-child { margin-left: 0; }
 .mac .m-lb .lb-badges .m-emb { width: 22px; height: 22px; }
@@ -121,6 +124,30 @@
 .mac .m-lb .lb-pager svg { width: 14px; height: 14px; }
 .mac .m-lb .lb-pager .ell { padding: 0 4px; color: var(--text-4); }
 .mac .m-lb .lb-empty { margin-top: 24px; }
+
+/* Narrower windows. The sidebar is a fixed width, so the window's width sets the page's.
+   The table drops its least-read columns first, keeping the builder column wide enough for a name and badges:
+   Gemini and OpenCode (the 7th and 8th) below the page's full width, then Other and 7 days (9th and 10th), then Est. cost (4th). */
+@media (max-width: 1427px) {
+  .mac .m-lb .lb-table .lbc-gemini, .mac .m-lb .lb-table .lbc-opencode, .mac .m-lb .lb-table tr > :nth-child(7), .mac .m-lb .lb-table tr > :nth-child(8) { display: none; }
+}
+/* Your strip takes two rows: who you are and your totals, then the chase and your week and month ranks. */
+@media (max-width: 1349px) {
+  .mac .m-lb .you-strip:not(.you-join) { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto auto; gap: 14px 22px; }
+  .mac .m-lb .you-vsep { display: none; }
+  .mac .m-lb .you-chase { grid-row: 2; grid-column: 1 / 4; max-width: none; }
+  .mac .m-lb .you-periods { grid-row: 2; grid-column: 4 / -1; justify-self: end; }
+}
+@media (max-width: 1239px) {
+  .mac .m-lb .lb-table .lbc-other, .mac .m-lb .lb-table .lbc-spark, .mac .m-lb .lb-table tr > :nth-child(9), .mac .m-lb .lb-table tr > :nth-child(10) { display: none; }
+}
+/* The chart moves under the community figures. */
+@media (max-width: 1199px) {
+  .mac .m-lb .hero-main { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+}
+@media (max-width: 1039px) {
+  .mac .m-lb .lb-table .lbc-cost, .mac .m-lb .lb-table tr > :nth-child(4) { display: none; }
+}
 
 /* ---------- profile modal (leaderboard.html#profile): a full-window dialog whose panel scrolls ---------- */
 .mac .m-pf { width: 100%; max-width: none; height: 100%; max-height: none; margin: 0; padding: 40px; overflow: hidden; border: 0; background: transparent; color: var(--text); font-size: 13px; letter-spacing: -0.005em; }
@@ -335,3 +362,12 @@
 .mac .m-ach .ach-meta { display: flex; justify-content: space-between; gap: 8px; margin-top: auto; padding-top: 10px; color: var(--text-4); font-size: 11.5px; }
 .mac .m-ach .ach-card:not(.locked) .ach-meta > span:first-child { color: var(--text-3); }
 .mac .m-ach .ach-meta > span:last-child { flex: none; white-space: nowrap; }
+
+/* Narrower windows: the summary stacks, its tier counts over your best badges, then the cards go two to a row. */
+@media (max-width: 1379px) {
+  .mac .m-ach .ach-hero { grid-template-columns: minmax(0, 1fr); }
+  .mac .m-ach .hero-left { border-right: 0; border-bottom: 1px solid var(--border); }
+}
+@media (max-width: 1139px) {
+  .mac .m-ach .next-grid, .mac .m-ach .grid3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

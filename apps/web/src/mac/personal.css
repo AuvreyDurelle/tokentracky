@@ -184,10 +184,17 @@
 .mac .tk-link { padding: 0; border: 0; background: none; font-size: 12px; color: var(--text-3); }
 .mac .tk-link:hover { color: var(--text); }
 
-@media (max-width: 1260px) {
+/* The hero stacks before its cost, sessions and date lines would wrap beside the tool table. */
+@media (max-width: 1359px) {
   .mac .tk-hero { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+}
+@media (max-width: 1260px) {
   .mac .tk-row-2 { grid-template-columns: minmax(0, 1fr); }
   .mac .tk-insights { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+/* The model breakdown leaves out its Input, Output and Cached columns (4th to 6th); the Totals card still has them. */
+@media (max-width: 1199px) {
+  .mac .tk-table:has(.tk-model-cell) tr > :nth-child(n+4):nth-child(-n+6) { display: none; }
 }
 
 /* ---------- settings page (settings.html) ---------- */
