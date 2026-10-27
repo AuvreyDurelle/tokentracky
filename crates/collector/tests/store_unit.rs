@@ -1087,6 +1087,48 @@ mod read_time_pricing {
         // A reported cost has no split by kind, so the summary has none either.
         assert_eq!(store.summary(&all()).unwrap().cost_parts, None);
     }
+    #[test]
+    fn prices_each_period_of_the_totals_and_says_when_a_used_model_has_no_price() {
+        let mut store = store();
+        // The fixture event is on 2026-10-20, and so is "now": it counts today, this week, this month and all time.
+        let now = time::macros::datetime!(2026-10-20 18:00 UTC);
+        let older = UsageEvent {
+            event_id: "older".to_owned(),
+            occurred_at: Some("2026-09-01T12:00:00.000Z".to_owned()),
+            ..event()
+        };
+        store.commit_file(&checkpoint(), &[event(), older], true).unwrap();
+        let price = |item: &UsageEvent| PricedCost {
+            cost_microusd: if item.event_id == "older" { 5 } else { 2 },
+            parts: input_cost(1),
+            pricing_version: "v1".to_owned(),
+        };
+        store.set_pricer(Some(Box::new(move |item: &UsageEvent| Some(price(item)))), Some("v1"));
+        let costs = store.period_totals(now, None).unwrap().costs;
+        assert_eq!(
+            (costs.today, costs.week, costs.month, costs.all_time),
+            (Some(2), Some(2), Some(2), Some(7))
+        );
+        // Without a price for the older event, all time is unknown; the periods without it keep theirs.
+        store.set_pricer(
+            Some(Box::new(|item: &UsageEvent| {
+                (item.event_id != "older").then(|| PricedCost {
+                    cost_microusd: 2,
+                    parts: input_cost(1),
+                    pricing_version: "v2".to_owned(),
+                })
+            })),
+            Some("v2"),
+        );
+        let costs = store.period_totals(now, None).unwrap().costs;
+        assert_eq!((costs.today, costs.all_time), (Some(2), None));
+        // A period with no usage costs nothing.
+        let later = store
+            .period_totals(time::macros::datetime!(2026-12-01 12:00 UTC), None)
+            .unwrap()
+            .costs;
+        assert_eq!((later.today, later.week, later.month), (Some(0), Some(0), Some(0)));
+    }
 }
 
 mod queries {

@@ -1,5 +1,11 @@
 {
   "allTime": 4060,
+  "costs": {
+    "allTime": null,
+    "month": 0,
+    "today": 0,
+    "week": 0
+  },
   "month": 0,
   "today": 0,
   "topTool": null,

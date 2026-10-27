@@ -243,6 +243,7 @@ mod tests {
                     tool: ToolId::Claude,
                     tokens: 8_400_000,
                 }),
+                costs: Default::default(),
             },
             rank: Some(10),
             alias: Some("ada".into()),

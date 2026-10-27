@@ -299,4 +299,13 @@ export type MenuOverview = {
   /** When the cycle behind these totals finished; null before the first. */
   refreshedAt: string | null;
   nextRefreshAt: string | null;
+  /** Each total's estimated cost. */
+  costs: PeriodCosts;
+};
+/** Each period's estimated cost in micro-USD at the current prices: zero without usage, null when a model used in it has no price. */
+export type PeriodCosts = {
+  today: number | null;
+  week: number | null;
+  month: number | null;
+  allTime: number | null;
 };

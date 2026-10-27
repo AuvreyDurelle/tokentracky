@@ -701,6 +701,22 @@ pub struct MenuOverview {
     /// When the cycle behind these totals finished; null before the first.
     pub refreshed_at: Option<String>,
     pub next_refresh_at: Option<String>,
+    /// Each total's estimated cost.
+    pub costs: PeriodCosts,
+}
+/// Each period's estimated cost in micro-USD at the current prices: zero without usage, null when a model used in it
+/// has no price.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+pub struct PeriodCosts {
+    #[ts(type = "number | null")]
+    pub today: Option<u64>,
+    #[ts(type = "number | null")]
+    pub week: Option<u64>,
+    #[ts(type = "number | null")]
+    pub month: Option<u64>,
+    #[ts(type = "number | null")]
+    pub all_time: Option<u64>,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct TopTool {

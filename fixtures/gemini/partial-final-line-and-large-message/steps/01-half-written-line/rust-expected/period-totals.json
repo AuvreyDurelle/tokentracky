@@ -1,0 +1,16 @@
+{
+  "allTime": 2,
+  "costs": {
+    "allTime": null,
+    "month": null,
+    "today": null,
+    "week": null
+  },
+  "month": 2,
+  "today": 2,
+  "topTool": {
+    "tokens": 2,
+    "tool": "gemini"
+  },
+  "week": 2
+}

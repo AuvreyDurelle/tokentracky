@@ -36,11 +36,12 @@ describe('PopoverPanel', () => {
     expect(text(panel({ yesterday: 44e6 }))).toContain('−50% vs this time yesterday');
     expect(text(panel({ yesterday: 0 }))).not.toContain('vs this time yesterday');
   });
-  it('lists this week, this month and all time from the overview, with the week and month costs', () => {
+  it('lists this week, this month and all time from the overview, each with its cost', () => {
     const rows = [...panel().matchAll(/<div class="po-prow">([\s\S]*?)<\/div>/g)].map((match) => text(match[1]!));
-    expect(rows.map((row) => row.replace(/ \$[\d,.]+$/, ''))).toEqual(['This week 2.1B', 'This month 6.9B', 'All time 18.4B']);
     // Whole dollars from $100.
-    expect(rows[1]).toMatch(/ \$2,39\d$/);
+    expect(rows).toEqual(['This week 2.1B $729', 'This month 6.9B $2,394', 'All time 18.4B $6,412']);
+    const unpriced = [...panel({ overview: { ...f.overview, costs: { ...f.overview.costs, allTime: null } } }).matchAll(/<div class="po-prow">([\s\S]*?)<\/div>/g)].map((match) => text(match[1]!));
+    expect(unpriced[2]).toBe('All time 18.4B —');
   });
   it("shows this month's tool mix, the streak and its seven weeks", () => {
     const html = panel();

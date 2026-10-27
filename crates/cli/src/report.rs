@@ -7,7 +7,7 @@ use std::path::Path;
 use std::sync::Arc;
 use time::OffsetDateTime;
 use tokentracky_collector::store::{PeriodTotals, StoreError, UsageStore};
-use tokentracky_core::{SourceState, ToolId};
+use tokentracky_core::{PeriodCosts, SourceState, ToolId};
 use tokentracky_local_api::{PricingDownload, SecretStore, cloud_origin};
 use tokentracky_pricing::{PricingRefresher, RefresherOptions};
 
@@ -111,6 +111,12 @@ pub async fn report(directory: &Path, context: &Context) -> Result<StatusReport,
                     month: 0,
                     all_time: 0,
                     top_tool: None,
+                    costs: PeriodCosts {
+                        today: Some(0),
+                        week: Some(0),
+                        month: Some(0),
+                        all_time: Some(0),
+                    },
                 },
                 Vec::new(),
             ),

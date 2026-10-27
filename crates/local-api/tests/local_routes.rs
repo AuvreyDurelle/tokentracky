@@ -1127,9 +1127,10 @@ async fn the_cycle_looks_up_the_weekly_rank_and_publishes_the_overview() {
     app.close().await.unwrap();
 }
 
-const OVERVIEW_KEYS: [&str; 11] = [
+const OVERVIEW_KEYS: [&str; 12] = [
     "alias",
     "allTime",
+    "costs",
     "month",
     "nextRefreshAt",
     "paused",

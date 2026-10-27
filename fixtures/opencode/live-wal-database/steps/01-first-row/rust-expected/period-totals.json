@@ -1,0 +1,16 @@
+{
+  "allTime": 110,
+  "costs": {
+    "allTime": null,
+    "month": null,
+    "today": null,
+    "week": null
+  },
+  "month": 110,
+  "today": 110,
+  "topTool": {
+    "tokens": 110,
+    "tool": "opencode"
+  },
+  "week": 110
+}

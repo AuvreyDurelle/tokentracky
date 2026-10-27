@@ -1,5 +1,11 @@
 {
   "allTime": 16850,
+  "costs": {
+    "allTime": null,
+    "month": null,
+    "today": 0,
+    "week": null
+  },
   "month": 16200,
   "today": 0,
   "topTool": {

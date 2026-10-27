@@ -23,10 +23,10 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 use time::{OffsetDateTime, UtcOffset};
 use tokentracky_core::{
-    BucketTool, CostParts, DayTokens, DayUsage, HourBreakdownRow, MAX_SAFE_INTEGER, ModelUsage, Period, ProjectSummary,
-    PublicBucket, PublicHour, SessionSummary, SourceCapabilities, SourceState, SourceStatus, TOOL_IDS, TokenCounts,
-    ToolId, ToolUsage, UsageBreakdownRow, UsageEvent, UsageSummary, activity_stats, checked_sum, is_public_model,
-    is_utc_day, ranking_window, total_tokens,
+    BucketTool, CostParts, DayTokens, DayUsage, HourBreakdownRow, MAX_SAFE_INTEGER, ModelUsage, Period, PeriodCosts,
+    ProjectSummary, PublicBucket, PublicHour, SessionSummary, SourceCapabilities, SourceState, SourceStatus, TOOL_IDS,
+    TokenCounts, ToolId, ToolUsage, UsageBreakdownRow, UsageEvent, UsageSummary, activity_stats, checked_sum,
+    is_public_model, is_utc_day, ranking_window, total_tokens,
 };
 
 /// `days` is a rolling window, which `offset` shifts back by that many days (e.g. the previous period); `from`/`to` are
@@ -97,6 +97,7 @@ pub struct PeriodTotals {
     pub month: u64,
     pub all_time: u64,
     pub top_tool: Option<TopTool>,
+    pub costs: PeriodCosts,
 }
 /// The tool with the most tokens this week.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -339,7 +340,10 @@ fn sessions_by<K: Eq + Hash>(rows: &[slots::Dated], key: impl Fn(&slots::Dated) 
             .or_default()
             .insert((row.slot.key.tool, row.slot.key.session_id.as_str()));
     }
-    groups.into_iter().map(|(key, sessions)| (key, sessions.len() as u32)).collect()
+    groups
+        .into_iter()
+        .map(|(key, sessions)| (key, sessions.len() as u32))
+        .collect()
 }
 /// The UTC day of a timestamp (`occurredAt.slice(0, 10)`).
 fn day(event: &UsageEvent) -> Option<&str> {
@@ -1296,36 +1300,50 @@ impl UsageStore {
                 (start(date.weekday().number_days_from_monday()), start(date.day() - 1))
             }
         };
-        let mut totals = PeriodTotals {
-            today: 0,
-            week: 0,
-            month: 0,
-            all_time: 0,
-            top_tool: None,
-        };
+        // Today, this week, this month and all time.
+        let mut periods: [slots::Totals; 4] = Default::default();
         let mut tools: Vec<(ToolId, u64)> = Vec::new();
         let everything = QueryOptions {
             tz: tz.cloned(),
             ..QueryOptions::default()
         };
-        for row in self.slots(&everything, false)? {
-            let tokens = sum(row.slot.tokens[..4].iter().copied())?;
-            totals.all_time = sum([totals.all_time, tokens])?;
+        for row in self.slots(&everything, true)? {
+            periods[3].add(&row.slot)?;
             let Some(day) = row.day else { continue };
             if day >= month {
-                totals.month = sum([totals.month, tokens])?;
+                periods[2].add(&row.slot)?;
             }
             if day >= week {
-                totals.week = sum([totals.week, tokens])?;
+                periods[1].add(&row.slot)?;
+                let tokens = sum(row.slot.tokens[..4].iter().copied())?;
                 match tools.iter_mut().find(|(tool, _)| *tool == row.slot.key.tool) {
                     Some((_, total)) => *total = sum([*total, tokens])?,
                     None => tools.push((row.slot.key.tool, tokens)),
                 }
             }
             if day == today {
-                totals.today = sum([totals.today, tokens])?;
+                periods[0].add(&row.slot)?;
             }
         }
+        let cost = |totals: &slots::Totals| -> Result<Option<u64>> {
+            Ok(match totals.cost() {
+                None if totals.tokens()? == 0 => Some(0),
+                cost => cost,
+            })
+        };
+        let mut totals = PeriodTotals {
+            today: periods[0].tokens()?,
+            week: periods[1].tokens()?,
+            month: periods[2].tokens()?,
+            all_time: periods[3].tokens()?,
+            top_tool: None,
+            costs: PeriodCosts {
+                today: cost(&periods[0])?,
+                week: cost(&periods[1])?,
+                month: cost(&periods[2])?,
+                all_time: cost(&periods[3])?,
+            },
+        };
         tools.retain(|&(_, tokens)| tokens > 0);
         tools.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| locale_cmp(&text(a.0), &text(b.0))));
         totals.top_tool = tools.first().map(|&(tool, tokens)| TopTool { tool, tokens });

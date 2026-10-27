@@ -7,7 +7,7 @@ import { addDays, fillRange, hourList, utcToday } from '../ranges';
 import { usageRevision } from '../refresh';
 import { Avatar, ToolIcon } from '../ui';
 import { ICONS } from './icons';
-import { changeVsPrevious, recentTotals } from './insights';
+import { changeVsPrevious } from './insights';
 import './personal.css';
 
 /** The days the popover's summary covers: its 7-week grid. */
@@ -66,7 +66,7 @@ export function Popover({ api, status }: { api: ApiClient; status: LocalStatus |
     root.style.background = 'transparent'; body.style.background = 'transparent';
     return () => { root.style.background = before[0]!; body.style.background = before[1]!; };
   }, []);
-  // Six reads and nothing else: the overview, the last 49 days (grid, streak, today's and the week's cost), this month (tool mix and cost), a week of
+  // Six reads and nothing else: the overview (totals and their costs), the last 49 days (grid, streak, today's cost), this month (tool mix), a week of
   // sessions, today's hours, and yesterday to this time for today's change.
   const revision = usageRevision(status);
   useEffect(() => {
@@ -105,8 +105,6 @@ export function PopoverPanel({ overview, recent, month, sessions, hours, yesterd
   const soFar = bars.reduce((sum, bar) => sum + bar.tokens, 0);
   const change = hours && yesterday !== null ? changeVsPrevious(soFar, yesterday) : null;
   const todayCost = recent ? recent.daily.find((point) => point.day === today)?.costMicrousd ?? 0 : undefined;
-  // Monday's UTC day starts the week.
-  const week = recent && recentTotals(recent.daily, today, ((new Date(`${today}T00:00:00Z`).getUTCDay() + 6) % 7) + 1);
   const levels = days ? heatLevels(days.map((point) => point.tokens)) : [];
   const streak = recent && days ? streakOf(recent.activity.currentStreak, days, today) : null;
   const tools = (month?.byTool ?? []).filter((item) => item.tokens > 0).sort((a, b) => b.tokens - a.tokens);
@@ -140,11 +138,10 @@ export function PopoverPanel({ overview, recent, month, sessions, hours, yesterd
           </div>}
         </div>
         <div className="po-sep" />
-        {/* Later: the all-time cost, once the overview carries costs. */}
         <div className="po-periods">
-          <div className="po-prow"><span>This week</span><b>{overview ? formatCompact(overview.week) : '—'}</b><em>{week ? periodCost(week.costMicrousd) : ''}</em></div>
-          <div className="po-prow"><span>This month</span><b>{overview ? formatCompact(overview.month) : '—'}</b><em>{month ? periodCost(month.costMicrousd) : ''}</em></div>
-          <div className="po-prow"><span>All time</span><b>{overview ? formatCompact(overview.allTime) : '—'}</b><em /></div>
+          <div className="po-prow"><span>This week</span><b>{overview ? formatCompact(overview.week) : '—'}</b><em>{overview ? periodCost(overview.costs.week) : ''}</em></div>
+          <div className="po-prow"><span>This month</span><b>{overview ? formatCompact(overview.month) : '—'}</b><em>{overview ? periodCost(overview.costs.month) : ''}</em></div>
+          <div className="po-prow"><span>All time</span><b>{overview ? formatCompact(overview.allTime) : '—'}</b><em>{overview ? periodCost(overview.costs.allTime) : ''}</em></div>
         </div>
         {tools.length > 0 && <>
           <div className="po-sep" />

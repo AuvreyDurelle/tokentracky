@@ -738,6 +738,7 @@ async fn overview(State(state): State<LocalState>) -> Result<Response, LocalErro
         refreshing: refresh.refreshing,
         refreshed_at: last.refresh.last_refresh_at,
         next_refresh_at: refresh.next_refresh_at,
+        costs: totals.costs,
     };
     Ok(json(StatusCode::OK, &overview))
 }
@@ -822,6 +823,7 @@ mod tests {
             month: 3,
             all_time: 4,
             top_tool: None,
+            costs: Default::default(),
         };
         let refresh = RefreshStatus {
             last_refresh_at: None,

@@ -94,7 +94,8 @@ export function personalFixtures(now = new Date()) {
     costMicrousd: Math.round(tokens * 0.35), lastUsedAt: iso(minutes),
   });
   const sessions = [session('s1', 'usage-dashboard', 'claude', 'claude-opus-5-5', 38.2e6, 4), session('s2', 'api-gateway', 'codex', 'gpt-6.1-sol', 21.7e6, 26), session('s3', 'sample-editor', 'claude', 'claude-sonnet-5-5', 9.8e6, 64), session('s4', 'usage-dashboard', 'claude', 'claude-opus-5-5', 184.2e6, 4 * 1440 + 200), session('s5', 'dotfiles', 'gemini', 'gemini-3.8-flash', 3.1e6, 2 * 1440)];
-  const overview: MenuOverview = { today: TODAY, week: 2.1e9, month: 6.9e9, allTime: 18.4e9, topTool: { tool: 'claude', tokens: 1.4e9 }, rank: 42, alias: 'example-builder', paused: false, refreshing: false, refreshedAt: iso(2), nextRefreshAt: iso(-58) };
+  const overview: MenuOverview = { today: TODAY, week: 2.1e9, month: 6.9e9, allTime: 18.4e9, topTool: { tool: 'claude', tokens: 1.4e9 }, rank: 42, alias: 'example-builder', paused: false, refreshing: false, refreshedAt: iso(2), nextRefreshAt: iso(-58),
+    costs: { today: 64.8e6, week: 729e6, month: 2_394e6, allTime: 6_412e6 } };
   const source = (id: ToolId, name: string, enabled: boolean, paths: string[], eventCount: number, state: SourceStatus['state'] = enabled ? 'current' : 'detected'): SourceStatus => ({
     id, name, enabled, state, paths, lastImportedAt: enabled ? iso(2) : null, eventCount, message: '', capabilities: { tokens: true, models: true, projects: true, costs: true, quotas: false },
   });

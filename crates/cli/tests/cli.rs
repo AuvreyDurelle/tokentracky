@@ -192,7 +192,7 @@ async fn reports_an_empty_data_folder_without_creating_it() {
     assert_eq!(
         report,
         json!({"version": "9.9.9", "dataDir": f.data_dir, "running": false, "lastRefreshAt": null,
-            "totals": {"today": 0, "week": 0, "month": 0, "allTime": 0, "topTool": null}, "sources": [],
+            "totals": {"today": 0, "week": 0, "month": 0, "allTime": 0, "topTool": null, "costs": {"today": 0, "week": 0, "month": 0, "allTime": 0}}, "sources": [],
             "leaderboard": {"linked": false, "url": null}, "pricingVersion": version})
     );
     // The keys keep the order of the TypeScript report.

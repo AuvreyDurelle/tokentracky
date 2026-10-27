@@ -62,6 +62,7 @@ fn generates_typescript_types() {
         (HourBreakdownRow::docs(), HourBreakdownRow::decl(&cfg)),
         (ActivityStats::docs(), ActivityStats::decl(&cfg)),
         (MenuOverview::docs(), MenuOverview::decl(&cfg)),
+        (PeriodCosts::docs(), PeriodCosts::decl(&cfg)),
     ] {
         out += &render(docs, decl);
     }

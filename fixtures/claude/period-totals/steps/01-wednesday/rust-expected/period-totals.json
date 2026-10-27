@@ -1,0 +1,16 @@
+{
+  "allTime": 1766,
+  "costs": {
+    "allTime": null,
+    "month": null,
+    "today": null,
+    "week": null
+  },
+  "month": 1500,
+  "today": 1130,
+  "topTool": {
+    "tokens": 1360,
+    "tool": "claude"
+  },
+  "week": 1360
+}
