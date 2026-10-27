@@ -47,7 +47,7 @@ npx tokentracky login
 Or install it. The npm package is a small Node 18+ launcher that downloads the verified native binary; the Homebrew formula needs no Node.
 
 ```sh
-npm i -g tokentracky                                # or: brew install auvreydurelle/tokentracky/tokentracky
+npm i -g tokentracky                                # or: brew install auvreydurelle/tokentracky/tokentracky-cli
 
 tokentracky serve     # private dashboard on a loopback port; reads the tools it finds
 tokentracky status    # totals, tracked tools, leaderboard link, last refresh

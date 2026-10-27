@@ -31,7 +31,9 @@ test('generates arm64 Homebrew definitions only from verified manifest artifacts
     await writeFile(input, JSON.stringify(manifest));
     const result = spawnSync(process.execPath, [script, input, output], { encoding: 'utf8' });
     assert.equal(result.status, 0, result.stderr);
-    const formula = await readFile(join(output, 'Formula/tokentracky.rb'), 'utf8');
+    // A formula named like the cask is not linked once the app is installed, so the CLI formula has its own name.
+    const formula = await readFile(join(output, 'Formula/tokentracky-cli.rb'), 'utf8');
+    assert.match(formula, /\nclass TokentrackyCli < Formula\n/);
     const cask = await readFile(join(output, 'Casks/tokentracky.rb'), 'utf8');
     // brew audit refuses the string form ">= :ventura" in a formula; a bare symbol is already a minimum.
     for (const definition of [formula, cask]) assert.match(definition, /\n {2}depends_on macos: :ventura\n/);
@@ -69,7 +71,7 @@ test('generated tap paths parse as Ruby and formula install maps the raw artifac
     const input = join(temp, 'manifest.json');
     await writeFile(input, JSON.stringify(manifest));
     assert.equal(spawnSync(process.execPath, [script, input, temp]).status, 0);
-    for (const path of ['Formula/tokentracky.rb', 'Casks/tokentracky.rb']) {
+    for (const path of ['Formula/tokentracky-cli.rb', 'Casks/tokentracky.rb']) {
       const syntax = spawnSync('ruby', ['-c', join(temp, path)], { encoding: 'utf8' });
       assert.equal(syntax.status, 0, syntax.stderr);
     }
@@ -87,10 +89,10 @@ class Bin
     FileUtils.mkdir_p('installed'); FileUtils.cp(mapping.keys.first, 'installed/tokentracky')
   end
 end
-class Tokentracky
+class TokentrackyCli
   def bin; Bin.new; end
 end
-Tokentracky.new.install
+TokentrackyCli.new.install
 raise 'install lost payload' unless File.read('installed/tokentracky') == 'native fixture'
 class CaskCheck
   def initialize; @app = nil; end
@@ -105,7 +107,7 @@ load ARGV[1]
 `;
     await writeFile(join(temp, 'contract.rb'), contract);
     await writeFile(join(temp, 'tokentracky-0.1.0-macos-arm64'), 'native fixture');
-    const installed = spawnSync('ruby', [join(temp, 'contract.rb'), join(temp, 'Formula/tokentracky.rb'), join(temp, 'Casks/tokentracky.rb')], { cwd: temp, encoding: 'utf8' });
+    const installed = spawnSync('ruby', [join(temp, 'contract.rb'), join(temp, 'Formula/tokentracky-cli.rb'), join(temp, 'Casks/tokentracky.rb')], { cwd: temp, encoding: 'utf8' });
     assert.equal(installed.status, 0, installed.stderr);
   } finally { await rm(temp, { recursive: true, force: true }); }
 });

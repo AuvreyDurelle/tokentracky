@@ -140,7 +140,7 @@ jobs:
           git clone --depth 1 "https://x-access-token:${TAP_TOKEN}@github.com/AuvreyDurelle/homebrew-tokentracky.git" "$tap"
           mkdir -p "$tap/Casks" "$tap/Formula"
           cp dist/macos-release/homebrew/Casks/tokentracky.rb "$tap/Casks/"
-          cp dist/macos-release/homebrew/Formula/tokentracky.rb "$tap/Formula/"
+          cp dist/macos-release/homebrew/Formula/tokentracky-cli.rb "$tap/Formula/"
           git -C "$tap" add Casks Formula
           if git -C "$tap" diff --cached --quiet; then
             echo "The tap already describes ${version}."
@@ -151,10 +151,10 @@ jobs:
           # Audit and install from the local commit before anyone can see it.
           brew tap auvreydurelle/tokentracky "$tap"
           brew audit --cask auvreydurelle/tokentracky/tokentracky
-          brew audit --formula auvreydurelle/tokentracky/tokentracky
+          brew audit --formula auvreydurelle/tokentracky/tokentracky-cli
           brew install --cask auvreydurelle/tokentracky/tokentracky
-          brew install --formula auvreydurelle/tokentracky/tokentracky
-          brew test auvreydurelle/tokentracky/tokentracky
+          brew install --formula auvreydurelle/tokentracky/tokentracky-cli
+          brew test auvreydurelle/tokentracky/tokentracky-cli
           git -C "$tap" push origin HEAD
 
   # npm trusts this job's GitHub identity token instead of a stored token (trusted publishing). It is a

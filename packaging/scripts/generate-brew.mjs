@@ -25,10 +25,10 @@ const expected = (artifact, kind) => {
 const appArtifact = expected(app, 'app');
 const cliArtifact = expected(cli, 'cli');
 const cask = `# typed: strict\n# frozen_string_literal: true\n\ncask "tokentracky" do\n  version "${version}"\n  sha256 "${appArtifact.sha256}"\n\n  url "${appArtifact.url.replaceAll(version, '#{version}')}"\n  name "Tokentracky"\n  desc "Local AI coding token tracker and leaderboard"\n  homepage "https://github.com/AuvreyDurelle/tokentracky"\n\n  auto_updates true\n  depends_on arch: :arm64\n  depends_on macos: :ventura\n\n  app "Tokentracky.app"\nend\n`;
-const formula = `# typed: strict\n# frozen_string_literal: true\n\n# CLI formula for Tokentracky on macOS Apple Silicon.\nclass Tokentracky < Formula\n  desc "Local AI coding token tracker and leaderboard CLI"\n  homepage "https://github.com/AuvreyDurelle/tokentracky"\n  url "${cliArtifact.url}"\n  sha256 "${cliArtifact.sha256}"\n\n  depends_on arch: :arm64\n  depends_on macos: :ventura\n\n  def install\n    bin.install "${cliArtifact.file}" => "tokentracky"\n  end\n\n  test do\n    assert_match version.to_s, shell_output("#{bin}/tokentracky --version")\n  end\nend\n`;
+const formula = `# typed: strict\n# frozen_string_literal: true\n\n# CLI formula for Tokentracky on macOS Apple Silicon.\nclass TokentrackyCli < Formula\n  desc "Local AI coding token tracker and leaderboard CLI"\n  homepage "https://github.com/AuvreyDurelle/tokentracky"\n  url "${cliArtifact.url}"\n  sha256 "${cliArtifact.sha256}"\n\n  depends_on arch: :arm64\n  depends_on macos: :ventura\n\n  def install\n    bin.install "${cliArtifact.file}" => "tokentracky"\n  end\n\n  test do\n    assert_match version.to_s, shell_output("#{bin}/tokentracky --version")\n  end\nend\n`;
 const destination = resolve(outputDir);
 await Promise.all(['Formula', 'Casks'].map((directory) => mkdir(resolve(destination, directory), { recursive: true })));
 await Promise.all([
-  writeFile(resolve(destination, 'Formula/tokentracky.rb'), formula),
+  writeFile(resolve(destination, 'Formula/tokentracky-cli.rb'), formula),
   writeFile(resolve(destination, 'Casks/tokentracky.rb'), cask),
 ]);
