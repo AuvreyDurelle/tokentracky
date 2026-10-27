@@ -396,7 +396,7 @@ fn forwarded(query: Option<&str>) -> String {
     params.finish()
 }
 
-/// The web app for `/u/:alias` when the alias matches `PROFILE_ALIAS`, `^[a-zA-Z0-9][a-zA-Z0-9_-]{2,29}$`; else the JSON
+/// The web app for `/u/:alias` when the alias matches `ALIAS_PATTERN`, `^[a-zA-Z0-9][a-zA-Z0-9_-]{2,29}$`; else the JSON
 /// 404.
 async fn public_profile(root: Arc<PathBuf>, alias: String, request: Request) -> Response {
     let mut chars = alias.chars();

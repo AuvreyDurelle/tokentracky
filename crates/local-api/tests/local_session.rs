@@ -1,4 +1,4 @@
-//! `apps/server/src/local-session.test.ts`, case for case: loopback workspace authentication, on a bare router.
+//! Loopback workspace authentication, on a bare router.
 use axum::body::{Body, to_bytes};
 use axum::extract::Request;
 use axum::routing::{get, post};

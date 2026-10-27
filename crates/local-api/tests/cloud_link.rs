@@ -1,4 +1,4 @@
-//! `apps/server/src/cloud-link.test.ts`, case for case: consent-aware publication transport.
+//! Consent-aware publication transport: the device link, its scope and the upload.
 mod support;
 
 use serde_json::{Value, json};
