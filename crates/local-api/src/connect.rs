@@ -2,13 +2,14 @@
 //! holds only a poll secret until approval, then saves the device credential with exactly the approved scope.
 use crate::error::LocalError;
 use crate::http::{HttpClient, HttpRequest, HttpResponse};
-use crate::link::{is_js_space, validate_cloud_link};
+use crate::link::validate_cloud_link;
 use crate::sync::{CloudSync, HOSTED_TIMEOUT, Outcome, outcome};
 use axum::http::{Method, StatusCode, header};
 use serde::Serialize;
 use serde_json::{Map, Value, json};
 use sha2::{Digest, Sha256};
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
+use tokentracky_core::is_js_space;
 use tokio::sync::watch;
 
 const NOT_STARTED: LocalError = LocalError::new(

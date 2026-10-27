@@ -1,5 +1,5 @@
 //! The bundled snapshot and the daily refresh with its 24-hour disk cache.
-use crate::{Json, PricingError, PricingTable, table::is_js_whitespace, trim_litellm};
+use crate::{Json, PricingError, PricingTable, trim_litellm};
 use serde::Deserialize;
 use std::{
     error::Error,
@@ -8,7 +8,8 @@ use std::{
     path::{Path, PathBuf},
     sync::{Arc, OnceLock},
 };
-use time::{OffsetDateTime, UtcOffset, format_description::well_known::Rfc3339};
+use time::{OffsetDateTime, format_description::well_known::Rfc3339};
+use tokentracky_core::{is_js_space, iso_timestamp};
 
 pub const LITELLM_URL: &str =
     "https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json";
@@ -54,7 +55,7 @@ pub fn bundled_table() -> Arc<PricingTable> {
 
 /// `TOKENTRACKY_PRICING_REFRESH=off` keeps the bundled snapshot and makes no pricing download.
 pub fn pricing_refresh_enabled(value: Option<&str>) -> bool {
-    let value = value.unwrap_or("").trim_matches(is_js_whitespace).to_lowercase();
+    let value = value.unwrap_or("").trim_matches(is_js_space).to_lowercase();
     !["off", "0", "false", "no"].contains(&value.as_str())
 }
 
@@ -64,19 +65,6 @@ fn parse_ms(iso: &str) -> Option<i64> {
 
 fn unix_ms(time: OffsetDateTime) -> i64 {
     time.unix_timestamp() * 1000 + i64::from(time.millisecond())
-}
-
-/// `Date.prototype.toISOString`.
-fn iso(time: OffsetDateTime) -> String {
-    let t = time.to_offset(UtcOffset::UTC);
-    let (year, month, day) = (t.year(), u8::from(t.month()), t.day());
-    format!(
-        "{year:04}-{month:02}-{day:02}T{:02}:{:02}:{:02}.{:03}Z",
-        t.hour(),
-        t.minute(),
-        t.second(),
-        t.millisecond()
-    )
 }
 
 pub type TransportError = Box<dyn Error + Send + Sync>;
@@ -208,7 +196,7 @@ fn write_cache(path: &Path, fetched_at: OffsetDateTime, models: &Json) -> io::Re
     temporary.push(".tmp");
     let body = format!(
         "{{\"fetchedAt\":\"{}\",\"models\":{}}}",
-        iso(fetched_at),
+        iso_timestamp(fetched_at),
         models.to_json_string()
     );
     file.open(&temporary)?.write_all(body.as_bytes())?;

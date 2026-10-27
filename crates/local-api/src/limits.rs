@@ -1,10 +1,9 @@
 //! What `GET /api/local/limits` answers (F6, Rust only): Claude Code's and Codex's latest usage-limit readings as the
 //! store keeps them, each window with its pace. Local only: the hosted site has no limits and uploads never carry them.
-use crate::link::iso;
 use serde::Serialize;
 use time::OffsetDateTime;
 use tokentracky_collector::limits::{LimitReading, LimitWindow};
-use tokentracky_core::ToolId;
+use tokentracky_core::{ToolId, iso_timestamp};
 
 /// The tools with usage limits, in the order they are listed.
 const TOOLS: [ToolId; 2] = [ToolId::Claude, ToolId::Codex];
@@ -87,7 +86,7 @@ pub fn pace(used_percent: f64, window_ms: i64, resets_at_ms: i64, now_ms: i64) -
 fn iso_ms(ms: i64) -> Option<String> {
     OffsetDateTime::from_unix_timestamp_nanos(i128::from(ms) * 1_000_000)
         .ok()
-        .map(iso)
+        .map(iso_timestamp)
 }
 
 fn window(window: &LimitWindow, now_ms: i64) -> WindowLimits {

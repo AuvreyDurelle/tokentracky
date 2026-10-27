@@ -24,8 +24,8 @@ use time::{OffsetDateTime, UtcOffset};
 use tokentracky_core::{
     BucketTool, CostParts, DayTokens, DayUsage, HourBreakdownRow, MAX_SAFE_INTEGER, ModelUsage, Period, ProjectSummary,
     PublicBucket, PublicHour, SessionSummary, SourceCapabilities, SourceState, SourceStatus, TOOL_IDS, TokenCounts,
-    ToolId, ToolUsage, UsageBreakdownRow, UsageEvent, UsageSummary, activity_stats, checked_sum, is_public_model,
-    is_utc_day, ranking_window, total_tokens,
+    ToolId, ToolUsage, UsageBreakdownRow, UsageEvent, UsageSummary, activity_stats, checked_sum, is_js_space,
+    is_public_model, is_utc_day, ranking_window, total_tokens,
 };
 
 /// `days` is a rolling window, which `offset` shifts back by that many days (e.g. the previous period); `from`/`to` are
@@ -1740,18 +1740,10 @@ impl UsageStore {
     }
 }
 
-/// White space as JavaScript's `\s` matches it.
-fn js_space(c: char) -> bool {
-    matches!(
-        c,
-        '\t' | '\n' | '\u{b}' | '\u{c}' | '\r' | ' ' | '\u{a0}' | '\u{1680}' | '\u{2000}'
-            ..='\u{200a}' | '\u{2028}' | '\u{2029}' | '\u{202f}' | '\u{205f}' | '\u{3000}' | '\u{feff}'
-    )
-}
 /// One quoted CSV cell (`/^(?:\s*[=+\-@]|[\t\r\n])/` gets the apostrophe).
 fn cell(value: &str) -> String {
-    let formula =
-        value.trim_start_matches(js_space).starts_with(['=', '+', '-', '@']) || value.starts_with(['\t', '\r', '\n']);
+    let formula = value.trim_start_matches(is_js_space).starts_with(['=', '+', '-', '@'])
+        || value.starts_with(['\t', '\r', '\n']);
     let safe = if formula { format!("'{value}") } else { value.to_owned() };
     format!("\"{}\"", safe.replace('"', "\"\""))
 }

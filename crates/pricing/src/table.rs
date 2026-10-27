@@ -6,7 +6,7 @@ use std::{
     collections::HashMap,
     sync::{LazyLock, Mutex, PoisonError},
 };
-use tokentracky_core::{CostParts, MAX_SAFE_INTEGER, TokenCounts, ToolId};
+use tokentracky_core::{CostParts, MAX_SAFE_INTEGER, TokenCounts, ToolId, is_js_space};
 
 /// LiteLLM field names this crate reads, in component order: input, output, cache read, cache write and one-hour
 /// cache write. Everything else in an entry is ignored.
@@ -245,14 +245,9 @@ fn weight(c: char) -> Option<u32> {
     }
 }
 
-/// JavaScript's `trim` set: Unicode whitespace and the byte order mark, but not U+0085.
-pub(crate) fn is_js_whitespace(c: char) -> bool {
-    c == '\u{feff}' || (c.is_whitespace() && c != '\u{85}')
-}
-
 /// Free tiers end their id in `-free` (OpenCode's `glm-5.3-flash-free`, Muse's `muse-spark-1.3-contributor-free`).
 fn is_free(model: &str) -> bool {
-    let id = model.trim_matches(is_js_whitespace);
+    let id = model.trim_matches(is_js_space);
     id.len()
         .checked_sub("-free".len())
         .is_some_and(|at| id.as_bytes()[at..].eq_ignore_ascii_case(b"-free"))
@@ -284,7 +279,7 @@ fn strip_bedrock_version(s: &str) -> &str {
 /// Normalized candidates, most specific first. Logged ids may carry dates, regions, provider prefixes or
 /// Claude Code's context suffix.
 fn candidates(model: &str, tool: ToolId) -> Vec<String> {
-    let lowered = model.trim_matches(is_js_whitespace).to_lowercase();
+    let lowered = model.trim_matches(is_js_space).to_lowercase();
     // A trailing `[...]` group, such as Claude Code's `[1m]`.
     let id = match lowered.strip_suffix(']') {
         Some(body) => {

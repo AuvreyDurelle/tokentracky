@@ -12,6 +12,7 @@ publish.workspace = true
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+tokentracky-core = { path = "../../crates/core" }
 tokentracky-local-api = { path = "../../crates/local-api" }
 axum = { workspace = true }
 tokio = { workspace = true }
@@ -67,7 +68,6 @@ objc2-foundation = { version = "0.3", default-features = false, features = [
 
 [dev-dependencies]
 tokentracky-collector = { path = "../../crates/collector" }
-tokentracky-core = { path = "../../crates/core" }
 tempfile = { workspace = true }
 
 [lints]

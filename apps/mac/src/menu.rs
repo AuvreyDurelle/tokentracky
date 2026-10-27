@@ -1,4 +1,5 @@
 //! The menu-bar title and dropdown. Pure functions let tests run without a menu bar.
+use tokentracky_core::compact_count;
 use tokentracky_local_api::LocalOverview;
 
 pub const REFRESH: &str = "refresh";
@@ -27,38 +28,6 @@ pub enum UpdateState {
     Ready(String),
 }
 
-/// `Intl.NumberFormat('en', {notation: 'compact', maximumFractionDigits: 1})` for whole numbers: `161`, `12.3K`,
-/// `1.2M`. Halves round up, a value that rounds to 1000 of a unit moves to the next (`999,950` is `1M`), and past
-/// `T` the integer part grows, grouped from five digits (`10,000T`), as ICU does.
-pub fn compact_tokens(tokens: u64) -> String {
-    const SUFFIXES: [&str; 5] = ["", "K", "M", "B", "T"];
-    if tokens < 1000 {
-        return tokens.to_string();
-    }
-    let mut unit = (tokens.ilog10() / 3).min(4) as usize;
-    let tenths = |unit: usize| {
-        let divisor = 1000u128.pow(unit as u32);
-        (u128::from(tokens) * 10 + divisor / 2) / divisor
-    };
-    let mut rounded = tenths(unit);
-    if rounded >= 10_000 && unit < 4 {
-        unit += 1;
-        rounded = tenths(unit);
-    }
-    let (whole, fraction) = (rounded / 10, rounded % 10);
-    let mut digits = whole.to_string();
-    let length = digits.len();
-    if length >= 5 {
-        for at in (1..length).rev().filter(|at| (length - at) % 3 == 0) {
-            digits.insert(at, ',');
-        }
-    }
-    match fraction {
-        0 => format!("{digits}{}", SUFFIXES[unit]),
-        _ => format!("{digits}.{fraction}{}", SUFFIXES[unit]),
-    }
-}
-
 /// Read-only dropdown lines. `time` formats an ISO timestamp for the user's locale.
 pub fn summary_lines(overview: Option<&LocalOverview>, time: impl Fn(&str) -> String) -> Vec<String> {
     let Some(overview) = overview else {
@@ -66,10 +35,10 @@ pub fn summary_lines(overview: Option<&LocalOverview>, time: impl Fn(&str) -> St
     };
     let totals = &overview.totals;
     let mut lines = vec![
-        format!("Today: {} tokens", compact_tokens(totals.today)),
-        format!("This week: {}", compact_tokens(totals.week)),
-        format!("This month: {}", compact_tokens(totals.month)),
-        format!("All time: {}", compact_tokens(totals.all_time)),
+        format!("Today: {} tokens", compact_count(totals.today)),
+        format!("This week: {}", compact_count(totals.week)),
+        format!("This month: {}", compact_count(totals.month)),
+        format!("All time: {}", compact_count(totals.all_time)),
     ];
     if let Some(top) = &totals.top_tool {
         lines.push(format!("Top tool this week: {}", top.tool.name()));
@@ -102,13 +71,13 @@ pub fn summary_lines(overview: Option<&LocalOverview>, time: impl Fn(&str) -> St
 /// The menu-bar title: today's tokens, empty until the first overview.
 pub fn title(overview: Option<&LocalOverview>) -> String {
     overview
-        .map(|overview| compact_tokens(overview.totals.today))
+        .map(|overview| compact_count(overview.totals.today))
         .unwrap_or_default()
 }
 
 pub fn tooltip(overview: Option<&LocalOverview>) -> String {
     match overview {
-        Some(overview) => format!("Tokentracky: {} tokens today", compact_tokens(overview.totals.today)),
+        Some(overview) => format!("Tokentracky: {} tokens today", compact_count(overview.totals.today)),
         None => "Tokentracky".into(),
     }
 }
@@ -266,44 +235,6 @@ mod tests {
             rank: None,
             alias: None,
             ..overview()
-        }
-    }
-
-    #[test]
-    fn formats_compact_token_counts_for_the_menu_bar_title() {
-        let cases = [0, 999, 1_234, 12_345, 1_234_567, 2_500_000_000].map(compact_tokens);
-        assert_eq!(cases, ["0", "999", "1.2K", "12.3K", "1.2M", "2.5B"]);
-    }
-
-    /// Each expected value is what `Intl.NumberFormat` gives in Node 22.
-    #[test]
-    fn rounds_and_changes_unit_as_intl_does() {
-        let cases = [
-            (161, "161"),
-            (1_000, "1K"),
-            (1_049, "1K"),
-            (1_050, "1.1K"),
-            (1_250, "1.3K"),
-            (9_949, "9.9K"),
-            (9_950, "10K"),
-            (99_950, "100K"),
-            (999_499, "999.5K"),
-            (999_949, "999.9K"),
-            (999_950, "1M"),
-            (1_049_999, "1M"),
-            (1_200_000, "1.2M"),
-            (20_149_999, "20.1M"),
-            (999_949_999, "999.9M"),
-            (999_950_000, "1B"),
-            (120_000_000_000, "120B"),
-            (999_950_000_000, "1T"),
-            (1_250_000_000_000, "1.3T"),
-            (1_000_000_000_000_000, "1000T"),
-            (9_007_199_254_740_991, "9007.2T"),
-            (10_000_000_000_000_000, "10,000T"),
-        ];
-        for (tokens, expected) in cases {
-            assert_eq!(compact_tokens(tokens), expected, "{tokens}");
         }
     }
 

@@ -8,7 +8,9 @@ use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use std::sync::Arc;
-use tokentracky_core::{MAX_SAFE_INTEGER, ParseResult, TokenCounts, ToolId, UsageEvent, checked_sum, is_safe_count};
+use tokentracky_core::{
+    MAX_SAFE_INTEGER, ParseResult, TokenCounts, ToolId, UsageEvent, checked_sum, is_js_space, is_safe_count,
+};
 
 /// Re-read accounting, OmO mirror identities, the combined parser state, and Codex fork copies told by their parent's
 /// totals.
@@ -327,10 +329,6 @@ fn replace_lone_surrogates(text: &str) -> Option<String> {
     }
     (copied > 0).then(|| repaired + &text[copied..])
 }
-/// White space as JavaScript's `trim` sees it: Unicode white space and U+FEFF, but not U+0085.
-pub(crate) fn is_js_space(c: char) -> bool {
-    c == '\u{feff}' || (c.is_whitespace() && c != '\u{85}')
-}
 /// `basename(path)`.
 pub(crate) fn file_name(path: &Path) -> Cow<'_, str> {
     path.file_name()
@@ -339,41 +337,6 @@ pub(crate) fn file_name(path: &Path) -> Cow<'_, str> {
 /// `basename(dirname(path))`.
 pub(crate) fn parent_name(path: &Path) -> Cow<'_, str> {
     path.parent().map_or(Cow::Borrowed(""), file_name)
-}
-/// The tool's id as JSON writes it; it prefixes event ids.
-pub(crate) fn tool_id(tool: ToolId) -> &'static str {
-    match tool {
-        ToolId::Claude => "claude",
-        ToolId::Codex => "codex",
-        ToolId::Cursor => "cursor",
-        ToolId::Gemini => "gemini",
-        ToolId::Cline => "cline",
-        ToolId::Roo => "roo",
-        ToolId::Kilo => "kilo",
-        ToolId::OpenCode => "opencode",
-        ToolId::EveryCode => "everycode",
-        ToolId::Mimo => "mimo",
-        ToolId::DuMate => "dumate",
-        ToolId::Pi => "pi",
-        ToolId::Omp => "omp",
-        ToolId::Omo => "omo",
-        ToolId::PrimeAgent => "primeagent",
-        ToolId::MiniMax => "minimax",
-        ToolId::CodeBuddy => "codebuddy",
-        ToolId::Kimi => "kimi",
-        ToolId::CommandCode => "commandcode",
-        ToolId::DeepSeek => "deepseek",
-        ToolId::LmStudio => "lmstudio",
-        ToolId::Copilot => "copilot",
-        ToolId::Unsloth => "unsloth",
-        ToolId::ZCode => "zcode",
-        ToolId::Zed => "zed",
-        ToolId::OpenClaw => "openclaw",
-        ToolId::Reasonix => "reasonix",
-        ToolId::Hermes => "hermes",
-        ToolId::Goose => "goose",
-        ToolId::Grok => "grok",
-    }
 }
 /// A result with no events and one diagnostic.
 pub(crate) fn only(code: &str) -> ParseResult {
@@ -419,7 +382,7 @@ impl EventMap {
 
 /// `eventId`: the id of the event a tool records under `key`.
 pub(crate) fn event_id(tool: ToolId, key: &str) -> String {
-    format!("{}:{}", tool_id(tool), digest(key))
+    format!("{}:{}", tool.id(), digest(key))
 }
 /// One event from disjoint counts (reasoning inside output), or `None` when nothing was used.
 pub(crate) fn usage_event(

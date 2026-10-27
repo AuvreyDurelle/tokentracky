@@ -7,7 +7,7 @@
 //! caller that goes away (a closed HTTP connection) does not cut a change or an upload short, as with promises.
 use crate::error::LocalError;
 use crate::http::{HttpClient, HttpRequest, HttpResponse};
-use crate::link::{CloudLink, LinkInput, Scope, SecretStore, broader, cutoff, iso, validate_cloud_link};
+use crate::link::{CloudLink, LinkInput, Scope, SecretStore, broader, cutoff, validate_cloud_link};
 use axum::http::{Method, StatusCode, header};
 use serde::Serialize;
 use serde_json::Value;
@@ -17,7 +17,7 @@ use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use std::time::Duration;
 use time::OffsetDateTime;
 use tokentracky_collector::store::{StoreError, UsageStore};
-use tokentracky_core::{PublicBucket, PublicHour, is_public_model, is_safe_count};
+use tokentracky_core::{PublicBucket, PublicHour, is_public_model, is_safe_count, iso_timestamp};
 use tokio::sync::watch;
 use tokio_util::sync::CancellationToken;
 
@@ -384,7 +384,7 @@ impl CloudSync {
         let mut state = self.state();
         match result {
             Ok(()) => {
-                let synced_at = iso(OffsetDateTime::now_utc());
+                let synced_at = iso_timestamp(OffsetDateTime::now_utc());
                 state.status.last_sync_at = Some(synced_at.clone());
                 state.status.sync_error = None;
                 Ok(Synced { synced_at })

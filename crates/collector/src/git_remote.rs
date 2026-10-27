@@ -1,8 +1,9 @@
 //! The repository name of a local project folder, read only from its git metadata.
-use crate::{is_js_space, resolve};
+use crate::resolve;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
+use tokentracky_core::is_js_space;
 
 /// Files longer than this many UTF-16 units (`text.length`) are not read.
 const MAX_BYTES: usize = 64 * 1024;

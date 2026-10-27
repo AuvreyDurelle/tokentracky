@@ -7,7 +7,6 @@
 use crate::app::{LocalState, encode_uri_component, hosted};
 use crate::body::JsonBody;
 use crate::error::{LocalError, json, object};
-use crate::link::is_js_space;
 use crate::server::{LocalOptions, LocalOverview, OpenError, PricingDownload};
 use crate::sync::{CloudSync, SyncStatus};
 use axum::Router;
@@ -31,7 +30,7 @@ use tokentracky_collector::scheduler::{BoxFuture, RetryAfter, Step, StepError};
 use tokentracky_collector::store::{QueryOptions, SourceConfiguration, StoreError, UsageStore};
 use tokentracky_collector::{LocalCollector, RefreshError, RefreshScheduler, RefreshStatus, ServiceError};
 use tokentracky_core::{
-    MAX_SAFE_INTEGER, MenuOverview, ProjectSummary, SourceState, SourceStatus, ToolId, TopTool, is_utc_day,
+    MAX_SAFE_INTEGER, MenuOverview, ProjectSummary, SourceState, SourceStatus, ToolId, TopTool, is_js_space, is_utc_day,
 };
 use tokio::sync::watch;
 
