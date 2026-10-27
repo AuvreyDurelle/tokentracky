@@ -86,6 +86,26 @@ struct ModelPrice {
     /// Codex's Fast service tier (`*_priority`): empty for most models.
     priority: Schedule,
 }
+impl ModelPrice {
+    /// The highest rate per kind (input, output, cache read, cache write) in any context or service tier, one-hour
+    /// cache writes counted as cache writes.
+    fn ceiling(&self) -> Ceiling {
+        let mut most = [None; 4];
+        for schedule in [&self.standard, &self.priority] {
+            for rates in std::iter::once(&schedule.base).chain(schedule.tiers.iter().map(|tier| &tier.rates)) {
+                for (component, &rate) in rates.iter().enumerate() {
+                    let kind = &mut most[component.min(CACHE_WRITE)];
+                    *kind = (*kind).max(rate);
+                }
+            }
+        }
+        most
+    }
+}
+
+/// Picodollars per token for input, output, cache read and cache write: the most one token of each kind can cost
+/// under a model. `None` where the model has no rate for that kind.
+pub type Ceiling = [Option<u64>; 4];
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PricedCost {
@@ -412,6 +432,24 @@ impl PricingTable {
 
     pub fn has(&self, model: &str, tool: ToolId) -> bool {
         self.lookup(model, tool).is_some()
+    }
+
+    /// The model's [`Ceiling`], or `None` when the table has no price for it. No tier [`Self::price_tier`] charges
+    /// is above it, so a cost priced from this table never exceeds the tokens times their ceilings.
+    pub fn ceiling(&self, model: &str, tool: ToolId) -> Option<Ceiling> {
+        self.lookup(model, tool).map(ModelPrice::ceiling)
+    }
+
+    /// Every id the table answers for without normalizing (its entries and their aliases), with its [`Ceiling`],
+    /// sorted by id.
+    pub fn ceilings(&self) -> Vec<(&str, Ceiling)> {
+        let mut all: Vec<_> = self
+            .index
+            .iter()
+            .map(|(id, &at)| (id.as_str(), self.prices[at].ceiling()))
+            .collect();
+        all.sort_unstable_by_key(|&(id, _)| id);
+        all
     }
 
     /// Integer micro-USD, rounded half up, or `None` when the model or a used rate is unknown.
