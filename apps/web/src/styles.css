@@ -176,7 +176,8 @@ p.panel-body { color: var(--text-2); font-size: 13px; line-height: 1.6; }
 .eyebrow { color: var(--text-3); font-size: 12px; font-weight: 500; }
 
 .pill { display: inline-flex; align-items: center; gap: 7px; height: 28px; padding: 0 10px; border: 1px solid var(--border-2); border-radius: 999px; background: transparent; color: var(--text-2); font-size: 12px; font-weight: 500; white-space: nowrap; }
-button.pill:hover { color: var(--text); border-color: rgba(255, 255, 255, 0.18); }
+button.pill:hover, a.pill:hover { color: var(--text); border-color: rgba(255, 255, 255, 0.18); }
+a.pill { text-decoration: none; }
 .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
 .dot.off { background: var(--text-3); }
 .dot.warn { background: var(--warn); }
@@ -991,6 +992,8 @@ span.profile-like { cursor: default; }
   .brand span:last-child, .pill.me span:last-child { display: none; }
   .pill.me { padding: 0 2px; }
   .pill.jump kbd { display: none; }
+  .pill.github { padding: 0 7px; }
+  .pill.github span { display: none; }
   .page-title { padding-top: 28px; }
   .types-bar { padding: 14px 16px; }
   .join { gap: 56px; }
