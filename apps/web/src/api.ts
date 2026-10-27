@@ -55,6 +55,8 @@ export interface LocalStatus {
   refreshing?: boolean;
   /** The price table applied to costs; it can change after a cycle's scan. */
   pricingVersion?: string;
+  /** When that table was fetched: the bundled snapshot's time until a download replaces it. */
+  pricingUpdatedAt?: string;
   /** Only in the launch that turned on the tools it found (the Rust app's first run): every token counted so far. */
   firstRun?: { tokens: number };
 }

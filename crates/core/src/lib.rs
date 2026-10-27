@@ -727,11 +727,22 @@ pub enum MenuBarPeriod {
     All,
 }
 /// The app's own settings, kept with the local history (`GET`/`PUT /api/local/settings`).
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct LocalSettings {
     pub menu_bar: MenuBarShows,
     pub menu_bar_period: MenuBarPeriod,
+    /// The daily LiteLLM price-table download; off keeps the bundled snapshot.
+    pub price_refresh: bool,
+}
+impl Default for LocalSettings {
+    fn default() -> Self {
+        Self {
+            menu_bar: MenuBarShows::default(),
+            menu_bar_period: MenuBarPeriod::default(),
+            price_refresh: true,
+        }
+    }
 }
 /// Each period's estimated cost in micro-USD at the current prices: zero without usage, null when a model used in it
 /// has no price.

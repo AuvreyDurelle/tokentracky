@@ -319,4 +319,6 @@ export type MenuBarPeriod = "today" | "week" | "month" | "all";
 export type LocalSettings = {
   menuBar: MenuBarShows;
   menuBarPeriod: MenuBarPeriod;
+  /** The daily LiteLLM price-table download; off keeps the bundled snapshot. */
+  priceRefresh: boolean;
 };

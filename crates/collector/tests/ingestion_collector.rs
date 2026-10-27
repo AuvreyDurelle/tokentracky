@@ -8,7 +8,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use support::fixture_text;
 use tokentracky_collector::store::{QueryOptions, SourceConfiguration, UsageStore};
 use tokentracky_collector::{LocalCollector, LocalCollectorOptions, RefreshScheduler};
-use tokentracky_core::ToolId;
+use tokentracky_core::{LocalSettings, ToolId};
 use tokentracky_pricing::{Transport, TransportError};
 
 /// Any download fails; the collector keeps the bundled table.
@@ -134,4 +134,65 @@ fn prices_codex_fast_turns_at_the_priority_rates_of_the_bundled_table() {
         ]
     );
     collector.close().unwrap();
+}
+
+/// The app's daily-download setting: off keeps the bundled snapshot even with a downloaded table cached, on prices
+/// with the cached one, and options that forbid downloads keep the snapshot whatever the setting.
+#[tokio::test]
+async fn the_price_refresh_setting_chooses_between_the_snapshot_and_the_cached_download() {
+    let temporary = tempfile::tempdir().unwrap();
+    let database = temporary.path().join("data").join("usage.sqlite");
+    let cache = temporary.path().join("data").join("pricing").join("litellm.json");
+    fs::create_dir_all(cache.parent().unwrap()).unwrap();
+    // A cached download from the year 2999, later than any bundled snapshot, of a table of 100 synthetic models.
+    let models: Vec<String> = (0..100)
+        .map(|i| format!(r#""pad-{i}":{{"input_cost_per_token":1e-6,"output_cost_per_token":2e-6,"mode":"chat"}}"#))
+        .collect();
+    fs::write(
+        &cache,
+        format!(
+            r#"{{"fetchedAt":"2999-01-01T00:00:00.000Z","models":{{{}}}}}"#,
+            models.join(",")
+        ),
+    )
+    .unwrap();
+    let mut store = UsageStore::open(&database).unwrap();
+    store
+        .set_settings(&LocalSettings {
+            price_refresh: false,
+            ..LocalSettings::default()
+        })
+        .unwrap();
+    store.close().unwrap();
+    let open = |pricing_refresh| {
+        LocalCollector::open(LocalCollectorOptions {
+            database_path: database.clone(),
+            pricing_refresh,
+            claude_config_file: None,
+            transport: Offline,
+        })
+        .unwrap()
+    };
+    let collector = open(true);
+    let bundled = (
+        collector.pricing_table().version().to_owned(),
+        collector.pricing_fetched_at(),
+    );
+    assert_eq!(bundled.0, tokentracky_pricing::bundled_table().version());
+    collector.set_pricing_refresh(true).await;
+    assert_ne!(collector.pricing_table().version(), bundled.0);
+    assert_eq!(collector.pricing_fetched_at(), 32_472_144_000_000);
+    collector.set_pricing_refresh(false).await;
+    assert_eq!(
+        (
+            collector.pricing_table().version().to_owned(),
+            collector.pricing_fetched_at()
+        ),
+        bundled
+    );
+    collector.close().unwrap();
+    let forbidden = open(false);
+    forbidden.set_pricing_refresh(true).await;
+    assert_eq!(forbidden.pricing_table().version(), bundled.0);
+    forbidden.close().unwrap();
 }

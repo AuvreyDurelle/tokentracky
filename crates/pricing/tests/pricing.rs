@@ -910,6 +910,33 @@ mod daily_refresh {
     }
 
     #[test]
+    fn switching_off_goes_back_to_the_bundled_snapshot_and_on_to_the_cached_download() {
+        let directory = tempfile::tempdir().unwrap();
+        let cache_path = cache_path(&directory);
+        let clock = TestClock::at(25);
+        let fake = Fake::table();
+        let mut refresher = PricingRefresher::new(options(&cache_path, true, fake.clone(), &clock));
+        assert_eq!(refresher.fetched_at(), snapshot_fetched_at_ms());
+        assert!(block_on(refresher.refresh()).unwrap());
+        let downloaded = refresher.current().version().to_owned();
+        assert_eq!(refresher.fetched_at(), snapshot_fetched_at_ms() + 25 * 3_600_000);
+        // Off: the bundled snapshot, no download however old it is.
+        assert!(refresher.set_enabled(false));
+        assert!(Arc::ptr_eq(&refresher.current(), &bundled_table()));
+        assert_eq!(refresher.fetched_at(), snapshot_fetched_at_ms());
+        clock.set(100);
+        assert!(!block_on(refresher.refresh()).unwrap());
+        assert_eq!(fake.calls(), 1);
+        assert!(!refresher.set_enabled(false));
+        // On again: the cached download, then the next refresh downloads, as it is over a day old.
+        assert!(refresher.set_enabled(true));
+        assert_eq!(refresher.current().version(), downloaded);
+        assert_eq!(refresher.fetched_at(), snapshot_fetched_at_ms() + 25 * 3_600_000);
+        assert!(!block_on(refresher.refresh()).unwrap());
+        assert_eq!(fake.calls(), 2);
+    }
+
+    #[test]
     fn keeps_the_current_table_when_a_download_fails_is_oversized_or_is_not_a_price_table() {
         let tiny = r#"{"tiny":{"input_cost_per_token":1e-6,"output_cost_per_token":1e-6}}"#;
         let directory = tempfile::tempdir().unwrap();

@@ -19,7 +19,7 @@ use tokentracky_local_api::{
     BoxFuture, CloudLink, LocalApp, LocalOverview, SecretError, SecretStore, UsageStore, serve_tcp,
 };
 
-const STATUS_KEYS: [&str; 11] = [
+const STATUS_KEYS: [&str; 12] = [
     "alias",
     "cloudLinked",
     "collecting",
@@ -27,6 +27,7 @@ const STATUS_KEYS: [&str; 11] = [
     "lastScanAt",
     "lastSyncAt",
     "nextRefreshAt",
+    "pricingUpdatedAt",
     "pricingVersion",
     "refreshing",
     "sources",
@@ -1291,10 +1292,13 @@ async fn settings_save_what_the_menu_bar_shows_and_give_it_the_overview_again() 
 
     let reply = server.get("/api/local/settings").await;
     assert_eq!(reply.status, 200, "{}", reply.text);
-    assert_eq!(reply.json(), json!({"menuBar": "tokens", "menuBarPeriod": "today"}));
+    assert_eq!(
+        reply.json(),
+        json!({"menuBar": "tokens", "menuBarPeriod": "today", "priceRefresh": true})
+    );
     assert_eq!(server.get("/api/local/settings?x=1").await.status, 400);
 
-    let chosen = json!({"menuBar": "cost", "menuBarPeriod": "week"});
+    let chosen = json!({"menuBar": "cost", "menuBarPeriod": "week", "priceRefresh": true});
     let reply = put(chosen.clone()).await;
     assert_eq!((reply.status, reply.json()), (200, chosen.clone()));
     assert_eq!(server.get("/api/local/settings").await.json(), chosen);
@@ -1303,17 +1307,19 @@ async fn settings_save_what_the_menu_bar_shows_and_give_it_the_overview_again() 
         shown.settings,
         LocalSettings {
             menu_bar: MenuBarShows::Cost,
-            menu_bar_period: MenuBarPeriod::Week
+            menu_bar_period: MenuBarPeriod::Week,
+            price_refresh: true,
         }
     );
     // The overview route serves the totals, not the settings.
     assert_eq!(keys(&server.get("/api/local/overview").await.json()), OVERVIEW_KEYS);
 
     for body in [
-        json!({"menuBar": "cost"}),
-        json!({"menuBar": "sparkles", "menuBarPeriod": "week"}),
-        json!({"menuBar": "icon", "menuBarPeriod": "week", "extra": true}),
-        json!(["icon", "week"]),
+        json!({"menuBar": "cost", "menuBarPeriod": "week"}),
+        json!({"menuBar": "sparkles", "menuBarPeriod": "week", "priceRefresh": true}),
+        json!({"menuBar": "icon", "menuBarPeriod": "week", "priceRefresh": "yes"}),
+        json!({"menuBar": "icon", "menuBarPeriod": "week", "priceRefresh": true, "extra": true}),
+        json!(["icon", "week", true]),
     ] {
         let reply = put(body.clone()).await;
         assert_eq!(reply.status, 400, "{body}");

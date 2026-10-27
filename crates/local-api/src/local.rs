@@ -388,6 +388,8 @@ struct Status {
     #[serde(flatten)]
     refresh: RefreshStatus,
     pricing_version: String,
+    /// When the price table in use was fetched: the bundled snapshot's time until a download replaces it.
+    pricing_updated_at: String,
     /// Only in the launch that turned tools on: TypeScript has no first run, so its status keeps the shape it shares.
     #[serde(skip_serializing_if = "Option::is_none")]
     first_run: Option<FirstRun>,
@@ -472,6 +474,9 @@ async fn status(state: &LocalState) -> Result<Status, LocalError> {
         sync,
         refresh: local.scheduler.status(),
         pricing_version: local.collector.pricing_table().version().to_owned(),
+        pricing_updated_at: jiff::Timestamp::from_millisecond(local.collector.pricing_fetched_at())
+            .map(|at| format!("{at:.3}"))
+            .unwrap_or_default(),
         first_run,
     })
 }
@@ -561,7 +566,7 @@ async fn get_settings(State(state): State<LocalState>, uri: Uri) -> Result<Respo
     Ok(json(StatusCode::OK, &settings))
 }
 
-/// `PUT /api/local/settings`: exactly `{menuBar, menuBarPeriod}`. Answers with the settings saved, once the menu bar
+/// `PUT /api/local/settings`: exactly `{menuBar, menuBarPeriod, priceRefresh}`. Answers with the settings saved, once the menu bar
 /// has its overview again under them.
 async fn put_settings(State(state): State<LocalState>, JsonBody(body): JsonBody) -> Result<Response, LocalError> {
     // An object only: serde would also read the two values as an array.
@@ -574,6 +579,8 @@ async fn put_settings(State(state): State<LocalState>, JsonBody(body): JsonBody)
     blocking(move || lock(&store).set_settings(&settings))
         .await?
         .map_err(|_| LocalError::internal())?;
+    // A change re-prices every event before the menu bar's totals are read again.
+    local.collector.set_pricing_refresh(settings.price_refresh).await;
     if let Some(callback) = &local.on_overview {
         let overview = local.overview(&state.sync).await?;
         *lock(&local.cached_overview) = Some((OffsetDateTime::now_utc().date(), overview.clone()));

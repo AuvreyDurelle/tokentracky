@@ -111,7 +111,7 @@ export function personalFixtures(now = new Date()) {
       source('cline', 'Cline', true, ['~/.cline/data/sessions'], 1_408), source('roo', 'Roo Code', false, ['~/Library/Application Support/Code/User/globalStorage/rooveterinaryinc.roo-cline'], 0),
       source('kilo', 'Kilo Code', false, ['~/.local/share/kilo/kilo.db'], 0), source('opencode', 'OpenCode', true, ['~/.local/share/opencode/opencode.db'], 2_216),
     ],
-    collecting: true, lastScanAt: iso(2), cloudLinked: true, syncError: null, lastSyncAt: iso(2), alias: 'example-builder', lastRefreshAt: iso(2), nextRefreshAt: iso(-58), refreshing: false, pricingVersion: 'litellm-2026-10-25',
+    collecting: true, lastScanAt: iso(2), cloudLinked: true, syncError: null, lastSyncAt: iso(2), alias: 'example-builder', lastRefreshAt: iso(2), nextRefreshAt: iso(-58), refreshing: false, pricingVersion: 'litellm-2026-10-25', pricingUpdatedAt: iso(228),
   };
   const detected = status.sources.filter((item) => item.enabled).map((item) => ({ id: item.id, name: item.name, paths: item.paths }));
   const shell: ShellState = { launchAtLogin: true, update: { state: 'idle', version: null }, version: '1.0.0' };

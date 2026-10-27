@@ -143,7 +143,11 @@ export function SettingsPage({ api, health, status, refresh, shell, onShell, det
       {shell && settings && <MenuBar settings={settings} overview={overview} busy={busy} change={(next) => void act('menubar', async () => onSettings(await api.setLocalSettings(next)))} />}
       <Section id="pricing" title="Pricing & data" note="Costs are estimates from a public price table. Models without a known price show as unknown, never $0.">
         <div className="st-group">
-          {status?.pricingVersion && <Row label="Price table" desc="LiteLLM’s public table of API list prices, applied to every model it lists." meta={`Version ${status.pricingVersion.replace(/^litellm:/, '')}`} />}
+          {settings && <Row label="Refresh price table daily" desc="Downloads LiteLLM’s public price table from GitHub once a day. Turn off to keep the snapshot that came with the app and make no downloads."
+            meta={status?.pricingUpdatedAt ? `Updated ${timeAgo(status.pricingUpdatedAt)}${status.pricingVersion ? ` · version ${status.pricingVersion.replace(/^litellm:/, '')}` : ''}` : undefined}>
+            <Toggle label="Refresh price table daily" on={settings.priceRefresh} disabled={busy === 'pricing'} onChange={() => void act('pricing', async () => { onSettings(await api.setLocalSettings({ ...settings, priceRefresh: !settings.priceRefresh })); await refresh(); })} />
+          </Row>}
+          {!settings && status?.pricingVersion && <Row label="Price table" desc="LiteLLM’s public table of API list prices, applied to every model it lists." meta={`Version ${status.pricingVersion.replace(/^litellm:/, '')}`} />}
           <Row label="Export data" desc="Every usage record with its tool, model, project and token counts, for all your history. The file is saved on this Mac.">
             <button type="button" className="m-btn st-sm" disabled={busy === 'export'} onClick={() => void act('export', () => downloadCsv(api, { from: '2000-01-01', to: utcToday() }, 'all', `tokentracky-usage-${utcToday()}.csv`))}>{ICONS.download}Export CSV</button>
           </Row>

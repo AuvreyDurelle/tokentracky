@@ -309,6 +309,7 @@ mod tests {
                 settings: LocalSettings {
                     menu_bar,
                     menu_bar_period,
+                    ..LocalSettings::default()
                 },
                 ..overview()
             }))

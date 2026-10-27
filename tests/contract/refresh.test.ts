@@ -6,7 +6,7 @@ import {startServer, type Server} from './runner.ts';
 import {configure, expectError, FIXTURE_DAY, getJson, logRoots, refresh, writeLog} from './support.ts';
 
 const HOUR = 3_600_000;
-const STATUS_KEYS = ['alias', 'cloudLinked', 'collecting', 'lastRefreshAt', 'lastScanAt', 'lastSyncAt', 'nextRefreshAt', 'pricingVersion', 'refreshing', 'sources', 'syncError'];
+const STATUS_KEYS = ['alias', 'cloudLinked', 'collecting', 'lastRefreshAt', 'lastScanAt', 'lastSyncAt', 'nextRefreshAt', 'pricingUpdatedAt', 'pricingVersion', 'refreshing', 'sources', 'syncError'];
 const DAY = `from=${FIXTURE_DAY}&to=${FIXTURE_DAY}`;
 let server: Server;
 let roots: ReturnType<typeof logRoots>;

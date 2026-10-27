@@ -8,7 +8,7 @@ const routes: Array<{method: string; path: string; static?: boolean}> = inventor
 const SAMPLES: Record<string, {path?: string; json?: unknown}> = {
   'PUT /api/local/sources/:id': {path: '/api/local/sources/claude', json: {enabled: false, paths: []}},
   'PUT /api/local/collection': {json: {paused: false}},
-  'PUT /api/local/settings': {json: {menuBar: 'tokens', menuBarPeriod: 'today'}},
+  'PUT /api/local/settings': {json: {menuBar: 'tokens', menuBarPeriod: 'today', priceRefresh: true}},
   // A well-formed link to a non-loopback http origin is refused before any network access.
   'PUT /api/local/cloud': {json: {url: 'http://example.com', deviceToken: 'x'.repeat(32), historyStart: null, shareTools: false, shareCost: false}},
   'GET /api/profiles/:alias': {path: '/api/profiles/someone'},

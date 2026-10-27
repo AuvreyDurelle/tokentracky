@@ -133,6 +133,28 @@ impl<T: Transport> PricingRefresher<T> {
         self.table.clone()
     }
 
+    /// When the active table was fetched, in milliseconds since the Unix epoch: the bundled snapshot's until a
+    /// download or the cache replaces it.
+    pub fn fetched_at(&self) -> i64 {
+        self.fetched_at
+    }
+
+    /// Turns the daily download on or off, returning true when the active table changed. Off goes back to the
+    /// bundled snapshot, as a refresher opened turned off starts; on loads the cache, as one opened turned on does.
+    pub fn set_enabled(&mut self, enabled: bool) -> bool {
+        if enabled == self.options.enabled {
+            return false;
+        }
+        self.options.enabled = enabled;
+        let (before, bundled) = (self.table.clone(), bundled());
+        self.table = bundled.table.clone();
+        self.fetched_at = bundled.fetched_at;
+        if enabled {
+            self.load_cache();
+        }
+        self.table.version() != before.version()
+    }
+
     fn now(&self) -> OffsetDateTime {
         self.options
             .now

@@ -39,13 +39,16 @@ describe('GET /api/local/status', () => {
     expect(reply.status).toBe(200);
     expect(reply.headers['content-type']).toMatch(/^application\/json/);
     const body = reply.json();
-    expect(Object.keys(body).sort()).toEqual(['alias', 'cloudLinked', 'collecting', 'lastRefreshAt', 'lastScanAt', 'lastSyncAt', 'nextRefreshAt', 'pricingVersion', 'refreshing', 'sources', 'syncError']);
+    expect(Object.keys(body).sort()).toEqual(['alias', 'cloudLinked', 'collecting', 'lastRefreshAt', 'lastScanAt', 'lastSyncAt', 'nextRefreshAt', 'pricingUpdatedAt', 'pricingVersion', 'refreshing', 'sources', 'syncError']);
     const suggested = server.home ? defaults(server.home) : null;
     expect(body).toEqual({
       sources: ALL.map(([id, name]) => LATER.some(([other]) => other === id) ? later(id, name) : source(id, name, suggested && suggested[id]!)),
       collecting: false, lastScanAt: null, cloudLinked: false, lastSyncAt: null, syncError: null, alias: null,
       lastRefreshAt: null, nextRefreshAt: expect.any(String), refreshing: false, pricingVersion: expect.stringMatching(/^litellm:[0-9a-f]{12}$/),
+      pricingUpdatedAt: expect.any(String),
     });
+    // The bundled snapshot's fetch time, as no download runs here.
+    expect(new Date(body.pricingUpdatedAt).toISOString()).toBe(body.pricingUpdatedAt);
     const next = Date.parse(body.nextRefreshAt) - Date.now();
     expect(new Date(body.nextRefreshAt).toISOString()).toBe(body.nextRefreshAt);
     expect(next).toBeGreaterThan(3_500_000);

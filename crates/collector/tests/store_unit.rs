@@ -304,16 +304,15 @@ mod source_statuses {
         let path = directory.path().join("usage.sqlite");
         let mut store = UsageStore::open(&path).unwrap();
         assert_eq!(store.settings().unwrap(), LocalSettings::default());
+        let defaults = LocalSettings::default();
         assert_eq!(
-            (
-                LocalSettings::default().menu_bar,
-                LocalSettings::default().menu_bar_period
-            ),
-            (MenuBarShows::Tokens, MenuBarPeriod::Today)
+            (defaults.menu_bar, defaults.menu_bar_period, defaults.price_refresh),
+            (MenuBarShows::Tokens, MenuBarPeriod::Today, true)
         );
         let chosen = LocalSettings {
             menu_bar: MenuBarShows::Cost,
             menu_bar_period: MenuBarPeriod::Week,
+            price_refresh: false,
         };
         store.set_settings(&chosen).unwrap();
         assert_eq!(store.settings().unwrap(), chosen);

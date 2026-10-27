@@ -7,7 +7,7 @@ import {configure, expectError, getJson, refresh} from './support.ts';
 const TOOLS = ['claude', 'cline', 'codex', 'cursor', 'gemini', 'kilo', 'opencode', 'roo'];
 /** Every tool id in the status, including those only some implementations read. */
 const ALL = [...TOOLS, 'codebuddy', 'commandcode', 'copilot', 'deepseek', 'dumate', 'everycode', 'goose', 'grok', 'hermes', 'kimi', 'lmstudio', 'mimo', 'minimax', 'omo', 'omp', 'openclaw', 'pi', 'primeagent', 'reasonix', 'unsloth', 'zcode', 'zed'].sort();
-const STATUS_KEYS = ['alias', 'cloudLinked', 'collecting', 'lastRefreshAt', 'lastScanAt', 'lastSyncAt', 'nextRefreshAt', 'pricingVersion', 'refreshing', 'sources', 'syncError'];
+const STATUS_KEYS = ['alias', 'cloudLinked', 'collecting', 'lastRefreshAt', 'lastScanAt', 'lastSyncAt', 'nextRefreshAt', 'pricingUpdatedAt', 'pricingVersion', 'refreshing', 'sources', 'syncError'];
 let server: Server;
 let folders: string;
 const source = (reply: Reply | {sources: Array<{id: string}>}, id: string) => ('sources' in reply ? reply : reply.json()).sources.find((item: {id: string}) => item.id === id);
