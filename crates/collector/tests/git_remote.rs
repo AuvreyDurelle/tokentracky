@@ -1,4 +1,4 @@
-//! `apps/server/src/git-remote.test.ts`, case for case.
+//! The repository name of a project folder, from its git metadata.
 use std::fs;
 use tokentracky_collector::git_remote::{project_repository, remote_url, repository_from_url};
 

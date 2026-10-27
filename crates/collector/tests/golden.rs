@@ -207,9 +207,9 @@ fn close(store: Store, service: IngestionService) {
     store.into_inner().unwrap().close().unwrap();
 }
 
-/// Plays a case in a temporary folder (`play` in runner.ts). Per step: the ops, then the files of the step's `root/`
-/// (a file that exists is rewritten in place, `X.db.sql` runs against its database), then, in the first step, the
-/// case's `sources` are granted, then one scan, then the outputs are collected.
+/// Plays a case in a temporary folder. Per step: the ops, then the files of the step's `root/` (a file that exists is
+/// rewritten in place, `X.db.sql` runs against its database), then, in the first step, the case's `sources` are
+/// granted, then one scan, then the outputs are collected.
 fn play(case: &Case) -> Played {
     let temporary = tempfile::Builder::new()
         .prefix("tokentracky-fixture-")

@@ -1,6 +1,5 @@
-//! The local app and its TCP transport (`startLocalServer` in `apps/server/src/app.ts`, and the local mode of
-//! `main.ts`): the collector, cloud sync and the refresh cycle behind one router, which the Mac app calls
-//! in-process and the CLI serves on loopback behind the session.
+//! The local app and its TCP transport: the collector, cloud sync and the refresh cycle behind one router, which the
+//! Mac app calls in-process and the CLI serves on loopback behind the session.
 use crate::app::{LocalState, base_router};
 use crate::body::REQUEST_TIMEOUT;
 use crate::error::LocalError;
@@ -33,7 +32,7 @@ use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
 use tower::Layer;
 
-/// What `startLocalServer` is given, less the port, which belongs to [`serve_tcp`].
+/// What [`LocalApp::open`] is given. The port is not among them: it belongs to [`serve_tcp`].
 pub struct LocalOptions {
     pub database_path: PathBuf,
     /// The web build: `index.html` and `assets/`.
@@ -128,7 +127,7 @@ impl Transport for PricingDownload {
     }
 }
 
-/// The local API with its collector, cloud sync and refresh cycle: `startLocalServer` without the listener.
+/// The local API with its collector, cloud sync and refresh cycle, without the listener.
 /// [`Self::router`] is the in-process transport as it is; [`serve_tcp`] puts it on loopback behind a session.
 pub struct LocalApp {
     state: LocalState,
@@ -223,7 +222,7 @@ impl LocalApp {
     }
 }
 
-/// The local app on loopback TCP behind its session (what `startLocalServer` returns).
+/// The local app on loopback TCP behind its session.
 pub struct LocalServer {
     app: LocalApp,
     session: LocalSession,
@@ -309,7 +308,7 @@ async fn accept(listener: TcpListener, router: Router, shutdown: CancellationTok
     graceful.shutdown().await;
 }
 
-/// `main.ts` in local mode, up to the launch link: the app from `TOKENTRACKY_DATABASE_PATH` (default
+/// The local server up to the launch link, from the environment: the app from `TOKENTRACKY_DATABASE_PATH` (default
 /// `.runtime/usage.sqlite`), `TOKENTRACKY_WEB_ROOT` (default `apps/web/dist`), `TOKENTRACKY_CLOUD_URL`,
 /// `TOKENTRACKY_REFRESH_INTERVAL_MS` and `TOKENTRACKY_PRICING_REFRESH`, with the link kept in `secrets`, served on
 /// `PORT` (default 0) and started. `TOKENTRACKY_MODE` may only be `local`. Detection reads `HOME` and the tools' own

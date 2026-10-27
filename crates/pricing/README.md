@@ -25,7 +25,7 @@ Download `model_prices_and_context_window.json` from a full commit of `BerriAI/l
 cargo run -p tokentracky-pricing --example update_snapshot -- <full-upstream-commit-sha> <downloaded-json-file>
 ```
 
-The writer validates and trims the downloaded table with the production Rust implementation, preserves JavaScript-compatible JSON serialization, writes `data/litellm-prices.json` and prints both its current version and its LiteLLM-only snapshot version. Use the latter for the frozen TypeScript comparison constant. Update the exact-price expectations and the frozen version constant in `tests/pricing.rs` when the bundled prices change, and remove any `data/curated-prices.json` entry the new snapshot now carries (a test names them). The upstream license stays in `data/LICENSE-litellm.txt`.
+The writer validates and trims the downloaded table with the production Rust implementation, preserves JavaScript-compatible JSON serialization, writes `data/litellm-prices.json` and prints both its current version and its LiteLLM-only snapshot version. Update the exact-price expectations and the frozen version constant in `tests/pricing.rs` (the LiteLLM-only snapshot version) when the bundled prices change, and remove any `data/curated-prices.json` entry the new snapshot now carries (a test names them). The upstream license stays in `data/LICENSE-litellm.txt`.
 
 ## Version rule
 

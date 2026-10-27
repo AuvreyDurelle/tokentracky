@@ -301,7 +301,7 @@ mod tests {
         assert_eq!(summary_lines(None, time), ["Starting…"]);
     }
 
-    /// `apps/desktop/src/tray.test.ts` and `startup-pause.test.ts`, for the menu's content.
+    /// The menu's content.
     #[test]
     fn shows_today_in_the_title_and_the_summary_and_actions_in_the_dropdown() {
         let codex = LocalOverview {

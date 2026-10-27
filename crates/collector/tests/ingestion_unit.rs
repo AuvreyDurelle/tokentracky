@@ -1,5 +1,5 @@
-//! What `packages/collector/test/ingestion.test.ts` keeps beside the golden fixtures: permissions and symlinks, the
-//! database lock, crash recovery, receipts and the metadata boundary. Unix only, as the service is.
+//! What sits beside the golden fixtures: permissions and symlinks, the database lock, crash recovery, receipts and the
+//! metadata boundary. Unix only, as the service is.
 mod support;
 
 use serde_json::json;

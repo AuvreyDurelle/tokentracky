@@ -1,5 +1,5 @@
-//! The local collector's wiring (`apps/server/src/local-collector.ts`): store, service, the price table applied to the
-//! store, the cycle steps a scheduler runs, and closing.
+//! The local collector's wiring: store, service, the price table applied to the store, the cycle steps a scheduler
+//! runs, and closing.
 mod support;
 
 use std::fs;

@@ -1,5 +1,5 @@
 //! The local app behind the menu and the window: [`LocalApp`] (the collector, cloud sync, the refresh cycle and the
-//! whole local API router, as `startLocalServer` wires them for the Electron collector process), held until quit.
+//! whole local API router), held until quit.
 use axum::Router;
 use std::sync::Arc;
 use tokentracky_local_api::{LocalApp, LocalError, LocalOptions, LocalOverview, OpenError};

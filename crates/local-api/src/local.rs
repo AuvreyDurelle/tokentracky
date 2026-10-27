@@ -1,6 +1,5 @@
-//! The collector-backed routes (`apps/server/src/local-routes.ts`, and `PUT /api/local/collection`, the pause switch
-//! and the weekly rank of `startLocalServer` in `app.ts`): status, detection, source authorisation, refresh, pause,
-//! the usage queries and the CSV export, the Rust-only local days (F3): a `tz` on the usage queries,
+//! The collector-backed routes: status, detection, source authorisation, refresh, pause (`PUT /api/local/collection`),
+//! the weekly rank, the usage queries and the CSV export, the Rust-only local days (F3): a `tz` on the usage queries,
 //! the Rust-only usage limits (F6): `GET /api/local/limits`, and, for the Mac app's pages, the
 //! cached overview and the Rust-only last 24 hours: `since`/`until` on the usage queries and `GET /api/local/hours`.
 //! Collector and store calls are synchronous, so they run on the blocking pool, and only there is the store held.

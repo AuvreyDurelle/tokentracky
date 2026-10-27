@@ -162,9 +162,8 @@ fn mode(path: &Path) -> u32 {
 mod bundled_snapshot {
     use super::*;
 
-    /// The version `bundledTable().version` gives in TypeScript for the same snapshot, computed once at the port
-    /// baseline with
-    /// `npx tsx -e "import {bundledTable} from './packages/pricing/src/index.ts'; console.log(bundledTable().version)"`.
+    /// The version of the snapshot's LiteLLM part alone, without the hand-maintained list: `litellm:` and the first
+    /// 12 hex digits of the SHA-256 of the JSON of its `models`, as the test below computes it.
     const TYPESCRIPT_VERSION: &str = "litellm:ebe634462118";
 
     #[test]
@@ -759,7 +758,7 @@ mod pricing_table {
         assert_ne!(PricingTable::new(&changed).unwrap().version(), table.version());
     }
 
-    // The cases below are outside pricing.test.ts: the expected values come from running the TypeScript package.
+    // The expected values of the cases below were computed with the earlier TypeScript pricing package.
 
     #[test]
     fn matches_the_alias_rules_of_the_typescript_candidates() {

@@ -22,8 +22,8 @@
 //! server.close().await?;
 //! ```
 //!
-//! [`serve_from_env`] is `apps/server/src/main.ts` in local mode up to that `println!`, from the TypeScript
-//! variables; the `contract-server` binary prints the launch link and closes on a signal, for `CONTRACT_SERVER_CMD`.
+//! [`serve_from_env`] does the same up to that `println!`, from environment variables; the `contract-server` binary
+//! prints the launch link and closes on a signal, for `CONTRACT_SERVER_CMD`.
 //!
 //! # Shared state
 //!
@@ -45,10 +45,10 @@
 //! request timeout is Node's `requestTimeout`, a limit on receiving the request, not on handling it: [`JsonBody`]
 //! enforces it for bodies and [`serve_tcp`] for headers, with hyper's `header_read_timeout`.
 //!
-//! # The known TypeScript quirks (`tests/contract/README.md`)
+//! # Deliberate differences from the earlier TypeScript implementation (`tests/contract/README.md`)
 //!
 //! 1. `PUT /api/local/cloud` when the linked service cannot be reached or answers unreadably: 502 `SYNC_FAILED`
-//!    ("Hosted publication settings are unavailable."), not TypeScript's 500 `INTERNAL_ERROR`.
+//!    ("Hosted publication settings are unavailable."), not the earlier 500 `INTERNAL_ERROR`.
 //! 2. `GET /api/local/export` with an invalid query (collector routes): answer the JSON error only; set the CSV
 //!    `Content-Type` and `Content-Disposition` on success only.
 //! 3. `POST /api/local/sync` with nothing linked: still 409 `CLOUD_NOT_LINKED`, but it records no `syncError`.

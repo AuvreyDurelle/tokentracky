@@ -417,8 +417,6 @@ impl PricingTable {
         self.price_tier(tokens, model, tool, false)
     }
 
-    /// [`Self::price`], on Codex's Fast service tier when `priority` is set. Each used component then takes its
-    /// `_priority` rate where the model publishes one (its `_above_<n>k_tokens_priority` rate in long context, else
     /// Price using the recorded service tier; Fast and priority share the published priority schedule.
     pub fn price_on_tier(
         &self,
@@ -430,6 +428,8 @@ impl PricingTable {
         self.price_tier(tokens, model, tool, matches!(service_tier, Some("priority" | "fast")))
     }
 
+    /// [`Self::price`], on Codex's Fast service tier when `priority` is set. Each used component then takes its
+    /// `_priority` rate where the model publishes one (its `_above_<n>k_tokens_priority` rate in long context, else
     /// its flat `_priority` rate), and its Standard rate otherwise. Cache savings use the same rates.
     pub fn price_tier(&self, tokens: &TokenCounts, model: &str, tool: ToolId, priority: bool) -> Option<PricedCost> {
         let one_hour = tokens.cache_write_1h.unwrap_or(0).min(tokens.cache_write);

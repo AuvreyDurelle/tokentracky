@@ -1,5 +1,5 @@
-//! The command line: `parse` in `apps/cli/src/commands.ts`, with clap doing the option splitting. Every option is
-//! accepted with every command, as there; what clap reports is put back into the TypeScript messages.
+//! The command line, with clap doing the option splitting. Every option is accepted with every command; what clap
+//! reports is put back into the CLI's own messages.
 use crate::CliError;
 use clap::error::{ContextKind, ContextValue, ErrorKind};
 use clap::{CommandFactory, FromArgMatches, Parser};

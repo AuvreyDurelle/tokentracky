@@ -1,4 +1,5 @@
-//! Section 3 regressions. These intentionally supersede frozen TypeScript accounting assumptions.
+//! Section 3 regressions. These intentionally supersede the accounting assumptions the `expected/` goldens were
+//! recorded with.
 mod support;
 
 use rusqlite::{Connection, params};

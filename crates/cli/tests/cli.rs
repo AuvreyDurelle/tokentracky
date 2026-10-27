@@ -1,5 +1,5 @@
-//! `apps/cli/src/cli.test.ts`, case for case, against the library's `run` and a data folder under a temporary
-//! directory. The macOS keychain store has its own test in `crates/secrets`.
+//! The CLI's commands, against the library's `run` and a data folder under a temporary directory. The credential file
+//! store has its own test in `crates/secrets`.
 use axum::extract::State;
 use axum::http::Method;
 use axum::routing::{get, post};
@@ -147,8 +147,8 @@ impl Fixture {
     }
 }
 
-/// `claude()` of `packages/collector/test/fixtures.ts`: one assistant turn of 161 tokens (11 in, 20 out, 100 cache
-/// read, 30 cache write) carrying a private prompt, project and session.
+/// One assistant turn of 161 tokens (11 in, 20 out, 100 cache read, 30 cache write) carrying a private prompt, project
+/// and session.
 fn claude() -> Value {
     json!({"type": "assistant", "sessionId": "claude-session", "cwd": "/synthetic/private-project",
         "timestamp": "2026-10-20T12:00:00.000Z", "requestId": "req-msg-1",
@@ -356,8 +356,8 @@ async fn doctor_fails_when_the_data_folder_cannot_be_written() {
     );
 }
 
-/// The hosted service of the login test (the Fastify stub in `cli.test.ts`): device authorisation that is pending
-/// once and then approved, the publication policy, and an ingest that records every body.
+/// The hosted service of the login test: device authorisation that is pending once and then approved, the publication
+/// policy, and an ingest that records every body.
 #[derive(Clone)]
 struct Hosted {
     polls: Arc<AtomicUsize>,

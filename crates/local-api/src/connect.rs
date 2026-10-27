@@ -1,4 +1,4 @@
-//! Browser approval (`apps/server/src/connect.ts`). The member signs in and consents on the hosted site; this process
+//! Browser approval. The member signs in and consents on the hosted site; this process
 //! holds only a poll secret until approval, then saves the device credential with exactly the approved scope.
 use crate::error::LocalError;
 use crate::http::{HttpClient, HttpRequest, HttpResponse};

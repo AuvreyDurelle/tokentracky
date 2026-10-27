@@ -1,10 +1,10 @@
-//! Cloud sync (`CloudSync` in `cloud-link.ts`): link changes, the hosted consent policy, and uploads of the frozen
-//! pending batch with its receipts.
+//! Cloud sync (`CloudSync`): link changes, the hosted consent policy, and uploads of the frozen pending batch with its
+//! receipts.
 //!
-//! The TypeScript promise chain becomes a fair async mutex: link changes (`set_link`, `unlink`, `stop`) run one at a
-//! time in call order, each first cancelling and awaiting the sync in flight. While any change is queued or running,
-//! `sync` answers 409 `LINK_CHANGING`. Concurrent `sync` calls share one upload. Work runs on spawned tasks, so a
-//! caller that goes away (a closed HTTP connection) does not cut a change or an upload short, as with promises.
+//! Link changes (`set_link`, `unlink`, `stop`) run one at a time in call order behind a fair async mutex, each first
+//! cancelling and awaiting the sync in flight. While any change is queued or running, `sync` answers 409
+//! `LINK_CHANGING`. Concurrent `sync` calls share one upload. Work runs on spawned tasks, so a caller that goes away (a
+//! closed HTTP connection) does not cut a change or an upload short.
 use crate::error::LocalError;
 use crate::http::{HttpClient, HttpRequest, HttpResponse};
 use crate::link::{CloudLink, LinkInput, Scope, SecretStore, broader, cutoff, validate_cloud_link};

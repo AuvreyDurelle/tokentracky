@@ -1,7 +1,7 @@
-//! What files cannot express about the store, ported case for case from `packages/collector/test/store.test.ts`:
-//! receipts, source rows, the metadata boundary, rejected options, read-time pricing and read-only readers, plus
-//! the commit and projection invariants the golden cases rely on. Input a Rust type cannot hold (a number where
-//! text belongs, `undefined`) has no test here; the parser state is JSON, so its malformed shapes are all kept.
+//! What files cannot express about the store: receipts, source rows, the metadata boundary, rejected options, read-time
+//! pricing and read-only readers, plus the commit and projection invariants the golden cases rely on. Input a Rust type
+//! cannot hold (a number where text belongs, `undefined`) has no test here; the parser state is JSON, so its malformed
+//! shapes are all kept.
 use rusqlite::Connection;
 use serde_json::{Value, json};
 use std::path::Path;
@@ -1086,7 +1086,7 @@ mod queries {
             );
         }
     }
-    // `ingestion.test.ts` at 2e2a1d3: two events this week, one undated and one from January.
+    // Two events this week, one undated and one from January.
     #[test]
     fn shifts_a_rolling_window_back_by_offset_days() {
         let mut store = store();

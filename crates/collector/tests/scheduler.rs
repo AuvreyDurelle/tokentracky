@@ -1,4 +1,4 @@
-//! `apps/server/src/refresh.test.ts`, case for case, on tokio's paused clock in place of vitest's fake timers.
+//! The refresh scheduler, on tokio's paused clock.
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;

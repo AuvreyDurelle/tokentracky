@@ -75,7 +75,8 @@ impl CloudLink {
 
 pub type SecretError = Box<dyn Error + Send + Sync>;
 
-/// Where the link (and so the device credential) is kept: the Keychain in the app and CLI, memory in tests.
+/// Where the link (and so the device credential) is kept: a private file (`cloud-link.json`) in the app and CLI,
+/// memory in tests.
 pub trait SecretStore: Send + Sync {
     fn get(&self) -> BoxFuture<'_, Result<Option<CloudLink>, SecretError>>;
     fn set(&self, link: CloudLink) -> BoxFuture<'_, Result<(), SecretError>>;
