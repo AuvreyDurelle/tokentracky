@@ -1,4 +1,5 @@
 import {type FastifyInstance} from 'fastify';
+import {ALIAS_PATTERN} from '@tokentracky/core';
 import {createHttpServer} from './http-server.ts';
 import staticFiles from '@fastify/static';
 import {Pool} from 'pg';
@@ -32,7 +33,6 @@ export function parseAuthProviders(value: string | undefined): AuthProvider[] {
 }
 /** Pages the web app renders at their own addresses; static hosting (vercel.json) must rewrite the same set. */
 export const SPA_PAGES = ['/privacy','/terms','/support','/leaderboard','/you','/join'] as const;
-export const PROFILE_ALIAS = /^[a-zA-Z0-9][a-zA-Z0-9_-]{2,29}$/;
 export const contentSecurityPolicy = (authOrigin?: string) => `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'${authOrigin ? ' '+authOrigin : ''}; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'`;
 async function baseApp(webRoot: string, authOrigin?: string, trustedProxies?: string[], rateLimitStore?: FastifyRateLimitStoreCtor, gateway?: GatewayAuthConfig): Promise<FastifyInstance> {
   // No request logging: headers, query strings and local paths may contain secrets.
@@ -56,7 +56,7 @@ async function baseApp(webRoot: string, authOrigin?: string, trustedProxies?: st
   // Legal and support pages are rendered by the web app at their own addresses.
   for (const page of SPA_PAGES) app.get(page,(_request,reply)=>reply.sendFile('index.html'));
   // Public profiles have shareable addresses; the web app shows its own not-found state for unknown names.
-  app.get<{Params:{alias:string}}>('/u/:alias',(request,reply)=>PROFILE_ALIAS.test(request.params.alias) ? reply.sendFile('index.html') : reply.callNotFound());
+  app.get<{Params:{alias:string}}>('/u/:alias',(request,reply)=>ALIAS_PATTERN.test(request.params.alias) ? reply.sendFile('index.html') : reply.callNotFound());
   app.setNotFoundHandler((_request,reply)=>reply.code(404).send({error:{code:'NOT_FOUND',message:'This endpoint does not exist.'}}));
   return app;
 }

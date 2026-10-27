@@ -1,6 +1,7 @@
 import {describe,expect,it} from 'vitest';
 import {access,readFile} from 'node:fs/promises';
-import {SPA_PAGES,PROFILE_ALIAS,contentSecurityPolicy} from './app.ts';
+import {ALIAS_PATTERN} from '@tokentracky/core';
+import {SPA_PAGES,contentSecurityPolicy} from './app.ts';
 
 interface VercelConfig {rewrites:Array<{source:string;destination:string}>;headers:Array<{source:string;headers:Array<{key:string;value:string}>}>}
 const config=JSON.parse(await readFile(new URL('../../../vercel.json',import.meta.url),'utf8')) as VercelConfig;
@@ -9,7 +10,7 @@ const destination=(source:string)=>config.rewrites.find(rewrite=>rewrite.source=
 describe('static hosting config',()=>{
   it('rewrites the same app pages the server serves',()=>{
     expect(destination(`/(${SPA_PAGES.map(page=>page.slice(1)).join('|')})`)).toBe('/index.html');
-    expect(destination(`/u/:alias(${PROFILE_ALIAS.source.slice(1,-1)})`)).toBe('/index.html');
+    expect(destination(`/u/:alias(${ALIAS_PATTERN.source.slice(1,-1)})`)).toBe('/index.html');
   });
   it('sends API, badge and card requests through the signing gateway function',async()=>{
     // Outside Next.js, Vercel routes [...path] files as one segment, so the gateway is a plain file and reads the visitor's path.

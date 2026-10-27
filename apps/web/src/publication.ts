@@ -1,11 +1,10 @@
-import { rankingWindow, type Publication } from '@tokentracky/core';
+import { ALIAS_PATTERN, rankingWindow, type Publication } from '@tokentracky/core';
 
 export interface PublicationDraft {
   alias: string;
 }
 
-const ALIAS = /^[a-zA-Z0-9][a-zA-Z0-9_-]{2,29}$/;
-export function validAlias(alias: string): boolean { return ALIAS.test(alias); }
+export function validAlias(alias: string): boolean { return ALIAS_PATTERN.test(alias); }
 
 /** A sign-in handle made into a leaderboard name, or null when nothing usable is left. */
 export function aliasFromHandle(handle: unknown): string | null {

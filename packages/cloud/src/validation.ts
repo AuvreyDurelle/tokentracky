@@ -1,4 +1,4 @@
-import { isPublicModel, isSafeCount, isUtcDay, TOOL_IDS, type PublicBucket, type PublicHour, type TokenCounts } from '@tokentracky/core';
+import { ALIAS_PATTERN, isPublicModel, isSafeCount, isUtcDay, TOOL_IDS, type PublicBucket, type PublicHour, type TokenCounts } from '@tokentracky/core';
 import { invalid } from './errors.ts';
 
 export function object(value: unknown, keys: readonly string[]): Record<string, unknown> {
@@ -8,7 +8,7 @@ export function object(value: unknown, keys: readonly string[]): Record<string, 
   return record;
 }
 export function alias(value: unknown): string {
-  if (typeof value !== 'string' || !/^[a-zA-Z0-9][a-zA-Z0-9_-]{2,29}$/.test(value)) invalid('Alias must be 3–30 letters, numbers, underscores or hyphens');
+  if (typeof value !== 'string' || !ALIAS_PATTERN.test(value)) invalid('Alias must be 3–30 letters, numbers, underscores or hyphens');
   return value.toLowerCase();
 }
 /** Sharing is fixed: a publication names its alias and nothing else. */

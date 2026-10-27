@@ -8,7 +8,7 @@ const MAX_CLOCK_SKEW_MS = 30_000;
 
 export interface GatewayAuthConfig {required: boolean; secret?: string}
 
-function validSecret(secret: string): boolean {
+export function validSecret(secret: string): boolean {
   const length = Buffer.byteLength(secret, 'utf8');
   return length >= 32 && length <= 1024 && !/[\r\n\0]/.test(secret);
 }

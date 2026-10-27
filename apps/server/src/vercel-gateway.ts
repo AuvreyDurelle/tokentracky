@@ -1,18 +1,12 @@
 import {isIP} from 'node:net';
 // .js: this file also runs in the Vercel function, which compiles each file to .js without rewriting specifiers.
-import {gatewayHeaders} from './gateway-auth.js';
+import {gatewayHeaders, validSecret} from './gateway-auth.js';
 
 export const VERCEL_GATEWAY_PREFIX = '/api/gateway';
 export const DEFAULT_BODY_LIMIT = 256_000;
 export const INGEST_BODY_LIMIT = 2 * 1024 * 1024;
 const RESPONSE_LIMIT = 2 * 1024 * 1024;
 const TIMEOUT_MS = 30_000;
-const FORWARDED_HEADERS = new Set([
-  'connection', 'content-length', 'forwarded', 'host', 'keep-alive', 'proxy-authenticate', 'proxy-authorization',
-  'te', 'trailer', 'transfer-encoding', 'upgrade', 'x-forwarded-for', 'x-forwarded-host', 'x-forwarded-proto',
-  'x-real-ip', 'x-vercel-forwarded-for', 'x-vercel-id', 'x-tokentracky-gateway-ip', 'x-tokentracky-gateway-signature',
-  'x-tokentracky-gateway-timestamp',
-]);
 const RESPONSE_HOP_BY_HOP = new Set(['connection', 'keep-alive', 'proxy-authenticate', 'proxy-authorization', 'te', 'trailer', 'transfer-encoding', 'upgrade', 'content-encoding', 'content-length']);
 
 export interface GatewayEnvironment {origin?: string; secret?: string}
@@ -55,7 +49,7 @@ function vercelClientIp(headers: Headers): string | null {
 
 function requestHeaders(headers: Headers): Headers {
   const forwarded = new Headers();
-  for (const [name, value] of headers) if (!FORWARDED_HEADERS.has(name.toLowerCase()) && (name === 'accept' || name === 'accept-language' || name === 'authorization' || name === 'content-type' || name === 'if-none-match')) forwarded.set(name, value);
+  for (const [name, value] of headers) if (name === 'accept' || name === 'accept-language' || name === 'authorization' || name === 'content-type' || name === 'if-none-match') forwarded.set(name, value);
   return forwarded;
 }
 
@@ -94,7 +88,7 @@ export async function proxyVercelGateway(request: Request, environment: GatewayE
   const secret = environment.secret;
   const route = routeFromGatewayUrl(new URL(request.url));
   const ip = vercelClientIp(request.headers);
-  if (!origin || !secret || (Buffer.byteLength(secret, 'utf8') < 32 || Buffer.byteLength(secret, 'utf8') > 1024) || /[\r\n\0]/.test(secret)) return error(503, 'Gateway is not configured.');
+  if (!origin || !secret || !validSecret(secret)) return error(503, 'Gateway is not configured.');
   if (!route || !ip || !['GET', 'HEAD', 'POST', 'PUT', 'DELETE'].includes(request.method)) return error(400, 'Gateway request is invalid.');
   const target = new URL(route, origin);
   if (target.origin !== origin.origin) return error(400, 'Gateway request is invalid.');
