@@ -45,7 +45,7 @@
 //! request timeout is Node's `requestTimeout`, a limit on receiving the request, not on handling it: [`JsonBody`]
 //! enforces it for bodies and [`serve_tcp`] for headers, with hyper's `header_read_timeout`.
 //!
-//! # Deliberate differences from the earlier TypeScript implementation (`tests/contract/README.md`)
+//! # Deliberate differences from the earlier TypeScript implementation
 //!
 //! 1. `PUT /api/local/cloud` when the linked service cannot be reached or answers unreadably: 502 `SYNC_FAILED`
 //!    ("Hosted publication settings are unavailable."), not the earlier 500 `INTERNAL_ERROR`.

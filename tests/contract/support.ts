@@ -4,15 +4,6 @@ import {dirname, join} from 'node:path';
 import type {Reply, Server} from './runner.ts';
 import {jsonl} from './fixtures.ts';
 
-/** Set on every response the server produces, JSON errors included (HTML pages and the launch page differ only in CSP). */
-export const SECURITY_HEADERS = {
-  'content-security-policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
-  'x-content-type-options': 'nosniff',
-  'referrer-policy': 'no-referrer',
-  'cache-control': 'no-store',
-  'permissions-policy': 'camera=(), microphone=(), geolocation=()',
-};
-export const DAY_MS = 86_400_000;
 /** The UTC day of every fixture event in fixtures.ts. */
 export const FIXTURE_DAY = '2026-10-20';
 
@@ -44,8 +35,6 @@ export async function writeLog(path: string, ...records: unknown[]): Promise<voi
 }
 
 export const configure = (server: Server, tool: string, enabled: boolean, paths: string[]) => server.request(`/api/local/sources/${tool}`, {method: 'PUT', json: {enabled, paths}});
-
-export const utcDay = (time: number) => new Date(time).toISOString().slice(0, 10);
 
 /** GET a route that must succeed and return its parsed JSON body. */
 export async function getJson(server: Server, path: string) {

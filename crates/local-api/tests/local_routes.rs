@@ -1,7 +1,8 @@
-//! The collector-backed routes, after `tests/contract/{health,sources,refresh,collection,queries,export}.test.ts`:
-//! the status composition, detection, the first run, source authorisation, refresh, the pause and refresh
-//! interaction, the usage queries and their filters, and the CSV export; then the Rust-only local days (`tz`), the
-//! weekly rank of the cycle, the cached overview (Rust only) and the TCP transport.
+//! The collector-backed routes of the whole local app: each behind the session, the status composition, detection
+//! below a `HOME` of the server's own, the first run, source authorisation, refresh, the pause and refresh
+//! interaction, the usage queries and their filters, exact totals and costs from synthetic logs, and the CSV export;
+//! then the Rust-only local days (`tz` on the usage queries), the weekly rank of the cycle, the cached overview
+//! (Rust only) and the TCP transport.
 mod support;
 
 use serde_json::{Value, json};
@@ -46,11 +47,12 @@ fn tool_of(id: &str) -> ToolId {
 }
 /// The default refresh cycle.
 const INTERVAL: i128 = 300_000;
-/// The UTC day of every fixture record.
+/// The UTC day of every fixture record, and a range over it.
+const FIXTURE_DAY: &str = "2026-10-20";
 const DAY: &str = "from=2026-10-20&to=2026-10-20";
 const ROUTES: [&str; 5] = ["summary", "sessions", "breakdown", "projects", "export"];
 
-/// `claude(id, input, output)` of `packages/collector/test/fixtures.ts`: 100 cache reads and 30 cache writes on top.
+/// `claude(id, input, output)` of `tests/contract/fixtures.ts`: 100 cache reads and 30 cache writes on top.
 fn claude(id: &str, input: u64, output: u64) -> Value {
     json!({"type": "assistant", "sessionId": "claude-session", "cwd": "/synthetic/private-project", "timestamp": "2026-10-20T12:00:00.000Z",
     "requestId": format!("req-{id}"), "message": {"id": id, "model": "claude-sonnet-4-6", "content": [{"type": "text", "text": "PRIVATE_PROMPT_MARKER"}], "usage": {
@@ -124,6 +126,22 @@ async fn post(server: &Server, path: &str) -> Reply {
     server.request(path, Init::method("POST")).await
 }
 
+/// Two full refresh cycles. A refresh joins a cycle that is already running, and enabling a source starts one in the
+/// background, so the first may return before the latest change was scanned; the second always starts afterwards.
+async fn refresh(server: &Server) -> Value {
+    assert_eq!(post(server, "/api/local/refresh").await.status, 200);
+    let reply = post(server, "/api/local/refresh").await;
+    assert_eq!(reply.status, 200, "{}", reply.text);
+    reply.json()
+}
+
+/// A route's JSON answer, which must be a success.
+async fn get_json(server: &Server, path: &str) -> Value {
+    let reply = server.get(path).await;
+    assert_eq!(reply.status, 200, "{path}: {}", reply.text);
+    reply.json()
+}
+
 async fn set_paused(server: &Server, paused: Value) -> Reply {
     let body = json!({ "paused": paused });
     server
@@ -162,6 +180,158 @@ fn suggested(id: &str) -> Value {
 
 fn source_name(id: &str) -> &'static str {
     tool_of(id).name()
+}
+
+/// The collector-backed routes; the last three are Rust only.
+const LOCAL_ROUTES: [(&str, &str); 13] = [
+    ("GET", "/api/local/status"),
+    ("GET", "/api/local/detect"),
+    ("PUT", "/api/local/sources/claude"),
+    ("POST", "/api/local/refresh"),
+    ("PUT", "/api/local/collection"),
+    ("GET", "/api/local/summary"),
+    ("GET", "/api/local/sessions"),
+    ("GET", "/api/local/breakdown"),
+    ("GET", "/api/local/projects"),
+    ("GET", "/api/local/export"),
+    ("GET", "/api/local/overview"),
+    ("GET", "/api/local/hours"),
+    ("GET", "/api/local/limits"),
+];
+
+/// A well-formed request for one of [`LOCAL_ROUTES`].
+fn sample(method: &'static str, path: &str) -> Init {
+    let init = Init::method(method);
+    match path {
+        "/api/local/sources/claude" => init.json(json!({"enabled": false, "paths": []})),
+        "/api/local/collection" => init.json(json!({"paused": false})),
+        _ => init,
+    }
+}
+
+#[tokio::test]
+async fn answers_every_collector_route_behind_the_session_and_nothing_else() {
+    let (server, _app) = Server::local(|_| {}).await;
+    for (method, path) in LOCAL_ROUTES {
+        let reply = server.request(path, sample(method, path)).await;
+        assert_ne!(reply.status, 404, "{method} {path}");
+        let anonymous = sample(method, path).header("cookie", None);
+        expect_error(&server.request(path, anonymous).await, 401, "LOCAL_AUTH_REQUIRED");
+    }
+    // Other paths, and known paths with another method, are 404 NOT_FOUND rather than 405.
+    for method in ["GET", "POST", "PUT", "DELETE"] {
+        let reply = server.request("/api/local/status/extra", Init::method(method)).await;
+        expect_error(&reply, 404, "NOT_FOUND");
+    }
+    for (method, path) in [("POST", "/api/local/status"), ("DELETE", "/api/local/summary")] {
+        let reply = server.request(path, Init::method(method)).await;
+        expect_error(&reply, 404, "NOT_FOUND");
+        assert_eq!(reply.header("allow"), None);
+    }
+    // A body that is not JSON is 400 INVALID_REQUEST.
+    for path in ["/api/local/collection", "/api/local/sources/claude"] {
+        for body in [r#"{"paused":"#, "not json", "{"] {
+            let put = Init::method("PUT")
+                .header("content-type", Some("application/json"))
+                .body(body);
+            expect_error(&server.request(path, put).await, 400, "INVALID_REQUEST");
+        }
+    }
+}
+
+/// The tools every implementation lists, with their names.
+const CORE_TOOLS: [(&str, &str); 8] = [
+    ("claude", "Claude Code"),
+    ("cline", "Cline"),
+    ("codex", "Codex"),
+    ("cursor", "Cursor"),
+    ("gemini", "Gemini CLI"),
+    ("kilo", "Kilo Code"),
+    ("opencode", "OpenCode"),
+    ("roo", "Roo Code"),
+];
+
+/// The folder suggested for each of [`CORE_TOOLS`] while none of its folders exists below `home`.
+fn usual_folders(home: &Path) -> Value {
+    let below = |path: &str| json!([text(&home.join(path))]);
+    json!({
+        "claude": below(".claude/projects"),
+        "cline": below(".cline/data/sessions"),
+        "codex": below(".codex/sessions"),
+        "cursor": [],
+        "gemini": below(".gemini/tmp"),
+        "kilo": below(".local/share/kilo/kilo.db"),
+        "opencode": below(".local/share/opencode/opencode.db"),
+        "roo": below("Library/Application Support/Code/User/globalStorage/rooveterinaryinc.roo-cline/tasks"),
+    })
+}
+
+#[tokio::test]
+async fn status_and_detection_look_below_the_servers_home() {
+    let server = Process::start(true).await;
+    let home = server.home.clone();
+    let reply = server.get("/api/local/status").await;
+    assert_eq!(reply.status, 200);
+    let body = reply.json();
+    // A fresh collector suggests each tool's usual folder and plans the next cycle an hour away.
+    let usual = usual_folders(&home);
+    for (id, name) in CORE_TOOLS {
+        let source = source(&body, id);
+        let message = source["message"].as_str().unwrap();
+        assert!(message.contains(|c: char| !c.is_whitespace()), "{id}");
+        let (state, capabilities) = if id == "cursor" {
+            (
+                "unsupported",
+                json!({"tokens": false, "models": false, "projects": false, "costs": false, "quotas": false}),
+            )
+        } else {
+            (
+                "permission_required",
+                json!({"tokens": true, "models": true, "projects": id != "gemini", "costs": false, "quotas": false}),
+            )
+        };
+        assert_eq!(
+            source,
+            &json!({"id": id, "name": name, "enabled": false, "state": state, "paths": usual[id], "lastImportedAt": null,
+                "eventCount": 0, "message": message, "capabilities": capabilities})
+        );
+    }
+    let next = millis(&body["nextRefreshAt"]) - now();
+    assert!(next > 3_500_000 && next <= 3_700_000, "{next}");
+    let reply = server.get("/api/local/detect").await;
+    assert!(reply.header("content-type").unwrap().starts_with("application/json"));
+    assert_eq!(reply.json(), json!({"tools": []}));
+
+    // Finds the tools whose usual folders or database files exist, and suggests those.
+    let claude_roots = [home.join(".claude/projects"), home.join(".config/claude/projects")];
+    let (codex, opencode) = (
+        home.join(".codex/sessions"),
+        home.join(".local/share/opencode/opencode.db"),
+    );
+    for folder in [&claude_roots[0], &claude_roots[1], &codex] {
+        fs::create_dir_all(folder).unwrap();
+    }
+    fs::create_dir_all(opencode.parent().unwrap()).unwrap();
+    fs::write(&opencode, "").unwrap();
+    // A database path that is a folder, and a log folder that is a file, are not installations.
+    fs::create_dir_all(home.join(".local/share/kilo/kilo.db")).unwrap();
+    fs::write(home.join(".gemini"), "").unwrap();
+    let claude_roots = json!([text(&claude_roots[0]), text(&claude_roots[1])]);
+    let (codex, opencode) = (json!([text(&codex)]), json!([text(&opencode)]));
+    assert_eq!(
+        server.get("/api/local/detect").await.json(),
+        json!({"tools": [
+            {"id": "claude", "name": "Claude Code", "paths": claude_roots},
+            {"id": "codex", "name": "Codex", "paths": codex},
+            {"id": "opencode", "name": "OpenCode", "paths": opencode},
+        ]})
+    );
+    let body = server.get("/api/local/status").await.json();
+    let mut expected = usual;
+    (expected["claude"], expected["codex"], expected["opencode"]) = (claude_roots, codex, opencode);
+    for (id, _) in CORE_TOOLS {
+        assert_eq!(source(&body, id)["paths"], expected[id], "{id}");
+    }
 }
 
 #[tokio::test]
@@ -440,6 +610,13 @@ async fn sources_authorise_each_folder_once_as_its_real_path_and_start_a_cycle()
     assert!(reply.header("content-type").unwrap().starts_with("application/json"));
     let body = reply.json();
     assert_eq!(keys(&body), STATUS_KEYS);
+    let ids: Vec<String> = body["sources"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|source| source["id"].as_str().unwrap().to_owned())
+        .collect();
+    assert_eq!(ids, tools());
     assert_eq!(
         (&source(&body, "claude")["enabled"], &source(&body, "claude")["paths"]),
         (&json!(true), &json!([text(&real)]))
@@ -447,14 +624,22 @@ async fn sources_authorise_each_folder_once_as_its_real_path_and_start_a_cycle()
     // Authorising a source starts a cycle by itself, and the status waits for a short one to finish.
     assert!(body["lastRefreshAt"].is_string());
     assert_eq!(
-        (&source(&body, "claude")["state"], &body["refreshing"]),
-        (&json!("detected"), &json!(false))
+        (
+            &source(&body, "claude")["state"],
+            &source(&body, "claude")["eventCount"],
+            &body["refreshing"]
+        ),
+        (&json!("detected"), &json!(0), &json!(false))
     );
 
     let body = configure(&server, "claude", false, &[]).await.json();
     assert_eq!(
-        (&source(&body, "claude")["enabled"], &source(&body, "claude")["state"]),
-        (&json!(false), &json!("paused"))
+        (
+            &source(&body, "claude")["enabled"],
+            &source(&body, "claude")["state"],
+            &source(&body, "claude")["eventCount"]
+        ),
+        (&json!(false), &json!("paused"), &json!(0))
     );
     // A disabled source may name a folder that does not exist yet.
     let missing = text(&scratch(&server).join("not-yet-created"));
@@ -462,9 +647,72 @@ async fn sources_authorise_each_folder_once_as_its_real_path_and_start_a_cycle()
         .await
         .json();
     assert_eq!(source(&body, "claude")["paths"], json!([missing]));
-    // Every tool is accepted; one without a verified log format stays unsupported.
+    // Every tool is accepted; one without a verified log format stays unsupported, and is never read.
+    for (id, _) in CORE_TOOLS {
+        assert_eq!(configure(&server, id, false, &[]).await.status, 200, "{id}");
+    }
     let body = configure(&server, "cursor", true, &[text(&real)]).await.json();
-    assert_eq!(source(&body, "cursor")["state"], "unsupported");
+    assert_eq!(
+        (
+            &source(&body, "cursor")["state"],
+            &source(&body, "cursor")["capabilities"]
+        ),
+        (
+            &json!("unsupported"),
+            &json!({"tokens": false, "models": false, "projects": false, "costs": false, "quotas": false})
+        )
+    );
+    let body = refresh(&server).await;
+    assert_eq!(
+        (
+            &source(&body, "cursor")["state"],
+            &source(&body, "cursor")["eventCount"]
+        ),
+        (&json!("unsupported"), &json!(0))
+    );
+}
+
+#[tokio::test]
+async fn sources_are_detected_until_a_log_appears_take_single_files_and_keep_their_folders_when_refused() {
+    let (server, _app) = Server::local(|_| {}).await;
+    // A folder with no log of the tool's kind is detected; one with a log, even an empty one, is current.
+    let folder = scratch(&server).join("codex-logs");
+    fs::create_dir_all(&folder).unwrap();
+    fs::write(folder.join("notes.txt"), "not a log").unwrap();
+    assert_eq!(configure(&server, "codex", true, &[text(&folder)]).await.status, 200);
+    let codex = source(&refresh(&server).await, "codex").clone();
+    assert_eq!(
+        (
+            &codex["enabled"],
+            &codex["state"],
+            &codex["eventCount"],
+            &codex["paths"]
+        ),
+        (&json!(true), &json!("detected"), &json!(0), &json!([text(&folder)]))
+    );
+    fs::write(folder.join("rollout.jsonl"), "").unwrap();
+    let codex = source(&refresh(&server).await, "codex").clone();
+    assert_eq!((&codex["state"], &codex["eventCount"]), (&json!("current"), &json!(0)));
+
+    // A single log file of a kind the tool writes is accepted as it is.
+    let file = scratch(&server).join("single").join("session.jsonl");
+    fs::create_dir_all(file.parent().unwrap()).unwrap();
+    fs::write(&file, "").unwrap();
+    let body = configure(&server, "claude", true, &[text(&file)]).await.json();
+    assert_eq!(source(&body, "claude")["paths"], json!([text(&file)]));
+
+    // A refused change keeps the folders the source had.
+    let missing = text(&scratch(&server).join("does-not-exist"));
+    expect_error(
+        &configure(&server, "claude", true, &[missing]).await,
+        400,
+        "SOURCE_UNAVAILABLE",
+    );
+    let claude_source = source(&status(&server).await, "claude").clone();
+    assert_eq!(
+        (&claude_source["enabled"], &claude_source["paths"]),
+        (&json!(true), &json!([text(&file)]))
+    );
 }
 
 #[tokio::test]
@@ -490,6 +738,7 @@ async fn sources_refuse_unknown_tools_bad_bodies_and_unusable_paths() {
         json!(7),
         Value::Null,
         json!({"enabled": true, "paths": [], "extra": 1}),
+        json!({"enabled": false, "paths": [], "path": "/x"}),
     ] {
         expect_error(&put("claude", body).await, 400, "INVALID_REQUEST");
     }
@@ -504,9 +753,12 @@ async fn sources_refuse_unknown_tools_bad_bodies_and_unusable_paths() {
         json!({"enabled": true}),
         json!({"paths": []}),
         json!({"enabled": "true", "paths": []}),
+        json!({"enabled": 1, "paths": []}),
         json!({"enabled": null, "paths": []}),
         json!({"enabled": true, "paths": "/x"}),
+        json!({"enabled": true, "paths": null}),
         json!({"enabled": false, "paths": [1]}),
+        json!({"enabled": false, "paths": [null]}),
         json!({"enabled": false, "paths": [["/x"]]}),
         json!({"enabled": false, "paths": many}),
         json!({"enabled": false, "paths": [format!("/{}", "a".repeat(4096))]}),
@@ -575,6 +827,78 @@ async fn concurrent_refreshes(server: &Server) -> Vec<Reply> {
 }
 
 #[tokio::test]
+async fn refresh_moves_the_times_forward_reads_appends_once_and_recovers_a_folder_that_returns() {
+    let (server, _app) = Server::local(|_| {}).await;
+    // Both times move forward on every cycle.
+    let first = post(&server, "/api/local/refresh").await;
+    assert!(first.header("content-type").unwrap().starts_with("application/json"));
+    let first = first.json();
+    tokio::time::sleep(Duration::from_millis(20)).await;
+    let second = post(&server, "/api/local/refresh").await.json();
+    assert!(millis(&second["lastRefreshAt"]) > millis(&first["lastRefreshAt"]));
+    assert!(millis(&second["nextRefreshAt"]) > millis(&first["nextRefreshAt"]));
+
+    // A folder is not read before its source is authorised; authorising it starts a cycle by itself.
+    let root = scratch(&server).join(".claude").join("projects");
+    let file = root.join("p").join("session.jsonl");
+    write_log(&file, &[claude("msg-1", 11, 20)]);
+    refresh(&server).await;
+    assert_eq!(tokens(&server, DAY).await, 0);
+    let before = millis(&status(&server).await["lastRefreshAt"]);
+    assert_eq!(configure(&server, "claude", true, &[text(&root)]).await.status, 200);
+    eventually("the first import", async || tokens(&server, DAY).await == 161).await;
+    let after = status(&server).await;
+    assert!(millis(&after["lastRefreshAt"]) > before);
+    let claude_source = source(&after, "claude");
+    assert_eq!(
+        (
+            &claude_source["enabled"],
+            &claude_source["state"],
+            &claude_source["eventCount"],
+            &after["collecting"]
+        ),
+        (&json!(true), &json!("current"), &json!(1), &json!(true))
+    );
+
+    // What the tool appended is read by the next refresh, and nothing is counted twice.
+    write_log(&file, &[claude("msg-1", 11, 20), claude("msg-2", 5, 6)]);
+    refresh(&server).await;
+    assert_eq!(tokens(&server, DAY).await, 302);
+    refresh(&server).await;
+    assert_eq!(tokens(&server, DAY).await, 302);
+    // Concurrent refreshes share a cycle.
+    assert!(
+        concurrent_refreshes(&server)
+            .await
+            .iter()
+            .all(|reply| reply.status == 200)
+    );
+    assert_eq!(tokens(&server, DAY).await, 302);
+    assert_eq!(status(&server).await["refreshing"], false);
+
+    // A source whose folder disappeared is an error and keeps its totals, until the folder returns.
+    fs::remove_dir_all(&root).unwrap();
+    let failed = post(&server, "/api/local/refresh").await.json();
+    let claude_source = source(&failed, "claude");
+    assert_eq!(
+        (
+            &claude_source["enabled"],
+            &claude_source["state"],
+            &claude_source["eventCount"]
+        ),
+        (&json!(true), &json!("error"), &json!(2))
+    );
+    assert_eq!(tokens(&server, DAY).await, 302);
+    write_log(&file, &[claude("msg-1", 11, 20), claude("msg-2", 5, 6)]);
+    refresh(&server).await;
+    let claude_source = source(&status(&server).await, "claude").clone();
+    assert_eq!(
+        (&claude_source["state"], &claude_source["eventCount"]),
+        (&json!("current"), &json!(2))
+    );
+}
+
+#[tokio::test]
 async fn pausing_refuses_refreshes_reports_enabled_sources_paused_and_resuming_reads_what_appeared() {
     let (server, app) = Server::local(|_| {}).await;
     let claude_root = scratch(&server).join(".claude").join("projects");
@@ -583,6 +907,7 @@ async fn pausing_refuses_refreshes_reports_enabled_sources_paused_and_resuming_r
     for paused in [true, true, false, false] {
         let reply = set_paused(&server, json!(paused)).await;
         assert_eq!((reply.status, reply.json()), (200, json!({ "paused": paused })));
+        assert!(reply.header("content-type").unwrap().starts_with("application/json"));
     }
     // Resuming started a cycle. Enabling a source while one runs joins it, as in TypeScript, so let it settle.
     app.refresh().await.unwrap();
@@ -591,7 +916,11 @@ async fn pausing_refuses_refreshes_reports_enabled_sources_paused_and_resuming_r
         200
     );
     eventually("the first import", async || tokens(&server, DAY).await == 161).await;
-    assert_eq!(status(&server).await["collecting"], true);
+    let body = status(&server).await;
+    assert_eq!(
+        (&body["collecting"], &source(&body, "claude")["state"]),
+        (&json!(true), &json!("current"))
+    );
 
     assert_eq!(set_paused(&server, json!(true)).await.status, 200);
     let body = status(&server).await;
@@ -623,7 +952,15 @@ async fn pausing_refuses_refreshes_reports_enabled_sources_paused_and_resuming_r
     );
     tokio::time::sleep(Duration::from_millis(300)).await;
     assert_eq!(tokens(&server, DAY).await, 161);
-    assert_eq!(source(&status(&server).await, "codex")["state"], "paused");
+    let body = status(&server).await;
+    assert_eq!(
+        (
+            &source(&body, "codex")["state"],
+            &body["collecting"],
+            &body["refreshing"]
+        ),
+        (&json!("paused"), &json!(false), &json!(false))
+    );
 
     let before = millis(&status(&server).await["lastRefreshAt"]);
     assert_eq!(set_paused(&server, json!(false)).await.json(), json!({"paused": false}));
@@ -632,19 +969,30 @@ async fn pausing_refuses_refreshes_reports_enabled_sources_paused_and_resuming_r
         tokens(&server, DAY).await == 302 && millis(&status(&server).await["lastRefreshAt"]) > before
     })
     .await;
-    assert_eq!(status(&server).await["collecting"], true);
+    let body = status(&server).await;
+    let claude_source = source(&body, "claude");
+    assert_eq!(
+        (
+            &body["collecting"],
+            &claude_source["state"],
+            &claude_source["eventCount"]
+        ),
+        (&json!(true), &json!("current"), &json!(2))
+    );
     assert_eq!(post(&server, "/api/local/refresh").await.status, 200);
 
     for body in [
         json!({}),
         json!({"paused": "true"}),
         json!({"paused": 1}),
+        json!({"paused": 0}),
         json!({"paused": null}),
         json!({"paused": [true]}),
         json!({"paused": true, "extra": 1}),
         json!({"Paused": true}),
         json!([]),
         json!("paused"),
+        json!(7),
         Value::Null,
     ] {
         let reply = server
@@ -712,6 +1060,34 @@ fn day_of(days: i64) -> String {
     ago(days)[..10].to_owned()
 }
 
+/// The start of a Codex rollout: session `codex-session` in `/synthetic/codex-project`, on `gpt-5-codex`.
+fn codex_start() -> [Value; 2] {
+    [
+        json!({"type": "session_meta", "payload": {"id": "codex-session", "cwd": "/synthetic/codex-project", "instructions": "PRIVATE_PROMPT_MARKER"}}),
+        json!({"type": "turn_context", "payload": {"turn_id": "turn-1", "cwd": "/synthetic/codex-project", "model": "gpt-5-codex"}}),
+    ]
+}
+
+/// Codex's token counts: `input` tokens, `cached` of them, and `output` tokens, `reasoning` of them.
+fn usage(input: u64, cached: u64, output: u64, reasoning: u64) -> Value {
+    json!({"input_tokens": input, "cached_input_tokens": cached, "output_tokens": output, "reasoning_output_tokens": reasoning, "total_tokens": input + output})
+}
+
+/// A Codex `token_count` record: the session's running total and the last request's counts.
+fn token_count(timestamp: &str, total: Value, last: Value) -> Value {
+    json!({"timestamp": timestamp, "type": "event_msg", "payload": {"type": "token_count", "info": {"total_token_usage": total, "last_token_usage": last}}})
+}
+
+/// The sum of the `tokens` of a route's items.
+fn item_tokens(body: &Value) -> u64 {
+    body["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|item| item["tokens"].as_u64().unwrap())
+        .sum()
+}
+
 #[tokio::test]
 async fn usage_queries_filter_by_range_tool_and_text_and_name_git_repositories() {
     let (server, _app) = Server::local(|_| {}).await;
@@ -726,7 +1102,8 @@ async fn usage_queries_filter_by_range_tool_and_text_and_name_git_repositories()
         scratch(&server).join(".claude").join("projects"),
         scratch(&server).join(".codex").join("sessions"),
     );
-    // 140 tokens today (in the checkout), 150 ten days ago and 160 a hundred days ago; Codex 200 forty days ago.
+    // 140 tokens today (in the checkout), 150 ten days ago and 160 a hundred days ago; Codex 300 four hundred days ago,
+    // then 200 more forty days ago.
     write_log(
         &roots.0.join("p").join("session.jsonl"),
         &[
@@ -735,13 +1112,14 @@ async fn usage_queries_filter_by_range_tool_and_text_and_name_git_repositories()
             claude_ago("c", 100, 20, "/synthetic/private-project", "claude-session"),
         ],
     );
-    let usage = json!({"input_tokens": 200, "cached_input_tokens": 0, "output_tokens": 0, "reasoning_output_tokens": 0, "total_tokens": 200});
+    let [meta, context] = codex_start();
     write_log(
         &roots.1.join("rollout.jsonl"),
         &[
-            json!({"type": "session_meta", "payload": {"id": "codex-session", "cwd": "/synthetic/codex-project", "instructions": "PRIVATE_PROMPT_MARKER"}}),
-            json!({"type": "turn_context", "payload": {"turn_id": "turn-1", "cwd": "/synthetic/codex-project", "model": "gpt-5-codex"}}),
-            json!({"timestamp": ago(40), "type": "event_msg", "payload": {"type": "token_count", "info": {"total_token_usage": usage, "last_token_usage": null}}}),
+            meta,
+            context,
+            token_count(&ago(400), usage(300, 0, 0, 0), Value::Null),
+            token_count(&ago(40), usage(500, 0, 0, 0), Value::Null),
         ],
     );
     for (tool, root) in [("claude", &roots.0), ("codex", &roots.1)] {
@@ -768,14 +1146,74 @@ async fn usage_queries_filter_by_range_tool_and_text_and_name_git_repositories()
         ("days=90&tool=gemini", 0),
         ("days=90&q=GPT-5", 200),
         ("days=90&q=checkout-session", 140),
+        ("days=90&q=claude-session", 150),
+        ("days=90&q=codex-project", 200),
         ("days=90&q=no-such-text", 0),
-        ("from=2000-01-01&to=2099-12-31", 650),
+        ("days=90&tool=codex&q=sonnet", 0),
+        ("from=2000-01-01&to=2099-12-31", 950),
+        // A rolling window shifted back by `offset` days, for the previous period.
+        ("offset=0", 140),
+        ("offset=5", 150),
+        ("days=7&offset=5", 150),
+        ("days=30&offset=30", 200),
+        ("days=90&offset=90", 160),
+        ("days=90&offset=365", 300),
+        ("days=365&offset=365", 300),
     ] {
         assert_eq!(tokens(&server, query).await, expected, "{query}");
     }
-    let (today, ten) = (day_of(0), day_of(10));
-    assert_eq!(tokens(&server, &format!("from={today}&to={today}")).await, 140);
-    assert_eq!(tokens(&server, &format!("from={ten}&to={today}")).await, 290);
+    // A rolling window's sessions add up to its total, and its projects to no more.
+    for (days, expected) in [(7, 140), (30, 290), (90, 490), (365, 650)] {
+        let sessions = get_json(&server, &format!("/api/local/sessions?days={days}")).await;
+        assert_eq!(item_tokens(&sessions), expected, "{days}");
+        let projects = get_json(&server, &format!("/api/local/projects?days={days}")).await;
+        assert!(item_tokens(&projects) <= expected, "{days}");
+    }
+    // Custom ranges are inclusive UTC days; the days between data days are empty.
+    let (today, ten, hundred, four_hundred) = (day_of(0), day_of(10), day_of(100), day_of(400));
+    let (gap_from, gap_to) = (day_of(5), day_of(2));
+    for (from, to, expected) in [
+        (&today, &today, 140),
+        (&ten, &today, 290),
+        (&ten, &ten, 150),
+        (&hundred, &hundred, 160),
+        (&four_hundred, &four_hundred, 300),
+        (&gap_from, &gap_to, 0),
+    ] {
+        let query = format!("from={from}&to={to}");
+        assert_eq!(tokens(&server, &query).await, expected, "{query}");
+    }
+    // The daily split of a range, oldest day first, adds up to the total.
+    let summary = get_json(&server, "/api/local/summary?from=2000-01-01&to=2099-12-31").await;
+    let daily: Vec<Value> = summary["daily"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|row| json!([row["day"], row["tokens"]]))
+        .collect();
+    let expected: Vec<Value> = [(400, 300), (100, 160), (40, 200), (10, 150), (0, 140)]
+        .into_iter()
+        .map(|(days, tokens)| json!([day_of(days), tokens]))
+        .collect();
+    assert_eq!(daily, expected);
+    let activity = &summary["activity"];
+    assert_eq!(
+        (
+            &activity["activeDays"],
+            &activity["longestStreak"],
+            &activity["bestDay"]["tokens"]
+        ),
+        (&json!(5), &json!(1), &json!(300))
+    );
+    // A tool filter narrows the split by tool and the sessions too.
+    let by_tool = get_json(&server, "/api/local/summary?days=90&tool=codex").await["byTool"].clone();
+    assert_eq!(by_tool.as_array().unwrap().len(), 1);
+    let row = &by_tool[0];
+    assert_eq!(keys(row), ["breakdown", "costMicrousd", "costParts", "tokens", "tool"]);
+    assert_eq!((&row["tool"], &row["tokens"]), (&json!("codex"), &json!(200)));
+    assert!(row["breakdown"].is_object() && row["costMicrousd"].is_u64() && row["costParts"].is_object());
+    let sessions = get_json(&server, "/api/local/sessions?days=90&tool=codex").await;
+    assert_eq!(sessions["items"].as_array().unwrap().len(), 1);
 
     let summary = server.get("/api/local/summary?days=90&q=no-such-text").await.json();
     // `cacheRate` is an `f64` in `tokentracky-core`, written `0.0` where JavaScript writes `0`: the same number.
@@ -805,7 +1243,7 @@ async fn usage_queries_filter_by_range_tool_and_text_and_name_git_repositories()
         .collect();
     assert_eq!(
         days,
-        [day_of(100), day_of(40), day_of(10), day_of(0)]
+        [day_of(400), day_of(100), day_of(40), day_of(10), day_of(0)]
             .map(Value::from)
             .iter()
             .collect::<Vec<_>>()
@@ -853,7 +1291,9 @@ async fn usage_queries_refuse_invalid_filters_on_every_route() {
             expect_error(&reply, 400, code);
         }
     };
-    for days in ["0", "1", "14", "366", "-7", "7.5", "abc", "", "Infinity", "inf", "0x"] {
+    for days in [
+        "0", "1", "14", "60", "366", "-7", "7.5", "abc", "", "Infinity", "inf", "0x",
+    ] {
         refused(&format!("days={days}"), "INVALID_FILTER").await;
     }
     for query in [
@@ -861,8 +1301,11 @@ async fn usage_queries_refuse_invalid_filters_on_every_route() {
         "to=2026-10-20",
         "from=2026-10-21&to=2026-10-20",
         "from=2026-02-30&to=2026-03-01",
+        "from=2026-13-01&to=2026-13-02",
         "from=2026-1-1&to=2026-1-2",
+        "from=20261020&to=20261021",
         "from=&to=",
+        "from=today&to=today",
         "days=7&from=2026-10-20&to=2026-10-20",
         "days=30&to=2026-10-20",
         // A repeated parameter is a list.
@@ -904,12 +1347,512 @@ async fn usage_queries_refuse_invalid_filters_on_every_route() {
             .status,
         200
     );
+    // `offset` is a whole number of days from 0 to 365, and shifts a rolling window only.
+    for offset in ["-1", "366", "7.5", "abc"] {
+        let reply = server.get(&format!("/api/local/summary?days=7&offset={offset}")).await;
+        expect_error(&reply, 400, "INVALID_FILTER");
+    }
+    expect_error(
+        &server
+            .get("/api/local/summary?from=2026-10-20&to=2026-10-20&offset=7")
+            .await,
+        400,
+        "INVALID_FILTER",
+    );
     refused("days=7&extra=1", "INVALID_REQUEST").await;
     refused("page=2", "INVALID_REQUEST").await;
     // The CSV headers come with a download only.
     let reply = server.get("/api/local/export?days=3").await;
     assert!(reply.header("content-type").unwrap().starts_with("application/json"));
     assert_eq!(reply.header("content-disposition"), None);
+    assert!(!reply.text.contains(r#""tool","model""#));
+}
+
+/// Sorts a list of objects by one of their text fields.
+fn sort_by(rows: &mut Value, key: &str) {
+    let key = key.to_owned();
+    rows.as_array_mut()
+        .unwrap()
+        .sort_by(|a, b| a[&key].as_str().cmp(&b[&key].as_str()));
+}
+
+/// A list's items as `[name, tokens]` pairs, in its order.
+fn pairs(body: &Value, name: &str) -> Vec<Value> {
+    body["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|item| json!([item[name], item["tokens"]]))
+        .collect()
+}
+
+/// Exact totals and costs through the usage routes, at the bundled LiteLLM prices. Every record is dated 2026-10-20,
+/// so a range over that day gives the same totals on any date. Each phase changes the logs.
+#[tokio::test]
+async fn reports_exact_totals_and_costs_from_synthetic_claude_code_and_codex_logs() {
+    let (server, _app) = Server::local(|_| {}).await;
+    let roots = (
+        scratch(&server).join(".claude").join("projects"),
+        scratch(&server).join(".codex").join("sessions"),
+    );
+    let claude_file = roots.0.join("-synthetic-private-project").join("session.jsonl");
+    // The repeated third record is a replay and counts once.
+    let claude_log = [claude("msg-1", 11, 20), claude("msg-2", 5, 6), claude("msg-1", 11, 20)];
+    write_log(&claude_file, &claude_log);
+    // Running totals of 100 input (20 cached) and 50 output, then 150, 20 and 80; the repeated last one is a replay.
+    let [meta, context] = codex_start();
+    let (at, later) = ("2026-10-20T12:00:00.000Z", "2026-10-20T12:00:01.000Z");
+    let second = || token_count(later, usage(150, 20, 80, 10), usage(50, 0, 30, 0));
+    write_log(
+        &roots.1.join("2026/10/20/rollout-synthetic.jsonl"),
+        &[
+            meta,
+            context,
+            token_count(at, usage(100, 20, 50, 10), usage(100, 20, 50, 10)),
+            second(),
+            second(),
+        ],
+    );
+    let day = |route: &str| format!("/api/local/{route}?{DAY}");
+
+    // Nothing counts until each source is authorised, even though its logs exist.
+    assert_eq!(post(&server, "/api/local/refresh").await.status, 200);
+    assert_eq!(tokens(&server, DAY).await, 0);
+    assert_eq!(get_json(&server, &day("sessions")).await, json!({"items": []}));
+    assert_eq!(source(&status(&server).await, "claude")["eventCount"], 0);
+
+    // Once authorised and refreshed, each source is current with its event count.
+    for (tool, root) in [("claude", &roots.0), ("codex", &roots.1)] {
+        let body = configure(&server, tool, true, &[text(root)]).await.json();
+        let source = source(&body, tool);
+        assert_eq!(
+            (&source["enabled"], &source["paths"]),
+            (&json!(true), &json!([text(root)]))
+        );
+    }
+    let body = refresh(&server).await;
+    assert_eq!(body["collecting"], true);
+    for (id, name, root) in [("claude", "Claude Code", &roots.0), ("codex", "Codex", &roots.1)] {
+        let source = source(&body, id);
+        assert!(source["lastImportedAt"].is_string(), "{id}");
+        let message = source["message"].as_str().unwrap();
+        assert!(message.contains(|c: char| !c.is_whitespace()), "{id}");
+        assert_eq!(
+            source,
+            &json!({"id": id, "name": name, "enabled": true, "state": "current", "paths": [text(root)],
+                "lastImportedAt": source["lastImportedAt"], "eventCount": 2, "message": message,
+                "capabilities": {"tokens": true, "models": true, "projects": true, "costs": false, "quotas": false}})
+        );
+    }
+    let enabled = body["sources"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|source| source["enabled"] == true)
+        .count();
+    assert_eq!(enabled, 2);
+    assert!(millis(&body["lastScanAt"]) > 0);
+
+    // Tokens by kind. Claude Code: 11 + 5 input, 20 + 6 output with 7 + 6 reasoning, and per request 100 cache reads
+    // and 30 cache writes, 20 of them to the one-hour cache. Codex: 100 − 20 cached + 50 input, 50 + 30 output, 10
+    // reasoning.
+    let kinds = json!({
+        "claude": {"input": 16, "output": 26, "cacheRead": 200, "cacheWrite": 60, "reasoning": 13, "cacheWrite1h": 40},
+        "codex": {"input": 130, "output": 80, "cacheRead": 20, "cacheWrite": 0, "reasoning": 10},
+        "all": {"input": 146, "output": 106, "cacheRead": 220, "cacheWrite": 60, "reasoning": 23, "cacheWrite1h": 40},
+    });
+    // Each request's cost is rounded by kind, so that the kinds add up: msg-1 is 33 + 300 + 30 + 158 = 521 µUSD and
+    // msg-2 15 + 90 + 30 + 158 = 293. Cache savings are the difference from ordinary input pricing.
+    let parts = json!({
+        "claude": {"input": 48, "output": 390, "cacheRead": 60, "cacheWrite": 316, "cacheSavings": 540},
+        "codex": {"input": 163, "output": 800, "cacheRead": 3, "cacheWrite": 0, "cacheSavings": 23},
+        "all": {"input": 211, "output": 1190, "cacheRead": 63, "cacheWrite": 316, "cacheSavings": 563},
+    });
+    let mut summary = get_json(&server, &day("summary")).await;
+    let rows = ["byTool", "byModel", "daily"]
+        .iter()
+        .flat_map(|key| summary[*key].as_array().unwrap());
+    for row in std::iter::once(&summary).chain(rows) {
+        let parts = &row["costParts"];
+        let sum: u64 = ["input", "output", "cacheRead", "cacheWrite"]
+            .iter()
+            .map(|kind| parts[*kind].as_u64().unwrap())
+            .sum();
+        assert_eq!(json!(sum), row["costMicrousd"], "{row}");
+    }
+    // The split by tool and by model follows the event ids, so it is compared without order; the current streak
+    // depends on today's date.
+    sort_by(&mut summary["byTool"], "tool");
+    sort_by(&mut summary["byModel"], "model");
+    let (rate, streak) = (
+        summary["cacheRate"].clone(),
+        summary["activity"]["currentStreak"].clone(),
+    );
+    assert!((rate.as_f64().unwrap() - 220.0 / 426.0).abs() < 5e-13, "{rate}");
+    assert!(streak.is_u64());
+    let claude_total =
+        json!({"tokens": 302, "breakdown": kinds["claude"], "costMicrousd": 814, "costParts": parts["claude"]});
+    let codex_total =
+        json!({"tokens": 230, "breakdown": kinds["codex"], "costMicrousd": 966, "costParts": parts["codex"]});
+    let with = |total: &Value, key: &str, name: &str| {
+        let mut row = total.clone();
+        row[key] = json!(name);
+        row
+    };
+    assert_eq!(
+        summary,
+        json!({
+            "tokens": 532, "breakdown": kinds["all"], "costMicrousd": 1780, "costParts": parts["all"], "sessions": 2,
+            "cacheRate": rate,
+            "byTool": [with(&claude_total, "tool", "claude"), with(&codex_total, "tool", "codex")],
+            "byModel": [with(&claude_total, "model", "claude-sonnet-4-6"), with(&codex_total, "model", "gpt-5-codex")],
+            "daily": [{"day": FIXTURE_DAY, "tokens": 532, "breakdown": kinds["all"], "costMicrousd": 1780, "costParts": parts["all"]}],
+            "activity": {"activeDays": 1, "currentStreak": streak, "longestStreak": 1, "bestDay": {"day": FIXTURE_DAY, "tokens": 532},
+                "averagePerActiveDay": 532},
+        })
+    );
+
+    // One row per session, newest first; one per day, tool and model in that order; one per project, largest first,
+    // with no repository for a folder that is not a git checkout.
+    assert_eq!(
+        get_json(&server, &day("sessions")).await,
+        json!({"items": [
+            {"id": "codex-session", "project": "/synthetic/codex-project", "tool": "codex", "model": "gpt-5-codex",
+                "models": ["gpt-5-codex"], "tokens": 230, "breakdown": kinds["codex"], "costMicrousd": 966,
+                "lastUsedAt": "2026-10-20T12:00:01.000Z"},
+            {"id": "claude-session", "project": "/synthetic/private-project", "tool": "claude", "model": "claude-sonnet-4-6",
+                "models": ["claude-sonnet-4-6"], "tokens": 302, "breakdown": kinds["claude"], "costMicrousd": 814,
+                "lastUsedAt": "2026-10-20T12:00:00.000Z"},
+        ]})
+    );
+    assert_eq!(
+        get_json(&server, &day("breakdown")).await,
+        json!({"items": [
+            {"day": FIXTURE_DAY, "tool": "claude", "model": "claude-sonnet-4-6", "tokens": 302, "breakdown": kinds["claude"], "costMicrousd": 814},
+            {"day": FIXTURE_DAY, "tool": "codex", "model": "gpt-5-codex", "tokens": 230, "breakdown": kinds["codex"], "costMicrousd": 966},
+        ]})
+    );
+    assert_eq!(
+        get_json(&server, &day("projects")).await,
+        json!({"items": [
+            {"name": "/synthetic/private-project", "tokens": 302, "breakdown": kinds["claude"], "costMicrousd": 814, "sessions": 1, "repository": null},
+            {"name": "/synthetic/codex-project", "tokens": 230, "breakdown": kinds["codex"], "costMicrousd": 966, "sessions": 1, "repository": null},
+        ]})
+    );
+
+    // A repeated refresh and a repeated line count once.
+    refresh(&server).await;
+    refresh(&server).await;
+    assert_eq!(tokens(&server, DAY).await, 532);
+
+    // Appended records are read, and a corrected record replaces the one it corrects: msg-2 logged again with 4 more
+    // input tokens grows the session by 4, not by another 145. 161 + 145 + 132 tokens.
+    let mut appended = claude_log.to_vec();
+    appended.extend([claude("msg-2", 9, 6), claude("msg-3", 1, 1)]);
+    write_log(&claude_file, &appended);
+    refresh(&server).await;
+    let sessions = get_json(&server, &day("sessions")).await;
+    let claude_session = sessions["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|item| item["tool"] == "claude")
+        .unwrap();
+    assert_eq!(claude_session["tokens"], 438);
+    for (kind, count) in [
+        ("input", 21),
+        ("output", 27),
+        ("cacheRead", 300),
+        ("cacheWrite", 90),
+        ("reasoning", 14),
+    ] {
+        assert_eq!(claude_session["breakdown"][kind], count, "{kind}");
+    }
+    assert_eq!(tokens(&server, DAY).await, 668);
+
+    // A log rewritten with smaller counts lowers the totals, and usage of a record that disappeared is dropped: only
+    // msg-1 is left, with 1 + 2 + 100 + 30 tokens; Codex is untouched.
+    write_log(&claude_file, &[claude("msg-1", 1, 2)]);
+    refresh(&server).await;
+    let mut summary = get_json(&server, &day("summary")).await;
+    sort_by(&mut summary["byTool"], "tool");
+    assert_eq!((&summary["tokens"], &summary["sessions"]), (&json!(363), &json!(2)));
+    let by_tool = &summary["byTool"];
+    assert_eq!(
+        (&by_tool[0]["tool"], &by_tool[0]["tokens"]),
+        (&json!("claude"), &json!(133))
+    );
+    assert_eq!(
+        (&by_tool[1]["tool"], &by_tool[1]["tokens"], &by_tool[1]["costMicrousd"]),
+        (&json!("codex"), &json!(230), &json!(966))
+    );
+    assert_eq!(
+        pairs(&get_json(&server, &day("sessions")).await, "tool"),
+        [json!(["codex", 230]), json!(["claude", 133])]
+    );
+    let mut breakdown = get_json(&server, &day("breakdown")).await;
+    sort_by(&mut breakdown["items"], "tool");
+    assert_eq!(
+        pairs(&breakdown, "tool"),
+        [json!(["claude", 133]), json!(["codex", 230])]
+    );
+    assert_eq!(
+        pairs(&get_json(&server, &day("projects")).await, "name"),
+        [
+            json!(["/synthetic/codex-project", 230]),
+            json!(["/synthetic/private-project", 133])
+        ]
+    );
+
+    // A project folder that is a git checkout is named by its local remote.
+    let checkout = scratch(&server).join("checkout");
+    fs::create_dir_all(checkout.join(".git")).unwrap();
+    fs::write(
+        checkout.join(".git").join("config"),
+        "[remote \"origin\"]\n\turl = git@github.com:synthetic-owner/synthetic-repo.git\n",
+    )
+    .unwrap();
+    let mut record = claude("msg-9", 2, 3);
+    record["sessionId"] = json!("checkout-session");
+    record["cwd"] = json!(text(&checkout));
+    record["timestamp"] = json!("2026-10-20T13:00:00.000Z");
+    write_log(&roots.0.join("checkout").join("session.jsonl"), &[record]);
+    refresh(&server).await;
+    let projects = get_json(&server, &day("projects")).await;
+    let items = projects["items"].as_array().unwrap();
+    let named = items.iter().find(|item| item["name"] == text(&checkout)).unwrap();
+    assert!(named["costMicrousd"].is_u64());
+    assert_eq!(
+        named,
+        &json!({"name": text(&checkout), "tokens": 135,
+            "breakdown": {"input": 2, "output": 3, "cacheRead": 100, "cacheWrite": 30, "reasoning": 3, "cacheWrite1h": 20},
+            "costMicrousd": named["costMicrousd"], "sessions": 1, "repository": "synthetic-owner/synthetic-repo"})
+    );
+    assert_eq!(items.iter().filter(|item| item["repository"].is_null()).count(), 2);
+    // The newest session comes first.
+    let newest = &get_json(&server, &day("sessions")).await["items"][0];
+    assert_eq!(
+        (&newest["id"], &newest["project"], &newest["lastUsedAt"]),
+        (
+            &json!("checkout-session"),
+            &json!(text(&checkout)),
+            &json!("2026-10-20T13:00:00.000Z")
+        )
+    );
+
+    // A day outside the data has nothing, and the CSV export carries the same total.
+    let empty = |route: &str| format!("/api/local/{route}?from=2026-10-19&to=2026-10-19");
+    assert_eq!(
+        get_json(&server, &empty("summary")).await,
+        json!({"tokens": 0, "breakdown": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0, "reasoning": 0},
+            "costMicrousd": null, "costParts": null, "sessions": 0, "cacheRate": 0.0, "byTool": [], "byModel": [], "daily": [],
+            "activity": {"activeDays": 0, "currentStreak": 0, "longestStreak": 0, "bestDay": null, "averagePerActiveDay": 0}})
+    );
+    for route in ["sessions", "breakdown", "projects"] {
+        assert_eq!(get_json(&server, &empty(route)).await, json!({"items": []}), "{route}");
+    }
+    let csv = server.get(&day("export")).await.text;
+    // The total is the eleventh column.
+    let total: u64 = csv
+        .trim_end()
+        .split("\r\n")
+        .skip(1)
+        .map(|row| row.split(r#"",""#).nth(10).unwrap().parse::<u64>().unwrap())
+        .sum();
+    assert_eq!(json!(total), get_json(&server, &day("summary")).await["tokens"]);
+
+    // No route returns prompt, response or tool-result text.
+    for path in [
+        "/api/local/status".to_owned(),
+        day("summary"),
+        day("sessions"),
+        day("breakdown"),
+        day("projects"),
+        day("export"),
+        "/api/local/detect".to_owned(),
+    ] {
+        assert!(
+            !server.get(&path).await.text.contains("PRIVATE_PROMPT_MARKER"),
+            "{path}"
+        );
+    }
+}
+
+const CSV_COLUMNS: [&str; 12] = [
+    "tool",
+    "model",
+    "timestamp",
+    "project",
+    "session",
+    "input",
+    "output",
+    "cache_read",
+    "cache_write",
+    "reasoning",
+    "total",
+    "cost_microusd",
+];
+
+/// RFC 4180 rows of quoted cells, each line ended by CRLF; fails on anything else, such as an unquoted cell or a
+/// bare LF.
+fn csv_rows(text: &str) -> Vec<Vec<String>> {
+    let lines = text.strip_suffix("\r\n").expect("a final CRLF");
+    let row = |line: &str| {
+        let (mut cells, mut rest) = (Vec::new(), line);
+        loop {
+            rest = rest
+                .strip_prefix('"')
+                .unwrap_or_else(|| panic!("an unquoted cell: {line}"));
+            let mut cell = String::new();
+            loop {
+                let end = rest.find('"').unwrap_or_else(|| panic!("an unterminated cell: {line}"));
+                cell.push_str(&rest[..end]);
+                rest = &rest[end + 1..];
+                let Some(after) = rest.strip_prefix('"') else { break };
+                cell.push('"');
+                rest = after;
+            }
+            cells.push(cell);
+            match rest.strip_prefix(',') {
+                Some(after) => rest = after,
+                None => {
+                    assert!(rest.is_empty(), "text after a cell: {line}");
+                    return cells;
+                }
+            }
+        }
+    };
+    lines.split("\r\n").map(row).collect()
+}
+
+/// The rows of an export, each as an object of its cells by column, after its header row.
+async fn export_rows(server: &Server, query: &str) -> Vec<Value> {
+    let reply = server.get(&format!("/api/local/export?{query}")).await;
+    assert_eq!(reply.status, 200, "{query}: {}", reply.text);
+    let mut rows = csv_rows(&reply.text).into_iter();
+    assert_eq!(rows.next().unwrap(), CSV_COLUMNS);
+    rows.map(|row| {
+        let cells = CSV_COLUMNS.iter().zip(row);
+        Value::Object(
+            cells
+                .map(|(name, cell)| (name.to_string(), Value::from(cell)))
+                .collect(),
+        )
+    })
+    .collect()
+}
+
+#[tokio::test]
+async fn exports_every_event_in_quoted_cells_and_neutralises_a_formula_that_starts_a_cell() {
+    let (server, _app) = Server::local(|_| {}).await;
+    let root = scratch(&server).join(".claude").join("projects");
+    // Each record's input count identifies its row. A field taken from a log holds no control character, so a tab,
+    // CR or LF cannot start a cell; the other formula starters can, also after spaces.
+    let scenarios = [
+        (1, "project", "=1+1+cmd", "'=1+1+cmd"),
+        (2, "project", "+SUM(A1:A9)", "'+SUM(A1:A9)"),
+        (3, "project", "-2+3", "'-2+3"),
+        (4, "project", "@SUM(A1)", "'@SUM(A1)"),
+        (5, "project", "  =1+1", "'  =1+1"),
+        (6, "project", " @evil", "' @evil"),
+        (
+            7,
+            "project",
+            r#"=HYPERLINK("http://evil.example","click")"#,
+            r#"'=HYPERLINK("http://evil.example","click")"#,
+        ),
+        (8, "model", "=1+1", "'=1+1"),
+        (9, "session", "@session", "'@session"),
+        (10, "model", "-model", "'-model"),
+        // Left alone: the starter is not first, or there is none.
+        (11, "project", "a=b", "a=b"),
+        (12, "project", "x+y-z@w", "x+y-z@w"),
+        (13, "project", "  plain text", "  plain text"),
+        (14, "project", r#"say "hi", then leave"#, r#"say "hi", then leave"#),
+        (
+            15,
+            "project",
+            "/synthetic/private-project",
+            "/synthetic/private-project",
+        ),
+    ];
+    let records: Vec<Value> = scenarios
+        .iter()
+        .map(|&(input, field, value, _)| {
+            let mut record = claude(&format!("msg-{input}"), input, 0);
+            match field {
+                "project" => record["cwd"] = json!(value),
+                "session" => record["sessionId"] = json!(value),
+                _ => record["message"]["model"] = json!(value),
+            }
+            record
+        })
+        .collect();
+    write_log(&root.join("p").join("session.jsonl"), &records);
+    let header = CSV_COLUMNS.map(|name| format!("\"{name}\"")).join(",");
+
+    // Before any source is authorised: the header row alone.
+    let reply = server.get(&format!("/api/local/export?{DAY}")).await;
+    assert_eq!((reply.status, reply.text), (200, format!("{header}\r\n")));
+
+    assert_eq!(configure(&server, "claude", true, &[text(&root)]).await.status, 200);
+    refresh(&server).await;
+    let reply = server.get(&format!("/api/local/export?{DAY}")).await;
+    assert_eq!(reply.status, 200);
+    assert_eq!(reply.header("content-type").as_deref(), Some("text/csv; charset=utf-8"));
+    assert_eq!(
+        reply.header("content-disposition").as_deref(),
+        Some("attachment; filename=\"tokentracky-usage.csv\"")
+    );
+    assert_eq!(reply.header("cache-control").as_deref(), Some("no-store"));
+    // The header row, then one row of twelve quoted cells per event.
+    assert!(reply.text.starts_with(&format!("{header}\r\n")));
+    let rows = csv_rows(&reply.text);
+    assert_eq!(rows.len(), scenarios.len() + 1);
+    assert!(rows.iter().all(|row| row.len() == 12));
+    assert!(!reply.text.contains("PRIVATE_PROMPT_MARKER"));
+
+    // Each event: tool, model, UTC timestamp, project, session, the five counts, their total and the cost.
+    let rows = export_rows(&server, DAY).await;
+    let row_of = |input: u64| {
+        rows.iter()
+            .find(|row| row["input"].as_str() == Some(&input.to_string()))
+            .unwrap()
+    };
+    let digits = |cell: &Value| {
+        cell.as_str()
+            .is_some_and(|text| !text.is_empty() && text.bytes().all(|c| c.is_ascii_digit()))
+    };
+    let plain = row_of(15);
+    assert!(digits(&plain["cost_microusd"]));
+    assert_eq!(
+        plain,
+        &json!({"tool": "claude", "model": "claude-sonnet-4-6", "timestamp": "2026-10-20T12:00:00.000Z",
+            "project": "/synthetic/private-project", "session": "claude-session", "input": "15", "output": "0",
+            "cache_read": "100", "cache_write": "30", "reasoning": "0", "total": "145", "cost_microusd": plain["cost_microusd"]})
+    );
+    // A formula that starts a text cell is prefixed with `'`, and only that; the numbers are never touched.
+    for (input, field, _, cell) in scenarios {
+        let row = row_of(input);
+        assert_eq!(row[field], cell, "{input}");
+        for name in ["input", "output", "cache_read", "cache_write", "reasoning", "total"] {
+            assert!(digits(&row[name]), "{input} {name}");
+        }
+    }
+
+    // The range, tool and text filters of the other usage routes.
+    assert!(export_rows(&server, "from=2026-10-21&to=2026-10-21").await.is_empty());
+    assert!(export_rows(&server, &format!("{DAY}&tool=codex")).await.is_empty());
+    let claude_rows = export_rows(&server, &format!("{DAY}&tool=claude")).await;
+    assert_eq!(claude_rows.len(), scenarios.len());
+    for (query, input) in [("q=A1:A9", "2"), ("q=hyperlink", "7")] {
+        let found: Vec<Value> = export_rows(&server, &format!("{DAY}&{query}"))
+            .await
+            .into_iter()
+            .map(|row| row["input"].clone())
+            .collect();
+        assert_eq!(found, [json!(input)], "{query}");
+    }
 }
 
 #[tokio::test]

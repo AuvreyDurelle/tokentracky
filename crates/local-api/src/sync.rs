@@ -278,7 +278,7 @@ impl CloudSync {
     pub async fn set_link(self: &Arc<Self>, input: LinkInput) -> Result<(), LocalError> {
         self.mutate(move |this| async move {
             // TypeScript answers 500 when the service cannot be reached or answers nonsense; 502 is the sensible
-            // reading of the same failure (tests/contract/README.md, first quirk).
+            // reading of the same failure (the crate root's first difference).
             let policy = this
                 .policy(&input.url, &input.device_token, None)
                 .await
@@ -391,7 +391,7 @@ impl CloudSync {
             }
             Err(Failure::Local(error)) => {
                 // Nothing linked is not a sync failure, so it leaves no error in the status. TypeScript records
-                // CLOUD_NOT_LINKED until a link or unlink (tests/contract/README.md, third quirk).
+                // CLOUD_NOT_LINKED until a link or unlink (the crate root's third difference).
                 state.status.sync_error = (error != NOT_LINKED).then_some(error.code);
                 Err(error)
             }

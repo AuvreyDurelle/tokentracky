@@ -1,5 +1,5 @@
-//! Shared test doubles: a scripted [`HttpClient`], a recording stand-in for the hosted API (`stub-service.ts`), and a
-//! client for the assembled router that sends what `tests/contract/runner.ts` sends.
+//! Shared test doubles: a scripted [`HttpClient`], a recording stand-in for the hosted API, a client for the
+//! assembled router that sends what `tests/contract/runner.ts` sends, and the `contract-server` binary on loopback TCP.
 #![allow(dead_code)]
 use axum::Router;
 use axum::body::{Body, to_bytes};
@@ -7,18 +7,19 @@ use axum::extract::connect_info::MockConnectInfo;
 use axum::extract::{Request, State};
 use axum::http::{HeaderMap, HeaderName, HeaderValue, StatusCode};
 use axum::response::Response;
-use axum::routing::{get, post, put};
 use serde_json::{Value, json};
 use std::collections::{HashMap, VecDeque};
 use std::future::Future;
+use std::io::{BufRead, BufReader};
 use std::net::SocketAddr;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::path::PathBuf;
+use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
 use tokentracky_collector::store::{FileCheckpoint, UsageStore};
 use tokentracky_core::{TokenCounts, ToolId, UsageEvent};
 use tokentracky_local_api::{
-    BoxFuture, HttpClient, HttpError, HttpRequest, HttpResponse, JsonBody, LocalApp, LocalError, LocalOptions,
-    LocalSession, LocalState, MemorySecretStore, ReqwestClient, base_router, object,
+    BoxFuture, HttpClient, HttpError, HttpRequest, HttpResponse, LocalApp, LocalError, LocalOptions, LocalSession,
+    LocalState, MemorySecretStore, ReqwestClient, base_router,
 };
 use tower::ServiceExt;
 
@@ -159,7 +160,7 @@ pub fn commit(store: &Mutex<UsageStore>, path: &str, events: &[UsageEvent]) {
         .unwrap();
 }
 
-/// One Claude Code record of `claude(id, input, output)` in `packages/collector/test/fixtures.ts`: 100 cache reads and
+/// One Claude Code record of `claude(id, input, output)` in `tests/contract/fixtures.ts`: 100 cache reads and
 /// 30 cache writes on top, so `claude('msg-1', 11, 20)` is 161 tokens on 2026-10-20.
 pub fn claude(session: &str, project: &str, input: u64, output: u64) -> UsageEvent {
     UsageEvent {
@@ -338,53 +339,6 @@ impl Stub {
 // The assembled router, driven as `tests/contract/runner.ts` drives a server.
 
 pub const ORIGIN: &str = "http://127.0.0.1:4771";
-pub const HOST: &str = "127.0.0.1:4771";
-
-/// The collector-backed routes, reduced to what the session and header tests need: a private read, a refresh that
-/// refuses while collection is paused, the pause switch, a query filter and a CSV download.
-fn stand_ins() -> Router<LocalState> {
-    let paused = Arc::new(AtomicBool::new(false));
-    let refresh = {
-        let paused = paused.clone();
-        move || {
-            let paused = paused.load(Ordering::SeqCst);
-            async move {
-                if paused {
-                    return Err(LocalError::new(409, "COLLECTION_PAUSED", "Resume collection first."));
-                }
-                Ok(axum::Json(json!({"refreshing": false})))
-            }
-        }
-    };
-    let collection = move |JsonBody(body): JsonBody| {
-        let paused = paused.clone();
-        async move {
-            let body = object(body.as_ref(), &["paused"])?;
-            let value = body.get("paused").and_then(Value::as_bool).ok_or(LocalError::new(
-                400,
-                "INVALID_REQUEST",
-                "Choose whether collection is paused.",
-            ))?;
-            paused.store(value, Ordering::SeqCst);
-            Ok::<_, LocalError>(axum::Json(json!({"paused": value})))
-        }
-    };
-    Router::new()
-        .route(
-            "/api/local/status",
-            get(|| async { axum::Json(json!({"private": true})) }),
-        )
-        .route("/api/local/refresh", post(refresh))
-        .route("/api/local/collection", put(collection))
-        .route(
-            "/api/local/summary",
-            get(|| async { LocalError::new(400, "INVALID_FILTER", "Choose a supported reporting period and tool.") }),
-        )
-        .route(
-            "/api/local/export",
-            get(|| async { ([("content-type", "text/csv; charset=utf-8")], "day,tool\r\n") }),
-        )
-}
 
 pub struct Server {
     pub app: Router,
@@ -457,6 +411,25 @@ impl Init {
     pub fn no_session(self) -> Self {
         self.header("cookie", None).header("origin", None)
     }
+    /// The method, headers and body sent to a server at `origin` holding `cookie`.
+    fn outgoing(self, origin: &str, cookie: Option<&String>) -> (&'static str, Vec<(String, String)>, Option<String>) {
+        let host = origin.strip_prefix("http://").unwrap();
+        let mut headers: Vec<(String, String)> = vec![("host".into(), host.into()), ("origin".into(), origin.into())];
+        if let Some(cookie) = cookie {
+            headers.push(("cookie".into(), cookie.clone()));
+        }
+        if self.json.is_some() {
+            headers.push(("content-type".into(), "application/json".into()));
+        }
+        for (name, value) in self.headers {
+            headers.retain(|(other, _)| other != name);
+            if let Some(value) = value {
+                headers.push((name.to_owned(), value));
+            }
+        }
+        let body = self.json.map(|json| json.to_string()).or(self.body);
+        (self.method.unwrap_or("GET"), headers, body)
+    }
 }
 
 /// A web root holding `index.html` and `assets/contract.js`.
@@ -524,8 +497,9 @@ impl Server {
         self.cookie = Some(reply.cookies()[0].split(';').next().unwrap().to_owned());
     }
 
-    /// The full local API behind the session and the rate limit, with no hosted service unless `cloud_url` is given,
-    /// serving a web root holding `index.html` and `assets/contract.js`. `login` redeems the launch link first.
+    /// The routes of [`base_router`], without the collector's, behind the session and the rate limit, with no hosted
+    /// service unless `cloud_url` is given, serving a web root holding `index.html` and `assets/contract.js`. `login`
+    /// redeems the launch link first.
     pub async fn start(cloud_url: Option<&str>, login: bool) -> Self {
         let web_root = web_root();
         let client: Arc<dyn HttpClient> = Arc::new(ReqwestClient::new().unwrap());
@@ -537,7 +511,7 @@ impl Server {
         )
         .unwrap();
         let session = LocalSession::new(ORIGIN);
-        let app = base_router(web_root.path(), None, stand_ins(), state.clone());
+        let app = base_router(web_root.path(), None, Router::new(), state.clone());
         let app = session
             .protect(app)
             .layer(MockConnectInfo(SocketAddr::from(([127, 0, 0, 1], 50_000))));
@@ -566,21 +540,8 @@ impl Server {
     }
 
     pub async fn request(&self, path: &str, init: Init) -> Reply {
-        let mut headers: Vec<(String, String)> = vec![("host".into(), HOST.into()), ("origin".into(), ORIGIN.into())];
-        if let Some(cookie) = &self.cookie {
-            headers.push(("cookie".into(), cookie.clone()));
-        }
-        if init.json.is_some() {
-            headers.push(("content-type".into(), "application/json".into()));
-        }
-        for (name, value) in init.headers {
-            headers.retain(|(other, _)| other != name);
-            if let Some(value) = value {
-                headers.push((name.to_owned(), value));
-            }
-        }
-        let body = init.json.map(|json| json.to_string()).or(init.body);
-        let mut request = Request::builder().method(init.method.unwrap_or("GET")).uri(path);
+        let (method, headers, body) = init.outgoing(ORIGIN, self.cookie.as_ref());
+        let mut request = Request::builder().method(method).uri(path);
         for (name, value) in headers {
             request = request.header(
                 HeaderName::try_from(name).unwrap(),
@@ -611,6 +572,112 @@ impl Server {
     }
 }
 
+// ---------------------------------------------------------------------------------------------------------------
+// The `contract-server` binary on loopback TCP, started as `tests/contract/runner.ts` starts it.
+
+/// The `contract-server` process: local mode on a free loopback port, with a fresh database, a `HOME` and a web root
+/// holding `index.html` and `assets/contract.js` of its own, no pricing download, the hourly cycle, no hosted service
+/// and nothing else of this environment. Requests go over TCP as the runner sends them. Killed when dropped.
+pub struct Process {
+    child: Child,
+    /// `http://127.0.0.1:PORT`.
+    pub origin: String,
+    pub launch_url: String,
+    pub cookie: Option<String>,
+    /// The server's `HOME`, as its real path; the tools' usual folders are below it.
+    pub home: PathBuf,
+    client: reqwest::Client,
+    directory: tempfile::TempDir,
+}
+
+impl Process {
+    /// Starts the binary and reads its launch link; `login` redeems it for the session cookie.
+    pub async fn start(login: bool) -> Self {
+        let directory = web_root();
+        let root = std::fs::canonicalize(directory.path()).unwrap();
+        let home = root.join("home");
+        std::fs::create_dir(&home).unwrap();
+        let mut child = Command::new(env!("CARGO_BIN_EXE_contract-server"))
+            .env_clear()
+            .env("HOME", &home)
+            .env("TOKENTRACKY_MODE", "local")
+            .env("PORT", "0")
+            .env("TOKENTRACKY_DATABASE_PATH", root.join("data").join("usage.sqlite"))
+            .env("TOKENTRACKY_PRICING_REFRESH", "off")
+            .env("TOKENTRACKY_WEB_ROOT", &root)
+            .env("TOKENTRACKY_REFRESH_INTERVAL_MS", "3600000")
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .spawn()
+            .unwrap();
+        let mut lines = BufReader::new(child.stdout.take().unwrap()).lines();
+        let first = lines
+            .next()
+            .expect("the server exited before printing a launch link")
+            .unwrap();
+        // Keep reading what it prints, so that no later line meets a closed pipe.
+        std::thread::spawn(move || lines.for_each(drop));
+        let launch_url = first.rsplit(' ').next().unwrap().to_owned();
+        let origin = launch_url.split("/?launch=").next().unwrap().to_owned();
+        let client = reqwest::Client::builder()
+            .redirect(reqwest::redirect::Policy::none())
+            .no_proxy()
+            .build()
+            .unwrap();
+        let mut process = Self {
+            child,
+            origin,
+            launch_url,
+            cookie: None,
+            home,
+            client,
+            directory,
+        };
+        if login {
+            let launch = process.launch_path();
+            let reply = process.request(&launch, Init::default().header("origin", None)).await;
+            assert_eq!(reply.status, 200, "the launch link was refused");
+            process.cookie = Some(reply.cookies()[0].split(';').next().unwrap().to_owned());
+        }
+        process
+    }
+
+    /// The launch link's path and query.
+    pub fn launch_path(&self) -> String {
+        self.launch_url.strip_prefix(&self.origin).unwrap().to_owned()
+    }
+
+    pub async fn get(&self, path: &str) -> Reply {
+        self.request(path, Init::default()).await
+    }
+
+    pub async fn request(&self, path: &str, init: Init) -> Reply {
+        let (method, headers, body) = init.outgoing(&self.origin, self.cookie.as_ref());
+        let method = reqwest::Method::from_bytes(method.as_bytes()).unwrap();
+        let mut request = self.client.request(method, format!("{}{path}", self.origin));
+        for (name, value) in headers {
+            request = request.header(name, value);
+        }
+        if let Some(body) = body {
+            request = request.body(body);
+        }
+        let response = request.send().await.unwrap();
+        let (status, headers) = (response.status().as_u16(), response.headers().clone());
+        Reply {
+            status,
+            headers,
+            text: response.text().await.unwrap(),
+        }
+    }
+}
+
+impl Drop for Process {
+    fn drop(&mut self) {
+        let _ = self.child.kill();
+        let _ = self.child.wait();
+    }
+}
+
 /// `expectError`: the JSON content type and exactly `{error:{code,message}}` with a non-empty message.
 #[track_caller]
 pub fn expect_error(reply: &Reply, status: u16, code: &str) {
@@ -632,7 +699,7 @@ pub fn expect_error(reply: &Reply, status: u16, code: &str) {
     );
 }
 
-/// The security headers of every answer (`SECURITY_HEADERS` in `tests/contract/support.ts`).
+/// The security headers of every answer, JSON errors included (HTML pages and the launch page differ only in CSP).
 pub const SECURITY_HEADERS: [(&str, &str); 5] = [
     (
         "content-security-policy",

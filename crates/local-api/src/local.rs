@@ -776,7 +776,7 @@ async fn limits(State(state): State<LocalState>, uri: Uri) -> Result<Response, L
     Ok(json(StatusCode::OK, &crate::limits::limits(&readings, now)))
 }
 
-/// The CSV download. Its headers are set on success only (the crate root's second quirk).
+/// The CSV download. Its headers are set on success only (the crate root's second difference).
 async fn export(State(state): State<LocalState>, uri: Uri) -> Result<Response, LocalError> {
     let csv = query(&state, &uri, UsageStore::export_csv).await?;
     let headers = [
