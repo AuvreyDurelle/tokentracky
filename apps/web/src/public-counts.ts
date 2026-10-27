@@ -1,6 +1,6 @@
 import type {CommunityStats, ExactTokenCounts, LeaderboardResponse, TokenCounts, ToolId} from '@tokentracky/core';
 
-type Shared = Pick<LeaderboardResponse, 'totalTokens' | 'totalCostMicrousd' | 'toolTotals' | 'trend' | 'exactAggregates'> & {breakdown?: CommunityStats['breakdown']};
+type Shared = Pick<LeaderboardResponse, 'totalTokens' | 'totalCostMicrousd' | 'toolTotals' | 'trend' | 'exactAggregates'> & Partial<Pick<CommunityStats, 'breakdown' | 'monthly' | 'medianTokens'>>;
 export type PublicKinds = Record<'input' | 'output' | 'cacheRead' | 'cacheWrite' | 'reasoning', bigint>;
 
 /** Decimal companions are authoritative. The numeric fallback always comes from the safe legacy contract. */
@@ -27,7 +27,16 @@ export function sharedCounts(value: Shared) {
     toolTotals: Object.fromEntries(Object.entries(value.toolTotals).map(([tool, count]) => [tool, exactCount(count!, exact?.toolTotals?.[tool as ToolId])])) as Partial<Record<ToolId, bigint>>,
     trend: value.trend.map((point, index) => ({day: point.day, tokens: exactCount(point.tokens, exact?.trend?.[index]?.tokens)})),
     breakdown: value.breakdown ? publicKinds(value.breakdown, exact?.breakdown) : null,
+    monthly: value.monthly?.map((point, index) => ({month: point.month, tokens: exactCount(point.tokens, exact?.monthly?.[index]?.tokens)})) ?? null,
+    medianTokens: value.medianTokens === undefined ? null : exactCount(value.medianTokens, exact?.medianTokens),
   };
+}
+
+/** The running community total at the start of the first month and the end of each, the last being now: the total, less what each later month added. */
+export function cumulativeMonths(total: bigint, monthly: Array<{month: string; tokens: bigint}>): bigint[] {
+  const points = [total];
+  for (let index = monthly.length - 1; index >= 0; index--) points.unshift(points[0]! - monthly[index]!.tokens);
+  return points.map(point => point < 0n ? 0n : point);
 }
 
 export const sumCounts = (values: Iterable<bigint>): bigint => {

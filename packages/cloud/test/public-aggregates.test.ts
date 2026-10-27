@@ -27,6 +27,14 @@ describe('exact public aggregates', () => {
     expect(publicAggregates({...empty(), breakdown: null})).toMatchObject({totalCostMicrousd: null, breakdown: null});
     expect(() => JSON.stringify(result)).not.toThrow();
   });
+  it('carries the months and the median for the community, with exact companions above the boundary', () => {
+    const big = 2n ** 80n;
+    const result = publicAggregates({...empty(), monthly: [{month: '2026-09', tokens: 5n}, {month: '2026-10', tokens: big}], medianTokens: big});
+    expect(result).toMatchObject({monthly: [{month: '2026-09', tokens: 5}, {month: '2026-10', tokens: Number.MAX_SAFE_INTEGER}], medianTokens: Number.MAX_SAFE_INTEGER});
+    expect(result.exactAggregates).toEqual({monthly: [{month: '2026-09', tokens: '5'}, {month: '2026-10', tokens: big.toString()}], medianTokens: big.toString()});
+    expect(publicAggregates(empty())).not.toHaveProperty('monthly');
+    expect(publicAggregates(empty())).not.toHaveProperty('medianTokens');
+  });
   it('never rounds PostgreSQL integer text through Number and rejects invalid internal counters', () => {
     expect(wide('9007199254740993')).toBe(9007199254740993n);
     for (const value of [-1n, -1, Infinity, NaN, MAX.toString() + '.1', '1e10', Number.MAX_SAFE_INTEGER + 1]) expect(() => wide(value)).toThrow();

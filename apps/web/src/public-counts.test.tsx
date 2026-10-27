@@ -1,7 +1,7 @@
 import {describe, expect, it} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
 import type {CommunityStats} from '@tokentracky/core';
-import {averageCount, countRatio, countShare, publicKinds, sharedCounts, sumCounts} from './public-counts';
+import {averageCount, countRatio, countShare, cumulativeMonths, publicKinds, sharedCounts, sumCounts} from './public-counts';
 import {formatCompact, formatCost, formatCostCompact, formatExact} from './format';
 import {CommunityTypes} from './Leaderboard';
 import {CommunityHero} from './mac/LeaderboardView';
@@ -65,5 +65,13 @@ describe('exact public counter rendering', () => {
     const notice = renderToStaticMarkup(<IntegrityNotice />);
     expect(notice).toContain('save your listing');
     expect(notice).toContain('not a ban');
+  });
+});
+
+describe('cumulativeMonths', () => {
+  it('runs from the total before the first month to the total now, never below zero', () => {
+    const months = [{month: '2026-08', tokens: 10n}, {month: '2026-09', tokens: 0n}, {month: '2026-10', tokens: 5n}];
+    expect(cumulativeMonths(100n, months)).toEqual([85n, 95n, 95n, 100n]);
+    expect(cumulativeMonths(3n, months)).toEqual([0n, 0n, 0n, 3n]);
   });
 });

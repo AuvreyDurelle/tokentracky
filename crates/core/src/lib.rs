@@ -441,6 +441,12 @@ pub struct ExactAggregates {
     #[ts(optional, inline)]
     pub trend: Option<Vec<ExactDayTokens>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional, inline)]
+    pub monthly: Option<Vec<ExactMonthTokens>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub median_tokens: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub breakdown: Option<ExactTokenCounts>,
 }
@@ -448,6 +454,12 @@ pub struct ExactAggregates {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct ExactDayTokens {
     pub day: String,
+    pub tokens: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+pub struct ExactMonthTokens {
+    pub month: String,
     pub tokens: String,
 }
 
@@ -627,6 +639,22 @@ pub struct CommunityStats {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub exact_aggregates: Option<ExactAggregates>,
+    /// Community tokens per UTC calendar month for the 12 months ending this one (this one so far), oldest first;
+    /// absent from servers that predate it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional, inline)]
+    pub monthly: Option<Vec<MonthTokens>>,
+    /// The middle builder's all-time tokens, the lower middle one for an even count; absent likewise.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional, type = "number")]
+    pub median_tokens: Option<u64>,
+}
+/// One UTC calendar month's tokens (`YYYY-MM`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+pub struct MonthTokens {
+    pub month: String,
+    #[ts(type = "number")]
+    pub tokens: u64,
 }
 
 /// Achievements (F7), computed on the hosted side from published data only.

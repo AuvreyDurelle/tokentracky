@@ -31,4 +31,14 @@ fn numeric_only_responses_remain_compatible_and_exact_companions_round_trip() {
     community["exactAggregates"] = exact;
     let new: CommunityStats = serde_json::from_value(community.clone()).unwrap();
     assert_eq!(serde_json::to_value(new).unwrap(), community);
+    // The 12 months and the median, with exact companions above the safe range.
+    community["monthly"] =
+        json!([{"month": "2026-09", "tokens": 5}, {"month": "2026-10", "tokens": 9007199254740991_u64}]);
+    community["medianTokens"] = json!(9007199254740991_u64);
+    community["exactAggregates"]["monthly"] =
+        json!([{"month": "2026-09", "tokens": "5"}, {"month": "2026-10", "tokens": huge}]);
+    community["exactAggregates"]["medianTokens"] = json!(huge);
+    let monthly: CommunityStats = serde_json::from_value(community.clone()).unwrap();
+    assert_eq!(monthly.monthly.as_ref().map(Vec::len), Some(2));
+    assert_eq!(serde_json::to_value(monthly).unwrap(), community);
 }

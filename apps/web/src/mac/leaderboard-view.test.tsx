@@ -73,6 +73,15 @@ describe('CommunityHero', () => {
     expect(html).toContain('Claude Code <b>61%</b>');
     expect(html).toContain('Other <b>1.8%</b>');
     expect(html).toMatch(/<path d="M4,[^"]+ L512 158 L4 158 Z"/);
+    expect(html).toContain('Community tokens per day');
+  });
+  it('draws the last 12 months as a running total, with the median builder, where the server sends them', () => {
+    const monthly = Array.from({ length: 12 }, (_, index) => ({ month: new Date(Date.UTC(2025, 10 + index, 1)).toISOString().slice(0, 7), tokens: 2e12 }));
+    const html = markup(<CommunityHero stats={{ ...stats, monthly, medianTokens: 1.9e9 }} />);
+    expect(html).toContain('Community tokens, cumulative');
+    expect(html).toContain('Last 12 months');
+    expect(html).toContain('median 1.9B');
+    expect([...html.matchAll(/<text class="axis" x="[\d.]+" y="180"[^>]*>([^<]+)<\/text>/g)].map((match) => match[1])).toEqual(['Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct']);
   });
 });
 

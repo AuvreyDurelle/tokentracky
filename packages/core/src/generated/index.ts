@@ -223,6 +223,10 @@ export type CommunityStats = {
   breakdown: TokenCounts | null;
   /** Exact shared values beyond JavaScript's safe integer range. Corresponding numeric fields are lower bounds. */
   exactAggregates?: ExactAggregates;
+  /** Community tokens per UTC calendar month for the 12 months ending this one (this one so far), oldest first; absent from servers that predate it. */
+  monthly?: Array<{ month: string, tokens: number }>;
+  /** The middle builder's all-time tokens, the lower middle one for an even count; absent likewise. */
+  medianTokens?: number;
 };
 /** Decimal integer companions for shared aggregates. Maps and series are complete when present; null costs stay unknown. */
 export type ExactAggregates = {
@@ -230,6 +234,8 @@ export type ExactAggregates = {
   totalCostMicrousd?: string;
   toolTotals?: Partial<Record<ToolId, string>>;
   trend?: Array<{ day: string, tokens: string }>;
+  monthly?: Array<{ month: string, tokens: string }>;
+  medianTokens?: string;
   breakdown?: ExactTokenCounts;
 };
 /** Community token kinds as decimal integers. Reasoning is part of output and is never added to the total again. */

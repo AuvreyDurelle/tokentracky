@@ -8,6 +8,9 @@ export interface WideAggregates {
   toolTotals: Partial<Record<ToolId, bigint>>;
   trend: Array<{day: string; tokens: bigint}>;
   breakdown?: WideKinds | null;
+  /** The community's 12 months and the middle builder's total; only community stats carry them. */
+  monthly?: Array<{month: string; tokens: bigint}>;
+  medianTokens?: bigint;
 }
 
 /** Parse PostgreSQL numeric integer text without rounding it through a JavaScript number. */
@@ -38,6 +41,8 @@ export function publicAggregates(values: WideAggregates) {
   const tools = Object.entries(values.toolTotals) as Array<[ToolId, bigint]>;
   if (tools.some(([, value]) => value > MAX)) exact.toolTotals = Object.fromEntries(tools.map(([tool, value]) => [tool, value.toString()]));
   if (values.trend.some(point => point.tokens > MAX)) exact.trend = values.trend.map(point => ({day: point.day, tokens: point.tokens.toString()}));
+  if (values.monthly?.some(point => point.tokens > MAX)) exact.monthly = values.monthly.map(point => ({month: point.month, tokens: point.tokens.toString()}));
+  if (values.medianTokens !== undefined && values.medianTokens > MAX) exact.medianTokens = values.medianTokens.toString();
   let breakdown: TokenCounts | null | undefined;
   if (values.breakdown === null) breakdown = null;
   else if (values.breakdown !== undefined) {
@@ -51,6 +56,8 @@ export function publicAggregates(values: WideAggregates) {
     toolTotals: Object.fromEntries(tools.map(([tool, value]) => [tool, numeric(value)])) as Partial<Record<ToolId, number>>,
     trend: values.trend.map(point => ({day: point.day, tokens: numeric(point.tokens)})),
     ...(breakdown !== undefined ? {breakdown} : {}),
+    ...(values.monthly ? {monthly: values.monthly.map(point => ({month: point.month, tokens: numeric(point.tokens)}))} : {}),
+    ...(values.medianTokens !== undefined ? {medianTokens: numeric(values.medianTokens)} : {}),
     ...(Object.keys(exact).length ? {exactAggregates: exact} : {}),
   };
 }

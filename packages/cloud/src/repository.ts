@@ -46,6 +46,9 @@ const lastDay = (now: Date) => {
   const until = Math.floor(now.getTime() / HOUR_MS) * HOUR_MS;
   return {since: new Date(until - 24 * HOUR_MS), until: new Date(until)};
 };
+/** The last `count` UTC months (`YYYY-MM`) ending this one, oldest first. */
+const recentMonths = (now: Date, count: number) =>
+  Array.from({length: count}, (_, index) => new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (count - 1 - index), 1)).toISOString().slice(0, 7));
 /** The last `count` UTC day keys ending today, oldest first. */
 const recentDays = (now: Date, count: number) => {
   const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
@@ -639,15 +642,16 @@ export class PostgresCloudRepository {
     try { return checkedSum(values); } catch { throw new CloudError(422, 'COUNTER_OVERFLOW', 'Aggregate exceeds the safe integer range'); }
   }
 
-  /** Landing-page totals: every published builder, all time, plus the 30-day community trend and the totals by token kind. */
+  /** Landing-page totals: every published builder, all time, plus the 30-day community trend, the last 12 months, the median builder and the totals by token kind. */
   async community(): Promise<CommunityStats> {
     return this.snapshot(client => this.communitySummary(client, this.now()));
   }
 
   private async communitySummary(client: PoolClient, now: Date): Promise<CommunityStats> {
     const published = `(p.history_start IS NULL OR (b.day_key <> 'unknown' AND b.day_key >= to_char(p.history_start AT TIME ZONE 'UTC', 'YYYY-MM-DD')))`;
-    const totals = (await client.query<{builders: number; tokens: string; cost: string | null}>(`
-      SELECT count(*)::int AS builders, coalesce(sum(tokens), 0) AS tokens, sum(cost) AS cost FROM (
+    const totals = (await client.query<{builders: number; tokens: string; cost: string | null; median: string | null}>(`
+      SELECT count(*)::int AS builders, coalesce(sum(tokens), 0) AS tokens, sum(cost) AS cost,
+        percentile_disc(0.5) WITHIN GROUP (ORDER BY tokens) AS median FROM (
         SELECT p.account_id, coalesce(sum(b.tokens), 0) AS tokens,
           CASE WHEN NOT p.share_cost OR count(*) FILTER (WHERE b.cost_microusd IS NULL) > 0 THEN NULL ELSE sum(b.cost_microusd) END AS cost
         FROM ${this.schema}.cloud_publications p LEFT JOIN ${this.buckets} b ON b.account_id = p.account_id AND ${published}
@@ -665,8 +669,15 @@ export class PostgresCloudRepository {
       input: wide(kinds.input ?? '0'), output: wide(kinds.output ?? '0'), cacheRead: wide(kinds.cache_read ?? '0'),
       cacheWrite: wide(kinds.cache_write ?? '0'), reasoning: wide(kinds.reasoning ?? '0'),
     } : null;
+    const months = recentMonths(now, 12);
+    const monthly = await client.query<{month: string; tokens: string}>(`
+      SELECT substr(b.day_key, 1, 7) AS month, sum(b.tokens) AS tokens
+      FROM ${this.schema}.cloud_publications p JOIN ${this.buckets} b ON b.account_id = p.account_id
+      WHERE ${this.scope()} GROUP BY 1`, [`${months[0]}-01`, 'all']);
+    const byMonth = new Map(monthly.rows.map(row => [row.month, wide(row.tokens)]));
     const aggregates = publicAggregates({totalTokens: wide(totals.tokens), totalCostMicrousd: totals.cost === null ? null : wide(totals.cost),
-      toolTotals: Object.fromEntries(tools.rows.map(row => [row.tool, wide(row.tokens)])), trend: await this.publicTrend(client, 'all', now), breakdown});
+      toolTotals: Object.fromEntries(tools.rows.map(row => [row.tool, wide(row.tokens)])), trend: await this.publicTrend(client, 'all', now), breakdown,
+      monthly: months.map(month => ({month, tokens: byMonth.get(month) ?? 0n})), medianTokens: wide(totals.median ?? '0')});
     return {builders: totals.builders, newBuilders: fresh.rows[0]!.count, updatedAt: now.toISOString(), ...aggregates, breakdown: aggregates.breakdown ?? null};
   }
 
