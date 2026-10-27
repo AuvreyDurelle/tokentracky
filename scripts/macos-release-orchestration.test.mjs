@@ -106,6 +106,21 @@ test('ad-hoc release needs no Apple material: no keychain, notarization or stapl
   } finally { await rm(f.root, { recursive: true, force: true }); }
 });
 
+test('ad-hoc release hides the empty Apple settings the workflow passes, so Tauri keeps the "-" identity', async () => {
+  const f = await adhocFixture();
+  try {
+    // release-macos.yml sets each Apple value to '' for ad-hoc; Tauri treats a set-but-empty
+    // APPLE_SIGNING_IDENTITY as the identity and fails to find it in the keychain.
+    for (const name of APPLE) f.env[name] = '';
+    const result = f.execute();
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    const log = (await readFile(f.env.STUB_LOG, 'utf8')).trim().split('\n').map(JSON.parse);
+    const tauri = log.filter((e) => e.tool === 'cargo' && e.args[0] === 'tauri');
+    assert.ok(tauri.length > 0);
+    for (const call of tauri) assert.deepEqual(call.apple, [], call.args.join(' '));
+  } finally { await rm(f.root, { recursive: true, force: true }); }
+});
+
 for (const [name, change] of [['a missing signing mode', (env) => delete env.TOKENTRACKY_SIGNING], ['an unknown signing mode', (env) => { env.TOKENTRACKY_SIGNING = 'none'; }], ['an artifact that is not ad-hoc signed', (env) => { env.STUB_FAIL = 'adhoc-signature'; }], ['ad-hoc with the gate absent', (env) => { env.STUB_FAIL = 'gate'; }]]) {
   test(`ad-hoc release fails closed for ${name}`, async () => {
     const f = await adhocFixture();
