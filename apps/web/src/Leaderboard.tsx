@@ -223,10 +223,10 @@ export function Leaderboard({ api, me, join, onProfile, onGuide }: { api: ApiCli
       {columns.map((id) => cell(item, id))}
     </tr>;
   };
-  // Page one of a ranking shows its top three as a podium; search, cost order and later pages are plain lists.
+  // Page one of a ranking shows its top three as a podium, and the table still lists them; search, cost order and
+  // later pages are plain lists.
   const podium = query === '' && rankBy !== 'cost' ? rows.slice(0, 3) : [];
-  const listed = rows.slice(podium.length);
-  const slot = !custom && join ? ghostSlot(listed, me) : null;
+  const slot = !custom && join ? ghostSlot(rows, me) : null;
   const builders = community?.builders ?? overview?.total ?? null;
   const reset = shown ? resetText(period, shown.windowStart) : null;
 
@@ -273,7 +273,7 @@ export function Leaderboard({ api, me, join, onProfile, onGuide }: { api: ApiCli
       {shown && shown.total === 0 && (query
         ? <Empty title="No builders match">Try a different name.</Empty>
         : <Empty title="No one’s on the board yet" action={join && <button type="button" className="btn primary" onClick={join.onClick}>{join.label}</button>}>Be the first to put your tokens up.</Empty>)}
-      {shown && (listed.length > 0 || pinned || slot !== null) && shown.total > 0 && <div className="table-wrap" style={{ opacity: loading ? 0.6 : 1 }}><table className="table">
+      {shown && (rows.length > 0 || pinned || slot !== null) && shown.total > 0 && <div className="table-wrap" style={{ opacity: loading ? 0.6 : 1 }}><table className="table">
         <thead><tr>
           <th scope="col" className="c-rank" title="▲ ▼ rank change since the end of yesterday, UTC">Rank</th>
           <th scope="col" className="c-who">Builder</th>
@@ -281,8 +281,8 @@ export function Leaderboard({ api, me, join, onProfile, onGuide }: { api: ApiCli
         </tr></thead>
         <tbody>
           {pinned && row(pinned, 'pinned')}
-          {listed.flatMap((item, index) => index === slot && join ? [<GhostRow key="ghost" span={columns.length + 2} onJoin={join.onClick} />, row(item)] : [row(item)])}
-          {slot === listed.length && join && <GhostRow key="ghost" span={columns.length + 2} onJoin={join.onClick} />}
+          {rows.flatMap((item, index) => index === slot && join ? [<GhostRow key="ghost" span={columns.length + 2} onJoin={join.onClick} />, row(item)] : [row(item)])}
+          {slot === rows.length && join && <GhostRow key="ghost" span={columns.length + 2} onJoin={join.onClick} />}
         </tbody>
       </table></div>}
       {shown && shown.total > 0 && <footer className="board-foot" ref={foot}>
