@@ -744,7 +744,7 @@ span.profile-like { cursor: default; }
 .profile-legend .tool-ic { width: 12px; height: 12px; }
 .profile-legend em { grid-column: 2; color: var(--text-4); font-size: 11.5px; font-style: normal; font-variant-numeric: tabular-nums; }
 .profile-legend em b { color: var(--text-2); font-weight: 500; }
-.profile-model { display: grid; grid-template-columns: 22px 200px minmax(0, 1fr) 72px 84px; align-items: center; gap: 10px; height: 44px; padding: 0 20px; border-top: 1px solid var(--border); }
+.profile-model { display: grid; grid-template-columns: 22px 200px minmax(0, 1fr) minmax(72px, max-content) minmax(84px, max-content); align-items: center; gap: 10px; height: 44px; padding: 0 20px; border-top: 1px solid var(--border); }
 .profile-model:first-child { border-top: 0; }
 .profile-idx { color: var(--text-4); font-size: 12px; }
 .profile-model-name { overflow: hidden; color: var(--text); text-overflow: ellipsis; white-space: nowrap; }
@@ -969,7 +969,7 @@ span.profile-like { cursor: default; }
   .profile-btns { margin-left: 0; }
   .profile-stats { margin: 20px 18px 0; }
   .profile-high { margin: 10px 18px 18px; }
-  .profile-model { grid-template-columns: 18px minmax(0, 1fr) 60px 70px; row-gap: 6px; height: auto; padding: 10px 16px; }
+  .profile-model { grid-template-columns: 18px minmax(0, 1fr) minmax(60px, max-content) minmax(70px, max-content); row-gap: 6px; height: auto; padding: 10px 16px; }
   .profile-track { grid-column: 2 / -1; grid-row: 2; }
   .join-privacy, .demo-steps, .demo-desk { grid-template-columns: minmax(0, 1fr); }
   .join-privacy > div + div { border-left: 0; border-top: 1px solid var(--border); }
@@ -1039,7 +1039,7 @@ span.profile-like { cursor: default; }
   .search .input { width: 100%; }
   .profile-usage { padding: 14px 16px 16px; }
   .profile-legend, .profile-badges { grid-template-columns: minmax(0, 1fr); }
-  .profile-model { grid-template-columns: 14px minmax(0, 1fr) 56px 64px; gap: 8px; }
+  .profile-model { grid-template-columns: 14px minmax(0, 1fr) minmax(56px, max-content) minmax(64px, max-content); gap: 8px; }
   .profile-model-name { white-space: normal; overflow-wrap: anywhere; }
   .auth-page { padding: 28px 0; }
   .auth-card { padding: 22px; }
