@@ -35,10 +35,13 @@ tokio-util = "0.7"
 url = "2"
 gethostname = "1"
 libc = "0.2"
+# File identity and the machine id on Windows.
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Storage_FileSystem", "Win32_System_Registry"] }
 ruzstd = "0.9"
 # Local days in IANA time zones (F3). The system zoneinfo (`/usr/share/zoneinfo`), not a database bundled into the
-# binary; no fat lookup tables or forced inlining, for the app's size and memory budgets.
-jiff = { version = "0.2", default-features = false, features = ["std", "tz-system", "tzdb-zoneinfo"] }
+# binary; no fat lookup tables or forced inlining, for the app's size and memory budgets. Windows has no zoneinfo, so
+# `tzdb-bundle-platform` bundles the database there, and only there.
+jiff = { version = "0.2", default-features = false, features = ["std", "tz-system", "tzdb-zoneinfo", "tzdb-bundle-platform"] }
 
 [workspace.lints.clippy]
 all = { level = "warn", priority = -1 }

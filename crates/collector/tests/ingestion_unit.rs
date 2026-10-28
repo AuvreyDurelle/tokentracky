@@ -1,10 +1,11 @@
 //! What sits beside the golden fixtures: permissions and symlinks, the database lock, crash recovery, receipts and the
-//! metadata boundary. Unix only, as the service is.
+//! metadata boundary. The symlink cases are Unix only.
 mod support;
 
 use serde_json::json;
 use std::fs;
 use std::io::{BufRead, BufReader};
+#[cfg(unix)]
 use std::os::unix::fs::symlink;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
@@ -216,6 +217,7 @@ mod explicit_permissions_and_ownership {
         assert_eq!(cursor.state, SourceState::Unsupported);
     }
 
+    #[cfg(unix)]
     #[test]
     fn skips_symlinks_into_unapproved_directories_and_rejects_symlink_replacement_of_an_approved_root() {
         let folder = folder();
@@ -429,6 +431,7 @@ mod copies_across_folders {
         assert_eq!(collector.tokens(), 161);
     }
 
+    #[cfg(unix)]
     #[test]
     fn a_folder_saved_again_through_a_symlink_or_in_other_letter_case_is_saved_once() {
         let folder = folder();

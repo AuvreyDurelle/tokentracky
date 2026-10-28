@@ -603,6 +603,7 @@ async fn an_install_with_a_configured_source_is_marked_set_up_and_nothing_else_i
     assert!(setup_completed(data.path()));
 }
 
+#[cfg(unix)]
 #[tokio::test]
 async fn sources_authorise_each_folder_once_as_its_real_path_and_start_a_cycle() {
     let (server, _app) = Server::local(|_| {}).await;

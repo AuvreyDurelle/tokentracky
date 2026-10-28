@@ -1,14 +1,22 @@
 //! The Rust local server for `CONTRACT_SERVER_CMD` (`tests/contract/README.md`): [`serve_from_env`] with the device
-//! credential kept in memory. Runs until SIGINT or SIGTERM, then closes gracefully.
+//! credential kept in memory. Runs until SIGINT or SIGTERM (Ctrl-Break on Windows), then closes gracefully.
 use std::io::IsTerminal;
 use std::process::ExitCode;
 use std::sync::Arc;
 use tokentracky_local_api::{MemorySecretStore, serve_from_env};
-use tokio::signal::unix::{SignalKind, signal};
+
+#[cfg(unix)]
+fn terminate() -> std::io::Result<tokio::signal::unix::Signal> {
+    tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
+}
+#[cfg(windows)]
+fn terminate() -> std::io::Result<tokio::signal::windows::CtrlBreak> {
+    tokio::signal::windows::ctrl_break()
+}
 
 #[tokio::main]
 async fn main() -> ExitCode {
-    let mut terminate = signal(SignalKind::terminate()).expect("SIGTERM can be handled");
+    let mut terminate = terminate().expect("SIGTERM can be handled");
     let server = match serve_from_env(Arc::new(MemorySecretStore::default())).await {
         Ok(server) => server,
         Err(error) => {

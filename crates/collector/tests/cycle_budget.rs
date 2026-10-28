@@ -1,7 +1,9 @@
 //! Cost of one refresh cycle on a synthetic heavy Claude Code history. Ignored by default; run in release mode:
 //! `cargo test --release -p tokentracky-collector --test cycle_budget -- --ignored --nocapture`.
 //! `TOKENTRACKY_BENCH_SESSIONS` × `TOKENTRACKY_BENCH_REQUESTS` scale it (default 200 × 1,000 = 200,000 requests).
-//! Claude Code's `.claude.json` is 8 MiB of synthetic project state around its usage reading (F6).
+//! Claude Code's `.claude.json` is 8 MiB of synthetic project state around its usage reading (F6). Unix only: it
+//! measures CPU time with `getrusage`.
+#![cfg(unix)]
 use jiff::tz::TimeZone;
 use std::fs::{self, OpenOptions};
 use std::io::{BufWriter, Write};

@@ -4733,7 +4733,6 @@ dependencies = [
  "axum",
  "clap",
  "jiff",
- "libc",
  "serde",
  "serde_json",
  "tempfile",
@@ -4766,6 +4765,7 @@ dependencies = [
  "tokentracky-pricing",
  "tokio",
  "uuid",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -4865,6 +4865,7 @@ dependencies = [
  "serde_json",
  "tempfile",
  "tokentracky-local-api",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

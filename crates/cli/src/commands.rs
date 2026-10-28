@@ -3,8 +3,6 @@ use crate::args::Flags;
 use crate::report::{report, text};
 use crate::{CliError, Context, create_directory, database_path, other};
 use serde::Serialize;
-use std::ffi::CString;
-use std::os::unix::ffi::OsStrExt;
 use std::path::Path;
 use std::sync::Arc;
 use std::sync::PoisonError;
@@ -91,13 +89,10 @@ struct Doctor {
     detected: Vec<DetectedTool>,
 }
 
-/// `fs.access(directory, W_OK)`.
+/// A file can be created in `directory`: a temporary one, unnamed or deleted on close, is created and dropped.
+/// Truthful on every system, where `access(W_OK)` reads only Unix mode bits.
 fn writable(directory: &Path) -> bool {
-    let Ok(path) = CString::new(directory.as_os_str().as_bytes()) else {
-        return false;
-    };
-    // SAFETY: `path` is a NUL-terminated string that lives through the call.
-    unsafe { libc::access(path.as_ptr(), libc::W_OK) == 0 }
+    tempfile::tempfile_in(directory).is_ok()
 }
 
 pub async fn doctor(directory: &Path, flags: &Flags, context: &mut Context) -> Result<i32, CliError> {

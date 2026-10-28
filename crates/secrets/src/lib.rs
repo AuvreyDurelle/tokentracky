@@ -3,13 +3,19 @@
 //! same base64 JSON value the Keychain item held, in `cloud-link.json` in the data folder (`$TOKENTRACKY_HOME`, else
 //! `~/.tokentracky`; `--data-dir` does not move it). A file, not the Keychain: an ad-hoc signed build has no team
 //! identity, so the Keychain would ask for the password after every update and whenever the other binary reads it.
+//! On Windows the file has no mode bits: the user profile's access list keeps it the owner's.
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
 use std::fs::{File, OpenOptions};
 use std::io::{ErrorKind, Read, Write};
+#[cfg(unix)]
 use std::os::unix::fs::{DirBuilderExt, MetadataExt, OpenOptionsExt};
+#[cfg(windows)]
+use std::os::windows::fs::{MetadataExt, OpenOptionsExt};
 use std::path::{Path, PathBuf};
 use tokentracky_local_api::{BoxFuture, CloudLink, SecretError, SecretStore};
+#[cfg(windows)]
+use windows_sys::Win32::Storage::FileSystem::{FILE_ATTRIBUTE_REPARSE_POINT, FILE_FLAG_OPEN_REPARSE_POINT};
 
 const FILE: &str = "cloud-link.json";
 /// A link is a few hundred bytes; anything far larger is not one.
@@ -35,7 +41,7 @@ impl FileSecretStore {
         let home = std::env::var("TOKENTRACKY_HOME").ok().filter(|home| !home.is_empty());
         let folder = match &home {
             Some(home) => PathBuf::from(home),
-            None => PathBuf::from(std::env::var_os("HOME").ok_or_else(unavailable)?).join(".tokentracky"),
+            None => std::env::home_dir().ok_or_else(unavailable)?.join(".tokentracky"),
         };
         let store = Self::with_test_namespace(&folder, namespace.as_deref())?;
         if let Some(fixture) = std::env::var_os("TOKENTRACKY_TEST_CLOUD_FIXTURE") {
@@ -102,19 +108,27 @@ impl FileSecretStore {
         Self { path }
     }
     fn read(&self) -> Result<Option<CloudLink>, SecretError> {
-        // O_NOFOLLOW: a symlink planted at the path is refused rather than followed.
-        let file = match OpenOptions::new()
-            .read(true)
-            .custom_flags(libc::O_NOFOLLOW)
-            .open(&self.path)
-        {
+        let mut options = OpenOptions::new();
+        options.read(true);
+        // O_NOFOLLOW: a symlink planted at the path is refused rather than followed. On Windows the link itself is
+        // opened, and refused below.
+        #[cfg(unix)]
+        options.custom_flags(libc::O_NOFOLLOW);
+        #[cfg(windows)]
+        options.custom_flags(FILE_FLAG_OPEN_REPARSE_POINT);
+        let file = match options.open(&self.path) {
             Ok(file) => file,
             Err(error) if error.kind() == ErrorKind::NotFound => return Ok(None),
             Err(_) => return Err(unavailable()),
         };
         let metadata = file.metadata().map_err(|_| unavailable())?;
-        // Only the owner may read it; a file others can read may already have leaked the token.
-        if !metadata.is_file() || metadata.mode() & 0o077 != 0 || metadata.len() > MAX_BYTES {
+        // Only the owner may read it; a file others can read may already have leaked the token. Windows keeps that to
+        // the profile's access list, and refuses a link or other reparse point opened in the file's place.
+        #[cfg(unix)]
+        let refused = metadata.mode() & 0o077 != 0;
+        #[cfg(windows)]
+        let refused = metadata.file_attributes() & FILE_ATTRIBUTE_REPARSE_POINT != 0;
+        if !metadata.is_file() || refused || metadata.len() > MAX_BYTES {
             return Err(unavailable());
         }
         let mut encoded = String::new();
@@ -127,11 +141,11 @@ impl FileSecretStore {
     fn write(&self, link: &CloudLink) -> Result<(), SecretError> {
         let encoded = STANDARD.encode(serde_json::to_vec(link).map_err(|_| unavailable())?);
         let folder = self.path.parent().ok_or_else(unavailable)?;
-        std::fs::DirBuilder::new()
-            .recursive(true)
-            .mode(0o700)
-            .create(folder)
-            .map_err(|_| unavailable())?;
+        let mut builder = std::fs::DirBuilder::new();
+        builder.recursive(true);
+        #[cfg(unix)]
+        builder.mode(0o700);
+        builder.create(folder).map_err(|_| unavailable())?;
         // A 0600 temporary file renamed over the old one: readers see the old link or the new one, never half.
         let mut temporary = tempfile::Builder::new()
             .prefix(".cloud-link.")
@@ -172,6 +186,7 @@ impl SecretStore for FileSecretStore {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(unix)]
     use std::os::unix::fs::PermissionsExt;
 
     fn link() -> CloudLink {
@@ -186,6 +201,7 @@ mod tests {
         }
     }
 
+    #[cfg(unix)]
     fn mode(path: &Path) -> u32 {
         std::fs::metadata(path).unwrap().permissions().mode() & 0o777
     }
@@ -213,7 +229,8 @@ mod tests {
     fn synthetic_cloud_link_requires_explicit_isolation_and_loopback() {
         let fixture = |flag, namespace, home, url| FileSecretStore::fixture_link(flag, namespace, home, url);
         let namespace = Some("runtime-12345678");
-        let home = Some("/synthetic/native-runtime/data");
+        let home = std::env::temp_dir().join("synthetic-native-runtime");
+        let home = home.to_str();
         assert!(fixture(Some("1"), namespace, home, "http://127.0.0.1:54321").is_ok());
         for url in [
             "https://tokentracky.vercel.app",
@@ -237,8 +254,11 @@ mod tests {
         assert_eq!(store.read().unwrap(), None);
         store.write(&link()).unwrap();
         assert_eq!(store.read().unwrap(), Some(link()));
-        assert_eq!(mode(&data.join(FILE)), 0o600);
-        assert_eq!(mode(&data), 0o700);
+        #[cfg(unix)]
+        {
+            assert_eq!(mode(&data.join(FILE)), 0o600);
+            assert_eq!(mode(&data), 0o700);
+        }
 
         let replaced = CloudLink {
             device_token: "u".repeat(32),
@@ -258,6 +278,7 @@ mod tests {
         assert_eq!(store.read().unwrap(), None);
     }
 
+    #[cfg(unix)]
     #[test]
     fn refuses_a_file_others_can_read() {
         let folder = tempfile::tempdir().unwrap();
@@ -272,6 +293,7 @@ mod tests {
         assert_eq!(mode(&store.path), 0o600);
     }
 
+    #[cfg(unix)]
     #[test]
     fn refuses_a_symlink_and_does_not_write_through_it() {
         let folder = tempfile::tempdir().unwrap();
@@ -301,13 +323,11 @@ mod tests {
             STANDARD.encode(b"{\"url\":1}").into_bytes(),
             vec![b'A'; MAX_BYTES as usize + 4],
         ] {
-            let mut file = OpenOptions::new()
-                .write(true)
-                .create(true)
-                .truncate(true)
-                .mode(0o600)
-                .open(&path)
-                .unwrap();
+            let mut options = OpenOptions::new();
+            options.write(true).create(true).truncate(true);
+            #[cfg(unix)]
+            options.mode(0o600);
+            let mut file = options.open(&path).unwrap();
             file.write_all(&content).unwrap();
             assert!(store.read().is_err());
         }

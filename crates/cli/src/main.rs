@@ -6,7 +6,6 @@ use std::time::Duration;
 use time::UtcOffset;
 use tokentracky_cli::{Context, OnServe, ServeHandle, run};
 use tokentracky_local_api::SecretStore;
-use tokio::signal::unix::{SignalKind, signal};
 use tokio::sync::mpsc;
 
 mod web;
@@ -20,9 +19,17 @@ fn secret_store() -> Result<Option<Arc<dyn SecretStore>>, tokentracky_local_api:
 }
 
 fn open_url(url: &str) {
-    let opener = if cfg!(target_os = "macos") { "open" } else { "xdg-open" };
+    // `url` is always an http(s) origin's page, so Windows' URL handler opens it in the browser.
+    let (opener, options): (&str, &[&str]) = if cfg!(target_os = "macos") {
+        ("open", &[])
+    } else if cfg!(windows) {
+        ("rundll32", &["url.dll,FileProtocolHandler"])
+    } else {
+        ("xdg-open", &[])
+    };
     let silent = || Stdio::null();
     let _ = Command::new(opener)
+        .args(options)
         .arg(url)
         .stdin(silent())
         .stdout(silent())
@@ -39,7 +46,17 @@ fn confirm(question: &str) -> bool {
     matches!(answer.trim().to_lowercase().as_str(), "y" | "yes")
 }
 
-/// Runs until Ctrl-C or SIGTERM. On a terminal, Enter prints a fresh launch link.
+/// SIGTERM; on Windows, Ctrl-Break, which a parent sends to stop a process group.
+#[cfg(unix)]
+fn terminate() -> std::io::Result<tokio::signal::unix::Signal> {
+    tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
+}
+#[cfg(windows)]
+fn terminate() -> std::io::Result<tokio::signal::windows::CtrlBreak> {
+    tokio::signal::windows::ctrl_break()
+}
+
+/// Runs until Ctrl-C or SIGTERM (Ctrl-Break on Windows). On a terminal, Enter prints a fresh launch link.
 fn on_serve(interactive: bool) -> OnServe {
     Box::new(move |server: ServeHandle| {
         Box::pin(async move {
@@ -54,7 +71,7 @@ fn on_serve(interactive: bool) -> OnServe {
                     }
                 });
             }
-            let Ok(mut terminate) = signal(SignalKind::terminate()) else {
+            let Ok(mut terminate) = terminate() else {
                 return;
             };
             loop {

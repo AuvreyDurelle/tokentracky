@@ -61,8 +61,11 @@ fn embedding_fails_closed_for_missing_incomplete_or_symlinked_web_builds() {
         "HTML without the built entry points must fail"
     );
     fs::write(dist.join("index.html"), index).unwrap();
-    std::os::unix::fs::symlink(dist.join("assets/app.js"), dist.join("assets/symlink.js")).unwrap();
-    assert!(!run(true).status.success(), "symlinks must not enter a release bundle");
+    #[cfg(unix)]
+    {
+        std::os::unix::fs::symlink(dist.join("assets/app.js"), dist.join("assets/symlink.js")).unwrap();
+        assert!(!run(true).status.success(), "symlinks must not enter a release bundle");
+    }
 }
 
 #[test]
