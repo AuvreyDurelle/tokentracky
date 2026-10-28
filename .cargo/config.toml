@@ -1,0 +1,4 @@
+# The Windows CLI links its C runtime in: a clean Windows has no Visual C++ Redistributable, and the release ships
+# the executable alone. `cc` (bundled SQLite) and aws-lc-sys build their C with the same static runtime.
+[target.'cfg(all(windows, target_env = "msvc"))']
+rustflags = ["-C", "target-feature=+crt-static"]
