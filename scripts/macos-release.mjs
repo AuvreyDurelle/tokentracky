@@ -95,6 +95,15 @@ export async function releaseSettings(env, root) {
   };
 }
 
+const ASSETS = 'https://github.com/AuvreyDurelle/tokentracky/releases/download';
+
+/** The Linux and Windows CLI builds: each Rust target's place in the manifest and its asset's suffix. */
+export const CLI_TARGETS = {
+  'x86_64-unknown-linux-musl': { os: 'linux', arch: 'x86_64', extension: '' },
+  'aarch64-unknown-linux-musl': { os: 'linux', arch: 'aarch64', extension: '' },
+  'x86_64-pc-windows-msvc': { os: 'windows', arch: 'x86_64', extension: '.exe' },
+};
+
 export function updaterConfig(settings) {
   return {
     bundle: {
@@ -140,9 +149,10 @@ export async function main(argv = process.argv.slice(2), env = process.env) {
   const [command, ...args] = argv;
   const options = new Map();
   const allowed = {
-    validate: ['--root'], config: ['--root', '--out'],
+    validate: ['--root'], version: ['--root'], config: ['--root', '--out'],
     feed: ['--out', '--signature-file', '--artifact-url', '--version', '--notes', '--target'],
-    candidate: ['--out', '--version', '--dist'], notary: ['--receipt'],
+    candidate: ['--out', '--version', '--dist'], 'cli-candidate': ['--out', '--version', '--target', '--dist'],
+    notary: ['--receipt'],
   }[command];
   if (!allowed) throw new Error('Unknown release command');
   for (let i = 0; i < args.length; i += 2) {
@@ -167,9 +177,26 @@ export async function main(argv = process.argv.slice(2), env = process.env) {
     for (const [kind, extension] of [['cli', ''], ['app', '.dmg']]) {
       const file = `tokentracky-${version}-macos-arm64${extension}`;
       const bytes = await readFile(resolve(value('--dist'), file));
-      artifacts[kind] = { file, url: `https://github.com/AuvreyDurelle/tokentracky/releases/download/v${version}/${file}`, sha256: createHash('sha256').update(bytes).digest('hex') };
+      artifacts[kind] = { file, url: `${ASSETS}/v${version}/${file}`, sha256: createHash('sha256').update(bytes).digest('hex') };
     }
     await writeFile(value('--out'), `${JSON.stringify({ schemaVersion: 1, latest: version, releases: { [version]: { verified: true, macos: { arm64: artifacts } } } }, null, 2)}\n`);
+    return;
+  }
+  if (command === 'cli-candidate') {
+    const version = value('--version');
+    if (!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version ?? '') || !value('--out') || !value('--dist') || !value('--target')) {
+      throw new Error('cli-candidate requires --version, --target, --dist and --out');
+    }
+    if (!Object.hasOwn(CLI_TARGETS, value('--target'))) throw new Error(`Unknown CLI release target ${value('--target')}`);
+    const { os, arch, extension } = CLI_TARGETS[value('--target')];
+    const file = `tokentracky-${version}-${os}-${arch}${extension}`;
+    const bytes = await readFile(resolve(value('--dist'), file));
+    const cli = { file, url: `${ASSETS}/v${version}/${file}`, sha256: createHash('sha256').update(bytes).digest('hex') };
+    await writeFile(value('--out'), `${JSON.stringify({ schemaVersion: 1, latest: version, releases: { [version]: { verified: true, [os]: { [arch]: { cli } } } } }, null, 2)}\n`);
+    return;
+  }
+  if (command === 'version') {
+    process.stdout.write(`${await versions(root)}\n`);
     return;
   }
   if (command === 'validate') {

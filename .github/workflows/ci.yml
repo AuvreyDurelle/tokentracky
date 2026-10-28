@@ -46,9 +46,9 @@ jobs:
       - run: node --test scripts/check-hosted.test.mjs
       - run: PYTHONDONTWRITEBYTECODE=1 python3 scripts/test_restore_drill.py
       - run: PYTHONDONTWRITEBYTECODE=1 python3 scripts/test_native_runtime.py
-      - run: node --test scripts/macos-release*.test.mjs packaging/test/*.test.mjs
+      - run: node --test scripts/macos-release*.test.mjs scripts/cli-release*.test.mjs packaging/test/*.test.mjs
       - run: npm run test:harness --prefix packaging
-      - run: shellcheck scripts/prepare-macos-release.sh scripts/check-native-package.sh
+      - run: shellcheck scripts/prepare-macos-release.sh scripts/prepare-cli-release.sh scripts/check-native-package.sh
       - run: npm run build
 
   rust:
@@ -122,9 +122,9 @@ jobs:
       - run: npm ci
       - run: npm run build --workspace=@tokentracky/web
       - run: cargo build --locked --release -p tokentracky-cli --features embed-web --target ${{ matrix.target }}
-      # Windows runners have `python`, Ubuntu's only `python3`.
+      # Windows runners have `python`; `python3` there may be the Microsoft Store's placeholder.
       - run: >-
-          "$(command -v python3 || command -v python)" scripts/check-standalone-cli.py
+          ${{ runner.os == 'Windows' && 'python' || 'python3' }} scripts/check-standalone-cli.py
           --binary "target/${{ matrix.target }}/release/${{ matrix.binary }}" --web-dist apps/web/dist
         env:
           PYTHONDONTWRITEBYTECODE: '1'
@@ -157,5 +157,5 @@ jobs:
           TOKENTRACKY_TS_OUT: ${{ runner.temp }}/generated-types
       - run: cargo install tauri-cli --version 2.11.5 --locked
       - run: bash scripts/check-native-package.sh
-      - run: node --test scripts/macos-release*.test.mjs packaging/test/*.test.mjs
+      - run: node --test scripts/macos-release*.test.mjs scripts/cli-release*.test.mjs packaging/test/*.test.mjs
       - run: npm run test:harness --prefix packaging

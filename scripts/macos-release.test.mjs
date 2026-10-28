@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
 import { Buffer } from 'node:buffer';
 import test, { after } from 'node:test';
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import process from 'node:process';
 import { releaseSettings, updaterConfig, updaterFeed, validateUpdaterFeed, versions, validatePublicKey, main } from './macos-release.mjs';
 
 const packet = Buffer.concat([Buffer.from('Ed'), Buffer.alloc(40, 7)]).toString('base64');
@@ -118,4 +120,36 @@ test('rejects a packaging npm version that differs from native artifacts', async
   const root = await fixture();
   await writeFile(join(root, 'packaging/package.json'), '{"version":"0.2.0"}');
   await assert.rejects(versions(root), /Version mismatch/);
+});
+
+
+const artifact = (version, file) => ({ file, url: `https://github.com/AuvreyDurelle/tokentracky/releases/download/v${version}/${file}`, sha256: 'c'.repeat(64) });
+
+test('a CLI candidate describes its own target with the checksum of its binary', async () => {
+  const dist = await mkdtemp(join(tmpdir(), 'tokentracky-cli-candidate-'));
+  temporaryRoots.push(dist);
+  for (const [target, os, arch, file] of [
+    ['x86_64-unknown-linux-musl', 'linux', 'x86_64', 'tokentracky-0.2.0-linux-x86_64'],
+    ['aarch64-unknown-linux-musl', 'linux', 'aarch64', 'tokentracky-0.2.0-linux-aarch64'],
+    ['x86_64-pc-windows-msvc', 'windows', 'x86_64', 'tokentracky-0.2.0-windows-x86_64.exe'],
+  ]) {
+    await writeFile(join(dist, file), `binary for ${target}`);
+    const out = join(dist, `${target}.json`);
+    await main(['cli-candidate', '--out', out, '--version', '0.2.0', '--target', target, '--dist', dist]);
+    const sha256 = createHash('sha256').update(`binary for ${target}`).digest('hex');
+    assert.deepEqual(JSON.parse(await readFile(out, 'utf8')), {
+      schemaVersion: 1, latest: '0.2.0', releases: { '0.2.0': { verified: true, [os]: { [arch]: { cli: { ...artifact('0.2.0', file), sha256 } } } } },
+    });
+  }
+  await assert.rejects(main(['cli-candidate', '--out', join(dist, 'x.json'), '--version', '0.2.0', '--target', 'x86_64-apple-darwin', '--dist', dist]), /Unknown CLI release target/);
+  await assert.rejects(main(['cli-candidate', '--out', join(dist, 'x.json'), '--version', '0.2.1', '--target', 'x86_64-unknown-linux-musl', '--dist', dist]), /ENOENT/);
+});
+
+test('version prints the one version every manifest agrees on, without release settings', async () => {
+  const root = await fixture('0.2.0');
+  let printed = '';
+  const write = process.stdout.write;
+  process.stdout.write = (text) => { printed += text; return true; };
+  try { await main(['version', '--root', root], {}); } finally { process.stdout.write = write; }
+  assert.equal(printed, '0.2.0\n');
 });
