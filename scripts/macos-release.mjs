@@ -103,6 +103,33 @@ export const CLI_TARGETS = {
   'aarch64-unknown-linux-musl': { os: 'linux', arch: 'aarch64', extension: '' },
   'x86_64-pc-windows-msvc': { os: 'windows', arch: 'x86_64', extension: '.exe' },
 };
+const PLATFORMS = ['macos/arm64', ...Object.values(CLI_TARGETS).map(({ os, arch }) => `${os}/${arch}`)];
+
+/**
+ * One manifest for a release built on several runners: the macOS candidate's and each CLI's. Every part must be the
+ * same verified release, and no platform may come twice.
+ */
+export function mergeManifests(manifests) {
+  if (!manifests.length) throw new Error('merge needs at least one manifest');
+  const version = manifests[0].latest;
+  const release = { verified: true };
+  for (const manifest of manifests) {
+    const entry = manifest?.releases?.[version];
+    if (manifest?.schemaVersion !== 1 || manifest.latest !== version || entry?.verified !== true ||
+        Object.keys(manifest.releases).length !== 1) {
+      throw new Error(`Every manifest must describe the same verified release ${version}`);
+    }
+    for (const [os, architectures] of Object.entries(entry)) {
+      if (os === 'verified') continue;
+      for (const [arch, artifacts] of Object.entries(architectures)) {
+        if (!PLATFORMS.includes(`${os}/${arch}`)) throw new Error(`Unknown release platform ${os} ${arch}`);
+        if (Object.hasOwn(release[os] ?? {}, arch)) throw new Error(`The manifests describe ${os} ${arch} twice`);
+        release[os] = { ...release[os], [arch]: artifacts };
+      }
+    }
+  }
+  return { schemaVersion: 1, latest: version, releases: { [version]: release } };
+}
 
 export function updaterConfig(settings) {
   return {
@@ -147,6 +174,15 @@ export function validateUpdaterFeed(feed) {
 
 export async function main(argv = process.argv.slice(2), env = process.env) {
   const [command, ...args] = argv;
+  if (command === 'merge') {
+    const [flag, output, ...files] = args;
+    if (flag !== '--out' || !output || output.startsWith('--') || !files.length || files.some((file) => file.startsWith('--'))) {
+      throw new Error('merge requires --out PATH and the manifests to merge');
+    }
+    const manifests = await Promise.all(files.map(async (file) => JSON.parse(await readFile(file, 'utf8'))));
+    await writeFile(output, `${JSON.stringify(mergeManifests(manifests), null, 2)}\n`);
+    return;
+  }
   const options = new Map();
   const allowed = {
     validate: ['--root'], version: ['--root'], config: ['--root', '--out'],

@@ -6,7 +6,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import process from 'node:process';
-import { releaseSettings, updaterConfig, updaterFeed, validateUpdaterFeed, versions, validatePublicKey, main } from './macos-release.mjs';
+import { releaseSettings, updaterConfig, updaterFeed, validateUpdaterFeed, versions, validatePublicKey, mergeManifests, main } from './macos-release.mjs';
 
 const packet = Buffer.concat([Buffer.from('Ed'), Buffer.alloc(40, 7)]).toString('base64');
 const publicKey = Buffer.from(`untrusted comment: minisign public key: TEST\n${packet}\n`).toString('base64');
@@ -124,6 +124,7 @@ test('rejects a packaging npm version that differs from native artifacts', async
 
 
 const artifact = (version, file) => ({ file, url: `https://github.com/AuvreyDurelle/tokentracky/releases/download/v${version}/${file}`, sha256: 'c'.repeat(64) });
+const fragment = (version, os, arch, file) => ({ schemaVersion: 1, latest: version, releases: { [version]: { verified: true, [os]: { [arch]: { cli: artifact(version, file) } } } } });
 
 test('a CLI candidate describes its own target with the checksum of its binary', async () => {
   const dist = await mkdtemp(join(tmpdir(), 'tokentracky-cli-candidate-'));
@@ -143,6 +144,46 @@ test('a CLI candidate describes its own target with the checksum of its binary',
   }
   await assert.rejects(main(['cli-candidate', '--out', join(dist, 'x.json'), '--version', '0.2.0', '--target', 'x86_64-apple-darwin', '--dist', dist]), /Unknown CLI release target/);
   await assert.rejects(main(['cli-candidate', '--out', join(dist, 'x.json'), '--version', '0.2.1', '--target', 'x86_64-unknown-linux-musl', '--dist', dist]), /ENOENT/);
+});
+
+test('merging keeps every platform of one verified release, and refuses disagreement or a platform twice', () => {
+  const macos = { schemaVersion: 1, latest: '0.2.0', releases: { '0.2.0': { verified: true, macos: { arm64: { cli: artifact('0.2.0', 'tokentracky-0.2.0-macos-arm64'), app: artifact('0.2.0', 'tokentracky-0.2.0-macos-arm64.dmg') } } } } };
+  const linux = fragment('0.2.0', 'linux', 'x86_64', 'tokentracky-0.2.0-linux-x86_64');
+  const arm = fragment('0.2.0', 'linux', 'aarch64', 'tokentracky-0.2.0-linux-aarch64');
+  const windows = fragment('0.2.0', 'windows', 'x86_64', 'tokentracky-0.2.0-windows-x86_64.exe');
+  const merged = mergeManifests([macos, linux, arm, windows]);
+  assert.deepEqual(merged, {
+    schemaVersion: 1, latest: '0.2.0', releases: { '0.2.0': {
+      verified: true,
+      macos: macos.releases['0.2.0'].macos,
+      linux: { x86_64: linux.releases['0.2.0'].linux.x86_64, aarch64: arm.releases['0.2.0'].linux.aarch64 },
+      windows: windows.releases['0.2.0'].windows,
+    } },
+  });
+  // Launchers already published read only macOS arm64, which the merge leaves as it was.
+  assert.deepEqual(merged.releases['0.2.0'].macos, macos.releases['0.2.0'].macos);
+  assert.throws(() => mergeManifests([macos, fragment('0.2.1', 'linux', 'x86_64', 'tokentracky-0.2.1-linux-x86_64')]), /same verified release/);
+  assert.throws(() => mergeManifests([macos, { ...linux, releases: { '0.2.0': { ...linux.releases['0.2.0'], verified: false } } }]), /same verified release/);
+  assert.throws(() => mergeManifests([macos, { ...linux, schemaVersion: 2 }]), /same verified release/);
+  assert.throws(() => mergeManifests([linux, linux]), /linux x86_64 twice/);
+  assert.throws(() => mergeManifests([macos, fragment('0.2.0', 'linux', 'riscv64', 'tokentracky-0.2.0-linux-riscv64')]), /Unknown release platform linux riscv64/);
+  assert.throws(() => mergeManifests([]), /at least one/);
+});
+
+test('merge writes the combined manifest from the files it is given', async () => {
+  const dist = await mkdtemp(join(tmpdir(), 'tokentracky-merge-'));
+  temporaryRoots.push(dist);
+  const files = [];
+  for (const [os, arch, file] of [['linux', 'x86_64', 'tokentracky-0.2.0-linux-x86_64'], ['windows', 'x86_64', 'tokentracky-0.2.0-windows-x86_64.exe']]) {
+    files.push(join(dist, `${os}-${arch}.json`));
+    await writeFile(files.at(-1), JSON.stringify(fragment('0.2.0', os, arch, file)));
+  }
+  const out = join(dist, 'merged.json');
+  await main(['merge', '--out', out, ...files]);
+  assert.deepEqual(Object.keys(JSON.parse(await readFile(out, 'utf8')).releases['0.2.0']), ['verified', 'linux', 'windows']);
+  for (const args of [['merge', out, ...files], ['merge', '--out', out], ['merge', '--out', '--version', ...files]]) {
+    await assert.rejects(main(args), /merge requires --out/);
+  }
 });
 
 test('version prints the one version every manifest agrees on, without release settings', async () => {
