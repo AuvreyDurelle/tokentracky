@@ -6,7 +6,7 @@ import { createHash } from 'node:crypto';
 import { chmod, mkdir, readFile, rename, rm, stat } from 'node:fs/promises';
 import { realpathSync } from 'node:fs';
 import { homedir, release as kernelRelease } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, resolve, sep } from 'node:path';
 import { spawn } from 'node:child_process';
 import { URL, fileURLToPath } from 'node:url';
 
@@ -15,12 +15,33 @@ const REPOSITORY = 'AuvreyDurelle/tokentracky';
 const MANIFEST_PATH = new URL('../release-manifest.json', import.meta.url);
 const VERSION = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8')).version;
 
+/** Each supported Node `platform-arch`: its name, its place in the manifest and its asset's suffix. */
+export const PLATFORMS = {
+  'darwin-arm64': { name: 'macOS arm64', os: 'macos', arch: 'arm64', asset: 'macos-arm64' },
+  'linux-x64': { name: 'Linux x86_64', os: 'linux', arch: 'x86_64', asset: 'linux-x86_64' },
+  'linux-arm64': { name: 'Linux aarch64', os: 'linux', arch: 'aarch64', asset: 'linux-aarch64' },
+  'win32-x64': { name: 'Windows x86_64', os: 'windows', arch: 'x86_64', asset: 'windows-x86_64.exe' },
+};
+
 export function platformError(platform = process.platform, arch = process.arch, release = kernelRelease()) {
-  if (platform !== 'darwin') return `Tokentracky currently supports macOS 13 or later on Apple Silicon only; this system is ${platform}/${arch}.`;
-  if (arch !== 'arm64') return `Tokentracky currently supports Apple Silicon (arm64) only; this system is macOS/${arch}.`;
-  const [major] = release.split('.').map(Number);
-  if (!Number.isFinite(major) || major < 22) return `Tokentracky requires macOS 13 or later; detected macOS kernel ${release || 'unknown'}.`;
+  if (platform === 'darwin') {
+    if (arch !== 'arm64') return `Tokentracky currently supports Apple Silicon (arm64) only; this system is macOS/${arch}.`;
+    const [major] = release.split('.').map(Number);
+    if (!Number.isFinite(major) || major < 22) return `Tokentracky requires macOS 13 or later; detected macOS kernel ${release || 'unknown'}.`;
+    return null;
+  }
+  if (!Object.hasOwn(PLATFORMS, `${platform}-${arch}`)) {
+    return `Tokentracky supports macOS 13 or later on Apple Silicon, Linux on x64 and arm64, and Windows on x64; this system is ${platform}/${arch}.`;
+  }
   return null;
+}
+
+/** Where a version's binary is cached: the user's cache folder, or local application data on Windows. */
+export function cacheFolder(version, platform, arch, env = process.env) {
+  const base = platform === 'win32'
+    ? join(env.LOCALAPPDATA || join(homedir(), 'AppData', 'Local'), 'tokentracky')
+    : join(homedir(), '.cache', 'tokentracky');
+  return join(base, version, `${platform}-${arch}`);
 }
 
 function fail(message) {
@@ -28,13 +49,14 @@ function fail(message) {
   process.exitCode = 1;
 }
 
-function safeManifestEntry(manifest, version) {
-  if (!manifest || manifest.schemaVersion !== 1 || manifest.latest !== version || !manifest.releases || !Object.hasOwn(manifest.releases, version)) {
-    throw new Error(`No verified Tokentracky ${version} binary is published for macOS arm64 yet.`);
+function safeManifestEntry(manifest, version, platform) {
+  const { name, os, arch, asset } = platform;
+  if (!manifest || manifest.schemaVersion !== 1 || manifest.latest !== version || !manifest.releases || !Object.hasOwn(manifest.releases, version) ||
+      !Object.hasOwn(manifest.releases[version]?.[os] ?? {}, arch)) {
+    throw new Error(`No verified Tokentracky ${version} binary is published for ${name} yet.`);
   }
-  const entry = manifest.releases[version]?.macos?.arm64;
-  const artifact = entry?.cli;
-  const file = `tokentracky-${version}-macos-arm64`;
+  const artifact = manifest.releases[version][os][arch]?.cli;
+  const file = `tokentracky-${version}-${asset}`;
   const url = `https://github.com/${REPOSITORY}/releases/download/v${version}/${file}`;
   if (manifest.releases[version]?.verified !== true || artifact?.file !== file || !/^[a-f0-9]{64}$/.test(artifact.sha256 ?? '') || artifact.url !== url) {
     throw new Error(`The packaged integrity manifest for Tokentracky ${version} is invalid.`);
@@ -103,10 +125,10 @@ export async function download(url, destination, fetchImpl = fetch, { maxBytes =
 export async function installVerifiedBinary({ manifest, version = VERSION, platform = process.platform, arch = process.arch, osVersion = kernelRelease(), cacheRoot, fetchImpl = fetch }) {
   const problem = platformError(platform, arch, osVersion);
   if (problem) throw new Error(problem);
-  const entry = safeManifestEntry(manifest, version);
-  cacheRoot ??= join(homedir(), '.cache', 'tokentracky', version, 'darwin-arm64');
+  const entry = safeManifestEntry(manifest, version, PLATFORMS[`${platform}-${arch}`]);
+  cacheRoot ??= cacheFolder(version, platform, arch);
   const target = resolve(cacheRoot, entry.file);
-  if (!target.startsWith(`${resolve(cacheRoot)}/`)) throw new Error('Invalid binary cache path.');
+  if (!target.startsWith(`${resolve(cacheRoot)}${sep}`)) throw new Error('Invalid binary cache path.');
   try {
     const metadata = await stat(target);
     if (!metadata.isFile() || metadata.size > MAX_BINARY_BYTES) throw new Error('Invalid binary cache entry.');
@@ -121,7 +143,7 @@ export async function installVerifiedBinary({ manifest, version = VERSION, platf
     const bytes = await download(entry.url, temporary, fetchImpl);
     const actual = createHash('sha256').update(bytes).digest('hex');
     if (actual !== entry.sha256) throw new Error(`Tokentracky binary integrity check failed (expected ${entry.sha256}, received ${actual}).`);
-    await chmod(temporary, 0o700);
+    if (platform !== 'win32') await chmod(temporary, 0o700);
     await rename(temporary, target);
   } catch (error) {
     await rm(temporary, { force: true });
@@ -139,13 +161,17 @@ export async function main(args = process.argv.slice(2)) {
   try {
     const binary = await getBinary();
     const child = spawn(binary, args, { stdio: 'inherit' });
-    const handlers = new Map(['SIGINT', 'SIGTERM', 'SIGHUP'].map((signal) => [signal, () => child.kill(signal)]));
+    // Windows has no signals to pass on: the console sends Ctrl+C and Ctrl+Break to the CLI itself, and Node could
+    // only end it outright. The launcher waits for it to stop.
+    const windows = process.platform === 'win32';
+    const signals = windows ? ['SIGINT', 'SIGBREAK', 'SIGHUP'] : ['SIGINT', 'SIGTERM', 'SIGHUP'];
+    const handlers = new Map(signals.map((signal) => [signal, () => { if (!windows) child.kill(signal); }]));
     for (const [signal, handler] of handlers) process.on(signal, handler);
     const cleanup = () => { for (const [name, handler] of handlers) process.off(name, handler); };
     child.once('error', (error) => { cleanup(); fail(`Could not start the Tokentracky binary: ${error.message}`); });
     child.once('exit', (code, signal) => {
       cleanup();
-      if (signal) { process.kill(process.pid, signal); return; }
+      if (signal && !windows) { process.kill(process.pid, signal); return; }
       process.exitCode = code ?? 1;
     });
   } catch (error) { fail(error instanceof Error ? error.message : String(error)); }

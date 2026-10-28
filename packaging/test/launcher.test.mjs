@@ -4,11 +4,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
-import { installVerifiedBinary, platformError, download } from '../bin/tokentracky.mjs';
+import { installVerifiedBinary, platformError, download, cacheFolder } from '../bin/tokentracky.mjs';
 
 const { Response } = globalThis;
 const bytes = Buffer.from('#!/bin/sh\nprintf "synthetic cli\\n"\nexit 7\n');
@@ -20,10 +20,49 @@ const url = `https://github.com/AuvreyDurelle/tokentracky/releases/download/v${v
 const manifest = { schemaVersion: 1, latest: version, releases: { [version]: { verified: true, macos: { arm64: { cli: { file, url, sha256: digest } } } } } };
 
 test('rejects unsupported operating systems, architectures, and macOS versions clearly', () => {
-  assert.match(platformError('linux', 'arm64', '6.1'), /supports macOS 13 or later/);
+  for (const [platform, arch] of [['freebsd', 'x64'], ['linux', 'ia32'], ['win32', 'arm64'], ['win32', 'ia32']]) {
+    assert.match(platformError(platform, arch, '10.0.0'), new RegExp(`Linux on x64 and arm64, and Windows on x64; this system is ${platform}/${arch}`));
+  }
   assert.match(platformError('darwin', 'x64', '22.0.0'), /Apple Silicon \(arm64\)/);
   assert.match(platformError('darwin', 'arm64', '21.6.0'), /requires macOS 13 or later/);
   assert.equal(platformError('darwin', 'arm64', '22.0.0'), null);
+  // Only macOS has a minimum version.
+  for (const [platform, arch] of [['linux', 'x64'], ['linux', 'arm64'], ['win32', 'x64']]) assert.equal(platformError(platform, arch, '5.4.0'), null);
+});
+
+test('installs each system\'s own verified binary from its manifest entry', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'tokentracky-launcher-'));
+  const cli = (name) => ({ file: `tokentracky-${version}-${name}`, url: `https://github.com/AuvreyDurelle/tokentracky/releases/download/v${version}/tokentracky-${version}-${name}`, sha256: digest });
+  const every = { schemaVersion: 1, latest: version, releases: { [version]: { verified: true,
+    macos: { arm64: { cli: cli('macos-arm64') } },
+    linux: { x86_64: { cli: cli('linux-x86_64') }, aarch64: { cli: cli('linux-aarch64') } },
+    windows: { x86_64: { cli: cli('windows-x86_64.exe') } },
+  } } };
+  try {
+    for (const [platform, arch, name] of [['darwin', 'arm64', 'macos-arm64'], ['linux', 'x64', 'linux-x86_64'], ['linux', 'arm64', 'linux-aarch64'], ['win32', 'x64', 'windows-x86_64.exe']]) {
+      const requested = [];
+      const fetchImpl = async (url) => { requested.push(String(url)); return new Response(bytes, { status: 200 }); };
+      const cacheRoot = join(root, `${platform}-${arch}`);
+      const target = await installVerifiedBinary({ manifest: every, cacheRoot, platform, arch, osVersion: '22.0.0', fetchImpl });
+      assert.equal(target, join(cacheRoot, `tokentracky-${version}-${name}`));
+      assert.deepEqual(requested, [cli(name).url]);
+      assert.deepEqual(await readFile(target), bytes);
+    }
+    // A release without a system's build says so rather than calling the manifest invalid.
+    await assert.rejects(installVerifiedBinary({ manifest, cacheRoot: root, platform: 'linux', arch: 'x64', osVersion: '6.1.0' }), /No verified Tokentracky .* published for Linux x86_64 yet/);
+    await assert.rejects(installVerifiedBinary({ manifest, cacheRoot: root, platform: 'win32', arch: 'x64', osVersion: '10.0.0' }), /published for Windows x86_64 yet/);
+    // An entry naming another system's file is refused.
+    const swapped = { ...every, releases: { [version]: { ...every.releases[version], linux: { x86_64: { cli: cli('windows-x86_64.exe') } } } } };
+    await assert.rejects(installVerifiedBinary({ manifest: swapped, cacheRoot: root, platform: 'linux', arch: 'x64', osVersion: '6.1.0' }), /manifest.*invalid/);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test('caches under the user cache folder, and under local application data on Windows', () => {
+  const home = homedir();
+  assert.equal(cacheFolder('0.2.0', 'darwin', 'arm64', {}), join(home, '.cache', 'tokentracky', '0.2.0', 'darwin-arm64'));
+  assert.equal(cacheFolder('0.2.0', 'linux', 'x64', {}), join(home, '.cache', 'tokentracky', '0.2.0', 'linux-x64'));
+  assert.equal(cacheFolder('0.2.0', 'win32', 'x64', { LOCALAPPDATA: join(home, 'Local') }), join(home, 'Local', 'tokentracky', '0.2.0', 'win32-x64'));
+  assert.equal(cacheFolder('0.2.0', 'win32', 'x64', {}), join(home, 'AppData', 'Local', 'tokentracky', '0.2.0', 'win32-x64'));
 });
 
 test('downloads a synthetic CLI only after SHA-256 matches and reuses the verified cache', async () => {

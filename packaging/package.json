@@ -1,7 +1,7 @@
 {
   "name": "tokentracky",
   "version": "0.1.2",
-  "description": "Tokentracky Rust CLI for Apple Silicon Macs",
+  "description": "Tokentracky Rust CLI for Apple Silicon Macs, Linux and Windows",
   "type": "module",
   "repository": { "type": "git", "url": "git+https://github.com/AuvreyDurelle/tokentracky.git" },
   "bin": { "tokentracky": "bin/tokentracky.mjs" },
