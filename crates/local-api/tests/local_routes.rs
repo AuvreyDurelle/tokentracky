@@ -261,6 +261,15 @@ const CORE_TOOLS: [(&str, &str); 8] = [
     ("roo", "Roo Code"),
 ];
 
+/// Where the editors keep their settings below the server's home, which has no `XDG_CONFIG_HOME` or `APPDATA` set.
+const EDITOR_SETTINGS: &str = if cfg!(target_os = "macos") {
+    "Library/Application Support"
+} else if cfg!(windows) {
+    "AppData/Roaming"
+} else {
+    ".config"
+};
+
 /// The folder suggested for each of [`CORE_TOOLS`] while none of its folders exists below `home`.
 fn usual_folders(home: &Path) -> Value {
     let below = |path: &str| json!([text(&home.join(path))]);
@@ -272,7 +281,7 @@ fn usual_folders(home: &Path) -> Value {
         "gemini": below(".gemini/tmp"),
         "kilo": below(".local/share/kilo/kilo.db"),
         "opencode": below(".local/share/opencode/opencode.db"),
-        "roo": below("Library/Application Support/Code/User/globalStorage/rooveterinaryinc.roo-cline/tasks"),
+        "roo": below(&format!("{EDITOR_SETTINGS}/Code/User/globalStorage/rooveterinaryinc.roo-cline/tasks")),
     })
 }
 

@@ -6,6 +6,14 @@ use tokentracky_collector::detect::{DetectedTool, default_source_paths, detect_t
 use tokentracky_core::ToolId;
 
 const EDITORS: [&str; 5] = ["Code", "Code - Insiders", "VSCodium", "Cursor", "Windsurf"];
+/// Where the editors keep their settings below the home, with no `XDG_CONFIG_HOME` or `APPDATA` set.
+const EDITOR_SETTINGS: &str = if cfg!(target_os = "macos") {
+    "Library/Application Support"
+} else if cfg!(windows) {
+    "AppData/Roaming"
+} else {
+    ".config"
+};
 
 /// An environment holding only `vars`.
 fn env(vars: &[(&str, &str)]) -> impl Fn(&str) -> Option<String> {
@@ -21,7 +29,7 @@ fn defaults(vars: &[(&str, &str)], tool: ToolId) -> Vec<String> {
 }
 fn editor_tasks(extension: &str) -> Vec<String> {
     EDITORS
-        .map(|editor| format!("/Users/ada/Library/Application Support/{editor}/User/globalStorage/{extension}/tasks"))
+        .map(|editor| format!("/Users/ada/{EDITOR_SETTINGS}/{editor}/User/globalStorage/{extension}/tasks"))
         .to_vec()
 }
 fn home() -> tempfile::TempDir {
@@ -251,7 +259,9 @@ fn detects_a_database_only_when_it_is_a_file_by_stat_alone() {
 fn detects_only_the_editor_task_folders_that_exist() {
     let home = home();
     let home = home.path();
-    let tasks = home.join("Library/Application Support/VSCodium/User/globalStorage/saoudrizwan.claude-dev/tasks");
+    let tasks = home
+        .join(EDITOR_SETTINGS)
+        .join("VSCodium/User/globalStorage/saoudrizwan.claude-dev/tasks");
     fs::create_dir_all(&tasks).unwrap();
     assert_eq!(
         detect_tools(env(&[]), home),
