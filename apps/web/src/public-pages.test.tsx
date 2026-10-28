@@ -49,7 +49,7 @@ describe('profile sharing', () => {
   it('splits all-time tokens by type with shares, reasoning inside output and never added', () => {
     const html = renderToStaticMarkup(<ProfileTypes breakdown={{ input: 100, output: 50, cacheRead: 800, cacheWrite: 50, reasoning: 30 }} />);
     expect(html).toContain('share of 1,000 tokens');
-    for (const [label, share] of [['Input', '10%'], ['Output', '5.0%'], ['Cache read', '80%'], ['Cache write', '5.0%']]) expect(html).toMatch(new RegExp(`${label}</dt><dd[^>]*>[^<]+</dd><small>${share.replace('.', '\\.')} of tokens`));
+    for (const [label, share] of [['Input', '10%'], ['Output', '5.0%'], ['Cache read', '80%'], ['Cache write', '5.0%']]) expect(html).toMatch(new RegExp(`${label}</dt><dd><span class="exact" title="[^"]+ tokens">[^<]+</span></dd><small>${share.replace('.', '\\.')} of tokens`));
     expect(html).toContain('Of which reasoning 30');
     expect(html).not.toContain('Reasoning</dt>');
   });

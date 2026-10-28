@@ -3,8 +3,8 @@ import type { ProfileStats, Publication, PublicProfile } from '@tokentracky/core
 import { ApiError, type Account, type ApiClient } from './api';
 import type { AuthAdapter, AuthState, SignInIdentity } from './auth';
 import { draftFromPublication, publicationRequest, validAlias, type PublicationDraft } from './publication';
-import { errorText, formatCompact, formatCost, formatExact, shortDay, timeAgo } from './format';
-import { AppleIcon, Avatar, Empty, Loading, Notice, Segmented, Spinner } from './ui';
+import { errorText, formatCost, shortDay, timeAgo } from './format';
+import { AppleIcon, Avatar, Empty, Loading, Notice, Segmented, Spinner, Tokens } from './ui';
 import { PasswordResetRequest } from './PasswordRecovery';
 import { MAC_DOWNLOAD } from './download-config';
 
@@ -219,7 +219,7 @@ export function HostedAccount({ api, auth, authState, account, accountLoading, a
           {stats && (all
             ? <dl className="account-stats">
               <div><dt>Rank</dt><dd className="num">#{all.rank}</dd></div>
-              <div><dt>Tokens</dt><dd className="num" title={`${formatExact(all.tokens)} tokens`}>{formatCompact(all.tokens)}</dd></div>
+              <div><dt>Tokens</dt><dd className="num"><Tokens value={all.tokens} /></dd></div>
               <div><dt>Est. cost</dt><dd className="num">{formatCost(stats.costMicrousd)}</dd></div>
               <div><dt>Computers</dt><dd className="num">{account.devices.length}<span>/10</span></dd></div>
             </dl>
@@ -229,7 +229,7 @@ export function HostedAccount({ api, auth, authState, account, accountLoading, a
           <ProfileForm api={api} publication={account.publication} repair={Boolean(account.integrity)} onSaved={refreshAccount}>
             {neighbours.length > 0 && <div className="field">Preview · all time
               <ol className="board-preview">{neighbours.map((row) => <li key={row.alias} className={row.alias === alias ? 'is-you' : undefined}>
-                <span className="num">{row.rank}</span><Avatar alias={row.alias} /><strong>{row.alias}{row.alias === alias && <span className="badge">You</span>}</strong><span className="num push" title={`${formatExact(row.tokens)} tokens`}>{formatCompact(row.tokens)}</span>
+                <span className="num">{row.rank}</span><Avatar alias={row.alias} /><strong>{row.alias}{row.alias === alias && <span className="badge">You</span>}</strong><span className="num push"><Tokens value={row.tokens} /></span>
               </li>)}</ol>
             </div>}
           </ProfileForm>

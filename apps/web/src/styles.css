@@ -417,6 +417,7 @@ td.c-total { font-weight: 500; }
 .who button { overflow: hidden; padding: 0; border: 0; background: none; color: var(--text); font-size: 13px; font-weight: 500; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
 .who button:hover { text-decoration: underline; text-decoration-color: var(--text-3); text-underline-offset: 3px; }
 .who small { color: var(--text-3); font-size: 12px; }
+.board-key { display: none; padding: 10px 20px; border-top: 1px solid var(--border); color: var(--text-3); font-size: 12px; line-height: 1.6; }
 .board-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px 10px 20px; border-top: 1px solid var(--border); color: var(--text-3); font-size: 12px; }
 .board-foot .actions { gap: 10px; }
 
@@ -767,6 +768,7 @@ span.profile-like { cursor: default; }
 .profile-tier.t3 { color: var(--gold); }
 .profile-tier.t4 { color: #8fd8ff; }
 .profile-badge-meta { overflow: hidden; color: var(--text-4); font-size: 11.5px; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.profile-badge-desc { display: none; margin-top: 3px; color: var(--text-3); font-size: 11.5px; line-height: 1.4; }
 .profile-badge-bar { height: 3px; margin-top: 6px; overflow: hidden; border-radius: 2px; background: var(--surface-3); }
 .profile-badge-bar span { display: block; height: 100%; border-radius: 2px; background: var(--text-3); }
 .profile-join { position: relative; border-color: rgba(232, 182, 76, 0.22);
@@ -957,6 +959,7 @@ span.profile-like { cursor: default; }
   .snav { display: none; }
   .profile-aside { grid-column: auto; grid-row: auto; order: 1; }
   .profile-high { grid-template-columns: minmax(0, 1fr); }
+  .profile-hl-value { white-space: normal; overflow-wrap: anywhere; }
   .profile-legend { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .profile-badges { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .profile-id { flex-wrap: wrap; align-items: flex-start; gap: 14px; margin-top: -36px; padding: 0 18px; }
@@ -1037,8 +1040,15 @@ span.profile-like { cursor: default; }
   .profile-usage { padding: 14px 16px 16px; }
   .profile-legend, .profile-badges { grid-template-columns: minmax(0, 1fr); }
   .profile-model { grid-template-columns: 14px minmax(0, 1fr) 56px 64px; gap: 8px; }
+  .profile-model-name { white-space: normal; overflow-wrap: anywhere; }
   .auth-page { padding: 28px 0; }
   .auth-card { padding: 22px; }
+}
+/* Touch screens can't hover a tooltip: what it says is shown instead, and a figure's exact value is a tap away. */
+@media (hover: none) {
+  .exact { text-decoration: underline dotted var(--text-4); text-underline-offset: 3px; }
+  .board-key, .profile-badge-desc { display: block; }
+  .profile-badge-meta { white-space: normal; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; }
