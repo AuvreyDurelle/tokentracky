@@ -29,13 +29,17 @@ impl WebRoot {
         }
         #[cfg(feature = "embed-web")]
         {
-            use std::os::unix::fs::PermissionsExt;
             // Create an unpredictable, exclusively owned 0700 directory. Never reuse a shared cache
             // or follow externally supplied paths. No user can replace files beneath this private parent.
-            let directory = tempfile::Builder::new()
-                .prefix("tokentracky-web-")
-                .permissions(std::fs::Permissions::from_mode(0o700))
-                .tempdir()?;
+            // Windows' temporary folder is already the user's own.
+            let mut builder = tempfile::Builder::new();
+            builder.prefix("tokentracky-web-");
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                builder.permissions(std::fs::Permissions::from_mode(0o700));
+            }
+            let directory = builder.tempdir()?;
             for (name, bytes) in FILES {
                 let path = directory.path().join(name);
                 std::fs::create_dir_all(path.parent().expect("bundled file has parent"))?;
@@ -70,10 +74,13 @@ mod tests {
     #[cfg(feature = "embed-web")]
     #[test]
     fn extraction_is_private_complete_and_lifetime_bound() {
-        use std::os::unix::fs::PermissionsExt;
         let root = WebRoot::resolve(None).unwrap();
         let path = root.path().to_owned();
-        assert_eq!(std::fs::metadata(&path).unwrap().permissions().mode() & 0o077, 0);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            assert_eq!(std::fs::metadata(&path).unwrap().permissions().mode() & 0o077, 0);
+        }
         assert!(
             std::fs::read_to_string(path.join("index.html"))
                 .unwrap()

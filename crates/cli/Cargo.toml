@@ -15,7 +15,7 @@ path = "src/main.rs"
 
 [features]
 # Default debug builds stay Rust-only. Distribution builds require the Vite build first.
-embed-web = ["dep:tempfile"]
+embed-web = []
 
 [dependencies]
 tokentracky-core = { path = "../core" }
@@ -29,8 +29,7 @@ tokio = { workspace = true, features = ["signal"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 time = { workspace = true, features = ["formatting", "parsing", "local-offset"] }
-libc = { workspace = true }
-tempfile = { workspace = true, optional = true }
+tempfile = { workspace = true }
 
 [dev-dependencies]
 axum = { workspace = true }

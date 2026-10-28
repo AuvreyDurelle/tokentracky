@@ -261,6 +261,18 @@ const CORE_TOOLS: [(&str, &str); 8] = [
     ("roo", "Roo Code"),
 ];
 
+/// The start of an absolute path: Windows needs a drive.
+const ROOT: &str = if cfg!(windows) { "C:/" } else { "/" };
+
+/// Where the editors keep their settings below the server's home, which has no `XDG_CONFIG_HOME` or `APPDATA` set.
+const EDITOR_SETTINGS: &str = if cfg!(target_os = "macos") {
+    "Library/Application Support"
+} else if cfg!(windows) {
+    "AppData/Roaming"
+} else {
+    ".config"
+};
+
 /// The folder suggested for each of [`CORE_TOOLS`] while none of its folders exists below `home`.
 fn usual_folders(home: &Path) -> Value {
     let below = |path: &str| json!([text(&home.join(path))]);
@@ -272,7 +284,7 @@ fn usual_folders(home: &Path) -> Value {
         "gemini": below(".gemini/tmp"),
         "kilo": below(".local/share/kilo/kilo.db"),
         "opencode": below(".local/share/opencode/opencode.db"),
-        "roo": below("Library/Application Support/Code/User/globalStorage/rooveterinaryinc.roo-cline/tasks"),
+        "roo": below(&format!("{EDITOR_SETTINGS}/Code/User/globalStorage/rooveterinaryinc.roo-cline/tasks")),
     })
 }
 
@@ -398,11 +410,13 @@ async fn status_reports_every_tool_with_its_suggested_folder_and_the_cycle_times
     assert!(next > INTERVAL - 120_000 && next <= INTERVAL + 60_000, "{next}");
 
     // A source's own folders replace the suggestion, even while it is disabled.
-    configure(&server, "gemini", false, &["/synthetic/gemini".into()]).await;
-    assert_eq!(
-        source(&status(&server).await, "gemini")["paths"],
-        json!(["/synthetic/gemini"])
-    );
+    let folder = if cfg!(windows) {
+        r"C:\synthetic\gemini"
+    } else {
+        "/synthetic/gemini"
+    };
+    configure(&server, "gemini", false, &[folder.into()]).await;
+    assert_eq!(source(&status(&server).await, "gemini")["paths"], json!([folder]));
 }
 
 /// A credential store that always fails, as a locked Keychain does.
@@ -603,6 +617,7 @@ async fn an_install_with_a_configured_source_is_marked_set_up_and_nothing_else_i
     assert!(setup_completed(data.path()));
 }
 
+#[cfg(unix)]
 #[tokio::test]
 async fn sources_authorise_each_folder_once_as_its_real_path_and_start_a_cycle() {
     let (server, _app) = Server::local(|_| {}).await;
@@ -757,7 +772,7 @@ async fn sources_refuse_unknown_tools_bad_bodies_and_unusable_paths() {
         400,
         "INVALID_REQUEST",
     );
-    let many: Vec<String> = (0..21).map(|index| format!("/p{index}")).collect();
+    let many: Vec<String> = (0..21).map(|index| format!("{ROOT}p{index}")).collect();
     for body in [
         json!({}),
         json!({"enabled": true}),
@@ -771,7 +786,7 @@ async fn sources_refuse_unknown_tools_bad_bodies_and_unusable_paths() {
         json!({"enabled": false, "paths": [null]}),
         json!({"enabled": false, "paths": [["/x"]]}),
         json!({"enabled": false, "paths": many}),
-        json!({"enabled": false, "paths": [format!("/{}", "a".repeat(4096))]}),
+        json!({"enabled": false, "paths": [format!("{ROOT}{}", "a".repeat(4097 - ROOT.len()))]}),
     ] {
         expect_error(&put("claude", body).await, 400, "INVALID_PATHS");
     }
@@ -782,7 +797,7 @@ async fn sources_refuse_unknown_tools_bad_bodies_and_unusable_paths() {
             .status,
         200
     );
-    let long = format!("/{}", "é".repeat(4095));
+    let long = format!("{ROOT}{}", "é".repeat(4096 - ROOT.len()));
     assert_eq!(
         put("claude", json!({"enabled": false, "paths": [long]})).await.status,
         200

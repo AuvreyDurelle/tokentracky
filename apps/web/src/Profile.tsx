@@ -4,8 +4,7 @@ import { ApiError, type ApiClient } from './api';
 import { INSTALL_COMMAND, MAC_DOWNLOAD } from './download-config';
 import { KINDS, TOOLS, errorText, formatCompact, formatCost, formatCostCompact, formatExact, formatShare, shortDay, topPercent } from './format';
 import { Heatmap } from './Heatmap';
-import { rangeLabel } from './ranges';
-import { TrendChart } from './TrendChart';
+import { ProfileUsage } from './ProfileUsage';
 import { AppleIcon, Avatar, CopyCommand, Empty, Loading, Notice, Segmented, ToolIcon } from './ui';
 import { ACHIEVEMENT_COPY, TIER_NAMES } from './mac/achievement-copy';
 import { nextRatio, tierProgress } from './mac/achievements';
@@ -115,7 +114,7 @@ export function ProfileView({ stats, me, origin, join, onLeaderboard, likes = st
           <Highlight icon={ZAP} tone="zap" label="Best day">{activity.bestDay ? <>{formatCompact(activity.bestDay.tokens)}<small> · {shortDay(activity.bestDay.day)}</small></> : '—'}</Highlight>
           <Highlight icon={ICONS.star} tone="star" label={`Favourite${stats.models && stats.models.length > 1 ? ` · ${stats.models.length} models used` : ''}`}><span className="mono" title={favourite?.model}>{favourite?.model ?? '—'}</span></Highlight>
         </div>
-        <ProfileUsage daily={stats.daily} />
+        <ProfileUsage daily={stats.daily} hours={stats.hours} />
       </section>
       <aside className="profile-aside">
         {join && <JoinCard alias={stats.alias} join={join} />}
@@ -135,7 +134,7 @@ export function ProfileView({ stats, me, origin, join, onLeaderboard, likes = st
         </section>}
       </div>
     </div>
-    <p className="privacy-line">Profiles show each builder’s daily token totals, tool split, model mix and estimated cost; deleting the account removes them. Prompts, code and project names never leave their computer.</p>
+    <p className="privacy-line">Profiles show each builder’s hourly and daily token totals, tool split, model mix and estimated cost; deleting the account removes them. Prompts, code and project names never leave their computer.</p>
   </div>;
 }
 
@@ -187,36 +186,6 @@ function ProfileBadge({ badge }: { badge: BadgeProgress }) {
       <div className="profile-badge-meta" title={progress}>{progress}</div>
       <div className="profile-badge-bar" aria-hidden="true"><span style={{ width: `${(nextRatio(badge) ?? 1) * 100}%` }} /></div>
     </div>
-  </div>;
-}
-
-type UsageView = 'daily' | 'cumulative' | 'calendar';
-type UsageSpan = 30 | 90 | 365;
-const VIEWS: Array<{ value: UsageView; label: string }> = [{ value: 'daily', label: 'Daily' }, { value: 'cumulative', label: 'Cumulative' }, { value: 'calendar', label: 'Calendar' }];
-const SPANS: Array<{ value: UsageSpan; label: string }> = [{ value: 30, label: '30d' }, { value: 90, label: '90d' }, { value: 365, label: '12m' }];
-
-/** Running totals of a daily series, so each point is everything up to and including its day. */
-export function runningTotals(points: Array<{ day: string; tokens: number }>): Array<{ day: string; tokens: number }> {
-  let sum = 0;
-  return points.map(({ day, tokens }) => ({ day, tokens: (sum += tokens) }));
-}
-
-/** The recent daily tokens as an area chart, a running total or a calendar, over the last 30 days, 90 days or 12 months. */
-function ProfileUsage({ daily }: { daily: ProfileStats['daily'] }) {
-  const [view, setView] = useState<UsageView>('daily');
-  const [span, setSpan] = useState<UsageSpan>(90);
-  const days = daily.slice(-span);
-  const name = rangeLabel({ preset: span });
-  return <div className="profile-usage">
-    <div className="usage-head">
-      <Segmented label="Chart" value={view} options={VIEWS} onChange={setView} />
-      <Segmented label="Range" value={span} options={SPANS} onChange={setSpan} />
-    </div>
-    {view === 'calendar'
-      ? <Heatmap days={days} label={`Tokens per UTC day, ${name}`} />
-      : view === 'daily'
-        ? <TrendChart points={days} label={`Tokens per UTC day, ${name}`} />
-        : <TrendChart points={runningTotals(days)} label={`Running total of tokens, ${name}`} />}
   </div>;
 }
 

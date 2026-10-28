@@ -12,13 +12,21 @@ use ruzstd::decoding::StreamingDecoder;
 use serde::Serialize;
 use serde_json::Value;
 use std::collections::{BTreeSet, HashMap, HashSet};
-use std::fs::{self, DirEntry, File, Metadata, OpenOptions};
+#[cfg(unix)]
+use std::fs::OpenOptions;
+use std::fs::{self, DirEntry, File, Metadata};
 use std::io::{self, BufRead, BufReader, Read};
+#[cfg(unix)]
 use std::os::unix::fs::{FileExt, MetadataExt, OpenOptionsExt};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Condvar, Mutex, MutexGuard, PoisonError};
 use time::OffsetDateTime;
 use tokentracky_core::{ParseResult, SourceState, SourceStatus, TOOL_IDS, ToolId, UsageEvent, iso_timestamp};
+#[cfg(windows)]
+use windows::FileExt;
+
+#[cfg(windows)]
+mod windows;
 
 /// Line logs are read in chunks of this size.
 const CHUNK: usize = 64 * 1024;
@@ -142,6 +150,7 @@ struct Stat {
     ctime_ms: f64,
 }
 impl Stat {
+    #[cfg(unix)]
     fn of(metadata: &Metadata) -> Self {
         let ms = |seconds: i64, nanoseconds: i64| seconds as f64 * 1000.0 + nanoseconds as f64 / 1e6;
         Self {
@@ -150,6 +159,29 @@ impl Stat {
             mtime_ms: ms(metadata.mtime(), metadata.mtime_nsec()),
             ctime_ms: ms(metadata.ctime(), metadata.ctime_nsec()),
         }
+    }
+    /// `fstat`.
+    fn of_file(file: &File) -> io::Result<Self> {
+        #[cfg(unix)]
+        return Ok(Self::of(&file.metadata()?));
+        #[cfg(windows)]
+        windows::stat(file)
+    }
+    /// `lstat`: `path` itself, a link included.
+    fn of_path(path: &Path) -> io::Result<Self> {
+        #[cfg(unix)]
+        return Ok(Self::of(&fs::symlink_metadata(path)?));
+        #[cfg(windows)]
+        windows::lstat(path)
+    }
+    /// `lstat` of `path`, whose `symlink_metadata` is `metadata`: all Unix needs.
+    #[cfg(unix)]
+    fn of_link(_: &Path, metadata: &Metadata) -> io::Result<Self> {
+        Ok(Self::of(metadata))
+    }
+    #[cfg(windows)]
+    fn of_link(path: &Path, _: &Metadata) -> io::Result<Self> {
+        windows::lstat(path)
     }
     /// The checkpoint was taken of this very file, unchanged since.
     fn matches(&self, previous: &FileCheckpoint) -> bool {
@@ -187,12 +219,15 @@ fn open_inside(path: &Path, root: &Path) -> Result<Opened> {
     if !before.is_file() {
         return Err(ServiceError::SourceScopeChanged);
     }
+    #[cfg(unix)]
     let file = OpenOptions::new()
         .read(true)
         .custom_flags(libc::O_NOFOLLOW)
         .open(path)?;
-    let stat = Stat::of(&file.metadata()?);
-    if stat.identity != Stat::of(&before).identity {
+    #[cfg(windows)]
+    let file = windows::open_no_follow(path)?;
+    let stat = Stat::of_file(&file)?;
+    if stat.identity != Stat::of_link(path, &before)?.identity {
         return Err(ServiceError::SourceScopeChanged);
     }
     // A parent-directory symlink inserted between traversal and open must fail closed.
@@ -235,17 +270,18 @@ fn sidecar_version(tool: ToolId, path: &Path, root: &Path) -> String {
         .map_or_else(Vec::new, |sidecars| sidecars(path))
         .into_iter()
         .map(|(role, sibling)| {
-            let metadata = if inside(root, &sibling) {
-                fs::symlink_metadata(&sibling).ok()
+            let stat = if inside(root, &sibling) {
+                Stat::of_path(&sibling).ok()
             } else {
                 None
             };
-            let stamp = metadata.map_or_else(
+            let stamp = stat.map_or_else(
                 || "null".to_owned(),
-                |metadata| {
-                    let stat = Stat::of(&metadata);
+                |stat| {
                     let (mtime, ctime) = (js_number(stat.mtime_ms), js_number(stat.ctime_ms));
-                    format!("[{},{},{},{mtime},{ctime}]", metadata.dev(), metadata.ino(), stat.size)
+                    // `dev,ino`.
+                    let identity = stat.identity.replace(':', ",");
+                    format!("[{identity},{},{mtime},{ctime}]", stat.size)
                 },
             );
             format!("[{},{stamp}]", Value::from(role))
@@ -794,7 +830,7 @@ impl IngestionService {
                 // SECURITY: Growth is retried without checkpointing a partial snapshot (VULN-004).
                 return Ok(vec![PENDING.to_owned()]);
             };
-            let after = Stat::of(&file.metadata()?);
+            let after = Stat::of_file(&file)?;
             if bytes.len() as u64 != stat.size || after.size != stat.size || after.mtime_ms != stat.mtime_ms {
                 return Ok(vec![PENDING.to_owned()]);
             }
@@ -832,7 +868,7 @@ impl IngestionService {
         let stat = open_inside(path, root)?.stat;
         let mut wal = path.as_os_str().to_owned();
         wal.push("-wal");
-        let wal = fs::symlink_metadata(wal).ok().map(|wal| Stat::of(&wal));
+        let wal = Stat::of_path(Path::new(&wal)).ok();
         // `JSON.stringify([size, mtimeMs, ctimeMs, wal?.size ?? null, wal?.mtimeMs ?? null])`.
         let (wal_size, wal_mtime) = wal.map_or(("null".to_owned(), "null".to_owned()), |wal| {
             (wal.size.to_string(), js_number(wal.mtime_ms))
@@ -883,7 +919,10 @@ impl IngestionService {
         }
         // SQLite opens the path again; discard what it read if the file was swapped in the meantime.
         let after = fs::symlink_metadata(path)?;
-        if after.is_symlink() || Stat::of(&after).identity != stat.identity || !inside(root, &fs::canonicalize(path)?) {
+        if after.is_symlink()
+            || Stat::of_link(path, &after)?.identity != stat.identity
+            || !inside(root, &fs::canonicalize(path)?)
+        {
             return Err(ServiceError::SourceScopeChanged);
         }
         let checkpoint = FileCheckpoint {
@@ -922,7 +961,7 @@ impl IngestionService {
             Ok((events, diagnostics, limits)) => (events, diagnostics, !ledger, limits),
             Err(code) => (Vec::new(), vec![code.to_owned()], false, None),
         };
-        let after = Stat::of(&file.metadata()?);
+        let after = Stat::of_file(&file)?;
         if after.size != stat.size || after.mtime_ms != stat.mtime_ms || after.ctime_ms != stat.ctime_ms {
             return Err(ServiceError::FileChangedDuringScan);
         }
@@ -979,7 +1018,7 @@ impl IngestionService {
         let previous = lock(&self.store).checkpoint(&text(path), Some(tool))?;
         // An unchanged log needs no open; anything else, a swapped symlink included, takes the checks below.
         if let Some(previous) = &previous
-            && Stat::of(&fs::symlink_metadata(path)?).matches(previous)
+            && Stat::of_path(path)?.matches(previous)
         {
             return Ok(previous.diagnostics.clone());
         }
@@ -1081,7 +1120,7 @@ impl IngestionService {
         } else if length > 0 && usage.take() {
             add(&mut diagnostics, "record_too_large");
         }
-        let after = Stat::of(&file.metadata()?);
+        let after = Stat::of_file(&file)?;
         if changed_during_read(&stat, &after) {
             return Err(ServiceError::FileChangedDuringScan);
         }
@@ -1113,7 +1152,11 @@ impl IngestionService {
         let Some(path) = &self.claude_config_file else {
             return Ok(());
         };
+        #[cfg(unix)]
         let stat = fs::metadata(path).ok().map(|metadata| Stat::of(&metadata));
+        // The file a link leads to, as `fs::metadata` reads it.
+        #[cfg(windows)]
+        let stat = File::open(path).and_then(|file| Stat::of_file(&file)).ok();
         let mut seen = lock(&self.claude_config_seen);
         if seen.as_ref() == Some(&stat) {
             return Ok(());
@@ -1171,7 +1214,7 @@ mod tests {
         fs::write(&path, b"a").unwrap();
         let Opened { mut file, stat } = open_inside(&path, &root).unwrap();
         assert_eq!(stat.size, 1);
-        OpenOptions::new()
+        File::options()
             .append(true)
             .open(&path)
             .unwrap()
@@ -1205,9 +1248,12 @@ mod tests {
         let path = root.join("metadata.json");
         fs::write(&path, "{\"valid\":true}").unwrap();
         assert_eq!(read_sidecar(&path, &root).unwrap().as_deref(), Some("{\"valid\":true}"));
-        let link = root.join("link.json");
-        std::os::unix::fs::symlink(&path, &link).unwrap();
-        assert!(read_sidecar(&link, &root).unwrap().is_none());
+        #[cfg(unix)]
+        {
+            let link = root.join("link.json");
+            std::os::unix::fs::symlink(&path, &link).unwrap();
+            assert!(read_sidecar(&link, &root).unwrap().is_none());
+        }
         File::options()
             .write(true)
             .open(&path)

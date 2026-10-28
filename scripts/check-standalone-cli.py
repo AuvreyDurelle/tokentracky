@@ -20,6 +20,8 @@ import time
 from urllib.parse import urlsplit
 import uuid
 
+WINDOWS = os.name == 'nt'
+
 
 class References(HTMLParser):
     def __init__(self):
@@ -48,25 +50,32 @@ def check(binary, web_dist):
     process = None
     try:
         web_dist.rename(hidden)
-        with tempfile.TemporaryDirectory(prefix='tokentracky-standalone-', dir='/tmp') as temporary:
+        with tempfile.TemporaryDirectory(prefix='tokentracky-standalone-', dir=tempfile.gettempdir()) as temporary:
             root = Path(temporary)
             # Only a single raw executable is installed, as in npm's cache or Homebrew's bin directory.
-            installed = root / 'bin/tokentracky'
+            installed = root / ('bin/tokentracky.exe' if WINDOWS else 'bin/tokentracky')
             installed.parent.mkdir()
             shutil.copy2(binary, installed)
             for directory in ('home', 'data', 'tmp'):
                 (root / directory).mkdir(mode=0o700)
+            home, temporary_files = str(root / 'home'), str(root / 'tmp')
             env = {
-                'PATH': os.defpath, 'HOME': str(root / 'home'), 'TMPDIR': str(root / 'tmp'),
+                'PATH': os.defpath, 'HOME': home, 'USERPROFILE': home, 'TMPDIR': temporary_files,
+                'TMP': temporary_files, 'TEMP': temporary_files,
                 'TOKENTRACKY_HOME': str(root / 'data'), 'TOKENTRACKY_PRICING_REFRESH': 'off',
                 'TOKENTRACKY_TEST_KEYCHAIN_NAMESPACE': f'standalone-{uuid.uuid4().hex}',
                 'TOKENTRACKY_CLOUD_URL': 'http://127.0.0.1:9',
             }
+            # Windows starts no networking without it.
+            if WINDOWS:
+                env['SYSTEMROOT'] = os.environ['SYSTEMROOT']
             # Do not inherit developer overrides, tool folders, fixture credentials or cloud configuration.
             output = root / 'serve.log'
             with output.open('wb') as log:
+                # Windows stops a process with Ctrl-Break, which reaches only a group of its own.
+                group = subprocess.CREATE_NEW_PROCESS_GROUP if WINDOWS else 0
                 process = subprocess.Popen([str(installed), 'serve', '--port', '0'], cwd=root, env=env,
-                                           stdin=subprocess.DEVNULL, stdout=log, stderr=log)
+                                           stdin=subprocess.DEVNULL, stdout=log, stderr=log, creationflags=group)
                 deadline = time.monotonic() + 30
                 while True:
                     match = re.search(r'http://127\.0\.0\.1:\d+/\?launch=[A-Za-z0-9_-]+', output.read_text())
@@ -120,7 +129,7 @@ def check(binary, web_dist):
                 assert request('/api/health', cookie, 'https://example.invalid')[0] == 403
                 for path in ('/assets/%2e%2e/index.html', '/assets/%2e%2e%5cindex.html'):
                     assert request(path, cookie)[0] == 403, 'asset traversal must be rejected'
-                process.send_signal(signal.SIGTERM)
+                process.send_signal(signal.CTRL_BREAK_EVENT if WINDOWS else signal.SIGTERM)
                 assert process.wait(timeout=15) == 0, 'CLI must quit gracefully'
                 assert not list((root / 'tmp').glob('tokentracky-web-*')), 'extracted dashboard leaked after quit'
                 status = subprocess.run([str(installed), 'status', '--json'], cwd=root, env=env,
@@ -145,8 +154,8 @@ if __name__ == '__main__':
     def interrupted(signum, _frame):
         raise SystemExit(128 + signum)
 
-    # Restore the source directory and stop the child on normal CI cancellation too.
-    for shutdown_signal in (signal.SIGTERM, signal.SIGHUP):
+    # Restore the source directory and stop the child on normal CI cancellation too. Windows has no SIGHUP.
+    for shutdown_signal in (signal.SIGTERM,) if WINDOWS else (signal.SIGTERM, signal.SIGHUP):
         signal.signal(shutdown_signal, interrupted)
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--binary', type=Path, required=True)

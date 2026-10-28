@@ -120,7 +120,7 @@ table.sr-only { display: block; }
 .site-nav { position: sticky; top: 0; z-index: 20; border-bottom: 1px solid var(--border); background: rgba(8, 9, 10, 0.78); backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%); }
 .site-nav-inner { display: flex; align-items: center; gap: 28px; max-width: 1200px; height: 60px; margin: 0 auto; padding: 0 24px; }
 .site-nav-main { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
-.site-nav-main > .brand { justify-self: start; }
+.site-nav-main > .site-left { display: flex; align-items: center; gap: 14px; justify-self: start; }
 .site-links { display: flex; gap: 2px; }
 .site-links button { height: 30px; padding: 0 10px; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--text-3); font-size: 13px; font-weight: 500; }
 .site-links button:hover { color: var(--text-2); background: var(--hover); }
@@ -176,7 +176,8 @@ p.panel-body { color: var(--text-2); font-size: 13px; line-height: 1.6; }
 .eyebrow { color: var(--text-3); font-size: 12px; font-weight: 500; }
 
 .pill { display: inline-flex; align-items: center; gap: 7px; height: 28px; padding: 0 10px; border: 1px solid var(--border-2); border-radius: 999px; background: transparent; color: var(--text-2); font-size: 12px; font-weight: 500; white-space: nowrap; }
-button.pill:hover { color: var(--text); border-color: rgba(255, 255, 255, 0.18); }
+button.pill:hover, a.pill:hover { color: var(--text); border-color: rgba(255, 255, 255, 0.18); }
+a.pill { text-decoration: none; }
 .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
 .dot.off { background: var(--text-3); }
 .dot.warn { background: var(--warn); }
@@ -723,6 +724,8 @@ span.profile-like { cursor: default; }
 .profile-hl-value small { color: var(--text-3); font-size: 12px; font-weight: 400; }
 .profile-usage { display: grid; gap: 16px; padding: 18px 24px 20px; border-top: 1px solid var(--border); }
 .usage-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+/* The range stays on the right when the 24 hours hide the chart choice. */
+.usage-head .segmented:last-child { margin-left: auto; }
 .profile-usage .trend { margin: 8px 0 0; }
 /* Short ranges have few weeks: larger cells, centred, about as tall as the charts. */
 .profile-usage .heat-body { max-width: calc(27px + var(--weeks) * 30px); margin: 0 auto; }
@@ -991,6 +994,9 @@ span.profile-like { cursor: default; }
   .brand span:last-child, .pill.me span:last-child { display: none; }
   .pill.me { padding: 0 2px; }
   .pill.jump kbd { display: none; }
+  .site-nav-main > .site-left { gap: 8px; }
+  .pill.github { padding: 0 7px; }
+  .pill.github span { display: none; }
   .page-title { padding-top: 28px; }
   .types-bar { padding: 14px 16px; }
   .join { gap: 56px; }

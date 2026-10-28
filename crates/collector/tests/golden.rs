@@ -60,11 +60,15 @@ fn pricer(price: &Option<Price>) -> Option<Pricer> {
 fn stringify(value: &Value) -> String {
     serde_json::to_string_pretty(value).unwrap() + "\n"
 }
-/// `relative(root, path) || '.'`.
+/// `relative(root, path) || '.'`, with `/` between the parts on Windows too.
 fn relative(root: &Path, path: &str) -> String {
     match Path::new(path).strip_prefix(root) {
         Ok(inner) if inner.as_os_str().is_empty() => ".".to_owned(),
-        Ok(inner) => text(inner),
+        Ok(inner) => inner
+            .iter()
+            .map(|part| part.to_string_lossy())
+            .collect::<Vec<_>>()
+            .join("/"),
         Err(_) => path.to_owned(),
     }
 }

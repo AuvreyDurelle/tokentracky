@@ -54,7 +54,8 @@ pub struct Context {
     pub home: Option<PathBuf>,
     pub stdout: Box<dyn Write + Send>,
     pub stderr: Box<dyn Write + Send>,
-    /// The persistent leaderboard credential store: a private file in the shipped macOS binary, `None` elsewhere.
+    /// The persistent leaderboard credential store: a private file in the shipped binary. Without one the credential
+    /// lasts only as long as the process, and `login` refuses.
     pub secret_store: Option<Arc<dyn SecretStore>>,
     /// Opens a page in the browser; failures are the caller's to ignore.
     pub open_url: Arc<dyn Fn(&str) + Send + Sync>,
@@ -196,10 +197,14 @@ fn running(directory: &Path) -> String {
         directory.display()
     )
 }
-/// `mkdir(directory, {recursive: true, mode: 0o700})`.
+/// `mkdir(directory, {recursive: true, mode: 0o700})`. Windows has no mode: the folder takes the user profile's
+/// owner-only access.
 fn create_directory(directory: &Path) -> std::io::Result<()> {
-    use std::os::unix::fs::DirBuilderExt;
-    std::fs::DirBuilder::new().recursive(true).mode(0o700).create(directory)
+    let mut builder = std::fs::DirBuilder::new();
+    builder.recursive(true);
+    #[cfg(unix)]
+    std::os::unix::fs::DirBuilderExt::mode(&mut builder, 0o700);
+    builder.create(directory)
 }
 
 /// Runs one command and returns the process exit code: 0 on success, 1 on failure, 2 on a usage error. `argv` is the

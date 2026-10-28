@@ -18,7 +18,7 @@ The local ledger, summaries, totals, CSV and JSON exports retain excluded histor
 
 Nothing new leaves the computer for these. Achievements are computed on the hosted service from the daily totals a member already publishes, and every member's badges and their rarity are public. The GitHub username is the verified login of the account's GitHub sign-in, read by the hosted service when the member publishes or approves a device, and shown on the public profile. A like stores the pair of accounts; only the count is public.
 
-Session times and project identities stay local. Connected computers also send recent UTC hourly tool totals for the public last-24-hours figure; these contain no session or project identities.
+Session times and project identities stay local. Connected computers also send recent UTC hourly tool totals for the public last-24-hours figure and the profile's hour-by-hour chart of it (every tool together); these contain no session or project identities.
 
 ## Durable provenance and upgrades
 

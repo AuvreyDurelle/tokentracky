@@ -8,6 +8,7 @@ use serde::Deserialize;
 use serde_json::Value;
 use std::fs::{self, OpenOptions};
 use std::io::Read;
+#[cfg(unix)]
 use std::os::unix::fs::OpenOptionsExt;
 use std::path::{Path, PathBuf};
 use tokentracky_core::ToolId;
@@ -90,12 +91,13 @@ pub(crate) fn read_claude_config(path: &Path, limit: u64) -> Option<Vec<u8>> {
     if !metadata.is_file() || metadata.len() > limit {
         return None;
     }
-    // Non-blocking, so a file swapped for a pipe meanwhile cannot hold the scan; it is refused below.
-    let file = OpenOptions::new()
-        .read(true)
-        .custom_flags(libc::O_NONBLOCK)
-        .open(path)
-        .ok()?;
+    let mut options = OpenOptions::new();
+    options.read(true);
+    // Non-blocking, so a file swapped for a pipe meanwhile cannot hold the scan; it is refused below. Windows has no
+    // pipes at file paths.
+    #[cfg(unix)]
+    options.custom_flags(libc::O_NONBLOCK);
+    let file = options.open(path).ok()?;
     if !file.metadata().ok()?.is_file() {
         return None;
     }
@@ -193,8 +195,11 @@ mod tests {
         assert_eq!(read_claude_config(&path, 9), None);
         assert_eq!(read_claude_config(folder.path(), 10), None);
         assert_eq!(read_claude_config(&folder.path().join("missing"), 10), None);
-        let link = folder.path().join("link.json");
-        std::os::unix::fs::symlink(&path, &link).unwrap();
-        assert_eq!(read_claude_config(&link, 10).as_deref(), Some(&b"0123456789"[..]));
+        #[cfg(unix)]
+        {
+            let link = folder.path().join("link.json");
+            std::os::unix::fs::symlink(&path, &link).unwrap();
+            assert_eq!(read_claude_config(&link, 10).as_deref(), Some(&b"0123456789"[..]));
+        }
     }
 }

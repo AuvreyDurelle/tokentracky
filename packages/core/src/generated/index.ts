@@ -191,6 +191,8 @@ export type ProfileStats = {
   periods: { week: { rank: number, tokens: number, builders: number }, month: { rank: number, tokens: number, builders: number }, all: { rank: number, tokens: number, builders: number } };
   /** Tokens per UTC day for the 365 days ending today, oldest first. */
   daily: Array<{ day: string, tokens: number }>;
+  /** Tokens per UTC hour across every tool for the 24 whole hours before the hour under way, oldest first: the leaderboard's `last24h_tokens` hour by hour, and absent likewise. */
+  hours?: Array<{ hour: string, tokens: number }>;
   activity: ActivityStats;
   toolTokens?: Partial<Record<ToolId, number>>;
   /** All-time estimated cost; null when any shared day lacks a price. */

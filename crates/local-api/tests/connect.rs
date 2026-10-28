@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 use support::*;
 use tokentracky_local_api::{
     CloudLink, CloudSync, ConnectStart, ConnectStatus, DeviceConnect, MemorySecretStore, SecretStore,
-    default_device_name, hashed_machine_id, platform_uuid,
+    default_device_name, hashed_machine_id, linux_machine_id, machine_guid, platform_uuid,
 };
 use tokio::sync::Notify;
 
@@ -219,4 +219,28 @@ fn identifies_the_computer_by_a_salted_hash_of_its_hardware_uuid() {
         hashed_machine_id("4C4C4544-0042-3810-8052-B4C04F4E4A32"),
         "55ad7bed4365a317a3e669932fec6dad879e7c8707257ca898b88e87e8f729dc"
     );
+}
+
+#[test]
+fn identifies_a_linux_computer_by_its_machine_id() {
+    assert_eq!(
+        linux_machine_id("4c4c4544004238108052b4c04f4e4a32\n"),
+        Some("4c4c4544004238108052b4c04f4e4a32")
+    );
+    // systemd writes `uninitialized` until the first boot completes.
+    assert_eq!(linux_machine_id("uninitialized\n"), None);
+    assert_eq!(linux_machine_id("4c4c4544004238108052b4c04f4e4a3\n"), None);
+    assert_eq!(linux_machine_id("4c4c4544004238108052b4c04f4e4a3g\n"), None);
+    assert_eq!(linux_machine_id(""), None);
+}
+
+#[test]
+fn identifies_a_windows_computer_by_its_machine_guid() {
+    assert_eq!(
+        machine_guid("6f1e2a3b-4c5d-4e6f-8a9b-0c1d2e3f4a5b"),
+        Some("6f1e2a3b-4c5d-4e6f-8a9b-0c1d2e3f4a5b")
+    );
+    assert_eq!(machine_guid("6f1e2a3b4c5d4e6f8a9b0c1d2e3f4a5b"), None);
+    assert_eq!(machine_guid("{6f1e2a3b-4c5d-4e6f-8a9b-0c1d2e3f4a5b}"), None);
+    assert_eq!(machine_guid(""), None);
 }

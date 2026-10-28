@@ -330,6 +330,7 @@ async fn checks_the_runtime_data_folder_detected_tools_link_and_last_refresh() {
     assert!(text.stdout.ends_with("daily refresh off\n"));
 }
 
+#[cfg(unix)]
 #[tokio::test(flavor = "multi_thread")]
 async fn doctor_fails_when_the_data_folder_cannot_be_written() {
     use std::os::unix::fs::PermissionsExt;
@@ -504,7 +505,7 @@ async fn refuses_to_log_in_without_a_persistent_credential_store() {
     f.context.secret_store = None;
     let result = f.run(&["login", "--cloud-url", "https://cloud.example"]).await;
     assert_eq!(result.code, 1);
-    assert!(result.stderr.contains("needs macOS"));
+    assert!(result.stderr.contains("needs a credential store"), "{}", result.stderr);
 }
 
 #[tokio::test(flavor = "multi_thread")]
@@ -712,6 +713,7 @@ async fn finds_the_data_folder_from_the_flag_the_environment_or_the_home_folder(
     );
 }
 
+#[cfg(unix)]
 #[tokio::test(flavor = "multi_thread")]
 async fn creates_the_data_folder_for_the_owner_only() {
     use std::os::unix::fs::PermissionsExt;

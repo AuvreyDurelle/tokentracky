@@ -2,10 +2,10 @@
 use crate::{normalize, resolve};
 use serde::Serialize;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use tokentracky_core::ToolId;
 
-/// macOS VS Code-family editors whose extension storage holds Cline, Roo Code and Kilo Code tasks.
+/// VS Code-family editors whose extension storage holds Cline, Roo Code and Kilo Code tasks.
 const EDITORS: [&str; 5] = ["Code", "Code - Insiders", "VSCodium", "Cursor", "Windsurf"];
 
 /// `path.join`.
@@ -15,11 +15,20 @@ fn join(base: impl AsRef<Path>, parts: &[&str]) -> String {
         .fold(base.as_ref().to_path_buf(), |path, part| path.join(part));
     normalize(&joined).to_string_lossy().into_owned()
 }
-fn editor_tasks(home: &Path, extension: &str) -> Vec<String> {
+/// Where the editors keep their settings and extension storage on `os` (`std::env::consts::OS`): Application Support
+/// on macOS, `%APPDATA%` on Windows, `$XDG_CONFIG_HOME` (else `~/.config`) on Linux and the other Unix systems.
+fn editor_settings(os: &str, var: impl Fn(&str) -> Option<String>, home: &Path) -> PathBuf {
+    match os {
+        "macos" => home.join("Library/Application Support"),
+        "windows" => var("APPDATA").map_or_else(|| home.join("AppData").join("Roaming"), PathBuf::from),
+        _ => var("XDG_CONFIG_HOME").map_or_else(|| home.join(".config"), PathBuf::from),
+    }
+}
+fn editor_tasks(settings: &Path, extension: &str) -> Vec<String> {
     let storage = ["User", "globalStorage", extension, "tasks"];
     EDITORS
         .iter()
-        .map(|editor| join(home.join("Library/Application Support").join(editor), &storage))
+        .map(|editor| join(settings.join(editor), &storage))
         .collect()
 }
 
@@ -41,6 +50,7 @@ pub fn default_source_paths(env: impl Fn(&str) -> Option<String>, home: &Path) -
     let var = |key: &str| env(key).filter(|value| !value.is_empty());
     let or = |key: &str, default: String| var(key).unwrap_or(default);
     let data = or("XDG_DATA_HOME", join(home, &[".local", "share"]));
+    let editors = editor_settings(std::env::consts::OS, var, home);
     // T3 Code's routed profiles: it launches Claude Code and Codex with their homes here, which this app's own
     // environment never shows.
     let t3 = join(home, &["t3-routing", ".runtime", "profiles"]);
@@ -82,11 +92,11 @@ pub fn default_source_paths(env: impl Fn(&str) -> Option<String>, home: &Path) -
             ToolId::Cline,
             [
                 vec![join(cline, &["sessions"])],
-                editor_tasks(home, "saoudrizwan.claude-dev"),
+                editor_tasks(&editors, "saoudrizwan.claude-dev"),
             ]
             .concat(),
         ),
-        (ToolId::Roo, editor_tasks(home, "rooveterinaryinc.roo-cline")),
+        (ToolId::Roo, editor_tasks(&editors, "rooveterinaryinc.roo-cline")),
         // The database file (`OPENCODE_DB`, absolute or relative to the data folder) and pre-1.2 message files.
         (
             ToolId::OpenCode,
@@ -100,7 +110,7 @@ pub fn default_source_paths(env: impl Fn(&str) -> Option<String>, home: &Path) -
             ToolId::Kilo,
             [
                 vec![database("kilo", "KILO_DB", "kilo.db")],
-                editor_tasks(home, "kilocode.kilo-code"),
+                editor_tasks(&editors, "kilocode.kilo-code"),
             ]
             .concat(),
         ),
@@ -237,4 +247,38 @@ pub fn detect_tools(env: impl Fn(&str) -> Option<String>, home: &Path) -> Vec<De
             })
         })
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::editor_settings;
+    use std::path::Path;
+
+    #[test]
+    fn editors_keep_their_storage_where_each_system_keeps_settings() {
+        let home = Path::new("/home/ada");
+        let unset = |_: &str| None;
+        let only = |key: &'static str, value: &'static str| move |name: &str| (name == key).then(|| value.to_owned());
+        assert_eq!(
+            editor_settings("macos", unset, home),
+            home.join("Library/Application Support")
+        );
+        assert_eq!(editor_settings("linux", unset, home), home.join(".config"));
+        assert_eq!(
+            editor_settings("linux", only("XDG_CONFIG_HOME", "/xdg"), home),
+            Path::new("/xdg")
+        );
+        assert_eq!(
+            editor_settings("freebsd", only("XDG_CONFIG_HOME", "/xdg"), home),
+            Path::new("/xdg")
+        );
+        assert_eq!(
+            editor_settings("windows", unset, home),
+            home.join("AppData").join("Roaming")
+        );
+        assert_eq!(
+            editor_settings("windows", only("APPDATA", "D:/Roaming"), home),
+            Path::new("D:/Roaming")
+        );
+    }
 }

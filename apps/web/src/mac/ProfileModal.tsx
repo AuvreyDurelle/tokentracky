@@ -1,7 +1,8 @@
 import { useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
-import type { BadgeProgress, ProfileStats } from '@tokentracky/core';
+import { totalTokens, type BadgeProgress, type ProfileStats, type TokenCounts } from '@tokentracky/core';
 import { ApiError, type ApiClient } from '../api';
-import { TOOLS, errorText, formatCompact, formatCost, formatCostCompact, formatExact, formatShare, shortDay } from '../format';
+import { KINDS, TOOLS, errorText, formatCompact, formatCost, formatCostCompact, formatExact, formatShare, shortDay } from '../format';
+import { ProfileUsage } from '../ProfileUsage';
 import { Avatar, Empty, Loading, Notice, ToolIcon } from '../ui';
 import { ActivityGrid } from './ActivityGrid';
 import { ACHIEVEMENT_COPY, TIER_NAMES } from './achievement-copy';
@@ -13,6 +14,7 @@ const MEMBER_SINCE = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', t
 const SHOWN_MODELS = 6;
 const tokensTitle = (tokens: number) => `${formatExact(tokens)} tokens`;
 const days = (count: number) => `${formatExact(count)} ${count === 1 ? 'day' : 'days'}`;
+const KIND_COLORS: Record<keyof Omit<TokenCounts, 'reasoning' | 'cacheWrite1h'>, string> = { input: 'var(--kind-input)', output: 'var(--kind-output)', cacheRead: 'var(--kind-cache-read)', cacheWrite: 'var(--kind-cache-write)' };
 
 /** Each model with its bar width in percent of the largest (to one decimal). */
 export function modelBars<T extends { tokens: number }>(models: T[]): Array<T & { width: number }> {
@@ -131,6 +133,10 @@ export function ProfileCard({ stats, likes, like, onLike, onClose, headingId }: 
         {favourite ? <span className="fav-model">{favourite.model}</span> : <small>{stats.models ? 'None yet' : 'Not shared'}</small>}</Highlight>
     </div>
 
+    <div className="pf-sec"><ProfileUsage daily={stats.daily} hours={stats.hours} /></div>
+
+    {stats.breakdown && <TokenTypes breakdown={stats.breakdown} />}
+
     <div className="pf-sec"><ActivityGrid days={stats.daily} stats={activity} label="Activity · last 12 months" /></div>
 
     <div className="pf-sec pf-mix">
@@ -165,6 +171,23 @@ export function ProfileCard({ stats, likes, like, onLike, onClose, headingId }: 
 
     <div className="pf-foot"><button type="button" className="m-btn" onClick={onClose}>Close</button></div>
   </>;
+}
+
+/** The all-time split by token type, drawn like the tool mix. Reasoning is part of output, never added again. */
+function TokenTypes({ breakdown }: { breakdown: TokenCounts }) {
+  const total = totalTokens(breakdown);
+  const shown = KINDS.filter((kind) => breakdown[kind.key] > 0);
+  return <div className="pf-sec pf-mix">
+    <div className="pf-sec-head"><h3>Token types</h3><span>All time · share of {formatExact(total)} tokens</span></div>
+    {!total ? <p className="pf-none">No token usage yet.</p> : <>
+      <div className="m-bar" role="img" aria-label={shown.map((kind) => `${kind.label} ${formatShare(breakdown[kind.key], total)}`).join(', ')}>
+        {shown.map((kind) => <span key={kind.key} style={{ width: `${(breakdown[kind.key] / total) * 100}%`, '--c': KIND_COLORS[kind.key] } as CSSProperties} />)}
+      </div>
+      <div className="pf-legend" aria-hidden="true">{KINDS.map((kind) => <span key={kind.key}><i className="pf-key" style={{ background: KIND_COLORS[kind.key] }} />{kind.label}
+        <em title={tokensTitle(breakdown[kind.key])}><b>{formatCompact(breakdown[kind.key])}</b> · {formatShare(breakdown[kind.key], total)}</em>
+        {kind.key === 'output' && <em>Of which reasoning {formatCompact(breakdown.reasoning ?? 0)}</em>}</span>)}</div>
+    </>}
+  </div>;
 }
 
 /** One badge: its emblem in the tier's colour, and how far it is to the next tier. */

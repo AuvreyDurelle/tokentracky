@@ -597,9 +597,15 @@ impl Process {
         let root = std::fs::canonicalize(directory.path()).unwrap();
         let home = root.join("home");
         std::fs::create_dir(&home).unwrap();
-        let mut child = Command::new(env!("CARGO_BIN_EXE_contract-server"))
-            .env_clear()
+        let mut command = Command::new(env!("CARGO_BIN_EXE_contract-server"));
+        command.env_clear();
+        // Windows starts no networking without `SystemRoot`.
+        if let Some(root) = std::env::var_os("SystemRoot") {
+            command.env("SystemRoot", root);
+        }
+        let mut child = command
             .env("HOME", &home)
+            .env("USERPROFILE", &home)
             .env("TOKENTRACKY_MODE", "local")
             .env("PORT", "0")
             .env("TOKENTRACKY_DATABASE_PATH", root.join("data").join("usage.sqlite"))

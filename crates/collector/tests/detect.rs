@@ -6,6 +6,14 @@ use tokentracky_collector::detect::{DetectedTool, default_source_paths, detect_t
 use tokentracky_core::ToolId;
 
 const EDITORS: [&str; 5] = ["Code", "Code - Insiders", "VSCodium", "Cursor", "Windsurf"];
+/// Where the editors keep their settings below the home, with no `XDG_CONFIG_HOME` or `APPDATA` set.
+const EDITOR_SETTINGS: &str = if cfg!(target_os = "macos") {
+    "Library/Application Support"
+} else if cfg!(windows) {
+    "AppData/Roaming"
+} else {
+    ".config"
+};
 
 /// An environment holding only `vars`.
 fn env(vars: &[(&str, &str)]) -> impl Fn(&str) -> Option<String> {
@@ -15,20 +23,35 @@ fn env(vars: &[(&str, &str)]) -> impl Fn(&str) -> Option<String> {
         .collect();
     move |key| vars.get(key).cloned()
 }
+/// The home [`defaults`] lists below; Windows needs a drive for it to be absolute.
+const HOME: &str = if cfg!(windows) { "C:/Users/ada" } else { "/Users/ada" };
 fn defaults(vars: &[(&str, &str)], tool: ToolId) -> Vec<String> {
-    let all = default_source_paths(env(vars), Path::new("/Users/ada"));
-    all.into_iter().find(|(id, _)| *id == tool).unwrap().1
+    let all = default_source_paths(env(vars), Path::new(HOME));
+    let paths = all.into_iter().find(|(id, _)| *id == tool).unwrap().1;
+    paths.into_iter().map(unix).collect()
+}
+/// `path` as Unix writes it, so that one expectation holds everywhere: on Windows, `/` for `\` and no drive.
+fn unix(path: String) -> String {
+    if !cfg!(windows) {
+        return path;
+    }
+    let path = path.replace('\\', "/");
+    match path.as_bytes() {
+        [drive, b':', ..] if drive.is_ascii_alphabetic() => path[2..].to_owned(),
+        _ => path,
+    }
 }
 fn editor_tasks(extension: &str) -> Vec<String> {
     EDITORS
-        .map(|editor| format!("/Users/ada/Library/Application Support/{editor}/User/globalStorage/{extension}/tasks"))
+        .map(|editor| format!("/Users/ada/{EDITOR_SETTINGS}/{editor}/User/globalStorage/{extension}/tasks"))
         .to_vec()
 }
 fn home() -> tempfile::TempDir {
     tempfile::Builder::new().prefix("tokentracky-home-").tempdir().unwrap()
 }
+/// `path` with the system's separators: `join("a/b")` keeps the `/`.
 fn text(path: &Path) -> String {
-    path.to_string_lossy().into_owned()
+    path.to_string_lossy().replace('/', std::path::MAIN_SEPARATOR_STR)
 }
 
 #[test]
@@ -126,7 +149,10 @@ fn keeps_the_usual_claude_code_and_codex_folders_beside_their_home_overrides() {
         ]
     );
     assert_eq!(
-        defaults(&[("CLAUDE_CONFIG_DIR", "/Users/ada/.config/claude")], ToolId::Claude),
+        defaults(
+            &[("CLAUDE_CONFIG_DIR", &format!("{HOME}/.config/claude"))],
+            ToolId::Claude
+        ),
         [
             "/Users/ada/.config/claude/projects",
             "/Users/ada/.claude/projects",
@@ -251,7 +277,9 @@ fn detects_a_database_only_when_it_is_a_file_by_stat_alone() {
 fn detects_only_the_editor_task_folders_that_exist() {
     let home = home();
     let home = home.path();
-    let tasks = home.join("Library/Application Support/VSCodium/User/globalStorage/saoudrizwan.claude-dev/tasks");
+    let tasks = home
+        .join(EDITOR_SETTINGS)
+        .join("VSCodium/User/globalStorage/saoudrizwan.claude-dev/tasks");
     fs::create_dir_all(&tasks).unwrap();
     assert_eq!(
         detect_tools(env(&[]), home),

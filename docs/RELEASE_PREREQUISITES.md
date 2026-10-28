@@ -1,6 +1,6 @@
 # Release prerequisites
 
-The initial native target is Apple Silicon on macOS 13+. Ad-hoc signed releases require **Open Anyway** on first launch and are not notarized. Developer ID distribution requires separate Apple credentials and candidate verification. Windows, Linux and Intel Mac distribution are deferred. See [Mac releases](MAC_RELEASE.md) and [distribution](DISTRIBUTION.md) for the implemented workflows.
+The initial native target is Apple Silicon on macOS 13+. Ad-hoc signed releases require **Open Anyway** on first launch and are not notarized. Developer ID distribution requires separate Apple credentials and candidate verification. The CLI is also released for Linux (static x86_64 and aarch64 binaries) and Windows (x86_64), unsigned with SHA-256 checksums ([Linux and Windows CLI releases](MAC_RELEASE.md#linux-and-windows-cli-releases)). Linux and Windows apps, Windows code signing and Intel Mac distribution are deferred. See [Mac releases](MAC_RELEASE.md) and [distribution](DISTRIBUTION.md) for the implemented workflows.
 
 Repository checks establish code behavior on synthetic inputs. They do not establish that hosting, OAuth providers, signing credentials, public artifacts or clean-machine installation have been verified for a release candidate.
 

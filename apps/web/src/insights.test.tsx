@@ -5,7 +5,7 @@ import { dayRange, fillRange, previousLabel, previousRange, rangeLabel, rangeLen
 import { Heatmap, heatLevels } from './Heatmap';
 import { costGroups } from './Insights';
 import { TrendChart } from './TrendChart';
-import { formatCostCompact, timeUntil } from './format';
+import { formatCostCompact, timeUntil, utcHourSpan } from './format';
 
 const now = new Date('2026-10-23T15:00:00.000Z');
 
@@ -75,5 +75,13 @@ describe('trend chart', () => {
     expect(html).toContain('trend-line');
     expect(html).not.toContain('trend-layer');
     expect(html).toContain('<th>Day</th><th>Value</th></tr>');
+  });
+  it('reads 24 hours on the UTC clock, the axis at the first, middle and last hour', () => {
+    const points = Array.from({ length: 24 }, (_, index) => ({ day: new Date(Date.parse('2026-10-22T12:00:00.000Z') + index * 3_600_000).toISOString(), tokens: index }));
+    const html = renderToStaticMarkup(<TrendChart hours points={points} label="Tokens per UTC hour" />);
+    expect(html).toContain('<div class="chart-x" aria-hidden="true"><span>12:00</span><span>23:00</span><span>11:00</span></div>');
+    expect(html).toContain('Use arrow keys to read each hour.');
+    expect(html).toContain('<th>Hour (UTC)</th><th>Value</th>');
+    expect(html).toContain(`<td>${utcHourSpan('2026-10-23T11:00:00.000Z')}</td><td>23</td>`);
   });
 });

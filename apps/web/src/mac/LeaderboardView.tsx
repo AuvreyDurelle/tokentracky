@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties, type MouseEvent } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react';
 import type { CommunityStats, Period, ProfileStats, PublicProfile, ToolId } from '@tokentracky/core';
 import { ApiError, type ApiClient } from '../api';
 import { errorText, formatCompact, formatCost, formatCostCompact, formatExact, shortDay, toolLabel, topPercent } from '../format';
@@ -117,11 +117,13 @@ function ToolShare({ totals }: { totals: Partial<Record<ToolId, bigint>> }) {
   </div>;
 }
 
-// The hero chart's frame (viewBox units): the plot runs from x 4 to 512 and from y 18 down to the baseline at 158.
-const W = 520, H = 188, LEFT = 4, RIGHT = 512, TOP = 18, BASE = 158;
-/** An area over evenly spaced points, with `labels` at fractional point positions under it. */
+// The hero chart's frame (viewBox units, one per pixel): the plot runs from x 4 to 8 short of the chart's width and from y 18 down to the baseline at 158.
+const H = 188, LEFT = 4, TOP = 18, BASE = 158;
+/** An area over evenly spaced points, with `labels` at fractional point positions under it. Drawn at the width the window gives it, so its labels keep their size. */
 function TrendArea({ points: values, title, note, labels, aria }: { points: bigint[]; title: string; note: string; labels: Array<{ at: number; text: string }>; aria: string }) {
-  if (values.length < 2) return <div className="hero-chart" />;
+  const [box, W] = useWidth(520);
+  if (values.length < 2) return <div className="hero-chart" ref={box} />;
+  const RIGHT = W - 8;
   const maximum = values.reduce((max, value) => value > max ? value : max, 1n);
   const top = ((maximum + 3n) / 4n) * 4n;
   const ticks = [0n, top / 4n, top / 2n, top * 3n / 4n, top];
@@ -130,7 +132,7 @@ function TrendArea({ points: values, title, note, labels, aria }: { points: bigi
   const points = values.map((value, index) => [x(index), round(y(value))] as [number, number]);
   const line = monotonePath(points);
   const [endX, endY] = points.at(-1)!;
-  return <div className="hero-chart">
+  return <div className="hero-chart" ref={box}>
     <div className="hero-chart-head"><span className="m-label">{title}</span><span className="hero-note">{note}</span></div>
     <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={aria}>
       <defs>
@@ -147,6 +149,18 @@ function TrendArea({ points: values, title, note, labels, aria }: { points: bigi
       {labels.map((label, index) => <text key={`${label.at}${label.text}`} className="axis" x={x(label.at)} y="180" textAnchor={label.at >= values.length - 1 && index === labels.length - 1 ? 'end' : 'middle'}>{label.text}</text>)}
     </svg>
   </div>;
+}
+
+/** An element's width in CSS pixels, kept current as the window resizes; `initial` until it is first measured. */
+function useWidth(initial: number) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(initial);
+  useEffect(() => {
+    const observer = new ResizeObserver(([entry]) => setWidth(Math.round(entry!.contentRect.width)));
+    observer.observe(ref.current!);
+    return () => observer.disconnect();
+  }, []);
+  return [ref, width] as const;
 }
 
 /** Your all-time standing: rank, totals, the chase to the next rank and your week and month ranks. */
