@@ -12,6 +12,8 @@ The public leaderboard for AI coding tokens. A native macOS menu-bar app and a R
 [![npm](https://img.shields.io/npm/v/tokentracky?color=4f56b8&logo=npm&logoColor=white)](https://www.npmjs.com/package/tokentracky)
 [![Homebrew](https://img.shields.io/github/v/release/AuvreyDurelle/tokentracky?label=brew&color=F8B73E&logo=homebrew&logoColor=white)](https://github.com/AuvreyDurelle/homebrew-tokentracky)
 [![macOS 13+ on Apple Silicon](https://img.shields.io/badge/macOS%2013%2B-Apple%20Silicon-lightgrey?logo=apple&logoColor=white)](https://github.com/AuvreyDurelle/tokentracky/releases/latest)
+[![Linux x64 and arm64](https://img.shields.io/badge/Linux-x64%20%C2%B7%20arm64-lightgrey?logo=linux&logoColor=white)](https://github.com/AuvreyDurelle/tokentracky/releases/latest)
+[![Windows x64](https://img.shields.io/badge/Windows-x64-lightgrey)](https://github.com/AuvreyDurelle/tokentracky/releases/latest)
 [![CI](https://github.com/AuvreyDurelle/tokentracky/actions/workflows/ci.yml/badge.svg)](https://github.com/AuvreyDurelle/tokentracky/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Author tokens](https://tokentracky.com/badge/auvreydurelly.svg?label=author%20tokens)](https://tokentracky.com/u/auvreydurelly?ref=readme)
@@ -30,7 +32,7 @@ The public leaderboard for AI coding tokens. A native macOS menu-bar app and a R
 
 ## Quick start
 
-Tokentracky runs on Apple Silicon Macs with macOS 13 or later.
+The Mac app runs on Apple Silicon Macs with macOS 13 or later. The CLI also runs on Linux (x64 and arm64) and Windows (x64).
 
 **The Mac app.** [Download `Tokentracky.dmg`](https://github.com/AuvreyDurelle/tokentracky/releases/latest/download/Tokentracky.dmg) and drag Tokentracky to Applications, or use Homebrew:
 
@@ -38,7 +40,7 @@ Tokentracky runs on Apple Silicon Macs with macOS 13 or later.
 brew install --cask auvreydurelle/tokentracky/tokentracky
 ```
 
-**The CLI**, for the terminal or a Mac without the app. One command joins the leaderboard:
+**The CLI**, for the terminal, Linux, Windows or a Mac without the app. One command joins the leaderboard:
 
 ```sh
 npx tokentracky login
@@ -56,6 +58,13 @@ tokentracky doctor    # health check
 ```
 
 Both read the usual folders of the tools they find as soon as they open, and any other folders you choose. Nothing leaves your computer until you join the leaderboard. All commands are in the [CLI guide](crates/cli/README.md).
+
+**Linux and Windows without Node.** Download the CLI for your system from the [latest release](https://github.com/AuvreyDurelle/tokentracky/releases/latest) and compare it with `SHA256SUMS`:
+
+- **Linux:** `tokentracky-<version>-linux-x86_64` or `tokentracky-<version>-linux-aarch64`, one static binary that runs on every distribution. Run `chmod +x` on it and put it on your `PATH` as `tokentracky`.
+- **Windows:** `tokentracky-<version>-windows-x86_64.exe`. It is not signed yet, so SmartScreen may say Windows protected your PC: choose **More info → Run anyway**. The npm install shows no warning.
+
+There is no menu bar app outside macOS, so keep `tokentracky serve` running, or run `tokentracky refresh` on a schedule, to keep your totals and your leaderboard row current.
 
 <details>
 <summary><b>"Tokentracky Not Opened": macOS can't check the app</b></summary>
@@ -274,7 +283,7 @@ Badges and cards show "private" until the name is published, so an embed never b
 
 ## Native release status
 
-The initial release targets Apple Silicon on macOS 13+. It is ad-hoc signed, not notarized, until a Developer ID certificate exists; see [Mac releases](docs/MAC_RELEASE.md) and [release prerequisites](docs/RELEASE_PREREQUISITES.md). The hosted API stays TypeScript. The collector, local API, CLI and Mac shell run in Rust; their old TypeScript and Electron implementations have been removed. Windows/Linux native apps, widgets, Cursor and the Limits page are later work.
+The Mac app targets Apple Silicon on macOS 13+. It is ad-hoc signed, not notarized, until a Developer ID certificate exists; see [Mac releases](docs/MAC_RELEASE.md) and [release prerequisites](docs/RELEASE_PREREQUISITES.md). The CLI is also released for Linux (static x86_64 and aarch64) and Windows (x86_64), unsigned with SHA-256 checksums. The hosted API stays TypeScript. The collector, local API, CLI and Mac shell run in Rust; their old TypeScript and Electron implementations have been removed. Linux and Windows menu bar apps, widgets, Cursor and the Limits page are later work.
 
 ## Development
 

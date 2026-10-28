@@ -1,6 +1,6 @@
 # tokentracky CLI
 
-Waste tokens, not time. The `tokentracky` command tracks AI coding tokens from the terminal, for scripting or for machines without the Mac app. It is a native binary (Rust): no Node.js. It keeps its history in `~/.tokentracky` (override with `--data-dir` or `TOKENTRACKY_HOME`). The Mac app uses the same folder and the same single-writer lock, so only one of them collects at a time.
+Waste tokens, not time. The `tokentracky` command tracks AI coding tokens from the terminal, for scripting, on Linux and Windows, or on a Mac without the app. It is a native binary (Rust): no Node.js. It keeps its history in `~/.tokentracky` (`%USERPROFILE%\.tokentracky` on Windows; override with `--data-dir` or `TOKENTRACKY_HOME`). The Mac app uses the same folder and the same single-writer lock, so only one of them collects at a time.
 
 ```sh
 tokentracky serve          # private dashboard on a loopback port; reads the tools it finds
@@ -23,7 +23,7 @@ cargo run -q -p tokentracky-cli -- status   # or run it in place
 | `status [--json]` | Reads totals, sources and link state. Works while `serve` runs (read-only). Does not create the data folder. |
 | `refresh [--json]` | Runs one cycle now: scan the tracked folders, check prices, sync if linked. Prints `status` afterwards. Refuses while `serve` holds the data folder. It runs the cycle `serve` runs, so when linked it also looks up this week's public rank (one read of your public profile; the TypeScript CLI's `refresh` did not). |
 | `doctor [--json]` | Checks the runtime, SQLite, the data folder, the database, detected tools (by checking default folders exist, never reading them), the link and the last refresh. Exits 1 if a check fails. |
-| `login [--cloud-url URL]` | Browser approval: prints a code, opens the approval page and waits (checking every 3 seconds). A saved link keeps its server; otherwise `--cloud-url` takes precedence over `TOKENTRACKY_CLOUD_URL`, with `https://tokentracky.com` as the distributed CLI default. The credential goes into `cloud-link.json` in the data folder (`$TOKENTRACKY_HOME`, else `~/.tokentracky`; `--data-dir` does not move it), readable only by you, and the Mac app reads the same file; other systems have no persistent login yet. |
+| `login [--cloud-url URL]` | Browser approval: prints a code, opens the approval page and waits (checking every 3 seconds). A saved link keeps its server; otherwise `--cloud-url` takes precedence over `TOKENTRACKY_CLOUD_URL`, with `https://tokentracky.com` as the distributed CLI default. The credential goes into `cloud-link.json` in the data folder (`$TOKENTRACKY_HOME`, else `~/.tokentracky`; `--data-dir` does not move it), readable only by you, and the Mac app reads the same file. |
 | `unlink` | Removes the credential. Your public profile stays until you leave on the website. |
 | `uninstall [--yes]` | Deletes the data folder and the credential after confirmation (`--yes`, or `y` at the prompt on a terminal). Tokentracky never edits your tools' settings, so nothing else needs undoing. |
 
@@ -37,7 +37,7 @@ Release builds require `--features embed-web` and a complete dashboard build. Th
 
 ## Data folder
 
-`--data-dir`, else `$TOKENTRACKY_HOME`, else `~/.tokentracky`. Commands that write create it with mode 0700. It holds `usage.sqlite` (with its write-ahead log and `usage.sqlite.collector-lock.sqlite`, the single-writer lock) and `pricing/litellm.json` (the cached price table). `status` and `doctor` read it without a lock when a running `serve` holds it; `refresh`, `login`, `serve` and `uninstall` stop with "Tokentracky is already running" instead.
+`--data-dir`, else `$TOKENTRACKY_HOME`, else `~/.tokentracky` (`%USERPROFILE%\.tokentracky` on Windows). Commands that write create it with mode 0700; on Windows, which has no modes, it takes the user profile's owner-only access. It holds `usage.sqlite` (with its write-ahead log and `usage.sqlite.collector-lock.sqlite`, the single-writer lock) and `pricing/litellm.json` (the cached price table). `status` and `doctor` read it without a lock when a running `serve` holds it; `refresh`, `login`, `serve` and `uninstall` stop with "Tokentracky is already running" instead.
 
 ## Environment
 

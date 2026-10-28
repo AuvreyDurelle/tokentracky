@@ -1,20 +1,25 @@
 # CLI and Mac distribution
 
+Linux and Windows CLI releases: [Linux and Windows CLI releases](MAC_RELEASE.md#linux-and-windows-cli-releases).
+
 The Rust CLI is `crates/cli` (`tokentracky`), currently version `0.1.0`. The separate `packaging/` npm package owns the eventual public `tokentracky` npm name and must be published at the exact Cargo CLI version.
 
-## Supported target
+## Supported targets
 
-The first distribution target is macOS 13+ (Ventura) on Apple Silicon (`darwin-arm64`). npm users need Node 18+ to run the small launcher; after download, the Rust executable runs without Node. The launcher rejects Linux, Windows, Intel macOS and older macOS with a platform-specific message.
+The Mac app and its CLI target macOS 13+ (Ventura) on Apple Silicon (`darwin-arm64`). The CLI is also built for Linux on x86_64 and aarch64, as one static (musl) binary per architecture that runs on any distribution, and for Windows on x86_64. npm users need Node 18+ to run the small launcher; after download, the Rust executable runs without Node. The launcher rejects other systems and architectures, Intel macOS and older macOS with a platform-specific message.
 
 ## Release asset interface
 
-The native release pipeline builds the Rust executable from the same versioned commit as the Mac app, signs it (ad-hoc, or Developer ID with notarization), and publishes these immutable assets on the GitHub release `https://github.com/AuvreyDurelle/tokentracky/releases/tag/v<VERSION>`:
+The native release pipeline builds the Rust executable from the same versioned commit as the Mac app, signs the macOS one (ad-hoc, or Developer ID with notarization), and publishes these immutable assets on the GitHub release `https://github.com/AuvreyDurelle/tokentracky/releases/tag/v<VERSION>`:
 
 | Asset | Name | Purpose |
 | --- | --- | --- |
 | Raw signed CLI executable | `tokentracky-<VERSION>-macos-arm64` | npm launcher and Homebrew formula |
+| Static Linux CLI executables | `tokentracky-<VERSION>-linux-x86_64`, `tokentracky-<VERSION>-linux-aarch64` | npm launcher and direct download |
+| Windows CLI executable (unsigned) | `tokentracky-<VERSION>-windows-x86_64.exe` | npm launcher and direct download |
 | Signed Mac disk image | `tokentracky-<VERSION>-macos-arm64.dmg` | Homebrew cask |
 | The same disk image, fixed name | `Tokentracky.dmg` | Website download through `releases/latest/download/Tokentracky.dmg` |
+| Release manifest | `verified-candidate-manifest.json` | Every platform's checksums, below; the npm package embeds it |
 | Release checksums | `SHA256SUMS` | Auditable checksums for every published artifact |
 
 The raw executable must be directly executable after download and report the exact Cargo version for `--version`. The DMG must contain `Tokentracky.app`. Assets and release tags must use the exact versioned names above; do not overwrite published assets.
@@ -43,13 +48,22 @@ After signature/notarization validation and SHA-256 calculation, the packaging r
             "sha256": "<actual lowercase SHA-256>"
           }
         }
+      },
+      "linux": {
+        "x86_64": { "cli": { "file": "tokentracky-<VERSION>-linux-x86_64", "url": "…/v<VERSION>/tokentracky-<VERSION>-linux-x86_64", "sha256": "…" } },
+        "aarch64": { "cli": { "file": "tokentracky-<VERSION>-linux-aarch64", "url": "…/v<VERSION>/tokentracky-<VERSION>-linux-aarch64", "sha256": "…" } }
+      },
+      "windows": {
+        "x86_64": { "cli": { "file": "tokentracky-<VERSION>-windows-x86_64.exe", "url": "…/v<VERSION>/tokentracky-<VERSION>-windows-x86_64.exe", "sha256": "…" } }
       }
     }
   }
 }
 ```
 
-Only release automation may set `verified: true`, after it has validated the actual release artifacts: signed and notarized for Developer ID, ad-hoc signed otherwise. It means the manifest matches the published bytes, not that Apple notarized them. When a release is published, the release workflow copies the manifest into `packaging/` and runs `npm publish`; the checked-in manifest stays empty. The npm package embeds this manifest and the wrapper downloads only the matching version, validates its fixed GitHub release URL and checksum, and runs it from a user cache. `npm pack` must be repeated with the manifest matching the package/Cargo version for each npm publication. The `prepublishOnly` guard refuses an empty/unverified manifest and downloads both public CLI and DMG to verify their checksums before allowing `npm publish` from `packaging/`. Do not bypass lifecycle scripts during publication.
+The macOS candidate writes the `macos` entry and each CLI build its own; `scripts/macos-release.mjs merge` joins them, refusing parts of different or unverified releases and any platform twice. Launchers published before 0.2.0 read only `macos.arm64`, which the merge leaves unchanged.
+
+Only release automation may set `verified: true`, after it has validated the actual release artifacts: signed and notarized for Developer ID, ad-hoc signed otherwise. It means the manifest matches the published bytes, not that Apple notarized them. When a release is published, the release workflow copies the manifest into `packaging/` and runs `npm publish`; the checked-in manifest stays empty. The npm package embeds this manifest and the wrapper downloads only the matching version, validates its fixed GitHub release URL and checksum, and runs it from a user cache. `npm pack` must be repeated with the manifest matching the package/Cargo version for each npm publication. The `prepublishOnly` guard refuses an empty/unverified manifest and downloads every public CLI (macOS, both Linux and Windows) and the DMG to verify their checksums before allowing `npm publish` from `packaging/`. Do not bypass lifecycle scripts during publication.
 
 ## Homebrew and website
 
@@ -63,6 +77,6 @@ The website's download entry stays “Mac app coming soon” unless the deploy s
 
 The release workflow then uploads the draft, downloads it to check every byte, and (unless `publish` is false) publishes it as latest, publishes npm with the candidate manifest and updates the tap. Turn on the website button once, after the first release is public. For Developer ID, a raw CLI cannot carry a stapled ticket: its exact signed bytes are submitted in a ZIP, and its notarization receipt plus online Gatekeeper assessment are required. Offline first-run behavior of a newly downloaded raw CLI still needs a real clean-Mac check.
 
-`npm run test:harness --prefix packaging` packs and installs into disposable local and global prefixes, exercises direct/local/global/npx execution, arguments/exit codes, cache corruption rejection and SIGTERM/SIGINT/SIGHUP delivery. Its synthetic payloads simulate a supported host on Linux too. `node --test packaging/test/*.test.mjs` validates bounded downloads, Ruby syntax, tap filename/token shape and the formula's raw-binary install mapping; these checks do not substitute for real Homebrew install/audit against published signed artifacts.
+`npm run test:harness --prefix packaging` packs and installs into disposable local and global prefixes, exercises direct/local/global/npx execution, arguments/exit codes and cache corruption rejection as a macOS, a Linux and a Windows host, and SIGTERM/SIGINT/SIGHUP delivery on macOS and Linux (on Windows the console signals the CLI itself, so the launcher only waits). Its synthetic payloads simulate each host whatever system runs it. `node --test packaging/test/*.test.mjs` validates bounded downloads, Ruby syntax, tap filename/token shape and the formula's raw-binary install mapping; these checks do not substitute for real Homebrew install/audit against published signed artifacts.
 
-Native CI and the candidate script additionally run `python3 scripts/check-standalone-cli.py --binary <actual-cli> --web-dist apps/web/dist`. It copies only the executable outside the checkout, temporarily hides the checkout web build, and uses an isolated home/data folder and credential namespace. It consumes the private launch link and verifies exact HTML and every built JS/CSS file with MIME types, an SPA route, authenticated API health, session/traversal rejection and graceful shutdown/lock release. The source build is restored on success or failure. Run this check after other packaging work has finished reading that directory.
+Native CI (macOS, static Linux and Windows) and the candidate scripts additionally run `python3 scripts/check-standalone-cli.py --binary <actual-cli> --web-dist apps/web/dist` (`python` on Windows). It copies only the executable outside the checkout, temporarily hides the checkout web build, and uses an isolated home/data folder and credential namespace. It consumes the private launch link and verifies exact HTML and every built JS/CSS file with MIME types, an SPA route, authenticated API health, session/traversal rejection and graceful shutdown/lock release. The source build is restored on success or failure. Run this check after other packaging work has finished reading that directory.
