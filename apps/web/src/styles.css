@@ -996,8 +996,7 @@ span.profile-like { cursor: default; }
 @media (max-width: 640px) {
   .topbar-inner, .site-nav-inner, .page, .footer-inner { padding-left: 16px; padding-right: 16px; }
   .topbar-inner, .site-nav-inner { gap: 12px; }
-  .site-nav-main { display: flex; height: 60px; padding-top: 0; padding-bottom: 0; }
-  .site-links { display: none; }
+  .site-nav-main { padding-top: 6px; padding-bottom: 6px; row-gap: 2px; }
   .board-head { padding-top: 24px; }
   .me-chip span { display: none; }
   .brand span:last-child, .pill.me span:last-child { display: none; }
@@ -1049,6 +1048,10 @@ span.profile-like { cursor: default; }
   .exact { text-decoration: underline dotted var(--text-4); text-underline-offset: 3px; }
   .board-key, .profile-badge-desc { display: block; }
   .profile-badge-meta { white-space: normal; }
+}
+/* A fingertip needs a bigger target than a pointer. */
+@media (pointer: coarse) {
+  .btn.sm, .pill, .chip, .segmented button, .site-links button, .board th button { height: 36px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; }
