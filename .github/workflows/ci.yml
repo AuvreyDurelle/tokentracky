@@ -122,6 +122,12 @@ jobs:
       - run: npm ci
       - run: npm run build --workspace=@tokentracky/web
       - run: cargo build --locked --release -p tokentracky-cli --features embed-web --target ${{ matrix.target }}
+      # The runner has Visual Studio; a clean Windows has no Visual C++ runtime for the CLI to import.
+      - if: runner.os == 'Windows'
+        run: |
+          if grep -aiq 'vcruntime140\.dll' "target/${{ matrix.target }}/release/${{ matrix.binary }}"; then
+            echo 'The Windows CLI needs the Visual C++ runtime' >&2; exit 1
+          fi
       # Windows runners have `python`; `python3` there may be the Microsoft Store's placeholder.
       - run: >-
           ${{ runner.os == 'Windows' && 'python' || 'python3' }} scripts/check-standalone-cli.py

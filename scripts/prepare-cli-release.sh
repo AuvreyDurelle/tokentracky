@@ -52,6 +52,10 @@ cp "$CARGO_TARGET_DIR/$TARGET/release/tokentracky$EXE" "$CLI"
 if [[ "$PLATFORM" == linux-* ]] && ! file -b "$CLI" | grep -E 'static(-pie)? linked' >/dev/null; then
   echo 'Linux CLI is not statically linked' >&2; exit 1
 fi
+# Likewise a clean Windows has no Visual C++ runtime, so the CLI must not import it.
+if [[ "$PLATFORM" == windows-* ]] && grep -aiq 'vcruntime140\.dll' "$CLI"; then
+  echo 'Windows CLI needs the Visual C++ runtime' >&2; exit 1
+fi
 "$PYTHON" "$ROOT/scripts/check-standalone-cli.py" --binary "$CLI" --web-dist "$ROOT/apps/web/dist"
 cargo metadata --locked --format-version 1 >"$DIST_DIR/cargo-metadata.json"
 {

@@ -89,6 +89,18 @@ test('an unknown target is refused before anything is built', async () => {
   } finally { await rm(f.root, { recursive: true, force: true }); }
 });
 
+test('a Windows candidate that imports the Visual C++ runtime fails closed', async () => {
+  const f = await fixture();
+  const target = 'x86_64-pc-windows-msvc';
+  try {
+    f.env.STUB_FAIL = 'dynamic-crt';
+    const result = f.execute(target);
+    assert.notEqual(result.status, 0, result.stdout + result.stderr);
+    assert.match(result.stderr, /needs the Visual C\+\+ runtime/);
+    await assert.rejects(readFile(join(f.root, 'dist/cli-release', target, 'manifest-fragment.json')), /ENOENT/);
+  } finally { await rm(f.root, { recursive: true, force: true }); }
+});
+
 for (const failure of ['dirty', 'tag', 'tag-head', 'version', 'standalone', 'dynamic', 'exists']) {
   test(`a CLI candidate fails closed for ${failure}`, async () => {
     const f = await fixture();

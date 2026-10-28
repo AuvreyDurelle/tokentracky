@@ -21,7 +21,9 @@ elif name == 'cargo':
         release.mkdir(parents=True)
         binary = release / ('tokentracky.exe' if 'windows' in target else 'tokentracky')
         version = '0.0.9' if os.getenv('STUB_FAIL') == 'version' else '0.1.0'
-        binary.write_text(f'#!/bin/sh\necho "{version}"\n')  # what crates/cli prints for --version
+        # What crates/cli prints for --version, and the import a dynamically linked Windows C runtime adds.
+        runtime = '# VCRUNTIME140.dll\n' if os.getenv('STUB_FAIL') == 'dynamic-crt' else ''
+        binary.write_text(f'#!/bin/sh\necho "{version}"\n{runtime}')
         binary.chmod(0o755)
     elif args[0] == 'metadata':
         print('{}')
