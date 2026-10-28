@@ -49,7 +49,8 @@ CLI="$DIST_DIR/tokentracky-${VERSION}-${PLATFORM}${EXE}"
 cp "$CARGO_TARGET_DIR/$TARGET/release/tokentracky$EXE" "$CLI"
 [[ "$("$CLI" --version)" == "$VERSION" ]] || { echo 'CLI version mismatch' >&2; exit 1; }
 # One static binary runs on every distribution; a dynamically linked one needs the build system's C library.
-if [[ "$PLATFORM" == linux-* ]] && ! file -b "$CLI" | grep -E 'static(-pie)? linked' >/dev/null; then
+# x86_64 musl builds are static-pie, aarch64 ones plain static ("statically linked").
+if [[ "$PLATFORM" == linux-* ]] && ! file -b "$CLI" | grep -E '(statically|static-pie) linked' >/dev/null; then
   echo 'Linux CLI is not statically linked' >&2; exit 1
 fi
 # Likewise a clean Windows has no Visual C++ runtime, so the CLI must not import it.
