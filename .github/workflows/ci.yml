@@ -72,6 +72,36 @@ jobs:
       - uses: EmbarkStudios/cargo-deny-action@b66acf5e9fe20f8aba065be86778a8a4c846f902 # v2
       - run: scripts/check-generated-types.sh
 
+  rust-windows:
+    # The CLI's Windows build. The Mac app is macOS only.
+    runs-on: windows-2022
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: '1.99.0'
+          components: clippy
+      - uses: Swatinem/rust-cache@bc2d2e71bd35c5549942babaa51a89c586b981d1 # v2.8.1
+      - run: cargo clippy --workspace --exclude tokentracky-mac --all-targets -- -D warnings
+      - run: cargo test --workspace --exclude tokentracky-mac
+        env:
+          TOKENTRACKY_TS_OUT: ${{ runner.temp }}/generated-types
+
+  rust-musl:
+    # The static Linux CLI: one binary for every distribution.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - run: sudo apt-get update && sudo apt-get install -y musl-tools
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: '1.99.0'
+          targets: x86_64-unknown-linux-musl
+      - uses: Swatinem/rust-cache@bc2d2e71bd35c5549942babaa51a89c586b981d1 # v2.8.1
+      - run: cargo build --locked -p tokentracky-cli --target x86_64-unknown-linux-musl
+
   native-macos:
     # Builds the Tauri app, Rust CLI and React resources on Apple Silicon.
     # macOS minutes bill at 10x, so this runs on main and manual dispatch only.
