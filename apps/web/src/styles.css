@@ -954,7 +954,7 @@ span.profile-like { cursor: default; }
   .setting { grid-template-columns: 1fr; }
   .profile-layout, .account-layout { grid-template-columns: minmax(0, 1fr); }
   .snav { display: none; }
-  .profile-aside { grid-column: auto; grid-row: auto; }
+  .profile-aside { grid-column: auto; grid-row: auto; order: 1; }
   .profile-high { grid-template-columns: minmax(0, 1fr); }
   .profile-legend { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .profile-badges { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -965,8 +965,8 @@ span.profile-like { cursor: default; }
   .profile-btns { margin-left: 0; }
   .profile-stats { margin: 20px 18px 0; }
   .profile-high { margin: 10px 18px 18px; }
-  .profile-model { grid-template-columns: 18px minmax(0, 1fr) 60px 70px; padding: 0 16px; }
-  .profile-track { display: none; }
+  .profile-model { grid-template-columns: 18px minmax(0, 1fr) 60px 70px; row-gap: 6px; height: auto; padding: 10px 16px; }
+  .profile-track { grid-column: 2 / -1; grid-row: 2; }
   .join-privacy, .demo-steps, .demo-desk { grid-template-columns: minmax(0, 1fr); }
   .join-privacy > div + div { border-left: 0; border-top: 1px solid var(--border); }
   .demo-menubar { display: flex; justify-content: flex-end; gap: 14px; }
