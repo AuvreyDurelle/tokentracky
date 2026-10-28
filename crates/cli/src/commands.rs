@@ -201,9 +201,8 @@ fn clock(expires_at: &str, offset: UtcOffset) -> String {
 
 pub async fn login(directory: &Path, flags: &Flags, context: &mut Context) -> Result<i32, CliError> {
     let Some(store) = context.secret_store.clone() else {
-        context.err(
-            "Staying signed in needs macOS. On other systems use `tokentracky serve` and join from the dashboard.\n",
-        );
+        context
+            .err("Staying signed in needs a credential store. Use `tokentracky serve` and join from the dashboard.\n");
         return Ok(1);
     };
     let stored = store.get().await.ok().flatten();

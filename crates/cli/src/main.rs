@@ -10,12 +10,9 @@ use tokio::sync::mpsc;
 
 mod web;
 
-/// A private file in the data folder, shared with the Mac app; other systems have no persistent credential store yet.
+/// A private file in the data folder, shared with the Mac app.
 fn secret_store() -> Result<Option<Arc<dyn SecretStore>>, tokentracky_local_api::SecretError> {
-    #[cfg(target_os = "macos")]
-    return Ok(Some(Arc::new(tokentracky_secrets::FileSecretStore::from_env()?)));
-    #[cfg(not(target_os = "macos"))]
-    Ok(None)
+    Ok(Some(Arc::new(tokentracky_secrets::FileSecretStore::from_env()?)))
 }
 
 fn open_url(url: &str) {

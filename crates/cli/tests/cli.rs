@@ -505,7 +505,7 @@ async fn refuses_to_log_in_without_a_persistent_credential_store() {
     f.context.secret_store = None;
     let result = f.run(&["login", "--cloud-url", "https://cloud.example"]).await;
     assert_eq!(result.code, 1);
-    assert!(result.stderr.contains("needs macOS"));
+    assert!(result.stderr.contains("needs a credential store"), "{}", result.stderr);
 }
 
 #[tokio::test(flavor = "multi_thread")]

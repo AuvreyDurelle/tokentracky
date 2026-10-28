@@ -54,7 +54,8 @@ pub struct Context {
     pub home: Option<PathBuf>,
     pub stdout: Box<dyn Write + Send>,
     pub stderr: Box<dyn Write + Send>,
-    /// The persistent leaderboard credential store: a private file in the shipped macOS binary, `None` elsewhere.
+    /// The persistent leaderboard credential store: a private file in the shipped binary. Without one the credential
+    /// lasts only as long as the process, and `login` refuses.
     pub secret_store: Option<Arc<dyn SecretStore>>,
     /// Opens a page in the browser; failures are the caller's to ignore.
     pub open_url: Arc<dyn Fn(&str) + Send + Sync>,

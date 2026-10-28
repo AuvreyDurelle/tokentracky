@@ -72,7 +72,8 @@ const MACHINE_ID_SALT: &str = "tokentracky-machine-id-v1:";
 
 /// Lets the hosted service tell this computer connecting again (a reinstall, a new data folder) from another computer,
 /// so it replaces this computer's earlier totals instead of adding to them. Only a salted hash leaves the computer.
-/// `None` where there is no hardware UUID to read: only macOS has one today.
+/// The id is the hardware UUID on macOS, the systemd machine id on Linux and the `MachineGuid` the installation
+/// created on Windows; `None` where there is none to read.
 pub fn machine_id() -> Option<String> {
     #[cfg(target_os = "macos")]
     {
@@ -82,8 +83,60 @@ pub fn machine_id() -> Option<String> {
             .ok()?;
         platform_uuid(&String::from_utf8_lossy(&output.stdout)).map(hashed_machine_id)
     }
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(target_os = "linux")]
+    {
+        ["/etc/machine-id", "/var/lib/dbus/machine-id"]
+            .into_iter()
+            .find_map(|path| linux_machine_id(&std::fs::read_to_string(path).ok()?).map(hashed_machine_id))
+    }
+    #[cfg(windows)]
+    {
+        machine_guid(&windows_machine_guid()?).map(hashed_machine_id)
+    }
+    #[cfg(not(any(target_os = "macos", target_os = "linux", windows)))]
     None
+}
+
+/// `HKLM\SOFTWARE\Microsoft\Cryptography\MachineGuid`, from the 64-bit registry.
+#[cfg(windows)]
+fn windows_machine_guid() -> Option<String> {
+    use windows_sys::Win32::Foundation::ERROR_SUCCESS;
+    use windows_sys::Win32::System::Registry::{
+        HKEY_LOCAL_MACHINE, RRF_RT_REG_SZ, RRF_SUBKEY_WOW6464KEY, RegGetValueW,
+    };
+    let wide = |text: &str| text.encode_utf16().chain([0]).collect::<Vec<u16>>();
+    let (key, name) = (wide(r"SOFTWARE\Microsoft\Cryptography"), wide("MachineGuid"));
+    let mut value = [0u16; 64];
+    let mut size = size_of_val(&value) as u32;
+    // SAFETY: both names are NUL-terminated, and the call writes at most `size` bytes into `value`.
+    let status = unsafe {
+        RegGetValueW(
+            HKEY_LOCAL_MACHINE,
+            key.as_ptr(),
+            name.as_ptr(),
+            RRF_RT_REG_SZ | RRF_SUBKEY_WOW6464KEY,
+            std::ptr::null_mut(),
+            value.as_mut_ptr().cast(),
+            &mut size,
+        )
+    };
+    if status != ERROR_SUCCESS {
+        return None;
+    }
+    let end = value.iter().position(|&unit| unit == 0).unwrap_or(value.len());
+    String::from_utf16(&value[..end]).ok()
+}
+
+/// `8-4-4-4-12` hexadecimal digits.
+fn uuid_shaped(text: &str) -> bool {
+    text.len() == 36
+        && text.char_indices().all(|(index, c)| {
+            if matches!(index, 8 | 13 | 18 | 23) {
+                c == '-'
+            } else {
+                c.is_ascii_hexdigit()
+            }
+        })
 }
 
 /// The hardware UUID in `ioreg -rd1 -c IOPlatformExpertDevice` output.
@@ -91,16 +144,17 @@ pub fn platform_uuid(ioreg: &str) -> Option<&str> {
     ioreg
         .lines()
         .find_map(|line| line.trim().strip_prefix(r#""IOPlatformUUID" = ""#)?.strip_suffix('"'))
-        .filter(|uuid| {
-            uuid.len() == 36
-                && uuid.char_indices().all(|(index, c)| {
-                    if matches!(index, 8 | 13 | 18 | 23) {
-                        c == '-'
-                    } else {
-                        c.is_ascii_hexdigit()
-                    }
-                })
-        })
+        .filter(|uuid| uuid_shaped(uuid))
+}
+
+/// The id in `/etc/machine-id`: 32 hexadecimal digits on one line.
+pub fn linux_machine_id(content: &str) -> Option<&str> {
+    Some(content.trim()).filter(|id| id.len() == 32 && id.bytes().all(|byte| byte.is_ascii_hexdigit()))
+}
+
+/// Windows' `MachineGuid` registry value.
+pub fn machine_guid(value: &str) -> Option<&str> {
+    Some(value.trim()).filter(|guid| uuid_shaped(guid))
 }
 
 pub fn hashed_machine_id(platform_uuid: &str) -> String {

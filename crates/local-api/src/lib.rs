@@ -69,7 +69,8 @@ pub use app::{
 };
 pub use body::{JsonBody, REQUEST_TIMEOUT};
 pub use connect::{
-    ConnectStart, ConnectStatus, DeviceConnect, default_device_name, hashed_machine_id, machine_id, platform_uuid,
+    ConnectStart, ConnectStatus, DeviceConnect, default_device_name, hashed_machine_id, linux_machine_id, machine_guid,
+    machine_id, platform_uuid,
 };
 pub use error::{JSON, LocalError, json, object};
 pub use http::{BoxFuture, HttpClient, HttpError, HttpRequest, HttpResponse, ReqwestClient};
