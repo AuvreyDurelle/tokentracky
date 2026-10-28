@@ -258,7 +258,8 @@ td.c-total { font-weight: 500; }
 
 
 .trend { position: relative; margin: 24px 24px 0; padding: 0 0 26px 44px; }
-.trend-plot { position: relative; height: 180px; }
+/* A sideways drag reads along the chart; an upward or downward one still scrolls the page. */
+.trend-plot { position: relative; height: 180px; touch-action: pan-y; }
 .trend-plot:focus-visible { outline-offset: 6px; }
 .trend svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .trend-area { fill: var(--data-wash); }

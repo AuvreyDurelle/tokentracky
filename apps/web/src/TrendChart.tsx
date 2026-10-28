@@ -35,6 +35,8 @@ export function TrendChart({ points, previous, stacks, label, value = formatExac
     if (next === undefined) return;
     event.preventDefault(); setActive(clamp(next));
   };
+  // A touch ends by leaving, so its reading stays until another tap or blur; a mouse or pen clears it on the way out.
+  const leave = (event: PointerEvent<HTMLDivElement>) => { if (event.pointerType !== 'touch') setActive(null); };
   const point = active === null ? null : points[active];
   // The tooltip sits beside the crosshair, flipping left near the right edge.
   const edge = active !== null && x(active) > 70 ? ' end' : '';
@@ -44,7 +46,7 @@ export function TrendChart({ points, previous, stacks, label, value = formatExac
   const axis = (index: number) => hours ? points[index]!.day.slice(11, 16) : index === last && points[last]!.day === new Date().toISOString().slice(0, 10) ? 'Today' : shortDay(points[index]!.day);
   return <figure className="trend" aria-label={label}>
     <div className="trend-plot" tabIndex={0} aria-label={`${label}. Use arrow keys to read each ${hours ? 'hour' : 'day'}.`}
-      onPointerMove={pick} onPointerLeave={() => setActive(null)} onKeyDown={step} onFocus={() => setActive((value) => value ?? last)} onBlur={() => setActive(null)}>
+      onPointerDown={pick} onPointerMove={pick} onPointerLeave={leave} onKeyDown={step} onFocus={() => setActive((value) => value ?? last)} onBlur={() => setActive(null)}>
       {ticks.map((mark) => <div key={mark} className="gridline" style={{ bottom: `${(mark / top) * 100}%` }} aria-hidden="true"><span>{tick(mark)}</span></div>)}
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden="true">
         {stacks && tops ? <>
