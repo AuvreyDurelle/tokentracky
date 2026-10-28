@@ -384,9 +384,9 @@ td.c-total { font-weight: 500; }
 .board th button:hover svg, .board th button.sorted svg { opacity: 1; }
 .board td { height: 50px; }
 .board tbody tr { cursor: pointer; transition: background 0.1s; }
-.board tbody tr:hover { background: rgba(255, 255, 255, 0.02); }
-.board tr.mine { background: var(--accent-soft); }
-.board tr.mine:hover { background: rgba(123, 127, 246, 0.16); }
+.board tbody tr:hover { --tint: rgba(255, 255, 255, 0.02); background: var(--tint); }
+.board tr.mine { --tint: var(--accent-soft); background: var(--tint); }
+.board tr.mine:hover { --tint: rgba(123, 127, 246, 0.16); background: var(--tint); }
 .board tr.mine td:first-child { box-shadow: inset 2px 0 0 var(--accent); }
 .board tr.pinned td { border-bottom-color: var(--border-2); }
 .c-rank { width: 48px; color: var(--text-3); }
@@ -397,6 +397,14 @@ td.c-total { font-weight: 500; }
 .move.new { color: var(--accent); font-size: 9.5px; letter-spacing: 0.05em; text-transform: uppercase; }
 .who { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .board td.c-who { min-width: 220px; }
+/* A board wider than its panel scrolls sideways with rank and builder pinned. Pinned cells paint the panel under their row's tint, so
+   the scrolled columns pass beneath them; a glow on the right edge shows there is more, until the end covers it. */
+.board { --rank-w: 58px; }
+.board .c-rank, .board .c-who { position: sticky; z-index: 1; background: linear-gradient(var(--tint, transparent), var(--tint, transparent)) var(--surface); }
+.board .c-rank { left: 0; width: var(--rank-w); min-width: var(--rank-w); }
+.board .c-who { left: var(--rank-w); }
+.board tr.ghost .c-rank { background: none; }
+.board .table-wrap { background: linear-gradient(to left, var(--surface) 24px, transparent) right / 48px 100% no-repeat local, linear-gradient(to left, rgba(255, 255, 255, 0.08), transparent) right / 24px 100% no-repeat scroll; }
 .board th, .board td { padding-left: 10px; padding-right: 10px; }
 .board th .tool-ic { width: 11px; height: 11px; }
 .board th .th-others { display: inline-flex; gap: 2px; margin-right: 6px; vertical-align: middle; }
@@ -978,11 +986,8 @@ span.profile-like { cursor: default; }
   .podium-card.p1, .podium-card.p2, .podium-card.p3 { order: 0; }
   .ghost-note { display: none; }
   .ghost-body .btn { margin-left: auto; }
-}
-@media (max-width: 760px) {
-  .c-tool, .c-cost, .c-share, .c-life, .c-24h { display: none; }
-  .board td.c-who { min-width: 0; }
-  .board .who-line .tstack { display: none; }
+  .board .c-who { box-shadow: inset -1px 0 0 var(--border); }
+  .board tr.ghost .ghost-body { position: sticky; left: calc(var(--rank-w) + 10px); width: max-content; }
 }
 @media (max-width: 640px) {
   .topbar-inner, .site-nav-inner, .page, .footer-inner { padding-left: 16px; padding-right: 16px; }
@@ -1021,6 +1026,11 @@ span.profile-like { cursor: default; }
   .table th:first-child, .table td:first-child { padding-left: 16px; }
   .table th:last-child, .table td:last-child { padding-right: 16px; }
   .c-rank { width: 44px; }
+  .board { --rank-w: 54px; }
+  .board td.c-who { min-width: 0; }
+  .board .c-who .who { width: 136px; }
+  .board .who-line { flex-wrap: wrap; row-gap: 3px; }
+  .board .who-line .tstack { flex-basis: 100%; margin-left: 0; }
   .search { width: 100%; margin-left: 0; }
   .search .input { width: 100%; }
   .profile-usage { padding: 14px 16px 16px; }
