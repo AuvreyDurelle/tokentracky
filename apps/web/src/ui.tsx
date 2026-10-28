@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import type { ToolId } from '@tokentracky/core';
 import type { ApiClient } from './api';
+import { formatCompact, formatExact } from './format';
 
 export function Notice({ children, tone = 'plain' }: { children: ReactNode; tone?: 'plain' | 'error' | 'success' }) {
   return <div className={`notice ${tone}`} role={tone === 'error' ? 'alert' : tone === 'success' ? 'status' : undefined}>{children}</div>;
@@ -33,6 +34,19 @@ export function useRank(api: ApiClient, alias: string | null): number | null {
   return rank;
 }
 export function ToolIcon({ id }: { id: ToolId }) { return <i className={`tool-ic ic-${id}`} aria-hidden="true" />; }
+/** A compact figure whose exact value a mouse reads from the tooltip; touch screens have none, so a tap swaps the two instead of opening the row behind it. */
+export function Exact({ short, full, title = full }: { short: string; full: string; title?: string }) {
+  const [exact, setExact] = useState(false);
+  const tap = (event: MouseEvent) => {
+    if (!window.matchMedia('(hover: none)').matches) return;
+    event.stopPropagation(); setExact((value) => !value);
+  };
+  return <span className="exact" title={title} onClick={tap}>{exact ? full : short}</span>;
+}
+/** A token count, compact until a tap or the tooltip gives every digit. */
+export function Tokens({ value, title = `${formatExact(value)} tokens` }: { value: number | bigint; title?: string }) {
+  return <Exact short={formatCompact(value)} full={formatExact(value)} title={title} />;
+}
 export function Meter({ value, max, label }: { value: number; max: number; label?: string }) {
   const percent = max > 0 ? Math.min(100, (value / max) * 100) : 0;
   return <div className="meter" role={label ? 'img' : undefined} aria-label={label} aria-hidden={label ? undefined : true}><i style={{ width: `${percent}%` }} /></div>;

@@ -5,7 +5,7 @@ import { INSTALL_COMMAND, MAC_DOWNLOAD } from './download-config';
 import { KINDS, TOOLS, errorText, formatCompact, formatCost, formatCostCompact, formatExact, formatShare, shortDay, topPercent } from './format';
 import { Heatmap } from './Heatmap';
 import { ProfileUsage } from './ProfileUsage';
-import { AppleIcon, Avatar, CopyCommand, Empty, Loading, Notice, Segmented, ToolIcon } from './ui';
+import { AppleIcon, Avatar, CopyCommand, Empty, Exact, Loading, Notice, Segmented, ToolIcon, Tokens } from './ui';
 import { ACHIEVEMENT_COPY, TIER_NAMES } from './mac/achievement-copy';
 import { nextRatio, tierProgress } from './mac/achievements';
 import { Emblem } from './mac/Emblem';
@@ -104,8 +104,8 @@ export function ProfileView({ stats, me, origin, join, onLeaderboard, likes = st
           </div>
         </div>
         <dl className="stats profile-stats">
-          <div><dt>Total tokens</dt><dd title={`${formatExact(all.tokens)} tokens`}>{formatCompact(all.tokens)}</dd><small>{top ?? 'All time'}</small></div>
-          <div><dt>Est. cost</dt><dd title={stats.costMicrousd == null ? undefined : formatCost(stats.costMicrousd)}>{stats.costMicrousd == null ? '—' : formatCostCompact(stats.costMicrousd)}</dd><small>{!showCost ? 'Not shared' : stats.costMicrousd === null ? 'Pricing unknown' : 'API list prices'}</small></div>
+          <div><dt>Total tokens</dt><dd><Tokens value={all.tokens} /></dd><small>{top ?? 'All time'}</small></div>
+          <div><dt>Est. cost</dt><dd>{stats.costMicrousd == null ? '—' : <Exact short={formatCostCompact(stats.costMicrousd)} full={formatCost(stats.costMicrousd)} />}</dd><small>{!showCost ? 'Not shared' : stats.costMicrousd === null ? 'Pricing unknown' : 'API list prices'}</small></div>
           <div><dt>Active days</dt><dd>{formatExact(activity.activeDays)}</dd><small>Last 12 months</small></div>
           <div><dt>Avg / day</dt><dd>{activity.activeDays ? formatCompact(activity.averagePerActiveDay) : '—'}</dd><small>Per active day</small></div>
         </dl>
@@ -168,8 +168,8 @@ function ProfileModels({ models, showCost }: { models: ProfileStats['models']; s
         <span className="profile-idx num">{index + 1}</span>
         <span className="profile-model-name mono" title={model.model}>{model.model}</span>
         <div className="profile-track" aria-hidden="true"><span style={{ width: `${model.width}%` }} /></div>
-        <span className="profile-tok num" title={`${formatExact(model.tokens)} tokens`}>{formatCompact(model.tokens)}</span>
-        {showCost && <span className="profile-cost num" title={model.costMicrousd == null ? undefined : formatCost(model.costMicrousd)}>{model.costMicrousd == null ? '—' : formatCostCompact(model.costMicrousd)}</span>}
+        <span className="profile-tok num"><Tokens value={model.tokens} /></span>
+        {showCost && <span className="profile-cost num">{model.costMicrousd == null ? '—' : <Exact short={formatCostCompact(model.costMicrousd)} full={formatCost(model.costMicrousd)} />}</span>}
       </div>)}
       {rows.length > SHOWN_MODELS && <button type="button" className="profile-more" aria-expanded={all} onClick={() => setAll((value) => !value)}>{all ? 'Show fewer' : `Show all ${formatExact(rows.length)} models`}</button>}
     </div> : <p className="panel-empty">No model usage synced yet.</p>}
@@ -184,6 +184,7 @@ function ProfileBadge({ badge }: { badge: BadgeProgress }) {
     <div className="profile-badge-body">
       <div className="profile-badge-name"><b>{ACHIEVEMENT_COPY[badge.id].name}</b>{badge.tier > 0 && <span className={`profile-tier t${badge.tier}`}>{TIER_NAMES[badge.tier]}</span>}</div>
       <div className="profile-badge-meta" title={progress}>{progress}</div>
+      <div className="profile-badge-desc">{ACHIEVEMENT_COPY[badge.id].description}</div>
       <div className="profile-badge-bar" aria-hidden="true"><span style={{ width: `${(nextRatio(badge) ?? 1) * 100}%` }} /></div>
     </div>
   </div>;
@@ -199,7 +200,7 @@ export function ProfileTypes({ breakdown }: { breakdown: TokenCounts }) {
       {shown.map((kind) => <i key={kind.key} className={`kind-${kind.key}`} style={{ width: `${(breakdown[kind.key] / total) * 100}%` }} />)}
     </div></div>}
     <dl className="stats">{KINDS.map((kind) => <div key={kind.key}>
-      <dt><span className={`key kind-${kind.key}`} aria-hidden="true" />{kind.label}</dt><dd title={`${formatExact(breakdown[kind.key])} tokens`}>{formatCompact(breakdown[kind.key])}</dd>
+      <dt><span className={`key kind-${kind.key}`} aria-hidden="true" />{kind.label}</dt><dd><Tokens value={breakdown[kind.key]} /></dd>
       <small>{formatShare(breakdown[kind.key], total)} of tokens</small>
       {kind.key === 'output' && <small>Of which reasoning {formatCompact(breakdown.reasoning ?? 0)}</small>}
     </div>)}</dl>
