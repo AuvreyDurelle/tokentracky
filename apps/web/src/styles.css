@@ -998,6 +998,7 @@ span.profile-like { cursor: default; }
   .topbar-inner, .site-nav-inner { gap: 12px; }
   .site-nav-main { padding-top: 6px; padding-bottom: 6px; row-gap: 2px; }
   .board-head { padding-top: 24px; }
+  .podium { display: none; }
   .me-chip span { display: none; }
   .brand span:last-child, .pill.me span:last-child { display: none; }
   .pill.me { padding: 0 2px; }
