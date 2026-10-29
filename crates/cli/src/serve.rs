@@ -68,6 +68,11 @@ pub async fn serve(directory: &Path, flags: &Flags, context: &mut Context) -> Re
     if context.secret_store.is_none() {
         context.out("Leaderboard credentials are kept only while this process runs.\n");
     }
+    if context.interactive {
+        // A link of its own, so the printed one still works in another browser.
+        let (open, url) = (context.open_url.clone(), server.launch_url());
+        let _ = tokio::task::spawn_blocking(move || open(&url)).await;
+    }
     if let Some(on_serve) = &context.on_serve {
         let handle = ServeHandle {
             url: server.url().to_owned(),

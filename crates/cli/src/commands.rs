@@ -1,6 +1,8 @@
-//! `status`, `refresh`, `doctor`, `login`, `unlink` and `uninstall`; `serve` is in `serve.rs`.
+//! `status`, `refresh`, `doctor`, `login`, `unlink` and `uninstall`; `serve` is in `serve.rs`, and `login` ends in it
+//! when there is no Mac app to keep uploading.
 use crate::args::Flags;
 use crate::report::{report, text};
+use crate::serve::serve;
 use crate::{CliError, Context, create_directory, database_path, other};
 use serde::Serialize;
 use std::path::Path;
@@ -27,9 +29,10 @@ fn json(value: &impl Serialize) -> String {
 }
 
 /// `withCollector`: creates the data folder and opens the app on it, taking the lock on its database, which another
-/// process may hold ([`CliError::Locked`]). It is the app `serve` serves, not started, without a hosted origin and
-/// turning no tools on, so a command runs the same cycle and the same device connect as the server does.
-fn open(directory: &Path, context: &Context) -> Result<LocalApp, CliError> {
+/// process may hold ([`CliError::Locked`]). It is the app `serve` serves, not started and without a hosted origin, so a
+/// command runs the same cycle and the same device connect as the server does. On a first run it turns on the
+/// `detected` tools, as `serve` does.
+fn open(directory: &Path, context: &Context, detected: Vec<DetectedTool>) -> Result<LocalApp, CliError> {
     create_directory(directory)?;
     Ok(LocalApp::open(LocalOptions {
         database_path: database_path(directory),
@@ -41,7 +44,7 @@ fn open(directory: &Path, context: &Context) -> Result<LocalApp, CliError> {
         initially_paused: false,
         refresh_interval_ms: None,
         on_refresh: None,
-        detected: Vec::new(),
+        detected,
         claude_config_file: Some(claude_config_file(|key| context.var(key), &context.home())),
     })?)
 }
@@ -55,7 +58,7 @@ fn tracks_something(app: &LocalApp) -> bool {
 }
 
 pub async fn refresh(directory: &Path, flags: &Flags, context: &mut Context) -> Result<i32, CliError> {
-    let app = open(directory, context)?;
+    let app = open(directory, context, Vec::new())?;
     if !tracks_something(&app) {
         context.err("Nothing is tracked yet. Run `tokentracky serve` and choose Start tracking.\n");
     }
@@ -213,21 +216,41 @@ pub async fn login(directory: &Path, flags: &Flags, context: &mut Context) -> Re
         context.var("TOKENTRACKY_CLOUD_URL"),
     );
     let origin = cloud_origin(&configured)?;
-    let app = open(directory, context)?;
+    let app = match open(
+        directory,
+        context,
+        detect_tools(|key| context.var(key), &context.home()),
+    ) {
+        Ok(app) => app,
+        // The Mac app holds the data folder, and its window is where to join.
+        Err(CliError::Locked) => {
+            if !open_app(context).await {
+                return Err(CliError::Locked);
+            }
+            context.out("Tokentracky is already running in your menu bar; its window is open now.\n");
+            return Ok(0);
+        }
+        Err(error) => return Err(error),
+    };
     let alias = approval(&app, &origin, context).await;
     let _ = app.close().await;
-    match alias? {
-        Some(alias) => {
-            context.out(&format!(
-                "Connected as {alias}. This computer now uploads its daily totals every 5 minutes.\n"
-            ));
-            Ok(0)
-        }
-        None => {
-            context.err("The code expired before it was approved. Run `tokentracky login` again.\n");
-            Ok(1)
-        }
+    let Some(alias) = alias? else {
+        context.err("The code expired before it was approved. Run `tokentracky login` again.\n");
+        return Ok(1);
+    };
+    context.out(&format!("Connected as {alias}.\n"));
+    // Closing the app above let go of the data folder, so the Mac app can take it.
+    if open_app(context).await {
+        context.out("Tokentracky is open in your menu bar and uploads this computer's daily totals every 5 minutes.\n");
+        return Ok(0);
     }
+    context.out("Keep this running to upload this computer's daily totals every 5 minutes.\n");
+    serve(directory, flags, context).await
+}
+
+async fn open_app(context: &Context) -> bool {
+    let open = context.open_app.clone();
+    tokio::task::spawn_blocking(move || open()).await.unwrap_or(false)
 }
 
 fn login_cloud_url(saved: Option<String>, flag: Option<String>, env: Option<String>) -> String {
@@ -237,7 +260,8 @@ fn login_cloud_url(saved: Option<String>, flag: Option<String>, env: Option<Stri
         .unwrap_or_else(|| DEFAULT_CLOUD_ORIGIN.to_owned())
 }
 
-/// Starts the browser approval and waits for it: the alias once approved, `None` if the code expires first.
+/// Starts the browser approval and waits for it: the alias once approved, `None` if the code expires first. While the
+/// browser is open it reads the tracked tools once, so the upload on approval holds their history.
 async fn approval(app: &LocalApp, origin: &str, context: &mut Context) -> Result<Option<String>, CliError> {
     let connect = app.state().connect.clone();
     let started = connect.start(origin).await?;
@@ -249,6 +273,8 @@ async fn approval(app: &LocalApp, origin: &str, context: &mut Context) -> Result
     ));
     let (open, url) = (context.open_url.clone(), started.verification_url);
     let _ = tokio::task::spawn_blocking(move || open(&url)).await;
+    // A failed read leaves the history to the next cycle; joining does not depend on it.
+    let _ = app.refresh().await;
     loop {
         tokio::time::sleep(context.poll_interval).await;
         match connect.poll().await? {

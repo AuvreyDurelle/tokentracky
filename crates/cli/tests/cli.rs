@@ -82,6 +82,7 @@ impl Fixture {
                 let opened = opened.clone();
                 Arc::new(move |url| opened.lock().unwrap().push(url.to_owned()))
             },
+            open_app: Arc::new(|| false),
             web_root,
             interactive: false,
             confirm: {
@@ -125,6 +126,21 @@ impl Fixture {
             stdout: self.stdout.take(),
             stderr: self.stderr.take(),
         }
+    }
+
+    /// An installed Mac app: each opening records whether the data folder's lock was free for the app to take.
+    fn install_mac_app(&mut self) -> Arc<Mutex<Vec<bool>>> {
+        let (openings, database) = (Arc::new(Mutex::new(Vec::new())), self.data_dir.join("usage.sqlite"));
+        let seen = openings.clone();
+        self.context.open_app = Arc::new(move || {
+            let store = UsageStore::open(database.clone());
+            seen.lock().unwrap().push(store.is_ok());
+            if let Ok(store) = store {
+                store.close().unwrap();
+            }
+            true
+        });
+        openings
     }
 
     /// What "Start tracking" does in the dashboard: approve one synthetic Claude Code folder.
@@ -471,6 +487,75 @@ async fn logs_in_through_browser_approval_stores_the_credential_syncs_and_unlink
     assert_eq!(f.secrets.get().await.unwrap(), None);
 }
 
+/// On a computer that never ran Tokentracky, `login` turns on the tools in their usual folders and reads them while the
+/// code waits for approval, so the first upload already holds the history.
+#[tokio::test(flavor = "multi_thread")]
+async fn login_tracks_the_tools_it_finds_and_uploads_their_history() {
+    let (origin, hosted) = hosted(200).await;
+    let mut f = Fixture::new();
+    let project = f.home.join(".claude").join("projects").join("project");
+    fs::create_dir_all(&project).unwrap();
+    fs::write(project.join("session.jsonl"), format!("{}\n", claude())).unwrap();
+    let result = f.run(&["login", "--cloud-url", &origin]).await;
+    assert_eq!(result.code, 0, "{}", result.stderr);
+    let sent = Value::Array(hosted.ingested.lock().unwrap().clone()).to_string();
+    assert!(sent.contains("\"tokens\":161"), "{sent}");
+}
+
+/// With the Mac app installed, `login` leaves the uploading to it: it lets go of the data folder, then opens the app.
+#[tokio::test(flavor = "multi_thread")]
+async fn login_hands_the_computer_to_the_mac_app_once_approved() {
+    let (origin, _) = hosted(200).await;
+    let mut f = Fixture::new();
+    let openings = f.install_mac_app();
+    let result = f.run(&["login", "--cloud-url", &origin]).await;
+    assert_eq!(result.code, 0, "{}", result.stderr);
+    assert!(
+        result.stdout.ends_with(
+            "Connected as cli-builder.\nTokentracky is open in your menu bar and uploads this computer's daily totals every 5 minutes.\n"
+        ),
+        "{}",
+        result.stdout
+    );
+    assert_eq!(*openings.lock().unwrap(), [true]);
+}
+
+/// Without the app, `login` keeps the dashboard and the five-minute cycle running in the terminal, as `serve` does.
+#[tokio::test(flavor = "multi_thread")]
+async fn login_keeps_uploading_from_the_terminal_without_the_mac_app() {
+    let (origin, _) = hosted(200).await;
+    let mut f = Fixture::new();
+    let result = f.run(&["login", "--cloud-url", &origin]).await;
+    assert_eq!(result.code, 0, "{}", result.stderr);
+    let (_, after) = result.stdout.split_once("Connected as cli-builder.\n").unwrap();
+    assert!(
+        after.starts_with(
+            "Keep this running to upload this computer's daily totals every 5 minutes.\nOpen your private dashboard: http://127.0.0.1:"
+        ),
+        "{after}"
+    );
+    // Off a terminal only the approval page opens.
+    assert_eq!(f.opened.lock().unwrap().len(), 1);
+}
+
+/// While the Mac app holds the data folder, `login` opens its window instead of refusing.
+#[tokio::test(flavor = "multi_thread")]
+async fn login_opens_the_running_mac_app_instead_of_refusing() {
+    let mut f = Fixture::new();
+    f.track();
+    let owner = UsageStore::open(f.data_dir.join("usage.sqlite")).unwrap();
+    let openings = f.install_mac_app();
+    let result = f.run(&["login", "--cloud-url", "https://cloud.example"]).await;
+    assert_eq!(result.code, 0, "{}", result.stderr);
+    assert_eq!(
+        result.stdout,
+        "Tokentracky is already running in your menu bar; its window is open now.\n"
+    );
+    assert_eq!(openings.lock().unwrap().len(), 1);
+    assert!(f.opened.lock().unwrap().is_empty());
+    owner.close().unwrap();
+}
+
 #[tokio::test(flavor = "multi_thread")]
 async fn refresh_syncs_a_linked_computer_and_reports_a_failed_sync() {
     let (origin, hosted) = hosted(500).await;
@@ -667,6 +752,24 @@ async fn serve_says_when_enter_gives_a_new_link_and_when_credentials_are_kept_in
             .stdout
             .ends_with("Leaderboard credentials are kept only while this process runs.\n")
     );
+}
+
+/// On a terminal `serve` opens the dashboard itself, with a link of its own: the printed one stays unused.
+#[tokio::test(flavor = "multi_thread")]
+async fn serve_opens_the_dashboard_in_the_browser_on_a_terminal() {
+    let mut f = Fixture::new();
+    f.context.interactive = true;
+    f.context.on_serve = Some(Box::new(|_| Box::pin(async {})));
+    let result = f.run(&["serve"]).await;
+    assert_eq!(result.code, 0, "{}", result.stderr);
+    let opened = f.opened.lock().unwrap().clone();
+    assert_eq!(opened.len(), 1);
+    assert!(
+        opened[0].starts_with("http://127.0.0.1:") && opened[0].contains("/?launch="),
+        "{opened:?}"
+    );
+    assert!(result.stdout.contains("Open your private dashboard: http://127.0.0.1:"));
+    assert!(!result.stdout.contains(&opened[0]));
 }
 
 #[tokio::test(flavor = "multi_thread")]

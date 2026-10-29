@@ -51,7 +51,7 @@ npm i -g tokentracky                                # or: brew install auvreydur
 
 tokentracky serve     # private dashboard on a loopback port; reads the tools it finds
 tokentracky status    # totals, tracked tools, leaderboard link, last refresh
-tokentracky login     # join the leaderboard: approve a short code in the browser
+tokentracky login     # join the leaderboard in the browser, then keep uploading
 tokentracky doctor    # health check
 ```
 

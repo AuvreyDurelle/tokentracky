@@ -34,6 +34,19 @@ fn open_url(url: &str) {
         .status();
 }
 
+/// The menu-bar app wherever macOS knows it is installed. A launch opens its window, and so does reopening it while it
+/// runs.
+fn open_app() -> bool {
+    cfg!(target_os = "macos")
+        && Command::new("open")
+            .args(["-b", "com.tokentracky.desktop"])
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status()
+            .is_ok_and(|status| status.success())
+}
+
 /// `y` or `yes`, any case, after the question on the terminal.
 fn confirm(question: &str) -> bool {
     print!("{question}");
@@ -108,6 +121,7 @@ fn main() -> ExitCode {
         stderr: Box::new(std::io::stderr()),
         secret_store: secrets,
         open_url: Arc::new(open_url),
+        open_app: Arc::new(open_app),
         web_root: web.path().to_owned(),
         interactive,
         confirm: Box::new(confirm),

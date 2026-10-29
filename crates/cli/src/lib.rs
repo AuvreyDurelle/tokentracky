@@ -27,7 +27,7 @@ Commands:
   status [--json]     Token totals, sources and leaderboard link
   refresh [--json]    Run one refresh cycle now: scan, prices, sync
   doctor [--json]     Check the runtime, SQLite, the data folder, detected tools, link and last refresh
-  login               Connect this computer to the leaderboard through your browser
+  login               Connect this computer to the leaderboard through your browser, then keep uploading
   unlink              Stop uploading from this computer and remove its credential
   uninstall [--yes]   Delete local Tokentracky data and the credential
 
@@ -59,6 +59,8 @@ pub struct Context {
     pub secret_store: Option<Arc<dyn SecretStore>>,
     /// Opens a page in the browser; failures are the caller's to ignore.
     pub open_url: Arc<dyn Fn(&str) + Send + Sync>,
+    /// Opens the Tokentracky menu-bar app's window; false when the app is not installed, and on other systems.
+    pub open_app: Arc<dyn Fn() -> bool + Send + Sync>,
     /// The dashboard build `serve` serves.
     pub web_root: PathBuf,
     pub interactive: bool,
