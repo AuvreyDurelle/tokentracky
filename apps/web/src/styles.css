@@ -258,7 +258,8 @@ td.c-total { font-weight: 500; }
 
 
 .trend { position: relative; margin: 24px 24px 0; padding: 0 0 26px 44px; }
-.trend-plot { position: relative; height: 180px; }
+/* A sideways drag reads along the chart; an upward or downward one still scrolls the page. */
+.trend-plot { position: relative; height: 180px; touch-action: pan-y; }
 .trend-plot:focus-visible { outline-offset: 6px; }
 .trend svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .trend-area { fill: var(--data-wash); }
@@ -384,9 +385,9 @@ td.c-total { font-weight: 500; }
 .board th button:hover svg, .board th button.sorted svg { opacity: 1; }
 .board td { height: 50px; }
 .board tbody tr { cursor: pointer; transition: background 0.1s; }
-.board tbody tr:hover { background: rgba(255, 255, 255, 0.02); }
-.board tr.mine { background: var(--accent-soft); }
-.board tr.mine:hover { background: rgba(123, 127, 246, 0.16); }
+.board tbody tr:hover { --tint: rgba(255, 255, 255, 0.02); background: var(--tint); }
+.board tr.mine { --tint: var(--accent-soft); background: var(--tint); }
+.board tr.mine:hover { --tint: rgba(123, 127, 246, 0.16); background: var(--tint); }
 .board tr.mine td:first-child { box-shadow: inset 2px 0 0 var(--accent); }
 .board tr.pinned td { border-bottom-color: var(--border-2); }
 .c-rank { width: 48px; color: var(--text-3); }
@@ -397,6 +398,14 @@ td.c-total { font-weight: 500; }
 .move.new { color: var(--accent); font-size: 9.5px; letter-spacing: 0.05em; text-transform: uppercase; }
 .who { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .board td.c-who { min-width: 220px; }
+/* A board wider than its panel scrolls sideways with rank and builder pinned. Pinned cells paint the panel under their row's tint, so
+   the scrolled columns pass beneath them; a glow on the right edge shows there is more, until the end covers it. */
+.board { --rank-w: 58px; }
+.board .c-rank, .board .c-who { position: sticky; z-index: 1; background: linear-gradient(var(--tint, transparent), var(--tint, transparent)) var(--surface); }
+.board .c-rank { left: 0; width: var(--rank-w); min-width: var(--rank-w); }
+.board .c-who { left: var(--rank-w); }
+.board tr.ghost .c-rank { background: none; }
+.board .table-wrap { background: linear-gradient(to left, var(--surface) 24px, transparent) right / 48px 100% no-repeat local, linear-gradient(to left, rgba(255, 255, 255, 0.08), transparent) right / 24px 100% no-repeat scroll; }
 .board th, .board td { padding-left: 10px; padding-right: 10px; }
 .board th .tool-ic { width: 11px; height: 11px; }
 .board th .th-others { display: inline-flex; gap: 2px; margin-right: 6px; vertical-align: middle; }
@@ -408,6 +417,7 @@ td.c-total { font-weight: 500; }
 .who button { overflow: hidden; padding: 0; border: 0; background: none; color: var(--text); font-size: 13px; font-weight: 500; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
 .who button:hover { text-decoration: underline; text-decoration-color: var(--text-3); text-underline-offset: 3px; }
 .who small { color: var(--text-3); font-size: 12px; }
+.board-key { display: none; padding: 10px 20px; border-top: 1px solid var(--border); color: var(--text-3); font-size: 12px; line-height: 1.6; }
 .board-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px 10px 20px; border-top: 1px solid var(--border); color: var(--text-3); font-size: 12px; }
 .board-foot .actions { gap: 10px; }
 
@@ -734,7 +744,7 @@ span.profile-like { cursor: default; }
 .profile-legend .tool-ic { width: 12px; height: 12px; }
 .profile-legend em { grid-column: 2; color: var(--text-4); font-size: 11.5px; font-style: normal; font-variant-numeric: tabular-nums; }
 .profile-legend em b { color: var(--text-2); font-weight: 500; }
-.profile-model { display: grid; grid-template-columns: 22px 200px minmax(0, 1fr) 72px 84px; align-items: center; gap: 10px; height: 44px; padding: 0 20px; border-top: 1px solid var(--border); }
+.profile-model { display: grid; grid-template-columns: 22px 200px minmax(0, 1fr) minmax(72px, max-content) minmax(84px, max-content); align-items: center; gap: 10px; height: 44px; padding: 0 20px; border-top: 1px solid var(--border); }
 .profile-model:first-child { border-top: 0; }
 .profile-idx { color: var(--text-4); font-size: 12px; }
 .profile-model-name { overflow: hidden; color: var(--text); text-overflow: ellipsis; white-space: nowrap; }
@@ -758,6 +768,7 @@ span.profile-like { cursor: default; }
 .profile-tier.t3 { color: var(--gold); }
 .profile-tier.t4 { color: #8fd8ff; }
 .profile-badge-meta { overflow: hidden; color: var(--text-4); font-size: 11.5px; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.profile-badge-desc { display: none; margin-top: 3px; color: var(--text-3); font-size: 11.5px; line-height: 1.4; }
 .profile-badge-bar { height: 3px; margin-top: 6px; overflow: hidden; border-radius: 2px; background: var(--surface-3); }
 .profile-badge-bar span { display: block; height: 100%; border-radius: 2px; background: var(--text-3); }
 .profile-join { position: relative; border-color: rgba(232, 182, 76, 0.22);
@@ -946,8 +957,9 @@ span.profile-like { cursor: default; }
   .setting { grid-template-columns: 1fr; }
   .profile-layout, .account-layout { grid-template-columns: minmax(0, 1fr); }
   .snav { display: none; }
-  .profile-aside { grid-column: auto; grid-row: auto; }
+  .profile-aside { grid-column: auto; grid-row: auto; order: 1; }
   .profile-high { grid-template-columns: minmax(0, 1fr); }
+  .profile-hl-value { white-space: normal; overflow-wrap: anywhere; }
   .profile-legend { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .profile-badges { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .profile-id { flex-wrap: wrap; align-items: flex-start; gap: 14px; margin-top: -36px; padding: 0 18px; }
@@ -957,8 +969,8 @@ span.profile-like { cursor: default; }
   .profile-btns { margin-left: 0; }
   .profile-stats { margin: 20px 18px 0; }
   .profile-high { margin: 10px 18px 18px; }
-  .profile-model { grid-template-columns: 18px minmax(0, 1fr) 60px 70px; padding: 0 16px; }
-  .profile-track { display: none; }
+  .profile-model { grid-template-columns: 18px minmax(0, 1fr) minmax(60px, max-content) minmax(70px, max-content); row-gap: 6px; height: auto; padding: 10px 16px; }
+  .profile-track { grid-column: 2 / -1; grid-row: 2; }
   .join-privacy, .demo-steps, .demo-desk { grid-template-columns: minmax(0, 1fr); }
   .join-privacy > div + div { border-left: 0; border-top: 1px solid var(--border); }
   .demo-menubar { display: flex; justify-content: flex-end; gap: 14px; }
@@ -978,18 +990,15 @@ span.profile-like { cursor: default; }
   .podium-card.p1, .podium-card.p2, .podium-card.p3 { order: 0; }
   .ghost-note { display: none; }
   .ghost-body .btn { margin-left: auto; }
-}
-@media (max-width: 760px) {
-  .c-tool, .c-cost, .c-share, .c-life, .c-24h { display: none; }
-  .board td.c-who { min-width: 0; }
-  .board .who-line .tstack { display: none; }
+  .board .c-who { box-shadow: inset -1px 0 0 var(--border); }
+  .board tr.ghost .ghost-body { position: sticky; left: calc(var(--rank-w) + 10px); width: max-content; }
 }
 @media (max-width: 640px) {
   .topbar-inner, .site-nav-inner, .page, .footer-inner { padding-left: 16px; padding-right: 16px; }
   .topbar-inner, .site-nav-inner { gap: 12px; }
-  .site-nav-main { display: flex; height: 60px; padding-top: 0; padding-bottom: 0; }
-  .site-links { display: none; }
+  .site-nav-main { padding-top: 6px; padding-bottom: 6px; row-gap: 2px; }
   .board-head { padding-top: 24px; }
+  .podium { display: none; }
   .me-chip span { display: none; }
   .brand span:last-child, .pill.me span:last-child { display: none; }
   .pill.me { padding: 0 2px; }
@@ -1021,13 +1030,29 @@ span.profile-like { cursor: default; }
   .table th:first-child, .table td:first-child { padding-left: 16px; }
   .table th:last-child, .table td:last-child { padding-right: 16px; }
   .c-rank { width: 44px; }
+  .board { --rank-w: 54px; }
+  .board td.c-who { min-width: 0; }
+  .board .c-who .who { width: 136px; }
+  .board .who-line { flex-wrap: wrap; row-gap: 3px; }
+  .board .who-line .tstack { flex-basis: 100%; margin-left: 0; }
   .search { width: 100%; margin-left: 0; }
   .search .input { width: 100%; }
   .profile-usage { padding: 14px 16px 16px; }
   .profile-legend, .profile-badges { grid-template-columns: minmax(0, 1fr); }
-  .profile-model { grid-template-columns: 14px minmax(0, 1fr) 56px 64px; gap: 8px; }
+  .profile-model { grid-template-columns: 14px minmax(0, 1fr) minmax(56px, max-content) minmax(64px, max-content); gap: 8px; }
+  .profile-model-name { white-space: normal; overflow-wrap: anywhere; }
   .auth-page { padding: 28px 0; }
   .auth-card { padding: 22px; }
+}
+/* Touch screens can't hover a tooltip: what it says is shown instead, and a figure's exact value is a tap away. */
+@media (hover: none) {
+  .exact { text-decoration: underline dotted var(--text-4); text-underline-offset: 3px; }
+  .board-key, .profile-badge-desc { display: block; }
+  .profile-badge-meta { white-space: normal; }
+}
+/* A fingertip needs a bigger target than a pointer. */
+@media (pointer: coarse) {
+  .btn.sm, .pill, .chip, .segmented button, .site-links button, .board th button { height: 36px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; }

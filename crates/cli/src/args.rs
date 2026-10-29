@@ -12,6 +12,7 @@ pub enum Command {
     Help,
     Version,
     Serve,
+    Open,
     Status,
     Refresh,
     Doctor,
@@ -24,6 +25,7 @@ pub enum Command {
 pub struct Flags {
     pub json: bool,
     pub yes: bool,
+    pub background: bool,
     pub data_dir: Option<PathBuf>,
     pub cloud_url: Option<String>,
     pub port: Option<u16>,
@@ -42,6 +44,8 @@ struct Cli {
     json: bool,
     #[arg(short = 'y', long)]
     yes: bool,
+    #[arg(long)]
+    background: bool,
     #[arg(long, value_name = "dir")]
     data_dir: Option<PathBuf>,
     #[arg(long, value_name = "url")]
@@ -137,6 +141,7 @@ where
         Some("help") => Some(Command::Help),
         Some("version") => Some(Command::Version),
         Some("serve") => Some(Command::Serve),
+        Some("open") => Some(Command::Open),
         Some("status") => Some(Command::Status),
         Some("refresh") => Some(Command::Refresh),
         Some("doctor") => Some(Command::Doctor),
@@ -148,6 +153,7 @@ where
     let flags = Flags {
         json: cli.json,
         yes: cli.yes,
+        background: cli.background,
         data_dir: cli.data_dir,
         cloud_url: cli.cloud_url,
         port: cli.port,
@@ -175,6 +181,7 @@ mod tests {
             Flags {
                 json: true,
                 yes: true,
+                background: false,
                 data_dir: Some("/tmp/x".into()),
                 cloud_url: None,
                 port: Some(8080)

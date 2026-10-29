@@ -1,5 +1,7 @@
 //! The `tokentracky` binary: connects the command library to process I/O, signals and the local service.
+use std::ffi::OsStr;
 use std::io::{BufRead, IsTerminal, Write};
+use std::path::PathBuf;
 use std::process::{Command, ExitCode, Stdio};
 use std::sync::Arc;
 use std::time::Duration;
@@ -8,6 +10,7 @@ use tokentracky_cli::{Context, OnServe, ServeHandle, run};
 use tokentracky_local_api::SecretStore;
 use tokio::sync::mpsc;
 
+mod background;
 mod web;
 
 /// A private file in the data folder, shared with the Mac app.
@@ -32,6 +35,30 @@ fn open_url(url: &str) {
         .stdout(silent())
         .stderr(silent())
         .status();
+}
+
+/// The menu-bar app: by path in the Applications folders, where the npm launcher and the DMG put it (a path needs no
+/// lookup, so a copy made moments ago opens too), else wherever macOS knows it is. A launch opens its window, and so
+/// does reopening it while it runs.
+fn open_app() -> bool {
+    if !cfg!(target_os = "macos") {
+        return false;
+    }
+    let open = |args: &[&OsStr]| {
+        Command::new("open")
+            .args(args)
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status()
+            .is_ok_and(|status| status.success())
+    };
+    let home = std::env::home_dir().unwrap_or_default();
+    [PathBuf::from("/Applications"), home.join("Applications")]
+        .iter()
+        .map(|folder| folder.join("Tokentracky.app"))
+        .any(|app| app.is_dir() && open(&[app.as_os_str()]))
+        || open(&[OsStr::new("-b"), OsStr::new("com.tokentracky.desktop")])
 }
 
 /// `y` or `yes`, any case, after the question on the terminal.
@@ -108,12 +135,14 @@ fn main() -> ExitCode {
         stderr: Box::new(std::io::stderr()),
         secret_store: secrets,
         open_url: Arc::new(open_url),
+        open_app: Arc::new(open_app),
         web_root: web.path().to_owned(),
         interactive,
         confirm: Box::new(confirm),
         poll_interval: Duration::from_secs(3),
         utc_offset,
         on_serve: Some(on_serve(interactive)),
+        background: background::background(),
     };
     let runtime = match tokio::runtime::Runtime::new() {
         Ok(runtime) => runtime,

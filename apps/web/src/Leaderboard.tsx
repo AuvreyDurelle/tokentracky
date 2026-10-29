@@ -4,7 +4,7 @@ import { ApiError, type ApiClient } from './api';
 import { KINDS, TOOLS, errorText, formatCompact, formatCost, formatExact, formatShare, shortDay, timeAgo, toolLabel, topPercent } from './format';
 import { toolColumns } from './columns';
 import { INSTALL_COMMAND, MAC_DOWNLOAD } from './download-config';
-import { AppleIcon, Avatar, CopyCommand, Empty, Loading, Notice, SearchIcon, Segmented, ToolIcon } from './ui';
+import { AppleIcon, Avatar, CopyCommand, Empty, Loading, Notice, SearchIcon, Segmented, ToolIcon, Tokens } from './ui';
 import { Sparkline } from './TrendChart';
 import {countShare, publicKinds, sharedCounts, sumCounts} from './public-counts';
 import { lastSeven, otherTokens } from './mac/leaderboard';
@@ -86,8 +86,8 @@ export function CommunityTypes({ breakdown, exact }: { breakdown: TokenCounts; e
   const counts = publicKinds(breakdown, exact);
   const total = sumCounts(KINDS.map(kind => counts[kind.key]));
   return <p className="board-line" aria-label="Community tokens by type">{KINDS.map((kind, index) => <span key={kind.key}>
-    {index > 0 && ' · '}<strong className="num" title={`${formatExact(counts[kind.key])} tokens · ${countShare(counts[kind.key], total)}`}>{formatCompact(counts[kind.key])}</strong> {kind.label.toLowerCase()}
-    {kind.key === 'output' && <> (<strong className="num" title={`${formatExact(counts.reasoning)} tokens`}>{formatCompact(counts.reasoning)}</strong> reasoning)</>}
+    {index > 0 && ' · '}<strong className="num"><Tokens value={counts[kind.key]} title={`${formatExact(counts[kind.key])} tokens · ${countShare(counts[kind.key], total)}`} /></strong> {kind.label.toLowerCase()}
+    {kind.key === 'output' && <> (<strong className="num"><Tokens value={counts.reasoning} /></strong> reasoning)</>}
   </span>)}</p>;
 }
 
@@ -201,13 +201,13 @@ export function Leaderboard({ api, me, join, onProfile, onGuide }: { api: ApiCli
   };
   const cell = (item: PublicProfile, id: ColumnId) => {
     if (id === 'cost') return <td key={id} className={`c-num c-cost${rankBy === 'cost' ? ' sorted' : ''}`}>{item.costMicrousd == null ? <span className="none" title={item.costMicrousd === undefined ? 'Not shared' : 'Pricing unknown'}>—</span> : formatCost(item.costMicrousd)}</td>;
-    if (id === 'tokens') return <td key={id} className={`c-num c-total${rankBy === 'all' || rankBy === 'cost' ? ' sorted' : ''}`} title={`${formatExact(allTools(item, rankBy))} tokens`}>{formatCompact(allTools(item, rankBy))}</td>;
-    if (id === 'lifetime') return <td key={id} className="c-num c-life" title={item.lifetimeTokens === undefined ? undefined : `${formatExact(item.lifetimeTokens)} tokens all time`}>{item.lifetimeTokens === undefined ? <span className="none">—</span> : formatCompact(item.lifetimeTokens)}</td>;
-    if (id === 'last24h') return <td key={id} className="c-num c-24h" title={item.last24hTokens === undefined ? undefined : `${formatExact(item.last24hTokens)} tokens in the last 24 hours`}>{item.last24hTokens === undefined ? <span className="none" title="Not sent by this builder’s app yet">—</span> : formatCompact(item.last24hTokens)}</td>;
+    if (id === 'tokens') return <td key={id} className={`c-num c-total${rankBy === 'all' || rankBy === 'cost' ? ' sorted' : ''}`}><Tokens value={allTools(item, rankBy)} /></td>;
+    if (id === 'lifetime') return <td key={id} className="c-num c-life">{item.lifetimeTokens === undefined ? <span className="none">—</span> : <Tokens value={item.lifetimeTokens} title={`${formatExact(item.lifetimeTokens)} tokens all time`} />}</td>;
+    if (id === 'last24h') return <td key={id} className="c-num c-24h">{item.last24hTokens === undefined ? <span className="none" title="Not sent by this builder’s app yet">—</span> : <Tokens value={item.last24hTokens} title={`${formatExact(item.last24hTokens)} tokens in the last 24 hours`} />}</td>;
     if (id === 'last7') return <td key={id} className="c-days"><Sparkline values={lastSeven(item.daily)} end={end} mine={item.alias === me} /></td>;
     const tool = id === 'other' ? null : id.slice(5) as ToolId;
     const value = item.toolTokens ? tool ? item.toolTokens[tool] ?? 0 : otherTokens(item.toolTokens, tools)! : null;
-    return <td key={id} className={`c-num c-tool${tool && rankBy === tool ? ' sorted' : ''}`}>{value ? formatCompact(value) : <span className="none" title={value === null ? 'Not shared' : undefined}>—</span>}</td>;
+    return <td key={id} className={`c-num c-tool${tool && rankBy === tool ? ' sorted' : ''}`}>{value ? <Tokens value={value} /> : <span className="none" title={value === null ? 'Not shared' : undefined}>—</span>}</td>;
   };
   const row = (item: PublicProfile, extra?: string) => {
     const mine = item.alias === me;
@@ -237,9 +237,9 @@ export function Leaderboard({ api, me, join, onProfile, onGuide }: { api: ApiCli
         <h1>Waste tokens, not time.</h1>
         <p className="board-line">{overview
           ? <><span className="dot" aria-hidden="true" />
-            {community && <><strong className="num" title={`${formatExact(communityCounts!.totalTokens)} tokens`}>{formatCompact(communityCounts!.totalTokens)}</strong> tokens · </>}
+            {community && <><strong className="num"><Tokens value={communityCounts!.totalTokens} /></strong> tokens · </>}
             {builders !== null && <><strong className="num">{formatExact(builders)}</strong> {builders === 1 ? 'builder' : 'builders'} · </>}
-            {(period !== 'all' || !community) && <><strong className="num up" title={`${formatExact(overviewCounts!.totalTokens)} tokens`}>{period === 'all' ? '' : '+'}{formatCompact(overviewCounts!.totalTokens)}</strong> {PHRASE[period]} · </>}
+            {(period !== 'all' || !community) && <><strong className="num up">{period === 'all' ? '' : '+'}<Tokens value={overviewCounts!.totalTokens} /></strong> {PHRASE[period]} · </>}
             updated {timeAgo(overview.updatedAt)}</>
           : unavailable ? 'Leaderboard not connected' : error ? 'Rankings unavailable' : 'Loading…'}</p>
         {overview && community?.breakdown && <CommunityTypes breakdown={community.breakdown} exact={community.exactAggregates?.breakdown} />}
@@ -285,6 +285,8 @@ export function Leaderboard({ api, me, join, onProfile, onGuide }: { api: ApiCli
           {slot === rows.length && join && <GhostRow key="ghost" span={columns.length + 2} onJoin={join.onClick} />}
         </tbody>
       </table></div>}
+      {/* What the headers' tooltips say, for touch screens that can't hover them. */}
+      {shown && shown.total > 0 && <p className="board-key">Tap a number for its exact value · ▲▼ rank change since the end of yesterday · 24h: the last 24 whole hours · 7 days: tokens per day{others.length > 0 && ` · Other: ${others.map((tool) => tool.label).join(', ')}`} · — not shared or unknown · UTC</p>}
       {shown && shown.total > 0 && <footer className="board-foot" ref={foot}>
         <span className="num">Showing 1–{formatExact(rows.length)} of {formatExact(shown.total)} {shown.total === 1 ? 'builder' : 'builders'}</span>
         {hasMore && <span className="actions">{failed && !loadingMore && <span>Couldn’t load more.</span>}

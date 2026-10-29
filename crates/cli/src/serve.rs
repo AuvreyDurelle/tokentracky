@@ -1,7 +1,8 @@
 //! `serve`: the private dashboard on a loopback port, with the 5-minute refresh cycle. The app is `crates/local-api`'s
-//! `LocalApp`, put on loopback behind the launch-link session by its `serve_tcp`.
+//! `LocalApp`, put on loopback behind the launch-link session by its `serve_tcp`; other commands reach it through
+//! [`control`].
 use crate::args::Flags;
-use crate::{CliError, Context, create_directory, database_path, other};
+use crate::{CliError, Context, control, create_directory, database_path, other};
 use std::path::Path;
 use std::sync::Arc;
 use tokentracky_collector::detect::detect_tools;
@@ -10,6 +11,7 @@ use tokentracky_collector::scheduler::refresh_interval;
 use tokentracky_local_api::{
     DEFAULT_CLOUD_ORIGIN, LocalApp, LocalError, LocalOptions, LocalSession, ReqwestClient, cloud_origin, serve_tcp,
 };
+use tokio::sync::Notify;
 
 /// What the `on_serve` hook gets: where the server is, and fresh launch links (`{url, launchUrl}`).
 #[derive(Clone)]
@@ -56,7 +58,17 @@ pub async fn serve(directory: &Path, flags: &Flags, context: &mut Context) -> Re
     })?;
     // Binds, starts the refresh cycle, and closes the app if the port cannot be bound.
     let server = serve_tcp(app, flags.port.unwrap_or(0)).await?;
-    let again = if context.interactive {
+    let stop = Arc::new(Notify::new());
+    let control = match control::listen(directory, server.session().clone(), stop.clone()).await {
+        Ok(control) => control,
+        Err(error) => {
+            let _ = server.close().await;
+            return Err(error.into());
+        }
+    };
+    // The background job has no one at a terminal.
+    let interactive = context.interactive && !flags.background;
+    let again = if interactive {
         " Press Enter for a fresh link."
     } else {
         ""
@@ -68,12 +80,27 @@ pub async fn serve(directory: &Path, flags: &Flags, context: &mut Context) -> Re
     if context.secret_store.is_none() {
         context.out("Leaderboard credentials are kept only while this process runs.\n");
     }
+    if interactive {
+        // A link of its own, so the printed one still works in another browser.
+        let (open, url) = (context.open_url.clone(), server.launch_url());
+        let _ = tokio::task::spawn_blocking(move || open(&url)).await;
+    }
+    let mut stopped = false;
     if let Some(on_serve) = &context.on_serve {
         let handle = ServeHandle {
             url: server.url().to_owned(),
             session: server.session().clone(),
         };
-        on_serve(handle).await;
+        stopped = tokio::select! {
+            () = on_serve(handle) => false,
+            () = stop.notified() => true,
+        };
+    }
+    control.close().await;
+    if stopped {
+        // Asked through the control file by `uninstall`, which deletes the data next. Leaving the process lets go of
+        // the data folder without waiting for the refresh in flight, which on a first run can take minutes.
+        return Ok(0);
     }
     // A store that fails to close has nothing more to tell the user; the lock is released with the process.
     let _ = server.close().await;

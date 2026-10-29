@@ -30,8 +30,13 @@ elif name == 'cargo':
     else:
         raise RuntimeError(args)
 elif name == 'file':
-    linked = 'dynamically linked' if os.getenv('STUB_FAIL') == 'dynamic' else 'static-pie linked'
-    print(f'ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), {linked}, stripped')
+    # As `file -b` describes each Linux build: x86_64 musl is static-pie, aarch64 musl plain static.
+    if os.getenv('STUB_FAIL') == 'dynamic':
+        print('ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, stripped')
+    elif 'aarch64' in args[-1]:
+        print('ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked, stripped')
+    else:
+        print('ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), static-pie linked, stripped')
 elif name == 'rustc':
     print('rustc 1.99.0 (stub)')
 else:

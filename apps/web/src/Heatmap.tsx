@@ -42,7 +42,7 @@ export function Heatmap({ days, label }: { days: Array<{ day: string; tokens: nu
         <div className="heat-months" aria-hidden="true">{months.map((month) => <span key={`${month.column}${month.name}`} style={{ gridColumn: month.column + 1 }}>{month.name}</span>)}</div>
         <div className="heat-weekdays" aria-hidden="true">{WEEKDAYS.map((day, index) => <span key={index}>{day}</span>)}</div>
         <div className="heat-grid" tabIndex={0} aria-label={`${label}. Use arrow keys to read each day.`} onKeyDown={step}
-          onFocus={() => setActive((value) => value ?? last)} onBlur={() => setActive(null)} onPointerLeave={() => setActive(null)}>
+          onFocus={() => setActive((value) => value ?? last)} onBlur={() => setActive(null)} onPointerLeave={(event) => { if (event.pointerType !== 'touch') setActive(null); }}>
           {Array.from({ length: lead }, (_, index) => <i key={`pad${index}`} className="pad" aria-hidden="true" />)}
           {days.map((day, index) => <i key={day.day} className={`l${levels[index]}${active === index ? ' on' : ''}`} aria-hidden="true" onPointerEnter={() => setActive(index)} />)}
         </div>
@@ -50,7 +50,7 @@ export function Heatmap({ days, label }: { days: Array<{ day: string; tokens: nu
     </div>
     <figcaption className="heat-foot">
       {/* A readout instead of a floating tooltip: the scrolling grid would clip one. */}
-      <span className="heat-readout" role="status">{point ? <><strong>{point.tokens ? `${formatExact(point.tokens)} tokens` : 'No usage'}</strong> · {shortDay(point.day)}, UTC</> : 'Hover or focus a day to read it'}</span>
+      <span className="heat-readout" role="status">{point ? <><strong>{point.tokens ? `${formatExact(point.tokens)} tokens` : 'No usage'}</strong> · {shortDay(point.day)}, UTC</> : 'Hover, tap or focus a day to read it'}</span>
       <span className="heat-legend" aria-hidden="true">Less{Array.from({ length: LEVELS + 1 }, (_, level) => <i key={level} className={`l${level}`} />)}More</span>
     </figcaption>
     <table className="sr-only"><caption>{label}: {activeDays.length} days with usage</caption><thead><tr><th>Day</th><th>Tokens</th></tr></thead>

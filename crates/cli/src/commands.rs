@@ -1,11 +1,14 @@
-//! `status`, `refresh`, `doctor`, `login`, `unlink` and `uninstall`; `serve` is in `serve.rs`.
+//! `open`, `status`, `refresh`, `doctor`, `login`, `unlink` and `uninstall`; `serve` is in `serve.rs`, and `login`
+//! ends in it when neither the Mac app nor a background job can keep uploading.
 use crate::args::Flags;
 use crate::report::{report, text};
-use crate::{CliError, Context, create_directory, database_path, other};
+use crate::serve::serve;
+use crate::{CliError, Context, control, create_directory, database_path, other, resolve};
 use serde::Serialize;
 use std::path::Path;
 use std::sync::Arc;
 use std::sync::PoisonError;
+use std::time::Duration;
 use time::format_description::well_known::Rfc3339;
 use time::{OffsetDateTime, UtcOffset};
 use tokentracky_collector::detect::{DetectedTool, detect_tools};
@@ -27,9 +30,10 @@ fn json(value: &impl Serialize) -> String {
 }
 
 /// `withCollector`: creates the data folder and opens the app on it, taking the lock on its database, which another
-/// process may hold ([`CliError::Locked`]). It is the app `serve` serves, not started, without a hosted origin and
-/// turning no tools on, so a command runs the same cycle and the same device connect as the server does.
-fn open(directory: &Path, context: &Context) -> Result<LocalApp, CliError> {
+/// process may hold ([`CliError::Locked`]). It is the app `serve` serves, not started and without a hosted origin, so a
+/// command runs the same cycle and the same device connect as the server does. On a first run it turns on the
+/// `detected` tools, as `serve` does.
+fn open(directory: &Path, context: &Context, detected: Vec<DetectedTool>) -> Result<LocalApp, CliError> {
     create_directory(directory)?;
     Ok(LocalApp::open(LocalOptions {
         database_path: database_path(directory),
@@ -41,7 +45,7 @@ fn open(directory: &Path, context: &Context) -> Result<LocalApp, CliError> {
         initially_paused: false,
         refresh_interval_ms: None,
         on_refresh: None,
-        detected: Vec::new(),
+        detected,
         claude_config_file: Some(claude_config_file(|key| context.var(key), &context.home())),
     })?)
 }
@@ -55,7 +59,7 @@ fn tracks_something(app: &LocalApp) -> bool {
 }
 
 pub async fn refresh(directory: &Path, flags: &Flags, context: &mut Context) -> Result<i32, CliError> {
-    let app = open(directory, context)?;
+    let app = open(directory, context, Vec::new())?;
     if !tracks_something(&app) {
         context.err("Nothing is tracked yet. Run `tokentracky serve` and choose Start tracking.\n");
     }
@@ -213,21 +217,101 @@ pub async fn login(directory: &Path, flags: &Flags, context: &mut Context) -> Re
         context.var("TOKENTRACKY_CLOUD_URL"),
     );
     let origin = cloud_origin(&configured)?;
-    let app = open(directory, context)?;
+    let app = match open(
+        directory,
+        context,
+        detect_tools(|key| context.var(key), &context.home()),
+    ) {
+        Ok(app) => app,
+        // A `serve` holds the data folder (the background job, say), and its dashboard is where to join.
+        Err(CliError::Locked) if let Some(url) = control::launch_url(directory).await => {
+            open_page(context, url).await;
+            context.out("Tokentracky is already running; its dashboard is open in the browser.\n");
+            return Ok(0);
+        }
+        // The Mac app holds it, and its window is where to join.
+        Err(CliError::Locked) => {
+            if !open_app(context).await {
+                return Err(CliError::Locked);
+            }
+            context.out("Tokentracky is already running in your menu bar; its window is open now.\n");
+            return Ok(0);
+        }
+        Err(error) => return Err(error),
+    };
     let alias = approval(&app, &origin, context).await;
     let _ = app.close().await;
-    match alias? {
-        Some(alias) => {
-            context.out(&format!(
-                "Connected as {alias}. This computer now uploads its daily totals every 5 minutes.\n"
-            ));
-            Ok(0)
-        }
-        None => {
-            context.err("The code expired before it was approved. Run `tokentracky login` again.\n");
-            Ok(1)
+    let Some(alias) = alias? else {
+        context.err("The code expired before it was approved. Run `tokentracky login` again.\n");
+        return Ok(1);
+    };
+    context.out(&format!("Connected as {alias}.\n"));
+    // Closing the app above let go of the data folder, so the Mac app can take it. The app opens with the system's
+    // environment, so it reads this credential only where it is kept by default.
+    let custom_home = context.var("TOKENTRACKY_HOME").is_some_and(|home| !home.is_empty());
+    if !custom_home && open_app(context).await {
+        context.out("Tokentracky is open in your menu bar and uploads this computer's daily totals every 5 minutes.\n");
+        return Ok(0);
+    }
+    if let Some(background) = context.background.clone() {
+        let data_dir = directory.to_owned();
+        // The job starts in another folder, so the credential's folder goes to it resolved, as `directory` is.
+        let home = context
+            .var("TOKENTRACKY_HOME")
+            .filter(|home| !home.is_empty())
+            .map(|home| resolve(Path::new(&home)));
+        let installed = tokio::task::spawn_blocking(move || background.install(&data_dir, home.as_deref()))
+            .await
+            .unwrap_or_else(|error| Err(std::io::Error::other(error)));
+        match installed {
+            Ok(()) => {
+                context.out("Tokentracky now runs in the background and uploads this computer's daily totals every 5 minutes, after a restart too.\n");
+                return open_started_dashboard(directory, context).await;
+            }
+            Err(error) => context.err(&format!("Tokentracky could not run in the background: {error}.\n")),
         }
     }
+    context.out("Keep this running to upload this computer's daily totals every 5 minutes.\n");
+    serve(directory, flags, context).await
+}
+
+/// The background `serve` takes a moment to start; its dashboard opens once it answers.
+async fn open_started_dashboard(directory: &Path, context: &mut Context) -> Result<i32, CliError> {
+    for _ in 0..10 {
+        if let Some(url) = control::launch_url(directory).await {
+            open_page(context, url).await;
+            context.out("Your private dashboard is open in the browser; `tokentracky open` opens it again.\n");
+            return Ok(0);
+        }
+        tokio::time::sleep(context.poll_interval / 3).await;
+    }
+    context.out("`tokentracky open` opens your private dashboard once it is ready.\n");
+    Ok(0)
+}
+
+/// `open`: a fresh link to the running dashboard, else the Mac app's window.
+pub async fn open_dashboard(directory: &Path, context: &mut Context) -> Result<i32, CliError> {
+    if let Some(url) = control::launch_url(directory).await {
+        open_page(context, url).await;
+        context.out("Your private dashboard is open in the browser.\n");
+        return Ok(0);
+    }
+    if open_app(context).await {
+        context.out("Tokentracky is open in your menu bar.\n");
+        return Ok(0);
+    }
+    context.err("Tokentracky is not running. `tokentracky login` joins the leaderboard and keeps it running; `tokentracky serve` runs it in this terminal.\n");
+    Ok(1)
+}
+
+async fn open_app(context: &Context) -> bool {
+    let open = context.open_app.clone();
+    tokio::task::spawn_blocking(move || open()).await.unwrap_or(false)
+}
+
+async fn open_page(context: &Context, url: String) {
+    let open = context.open_url.clone();
+    let _ = tokio::task::spawn_blocking(move || open(&url)).await;
 }
 
 fn login_cloud_url(saved: Option<String>, flag: Option<String>, env: Option<String>) -> String {
@@ -237,7 +321,8 @@ fn login_cloud_url(saved: Option<String>, flag: Option<String>, env: Option<Stri
         .unwrap_or_else(|| DEFAULT_CLOUD_ORIGIN.to_owned())
 }
 
-/// Starts the browser approval and waits for it: the alias once approved, `None` if the code expires first.
+/// Starts the browser approval and waits for it: the alias once approved, `None` if the code expires first. While the
+/// browser is open it reads the tracked tools once, so the upload on approval holds their history.
 async fn approval(app: &LocalApp, origin: &str, context: &mut Context) -> Result<Option<String>, CliError> {
     let connect = app.state().connect.clone();
     let started = connect.start(origin).await?;
@@ -249,6 +334,8 @@ async fn approval(app: &LocalApp, origin: &str, context: &mut Context) -> Result
     ));
     let (open, url) = (context.open_url.clone(), started.verification_url);
     let _ = tokio::task::spawn_blocking(move || open(&url)).await;
+    // A failed read leaves the history to the next cycle; joining does not depend on it.
+    let _ = app.refresh().await;
     loop {
         tokio::time::sleep(context.poll_interval).await;
         match connect.poll().await? {
@@ -275,13 +362,27 @@ pub async fn uninstall(directory: &Path, flags: &Flags, context: &mut Context) -
         context.err("Nothing was deleted. Run `tokentracky uninstall --yes` to confirm.\n");
         return Ok(1);
     }
+    // A running `serve` (the background job among them) lets go of the data folder once asked, as its process ends.
+    let stopping = control::stop(directory).await;
     if database_path(directory).exists() {
         // Only the lock matters; any other failure to open is left to the removal below.
-        match UsageStore::open(database_path(directory)) {
-            Ok(store) => drop(store.close()),
-            Err(error @ StoreError::CollectorDatabaseLocked(_)) => return Err(error.into()),
-            Err(_) => {}
+        for waited in 0.. {
+            match UsageStore::open(database_path(directory)) {
+                Ok(store) => drop(store.close()),
+                Err(StoreError::CollectorDatabaseLocked(_)) if stopping && waited < 100 => {
+                    tokio::time::sleep(Duration::from_millis(100)).await;
+                    continue;
+                }
+                Err(error @ StoreError::CollectorDatabaseLocked(_)) => return Err(error.into()),
+                Err(_) => {}
+            }
+            break;
         }
+    }
+    if let Some(background) = context.background.clone() {
+        tokio::task::spawn_blocking(move || background.remove())
+            .await
+            .map_err(other)??;
     }
     if let Some(store) = &context.secret_store {
         let _ = store.clear().await;
