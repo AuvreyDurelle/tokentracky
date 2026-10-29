@@ -85,17 +85,23 @@ pub async fn serve(directory: &Path, flags: &Flags, context: &mut Context) -> Re
         let (open, url) = (context.open_url.clone(), server.launch_url());
         let _ = tokio::task::spawn_blocking(move || open(&url)).await;
     }
+    let mut stopped = false;
     if let Some(on_serve) = &context.on_serve {
         let handle = ServeHandle {
             url: server.url().to_owned(),
             session: server.session().clone(),
         };
-        tokio::select! {
-            () = on_serve(handle) => {}
-            () = stop.notified() => {}
-        }
+        stopped = tokio::select! {
+            () = on_serve(handle) => false,
+            () = stop.notified() => true,
+        };
     }
     control.close().await;
+    if stopped {
+        // Asked through the control file by `uninstall`, which deletes the data next. Leaving the process lets go of
+        // the data folder without waiting for the refresh in flight, which on a first run can take minutes.
+        return Ok(0);
+    }
     // A store that fails to close has nothing more to tell the user; the lock is released with the process.
     let _ = server.close().await;
     Ok(0)

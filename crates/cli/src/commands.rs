@@ -346,9 +346,6 @@ pub async fn unlink(context: &mut Context) -> Result<i32, CliError> {
     Ok(0)
 }
 
-/// How many times, 100 ms apart, `uninstall` checks for a stopping `serve` to let go: five minutes.
-const STOP_CHECKS: u32 = 3000;
-
 pub async fn uninstall(directory: &Path, flags: &Flags, context: &mut Context) -> Result<i32, CliError> {
     let question = format!(
         "Delete {} and this computer's leaderboard credential? [y/N] ",
@@ -359,18 +356,14 @@ pub async fn uninstall(directory: &Path, flags: &Flags, context: &mut Context) -
         context.err("Nothing was deleted. Run `tokentracky uninstall --yes` to confirm.\n");
         return Ok(1);
     }
-    // A running `serve` (the background job among them) lets go of the data folder once asked, after the refresh in
-    // progress, which on a first run reads all the history.
+    // A running `serve` (the background job among them) lets go of the data folder once asked, as its process ends.
     let stopping = control::stop(directory).await;
     if database_path(directory).exists() {
         // Only the lock matters; any other failure to open is left to the removal below.
         for waited in 0.. {
             match UsageStore::open(database_path(directory)) {
                 Ok(store) => drop(store.close()),
-                Err(StoreError::CollectorDatabaseLocked(_)) if stopping && waited < STOP_CHECKS => {
-                    if waited == 10 {
-                        context.out("Waiting for Tokentracky to finish its refresh and stop…\n");
-                    }
+                Err(StoreError::CollectorDatabaseLocked(_)) if stopping && waited < 100 => {
                     tokio::time::sleep(Duration::from_millis(100)).await;
                     continue;
                 }

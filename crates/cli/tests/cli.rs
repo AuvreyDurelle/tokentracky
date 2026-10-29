@@ -168,12 +168,22 @@ impl Fixture {
 /// `serve` as the background job of `login` runs it, a process of its own in all but name (a thread with its own
 /// runtime): it stops only when asked through its control file, which is there once this returns. Blocks while it waits.
 fn serve_in_background(data_dir: &Path) -> JoinHandle<Ran> {
+    serve_linked_in_background(data_dir, None)
+}
+
+/// [`serve_in_background`], tracking a Claude Code log and joined through `link` when given.
+fn serve_linked_in_background(data_dir: &Path, link: Option<CloudLink>) -> JoinHandle<Ran> {
     let directory = data_dir.to_str().unwrap().to_owned();
     let serving = std::thread::spawn(move || {
         let runtime = tokio::runtime::Runtime::new().unwrap();
         runtime.block_on(async move {
             let mut f = Fixture::new();
             f.context.on_serve = Some(Box::new(|_| Box::pin(std::future::pending())));
+            if let Some(link) = link {
+                f.data_dir = PathBuf::from(&directory);
+                f.track();
+                f.secrets.set(link).await.unwrap();
+            }
             f.run_bare(&["serve", "--background", "--data-dir", &directory]).await
         })
     });
@@ -703,6 +713,63 @@ async fn open_says_when_tokentracky_is_not_running() {
         "Tokentracky is not running. `tokentracky login` joins the leaderboard and keeps it running; `tokentracky serve` runs it in this terminal.\n"
     );
     assert!(f.opened.lock().unwrap().is_empty());
+}
+
+/// A hosted service whose ingest never answers, and how many uploads have reached it.
+async fn stalled_hosted() -> (String, Arc<AtomicUsize>) {
+    let uploads = Arc::new(AtomicUsize::new(0));
+    let router = Router::new()
+        .route(
+            "/api/device-policy",
+            get(|| async { Json(json!({"publication": publication()})) }),
+        )
+        .route(
+            "/api/ingest",
+            post(|State(uploads): State<Arc<AtomicUsize>>| async move {
+                uploads.fetch_add(1, Ordering::SeqCst);
+                std::future::pending::<()>().await;
+            }),
+        )
+        .with_state(uploads.clone());
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let origin = format!("http://{}", listener.local_addr().unwrap());
+    tokio::spawn(async move { axum::serve(listener, router).await });
+    (origin, uploads)
+}
+
+/// `uninstall` deletes the data next, so it does not wait for the refresh in flight: here an upload that never gets an
+/// answer, which holds a graceful stop until the hosted timeout (15 seconds), as a first read of a long history can
+/// for minutes.
+#[tokio::test(flavor = "multi_thread")]
+async fn uninstall_does_not_wait_for_the_refresh_in_flight() {
+    let (origin, uploads) = stalled_hosted().await;
+    let mut f = Fixture::new();
+    let link = CloudLink {
+        url: origin,
+        device_token: format!("ttd_{}", "x".repeat(40)),
+        history_start: None,
+        share_tools: false,
+        share_cost: false,
+        share_models: false,
+        generation: "00000000-0000-4000-8000-000000000001".to_owned(),
+    };
+    let serving = tokio::task::block_in_place(|| serve_linked_in_background(&f.data_dir, Some(link)));
+    while uploads.load(Ordering::SeqCst) == 0 {
+        tokio::time::sleep(Duration::from_millis(5)).await;
+    }
+    let result = tokio::time::timeout(Duration::from_secs(5), f.run(&["uninstall", "--yes"]))
+        .await
+        .expect("uninstall waited for the upload in flight");
+    assert_eq!(result.code, 0, "{}", result.stderr);
+    assert_eq!(
+        result.stdout,
+        format!(
+            "Removed {}. Tokentracky never changed your tools' settings, so there is nothing else to undo.\n",
+            f.data_dir.display()
+        )
+    );
+    assert!(!f.data_dir.exists());
+    assert_eq!(serving.join().unwrap().code, 0);
 }
 
 /// `uninstall` stops a running `serve` and the background job before it deletes the data folder.

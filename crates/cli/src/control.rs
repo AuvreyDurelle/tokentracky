@@ -129,7 +129,8 @@ pub async fn launch_url(directory: &Path) -> Option<String> {
         .filter(|url| url.starts_with("http://127.0.0.1:"))
 }
 
-/// Asks the running `serve` to stop; false when none answers.
+/// Asks the running `serve` to stop at once, without waiting for the refresh in flight: for `uninstall`, which deletes
+/// the data next. False when none answers.
 pub async fn stop(directory: &Path) -> bool {
     ask(directory, "stop").await.is_some()
 }
