@@ -246,8 +246,10 @@ pub async fn login(directory: &Path, flags: &Flags, context: &mut Context) -> Re
         return Ok(1);
     };
     context.out(&format!("Connected as {alias}.\n"));
-    // Closing the app above let go of the data folder, so the Mac app can take it.
-    if open_app(context).await {
+    // Closing the app above let go of the data folder, so the Mac app can take it. The app opens with the system's
+    // environment, so it reads this credential only where it is kept by default.
+    let custom_home = context.var("TOKENTRACKY_HOME").is_some_and(|home| !home.is_empty());
+    if !custom_home && open_app(context).await {
         context.out("Tokentracky is open in your menu bar and uploads this computer's daily totals every 5 minutes.\n");
         return Ok(0);
     }

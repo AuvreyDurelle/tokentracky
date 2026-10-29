@@ -156,9 +156,10 @@ export async function installVerifiedBinary({ manifest, version = VERSION, platf
 export const APP_FOLDERS = ['/Applications', join(homedir(), 'Applications')];
 const APP = 'Tokentracky.app';
 
-/** `login` from a Mac terminal, where the launcher offers the app before the CLI starts. */
-export function offersApp(args, { platform = process.platform, interactive = Boolean(process.stdin.isTTY && process.stdout.isTTY) } = {}) {
-  return platform === 'darwin' && interactive && args.includes('login') && !args.some((arg) => ['-h', '--help', '-v', '--version'].includes(arg));
+/** `login` from a Mac terminal, where the launcher offers the app before the CLI starts. Not with `TOKENTRACKY_HOME`:
+ * the app opens with the system's environment, so the CLI does not hand that credential to it. */
+export function offersApp(args, { platform = process.platform, interactive = Boolean(process.stdin.isTTY && process.stdout.isTTY), env = process.env } = {}) {
+  return platform === 'darwin' && interactive && !env.TOKENTRACKY_HOME && args.includes('login') && !args.some((arg) => ['-h', '--help', '-v', '--version'].includes(arg));
 }
 
 /** The installed Mac app, or null. */

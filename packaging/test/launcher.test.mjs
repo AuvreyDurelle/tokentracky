@@ -147,6 +147,9 @@ test('offers the Mac app to login on a Mac terminal only', () => {
     [['serve'], 'darwin', true], [['login', '--help'], 'darwin', true], [['login', '-v'], 'darwin', true]]) {
     assert.equal(offersApp(args, { platform, interactive }), false, `${args} ${platform} ${interactive}`);
   }
+  // The app opens with the system's environment, so the CLI opens it only for the default credential folder.
+  assert.equal(offersApp(['login'], { platform: 'darwin', interactive: true, env: { TOKENTRACKY_HOME: '/custom' } }), false);
+  assert.equal(offersApp(['login'], { platform: 'darwin', interactive: true, env: { TOKENTRACKY_HOME: '' } }), true);
 });
 
 test('finds the Mac app in either Applications folder', async () => {

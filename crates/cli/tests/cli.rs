@@ -588,6 +588,26 @@ async fn login_hands_the_computer_to_the_mac_app_once_approved() {
     assert_eq!(*openings.lock().unwrap(), [true]);
 }
 
+/// The Mac app opens with the system's environment, so it would read the default credential, not a `TOKENTRACKY_HOME`
+/// set in this terminal: then `login` keeps uploading from the terminal itself.
+#[tokio::test(flavor = "multi_thread")]
+async fn login_keeps_a_custom_credential_folder_away_from_the_mac_app() {
+    let (origin, _) = hosted(200).await;
+    let mut f = Fixture::new();
+    let openings = f.install_mac_app();
+    let home = f.root.path().join("credential").to_str().unwrap().to_owned();
+    f.context.env = Box::new(move |name| match name {
+        "TOKENTRACKY_HOME" => Some(home.clone()),
+        "TOKENTRACKY_PRICING_REFRESH" => Some("off".to_owned()),
+        _ => None,
+    });
+    let result = f.run(&["login", "--cloud-url", &origin]).await;
+    assert_eq!(result.code, 0, "{}", result.stderr);
+    let (_, after) = result.stdout.split_once("Connected as cli-builder.\n").unwrap();
+    assert!(after.starts_with("Keep this running to upload"), "{after}");
+    assert!(openings.lock().unwrap().is_empty());
+}
+
 /// Without the app, `login` keeps the dashboard and the five-minute cycle running in the terminal, as `serve` does.
 #[tokio::test(flavor = "multi_thread")]
 async fn login_keeps_uploading_from_the_terminal_without_the_mac_app() {
