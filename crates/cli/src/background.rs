@@ -9,8 +9,11 @@ use std::process::{Command, Stdio};
 use std::sync::Arc;
 use tokentracky_cli::Background;
 
+#[cfg(target_os = "linux")]
 const SERVICE: &str = "tokentracky.service";
+#[cfg(windows)]
 const RUN_KEY: &str = r"HKCU\Software\Microsoft\Windows\CurrentVersion\Run";
+#[cfg(windows)]
 const RUN_VALUE: &str = "Tokentracky";
 
 /// This system's background job; `None` on macOS, where the Mac app keeps uploading.
@@ -184,7 +187,8 @@ fn run<A: AsRef<OsStr>>(program: &str, args: impl IntoIterator<Item = A>) -> io:
 }
 
 /// The systemd user unit: `serve` on the data folder from the copy, restarted after a failure, its output (one-use
-/// dashboard links) discarded, and the credential's folder when it is not the default.
+/// dashboard links) discarded, and the credential's folder when it is not the default. Tested on every system.
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
 fn unit(program: &Path, data_dir: &Path, home: Option<&str>) -> io::Result<String> {
     let line = |value: &str| match value.chars().any(char::is_control) {
         true => Err(io::Error::other(format!(
@@ -217,13 +221,15 @@ fn unit(program: &Path, data_dir: &Path, home: Option<&str>) -> io::Result<Strin
 }
 
 /// A systemd value in double quotes: `\` and `"` escaped, `%` (its specifiers) doubled.
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
 fn quote(value: &str) -> String {
     let escaped = value.replace('\\', r"\\").replace('"', "\\\"").replace('%', "%%");
     format!("\"{escaped}\"")
 }
 
 /// The Run key's command: the console host, headless, starting `serve` from the copy. Windows paths hold no `"`; a
-/// trailing `\` is doubled so it does not escape the closing quote.
+/// trailing `\` is doubled so it does not escape the closing quote. Tested on every system.
+#[cfg_attr(not(windows), allow(dead_code))]
 fn run_command(conhost: &Path, program: &Path, data_dir: &Path) -> String {
     let quote = |path: &Path| {
         let text = path.display().to_string();
