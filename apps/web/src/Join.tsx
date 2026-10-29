@@ -37,7 +37,7 @@ export function Join({ onLeaderboard }: { onLeaderboard: () => void }) {
         </>}
         {INSTALL_COMMAND && <>
           <CopyCommand text={INSTALL_COMMAND} />
-          <p className="join-install-foot"><span>Installs the CLI and opens your browser to approve.</span><span>macOS, Linux and Windows · Node 18+</span></p>
+          <p className="join-install-foot"><span>Installs the CLI on macOS, Linux or Windows</span><span>Node 18+</span></p>
         </>}
         {MAC_DOWNLOAD
           ? <small className="first-launch"><span><strong>First open on a Mac:</strong> macOS can’t check the app yet. Allow it once:</span><span className="join-path"><b>System Settings</b> → <b>Privacy &amp; Security</b> → <b>Open Anyway</b></span></small>
