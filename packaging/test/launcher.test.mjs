@@ -3,12 +3,12 @@ import { ReadableStream } from 'node:stream/web';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { chmod, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { once } from 'node:events';
-import { installVerifiedBinary, platformError, download, cacheFolder } from '../bin/tokentracky.mjs';
+import { installVerifiedBinary, platformError, download, cacheFolder, offersApp, installedApp, installMacApp } from '../bin/tokentracky.mjs';
 
 const { Response } = globalThis;
 const bytes = Buffer.from('#!/bin/sh\nprintf "synthetic cli\\n"\nexit 7\n');
@@ -138,4 +138,70 @@ test('download deadline aborts headers and stalled response bodies', async () =>
     await assert.rejects(download(url, join(root, 'binary'), async () => new Response(new ReadableStream({ cancel() { cancelled = true; } })), { timeoutMs: 20 }), /timed out/);
     assert.equal(cancelled, true);
   } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test('offers the Mac app to login on a Mac terminal only', () => {
+  assert.equal(offersApp(['login'], { platform: 'darwin', interactive: true }), true);
+  assert.equal(offersApp(['--cloud-url', 'https://tokentracky.com', 'login'], { platform: 'darwin', interactive: true }), true);
+  for (const [args, platform, interactive] of [[['login'], 'linux', true], [['login'], 'win32', true], [['login'], 'darwin', false],
+    [['serve'], 'darwin', true], [['login', '--help'], 'darwin', true], [['login', '-v'], 'darwin', true]]) {
+    assert.equal(offersApp(args, { platform, interactive }), false, `${args} ${platform} ${interactive}`);
+  }
+  // The app opens with the system's environment, so the CLI opens it only for the default credential folder.
+  assert.equal(offersApp(['login'], { platform: 'darwin', interactive: true, env: { TOKENTRACKY_HOME: '/custom' } }), false);
+  assert.equal(offersApp(['login'], { platform: 'darwin', interactive: true, env: { TOKENTRACKY_HOME: '' } }), true);
+});
+
+test('finds the Mac app in either Applications folder', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'tokentracky-mac-app-test-'));
+  try {
+    const [system, user] = [join(root, 'system'), join(root, 'user')];
+    assert.equal(await installedApp([system, user]), null);
+    await mkdir(join(user, 'Tokentracky.app'), { recursive: true });
+    assert.equal(await installedApp([system, user]), join(user, 'Tokentracky.app'));
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test('refuses to install a Mac app the manifest does not pin', async () => {
+  await assert.rejects(installMacApp({ manifest, folders: [] }), /No verified Tokentracky .* Mac app/);
+  const app = { file: `tokentracky-${version}-macos-arm64.dmg`, url: 'https://evil.example/app.dmg', sha256: digest };
+  const elsewhere = { ...manifest, releases: { [version]: { verified: true, macos: { arm64: { app } } } } };
+  await assert.rejects(installMacApp({ manifest: elsewhere, folders: [] }), /No verified Tokentracky .* Mac app/);
+});
+
+test('installs the verified Mac app from its disk image into the first Applications folder that takes it', { skip: process.platform !== 'darwin' && 'hdiutil is macOS only' }, async () => {
+  const root = await mkdtemp(join(tmpdir(), 'tokentracky-mac-app-test-'));
+  const locked = join(root, 'locked');
+  try {
+    // A disk image laid out as the release's: the app beside a link to Applications.
+    const plist = '<plist><dict><key>CFBundleIdentifier</key><string>com.tokentracky.desktop</string></dict></plist>';
+    const stage = join(root, 'stage');
+    await mkdir(join(stage, 'Tokentracky.app', 'Contents'), { recursive: true });
+    await writeFile(join(stage, 'Tokentracky.app', 'Contents', 'Info.plist'), plist);
+    await symlink('/Applications', join(stage, 'Applications'));
+    const created = spawnSync('hdiutil', ['create', '-quiet', '-srcfolder', stage, '-volname', 'Tokentracky', '-format', 'UDZO', '-o', join(root, 'app.dmg')]);
+    assert.equal(created.status, 0, String(created.stderr));
+    const image = await readFile(join(root, 'app.dmg'));
+    const file = `tokentracky-${version}-macos-arm64.dmg`;
+    const app = { file, url: `https://github.com/AuvreyDurelle/tokentracky/releases/download/v${version}/${file}`, sha256: createHash('sha256').update(image).digest('hex') };
+    const pinned = { schemaVersion: 1, latest: version, releases: { [version]: { verified: true, macos: { arm64: { app } } } } };
+    const requested = [];
+    const fetchImpl = async (url) => { requested.push(String(url)); return new Response(image); };
+    // The system folder refuses this user, so the app goes into the user's own.
+    await mkdir(locked, { mode: 0o500 });
+    const user = join(root, 'user');
+    const installed = await installMacApp({ manifest: pinned, folders: [locked, user], fetchImpl });
+    assert.equal(installed, join(user, 'Tokentracky.app'));
+    assert.deepEqual(requested, [app.url]);
+    assert.equal(await readFile(join(installed, 'Contents', 'Info.plist'), 'utf8'), plist);
+    assert.equal(await installedApp([locked, user]), installed);
+    // The image is detached afterwards.
+    assert.doesNotMatch(spawnSync('hdiutil', ['info'], { encoding: 'utf8' }).stdout, /tokentracky-app-/);
+    const other = join(root, 'other');
+    await assert.rejects(installMacApp({ manifest: pinned, folders: [other], fetchImpl: async () => new Response('tampered') }), /integrity check failed/);
+    assert.equal(await installedApp([other]), null);
+  } finally {
+    await chmod(locked, 0o700).catch(() => {});
+    await rm(root, { recursive: true, force: true });
+  }
 });

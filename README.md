@@ -44,6 +44,8 @@ brew install --cask auvreydurelle/tokentracky/tokentracky
 npx tokentracky login
 ```
 
+It reads the tools it finds while you approve this computer in the browser, so your history counts straight away. Then it opens the Mac app, which keeps uploading from the menu bar; on a Mac without the app it offers to install it first. Say no and the CLI keeps uploading for as long as its terminal stays open.
+
 Or install it. The npm package is a small Node 18+ launcher that downloads the verified native binary; the Homebrew formula needs no Node.
 
 ```sh
@@ -51,7 +53,8 @@ npm i -g tokentracky                                # or: brew install auvreydur
 
 tokentracky serve     # private dashboard on a loopback port; reads the tools it finds
 tokentracky status    # totals, tracked tools, leaderboard link, last refresh
-tokentracky login     # join the leaderboard: approve a short code in the browser
+tokentracky login     # join the leaderboard in the browser, then keep uploading
+tokentracky open      # the dashboard of the Tokentracky running on this computer
 tokentracky doctor    # health check
 ```
 
