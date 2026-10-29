@@ -197,7 +197,7 @@ fn serve_linked_in_background(data_dir: &Path, link: Option<CloudLink>) -> JoinH
 /// The background job: each install starts `serve` on the data folder, as systemd or the Run key would.
 struct FakeBackground {
     fails: bool,
-    installs: Mutex<Vec<(PathBuf, Option<String>)>>,
+    installs: Mutex<Vec<(PathBuf, Option<PathBuf>)>>,
     removals: AtomicUsize,
     serving: Mutex<Option<JoinHandle<Ran>>>,
 }
@@ -214,11 +214,11 @@ impl FakeBackground {
 }
 
 impl Background for FakeBackground {
-    fn install(&self, data_dir: &Path, home: Option<&str>) -> std::io::Result<()> {
+    fn install(&self, data_dir: &Path, home: Option<&Path>) -> std::io::Result<()> {
         self.installs
             .lock()
             .unwrap()
-            .push((data_dir.to_owned(), home.map(str::to_owned)));
+            .push((data_dir.to_owned(), home.map(Path::to_owned)));
         if self.fails {
             return Err(std::io::Error::other("systemctl --user is unavailable"));
         }
@@ -648,7 +648,10 @@ async fn login_keeps_uploading_in_the_background_where_it_can() {
         after,
         "Tokentracky now runs in the background and uploads this computer's daily totals every 5 minutes, after a restart too.\nYour private dashboard is open in the browser; `tokentracky open` opens it again.\n"
     );
-    assert_eq!(*background.installs.lock().unwrap(), [(f.data_dir.clone(), Some(home))]);
+    assert_eq!(
+        *background.installs.lock().unwrap(),
+        [(f.data_dir.clone(), Some(PathBuf::from(&home)))]
+    );
     let opened = f.opened.lock().unwrap().clone();
     assert_eq!(opened.len(), 2);
     assert!(
@@ -658,6 +661,23 @@ async fn login_keeps_uploading_in_the_background_where_it_can() {
     let serving = background.serving.lock().unwrap().take().unwrap();
     assert_eq!(f.run(&["uninstall", "--yes"]).await.code, 0);
     assert_eq!(serving.join().unwrap().code, 0);
+}
+
+/// The service starts in another folder, so a relative credential folder goes to it resolved, as the data folder does.
+#[tokio::test(flavor = "multi_thread")]
+async fn login_gives_the_background_job_an_absolute_credential_folder() {
+    let (origin, _) = hosted(200).await;
+    let mut f = Fixture::new();
+    let background = FakeBackground::new(true);
+    f.context.background = Some(background.clone());
+    f.context.env = Box::new(|name| match name {
+        "TOKENTRACKY_HOME" => Some("relative-credential".to_owned()),
+        "TOKENTRACKY_PRICING_REFRESH" => Some("off".to_owned()),
+        _ => None,
+    });
+    assert_eq!(f.run(&["login", "--cloud-url", &origin]).await.code, 0);
+    let expected = std::env::current_dir().unwrap().join("relative-credential");
+    assert_eq!(background.installs.lock().unwrap()[0].1, Some(expected));
 }
 
 /// Where the background job cannot start, `login` says why and keeps uploading from the terminal.

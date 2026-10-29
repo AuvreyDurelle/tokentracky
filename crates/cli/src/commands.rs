@@ -3,7 +3,7 @@
 use crate::args::Flags;
 use crate::report::{report, text};
 use crate::serve::serve;
-use crate::{CliError, Context, control, create_directory, database_path, other};
+use crate::{CliError, Context, control, create_directory, database_path, other, resolve};
 use serde::Serialize;
 use std::path::Path;
 use std::sync::Arc;
@@ -255,7 +255,11 @@ pub async fn login(directory: &Path, flags: &Flags, context: &mut Context) -> Re
     }
     if let Some(background) = context.background.clone() {
         let data_dir = directory.to_owned();
-        let home = context.var("TOKENTRACKY_HOME").filter(|home| !home.is_empty());
+        // The job starts in another folder, so the credential's folder goes to it resolved, as `directory` is.
+        let home = context
+            .var("TOKENTRACKY_HOME")
+            .filter(|home| !home.is_empty())
+            .map(|home| resolve(Path::new(&home)));
         let installed = tokio::task::spawn_blocking(move || background.install(&data_dir, home.as_deref()))
             .await
             .unwrap_or_else(|error| Err(std::io::Error::other(error)));

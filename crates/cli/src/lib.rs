@@ -53,7 +53,7 @@ pub type OnServe = Box<dyn Fn(ServeHandle) -> Pin<Box<dyn Future<Output = ()> + 
 pub trait Background: Send + Sync {
     /// Copies this program into place and starts `serve --background --data-dir <data_dir>` from it, with
     /// `TOKENTRACKY_HOME` set to `home` (the credential's folder) when given.
-    fn install(&self, data_dir: &Path, home: Option<&str>) -> std::io::Result<()>;
+    fn install(&self, data_dir: &Path, home: Option<&Path>) -> std::io::Result<()>;
     /// Stops it starting again and deletes the copy; with nothing installed, there is nothing to do. `uninstall` has
     /// already stopped a running `serve`.
     fn remove(&self) -> std::io::Result<()>;

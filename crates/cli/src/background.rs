@@ -28,7 +28,7 @@ struct Job;
 
 #[cfg(target_os = "linux")]
 impl Background for Job {
-    fn install(&self, data_dir: &Path, home: Option<&str>) -> io::Result<()> {
+    fn install(&self, data_dir: &Path, home: Option<&Path>) -> io::Result<()> {
         let program = folder("XDG_DATA_HOME", &[".local", "share"])?.join("tokentracky/bin/tokentracky");
         copy_self(&program)?;
         let file = unit_file()?;
@@ -68,7 +68,7 @@ fn systemctl(args: &[&str]) -> io::Result<()> {
 
 #[cfg(windows)]
 impl Background for Job {
-    fn install(&self, data_dir: &Path, home: Option<&str>) -> io::Result<()> {
+    fn install(&self, data_dir: &Path, home: Option<&Path>) -> io::Result<()> {
         use std::os::windows::process::CommandExt;
         const DETACHED_PROCESS: u32 = 0x0000_0008;
         const CREATE_NEW_PROCESS_GROUP: u32 = 0x0000_0200;
@@ -189,7 +189,7 @@ fn run<A: AsRef<OsStr>>(program: &str, args: impl IntoIterator<Item = A>) -> io:
 /// The systemd user unit: `serve` on the data folder from the copy, restarted after a failure, its output (one-use
 /// dashboard links) discarded, and the credential's folder when it is not the default. Tested on every system.
 #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
-fn unit(program: &Path, data_dir: &Path, home: Option<&str>) -> io::Result<String> {
+fn unit(program: &Path, data_dir: &Path, home: Option<&Path>) -> io::Result<String> {
     let line = |value: &str| match value.chars().any(char::is_control) {
         true => Err(io::Error::other(format!(
             "{value:?} cannot be written into a service file"
@@ -212,7 +212,7 @@ fn unit(program: &Path, data_dir: &Path, home: Option<&str>) -> io::Result<Strin
     .map(|argument| quote(&argument.replace('$', "$$")))
     .join(" ");
     let environment = match home {
-        Some(home) => format!("Environment={}\n", quote(&line(&format!("TOKENTRACKY_HOME={home}"))?)),
+        Some(home) => format!("Environment={}\n", quote(&format!("TOKENTRACKY_HOME={}", path(home)?))),
         None => String::new(),
     };
     Ok(format!(
@@ -264,7 +264,12 @@ mod tests {
 
     #[test]
     fn passes_the_credential_folder_to_the_service() {
-        let unit = unit(Path::new("/bin/t"), Path::new("/d"), Some("/home/ada/token 50%")).unwrap();
+        let unit = unit(
+            Path::new("/bin/t"),
+            Path::new("/d"),
+            Some(Path::new("/home/ada/token 50%")),
+        )
+        .unwrap();
         assert!(
             unit.contains("\nEnvironment=\"TOKENTRACKY_HOME=/home/ada/token 50%%\"\nStandardOutput=null\n"),
             "{unit}"
@@ -274,7 +279,14 @@ mod tests {
     #[test]
     fn refuses_paths_a_unit_file_cannot_hold() {
         assert!(unit(Path::new("/bin/t"), Path::new("/data\nExecStartPre=/evil"), None).is_err());
-        assert!(unit(Path::new("/bin/t"), Path::new("/d"), Some("/home\n[Install]")).is_err());
+        assert!(
+            unit(
+                Path::new("/bin/t"),
+                Path::new("/d"),
+                Some(Path::new("/home\n[Install]"))
+            )
+            .is_err()
+        );
     }
 
     #[test]
