@@ -1,13 +1,14 @@
-//! `status`, `refresh`, `doctor`, `login`, `unlink` and `uninstall`; `serve` is in `serve.rs`, and `login` ends in it
-//! when there is no Mac app to keep uploading.
+//! `open`, `status`, `refresh`, `doctor`, `login`, `unlink` and `uninstall`; `serve` is in `serve.rs`, and `login`
+//! ends in it when neither the Mac app nor a background job can keep uploading.
 use crate::args::Flags;
 use crate::report::{report, text};
 use crate::serve::serve;
-use crate::{CliError, Context, create_directory, database_path, other};
+use crate::{CliError, Context, control, create_directory, database_path, other};
 use serde::Serialize;
 use std::path::Path;
 use std::sync::Arc;
 use std::sync::PoisonError;
+use std::time::Duration;
 use time::format_description::well_known::Rfc3339;
 use time::{OffsetDateTime, UtcOffset};
 use tokentracky_collector::detect::{DetectedTool, detect_tools};
@@ -222,7 +223,13 @@ pub async fn login(directory: &Path, flags: &Flags, context: &mut Context) -> Re
         detect_tools(|key| context.var(key), &context.home()),
     ) {
         Ok(app) => app,
-        // The Mac app holds the data folder, and its window is where to join.
+        // A `serve` holds the data folder (the background job, say), and its dashboard is where to join.
+        Err(CliError::Locked) if let Some(url) = control::launch_url(directory).await => {
+            open_page(context, url).await;
+            context.out("Tokentracky is already running; its dashboard is open in the browser.\n");
+            return Ok(0);
+        }
+        // The Mac app holds it, and its window is where to join.
         Err(CliError::Locked) => {
             if !open_app(context).await {
                 return Err(CliError::Locked);
@@ -244,13 +251,61 @@ pub async fn login(directory: &Path, flags: &Flags, context: &mut Context) -> Re
         context.out("Tokentracky is open in your menu bar and uploads this computer's daily totals every 5 minutes.\n");
         return Ok(0);
     }
+    if let Some(background) = context.background.clone() {
+        let data_dir = directory.to_owned();
+        let home = context.var("TOKENTRACKY_HOME").filter(|home| !home.is_empty());
+        let installed = tokio::task::spawn_blocking(move || background.install(&data_dir, home.as_deref()))
+            .await
+            .unwrap_or_else(|error| Err(std::io::Error::other(error)));
+        match installed {
+            Ok(()) => {
+                context.out("Tokentracky now runs in the background and uploads this computer's daily totals every 5 minutes, after a restart too.\n");
+                return open_started_dashboard(directory, context).await;
+            }
+            Err(error) => context.err(&format!("Tokentracky could not run in the background: {error}.\n")),
+        }
+    }
     context.out("Keep this running to upload this computer's daily totals every 5 minutes.\n");
     serve(directory, flags, context).await
+}
+
+/// The background `serve` takes a moment to start; its dashboard opens once it answers.
+async fn open_started_dashboard(directory: &Path, context: &mut Context) -> Result<i32, CliError> {
+    for _ in 0..10 {
+        if let Some(url) = control::launch_url(directory).await {
+            open_page(context, url).await;
+            context.out("Your private dashboard is open in the browser; `tokentracky open` opens it again.\n");
+            return Ok(0);
+        }
+        tokio::time::sleep(context.poll_interval / 3).await;
+    }
+    context.out("`tokentracky open` opens your private dashboard once it is ready.\n");
+    Ok(0)
+}
+
+/// `open`: a fresh link to the running dashboard, else the Mac app's window.
+pub async fn open_dashboard(directory: &Path, context: &mut Context) -> Result<i32, CliError> {
+    if let Some(url) = control::launch_url(directory).await {
+        open_page(context, url).await;
+        context.out("Your private dashboard is open in the browser.\n");
+        return Ok(0);
+    }
+    if open_app(context).await {
+        context.out("Tokentracky is open in your menu bar.\n");
+        return Ok(0);
+    }
+    context.err("Tokentracky is not running. `tokentracky login` joins the leaderboard and keeps it running; `tokentracky serve` runs it in this terminal.\n");
+    Ok(1)
 }
 
 async fn open_app(context: &Context) -> bool {
     let open = context.open_app.clone();
     tokio::task::spawn_blocking(move || open()).await.unwrap_or(false)
+}
+
+async fn open_page(context: &Context, url: String) {
+    let open = context.open_url.clone();
+    let _ = tokio::task::spawn_blocking(move || open(&url)).await;
 }
 
 fn login_cloud_url(saved: Option<String>, flag: Option<String>, env: Option<String>) -> String {
@@ -291,6 +346,9 @@ pub async fn unlink(context: &mut Context) -> Result<i32, CliError> {
     Ok(0)
 }
 
+/// How many times, 100 ms apart, `uninstall` checks for a stopping `serve` to let go: five minutes.
+const STOP_CHECKS: u32 = 3000;
+
 pub async fn uninstall(directory: &Path, flags: &Flags, context: &mut Context) -> Result<i32, CliError> {
     let question = format!(
         "Delete {} and this computer's leaderboard credential? [y/N] ",
@@ -301,13 +359,31 @@ pub async fn uninstall(directory: &Path, flags: &Flags, context: &mut Context) -
         context.err("Nothing was deleted. Run `tokentracky uninstall --yes` to confirm.\n");
         return Ok(1);
     }
+    // A running `serve` (the background job among them) lets go of the data folder once asked, after the refresh in
+    // progress, which on a first run reads all the history.
+    let stopping = control::stop(directory).await;
     if database_path(directory).exists() {
         // Only the lock matters; any other failure to open is left to the removal below.
-        match UsageStore::open(database_path(directory)) {
-            Ok(store) => drop(store.close()),
-            Err(error @ StoreError::CollectorDatabaseLocked(_)) => return Err(error.into()),
-            Err(_) => {}
+        for waited in 0.. {
+            match UsageStore::open(database_path(directory)) {
+                Ok(store) => drop(store.close()),
+                Err(StoreError::CollectorDatabaseLocked(_)) if stopping && waited < STOP_CHECKS => {
+                    if waited == 10 {
+                        context.out("Waiting for Tokentracky to finish its refresh and stop…\n");
+                    }
+                    tokio::time::sleep(Duration::from_millis(100)).await;
+                    continue;
+                }
+                Err(error @ StoreError::CollectorDatabaseLocked(_)) => return Err(error.into()),
+                Err(_) => {}
+            }
+            break;
         }
+    }
+    if let Some(background) = context.background.clone() {
+        tokio::task::spawn_blocking(move || background.remove())
+            .await
+            .map_err(other)??;
     }
     if let Some(store) = &context.secret_store {
         let _ = store.clear().await;

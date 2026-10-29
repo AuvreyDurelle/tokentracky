@@ -10,6 +10,7 @@ use tokentracky_cli::{Context, OnServe, ServeHandle, run};
 use tokentracky_local_api::SecretStore;
 use tokio::sync::mpsc;
 
+mod background;
 mod web;
 
 /// A private file in the data folder, shared with the Mac app.
@@ -141,6 +142,7 @@ fn main() -> ExitCode {
         poll_interval: Duration::from_secs(3),
         utc_offset,
         on_serve: Some(on_serve(interactive)),
+        background: background::background(),
     };
     let runtime = match tokio::runtime::Runtime::new() {
         Ok(runtime) => runtime,

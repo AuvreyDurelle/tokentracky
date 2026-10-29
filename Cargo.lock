@@ -4732,9 +4732,12 @@ version = "0.2.0"
 dependencies = [
  "axum",
  "clap",
+ "getrandom 0.4.3",
+ "hex",
  "jiff",
  "serde",
  "serde_json",
+ "subtle",
  "tempfile",
  "time",
  "tokentracky-collector",

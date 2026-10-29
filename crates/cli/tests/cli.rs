@@ -7,14 +7,15 @@ use axum::{Json, Router};
 use serde_json::{Value, json};
 use std::fs;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
+use std::thread::JoinHandle;
 use std::time::Duration;
 use tempfile::TempDir;
 use time::OffsetDateTime;
 use time::format_description::well_known::Rfc3339;
-use tokentracky_cli::{Context, ServeHandle, USAGE, run};
+use tokentracky_cli::{Background, Context, ServeHandle, USAGE, run};
 use tokentracky_collector::store::{SourceConfiguration, UsageStore};
 use tokentracky_collector::{IngestionOptions, IngestionService};
 use tokentracky_core::ToolId;
@@ -95,6 +96,7 @@ impl Fixture {
             poll_interval: Duration::from_millis(5),
             utc_offset: time::UtcOffset::UTC,
             on_serve: None,
+            background: None,
         };
         Self {
             root,
@@ -160,6 +162,62 @@ impl Fixture {
         service.configure_source(ToolId::Claude, &configuration).unwrap();
         drop(service);
         Arc::into_inner(store).unwrap().into_inner().unwrap().close().unwrap();
+    }
+}
+
+/// `serve` as the background job of `login` runs it, a process of its own in all but name (a thread with its own
+/// runtime): it stops only when asked through its control file, which is there once this returns. Blocks while it waits.
+fn serve_in_background(data_dir: &Path) -> JoinHandle<Ran> {
+    let directory = data_dir.to_str().unwrap().to_owned();
+    let serving = std::thread::spawn(move || {
+        let runtime = tokio::runtime::Runtime::new().unwrap();
+        runtime.block_on(async move {
+            let mut f = Fixture::new();
+            f.context.on_serve = Some(Box::new(|_| Box::pin(std::future::pending())));
+            f.run_bare(&["serve", "--background", "--data-dir", &directory]).await
+        })
+    });
+    while !data_dir.join("serve.json").exists() {
+        assert!(!serving.is_finished(), "serve stopped before it was ready");
+        std::thread::sleep(Duration::from_millis(5));
+    }
+    serving
+}
+
+/// The background job: each install starts `serve` on the data folder, as systemd or the Run key would.
+struct FakeBackground {
+    fails: bool,
+    installs: Mutex<Vec<(PathBuf, Option<String>)>>,
+    removals: AtomicUsize,
+    serving: Mutex<Option<JoinHandle<Ran>>>,
+}
+
+impl FakeBackground {
+    fn new(fails: bool) -> Arc<Self> {
+        Arc::new(Self {
+            fails,
+            installs: Mutex::default(),
+            removals: AtomicUsize::default(),
+            serving: Mutex::default(),
+        })
+    }
+}
+
+impl Background for FakeBackground {
+    fn install(&self, data_dir: &Path, home: Option<&str>) -> std::io::Result<()> {
+        self.installs
+            .lock()
+            .unwrap()
+            .push((data_dir.to_owned(), home.map(str::to_owned)));
+        if self.fails {
+            return Err(std::io::Error::other("systemctl --user is unavailable"));
+        }
+        *self.serving.lock().unwrap() = Some(serve_in_background(data_dir));
+        Ok(())
+    }
+    fn remove(&self) -> std::io::Result<()> {
+        self.removals.fetch_add(1, Ordering::SeqCst);
+        Ok(())
     }
 }
 
@@ -538,6 +596,129 @@ async fn login_keeps_uploading_from_the_terminal_without_the_mac_app() {
     assert_eq!(f.opened.lock().unwrap().len(), 1);
 }
 
+/// On Linux and Windows `login` leaves `serve` running in the background, with the credential's folder, and opens its
+/// dashboard.
+#[tokio::test(flavor = "multi_thread")]
+async fn login_keeps_uploading_in_the_background_where_it_can() {
+    let (origin, _) = hosted(200).await;
+    let mut f = Fixture::new();
+    let background = FakeBackground::new(false);
+    f.context.background = Some(background.clone());
+    let home = f.root.path().join("credential").to_str().unwrap().to_owned();
+    let credential = home.clone();
+    f.context.env = Box::new(move |name| match name {
+        "TOKENTRACKY_HOME" => Some(credential.clone()),
+        "TOKENTRACKY_PRICING_REFRESH" => Some("off".to_owned()),
+        _ => None,
+    });
+    let result = f.run(&["login", "--cloud-url", &origin]).await;
+    assert_eq!(result.code, 0, "{}", result.stderr);
+    let (_, after) = result.stdout.split_once("Connected as cli-builder.\n").unwrap();
+    assert_eq!(
+        after,
+        "Tokentracky now runs in the background and uploads this computer's daily totals every 5 minutes, after a restart too.\nYour private dashboard is open in the browser; `tokentracky open` opens it again.\n"
+    );
+    assert_eq!(*background.installs.lock().unwrap(), [(f.data_dir.clone(), Some(home))]);
+    let opened = f.opened.lock().unwrap().clone();
+    assert_eq!(opened.len(), 2);
+    assert!(
+        opened[1].starts_with("http://127.0.0.1:") && opened[1].contains("/?launch="),
+        "{opened:?}"
+    );
+    let serving = background.serving.lock().unwrap().take().unwrap();
+    assert_eq!(f.run(&["uninstall", "--yes"]).await.code, 0);
+    assert_eq!(serving.join().unwrap().code, 0);
+}
+
+/// Where the background job cannot start, `login` says why and keeps uploading from the terminal.
+#[tokio::test(flavor = "multi_thread")]
+async fn login_stays_in_the_terminal_when_it_cannot_run_in_the_background() {
+    let (origin, _) = hosted(200).await;
+    let mut f = Fixture::new();
+    f.context.background = Some(FakeBackground::new(true));
+    let result = f.run(&["login", "--cloud-url", &origin]).await;
+    assert_eq!(result.code, 0, "{}", result.stderr);
+    assert_eq!(
+        result.stderr,
+        "Tokentracky could not run in the background: systemctl --user is unavailable.\n"
+    );
+    let (_, after) = result.stdout.split_once("Connected as cli-builder.\n").unwrap();
+    assert!(after.starts_with("Keep this running to upload"), "{after}");
+}
+
+/// While a `serve` holds the data folder, `login` opens its dashboard, where the computer can join.
+#[tokio::test(flavor = "multi_thread")]
+async fn login_opens_the_running_dashboard_instead_of_refusing() {
+    let mut f = Fixture::new();
+    let serving = tokio::task::block_in_place(|| serve_in_background(&f.data_dir));
+    let result = f.run(&["login", "--cloud-url", "https://cloud.example"]).await;
+    assert_eq!(result.code, 0, "{}", result.stderr);
+    assert_eq!(
+        result.stdout,
+        "Tokentracky is already running; its dashboard is open in the browser.\n"
+    );
+    assert!(f.opened.lock().unwrap()[0].contains("/?launch="));
+    assert_eq!(f.run(&["uninstall", "--yes"]).await.code, 0);
+    assert_eq!(serving.join().unwrap().code, 0);
+}
+
+/// `open` asks the running `serve` for a fresh one-use link and opens it.
+#[tokio::test(flavor = "multi_thread")]
+async fn open_gives_a_fresh_link_to_the_running_dashboard() {
+    let mut f = Fixture::new();
+    let serving = tokio::task::block_in_place(|| serve_in_background(&f.data_dir));
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mode = fs::metadata(f.data_dir.join("serve.json"))
+            .unwrap()
+            .permissions()
+            .mode();
+        assert_eq!(mode & 0o777, 0o600);
+    }
+    let result = f.run(&["open"]).await;
+    assert_eq!(result.code, 0, "{}", result.stderr);
+    assert_eq!(result.stdout, "Your private dashboard is open in the browser.\n");
+    let launch = f.opened.lock().unwrap()[0].clone();
+    let request = HttpRequest::new(Method::GET, launch, Duration::from_secs(10));
+    assert_eq!(ReqwestClient::new().unwrap().send(request).await.unwrap().status, 200);
+    assert_eq!(f.run(&["uninstall", "--yes"]).await.code, 0);
+    assert_eq!(serving.join().unwrap().code, 0);
+}
+
+/// Without a running `serve` (here a control file left behind by one that crashed), `open` says what to run.
+#[tokio::test(flavor = "multi_thread")]
+async fn open_says_when_tokentracky_is_not_running() {
+    let mut f = Fixture::new();
+    fs::create_dir_all(&f.data_dir).unwrap();
+    fs::write(
+        f.data_dir.join("serve.json"),
+        r#"{"url":"http://127.0.0.1:1","token":"left-behind"}"#,
+    )
+    .unwrap();
+    let result = f.run(&["open"]).await;
+    assert_eq!(result.code, 1);
+    assert_eq!(
+        result.stderr,
+        "Tokentracky is not running. `tokentracky login` joins the leaderboard and keeps it running; `tokentracky serve` runs it in this terminal.\n"
+    );
+    assert!(f.opened.lock().unwrap().is_empty());
+}
+
+/// `uninstall` stops a running `serve` and the background job before it deletes the data folder.
+#[tokio::test(flavor = "multi_thread")]
+async fn uninstall_stops_the_running_serve_and_removes_the_background_job() {
+    let mut f = Fixture::new();
+    let background = FakeBackground::new(false);
+    f.context.background = Some(background.clone());
+    let serving = tokio::task::block_in_place(|| serve_in_background(&f.data_dir));
+    let result = f.run(&["uninstall", "--yes"]).await;
+    assert_eq!(result.code, 0, "{}", result.stderr);
+    assert_eq!(serving.join().unwrap().code, 0);
+    assert_eq!(background.removals.load(Ordering::SeqCst), 1);
+    assert!(!f.data_dir.exists());
+}
+
 /// While the Mac app holds the data folder, `login` opens its window instead of refusing.
 #[tokio::test(flavor = "multi_thread")]
 async fn login_opens_the_running_mac_app_instead_of_refusing() {
@@ -770,6 +951,11 @@ async fn serve_opens_the_dashboard_in_the_browser_on_a_terminal() {
     );
     assert!(result.stdout.contains("Open your private dashboard: http://127.0.0.1:"));
     assert!(!result.stdout.contains(&opened[0]));
+    // The background job has no one at the terminal: no browser, no Enter.
+    let background = f.run(&["serve", "--background"]).await;
+    assert_eq!(background.code, 0, "{}", background.stderr);
+    assert_eq!(f.opened.lock().unwrap().len(), 1);
+    assert!(!background.stdout.contains("Press Enter"));
 }
 
 #[tokio::test(flavor = "multi_thread")]

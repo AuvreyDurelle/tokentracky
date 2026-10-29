@@ -2,6 +2,7 @@
 //! storage and network dependencies. Commands support human-readable output and stable `--json` responses.
 mod args;
 mod commands;
+mod control;
 mod report;
 mod serve;
 
@@ -24,6 +25,7 @@ pub const USAGE: &str = "Usage: tokentracky <command> [options]
 
 Commands:
   serve               Open the private dashboard (prints a one-use link) and refresh every 5 minutes
+  open                Open the dashboard of the Tokentracky running on this computer
   status [--json]     Token totals, sources and leaderboard link
   refresh [--json]    Run one refresh cycle now: scan, prices, sync
   doctor [--json]     Check the runtime, SQLite, the data folder, detected tools, link and last refresh
@@ -35,6 +37,7 @@ Options:
   --data-dir <dir>    Data folder (default: $TOKENTRACKY_HOME or ~/.tokentracky)
   --cloud-url <url>   Hosted leaderboard origin (default: $TOKENTRACKY_CLOUD_URL or https://tokentracky.com)
   --port <port>       Port for serve (default: random loopback port)
+  --background        For serve without a terminal, as login's background job runs it: opens no browser
   -h, --help          Show this help
   -v, --version       Show the version
 ";
@@ -44,6 +47,17 @@ pub type Env = Box<dyn Fn(&str) -> Option<String> + Send + Sync>;
 
 /// Called once `serve` is listening; the server runs until the returned future finishes, then closes.
 pub type OnServe = Box<dyn Fn(ServeHandle) -> Pin<Box<dyn Future<Output = ()> + Send>> + Send + Sync>;
+
+/// What `login` leaves running on Linux and Windows, where no Mac app keeps uploading: `serve` on the data folder, from
+/// a copy of this program that stays put, now and at each sign-in.
+pub trait Background: Send + Sync {
+    /// Copies this program into place and starts `serve --background --data-dir <data_dir>` from it, with
+    /// `TOKENTRACKY_HOME` set to `home` (the credential's folder) when given.
+    fn install(&self, data_dir: &Path, home: Option<&str>) -> std::io::Result<()>;
+    /// Stops it starting again and deletes the copy; with nothing installed, there is nothing to do. `uninstall` has
+    /// already stopped a running `serve`.
+    fn remove(&self) -> std::io::Result<()>;
+}
 
 /// Everything a command takes from the process around it (`CliContext`).
 pub struct Context {
@@ -73,6 +87,8 @@ pub struct Context {
     pub utc_offset: UtcOffset,
     /// What `serve` does while it runs. Without one `serve` closes at once.
     pub on_serve: Option<OnServe>,
+    /// Where `login` can keep uploading without a terminal; `None` on macOS, where the Mac app does.
+    pub background: Option<Arc<dyn Background>>,
 }
 
 impl Context {
@@ -255,6 +271,7 @@ where
             Ok(0)
         }
         Command::Serve => serve::serve(&directory, &flags, context).await,
+        Command::Open => commands::open_dashboard(&directory, context).await,
         Command::Status => commands::status(&directory, &flags, context).await,
         Command::Refresh => commands::refresh(&directory, &flags, context).await,
         Command::Doctor => commands::doctor(&directory, &flags, context).await,

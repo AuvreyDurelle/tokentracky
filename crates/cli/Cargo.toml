@@ -1,6 +1,6 @@
 [package]
 name = "tokentracky-cli"
-description = "The tokentracky command line: serve, status, refresh, doctor, login, unlink, uninstall"
+description = "The tokentracky command line: serve, open, status, refresh, doctor, login, unlink, uninstall"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -23,16 +23,19 @@ tokentracky-collector = { path = "../collector" }
 tokentracky-pricing = { path = "../pricing" }
 tokentracky-local-api = { path = "../local-api" }
 tokentracky-secrets = { path = "../secrets" }
+axum = { workspace = true }
 clap = { workspace = true }
+getrandom = { workspace = true }
+hex = { workspace = true }
 jiff = { workspace = true }
-tokio = { workspace = true, features = ["signal"] }
+tokio = { workspace = true, features = ["net", "signal"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
+subtle = { workspace = true }
 time = { workspace = true, features = ["formatting", "parsing", "local-offset"] }
 tempfile = { workspace = true }
 
 [dev-dependencies]
-axum = { workspace = true }
 tempfile = { workspace = true }
 tokio = { workspace = true, features = ["net"] }
 
