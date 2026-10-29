@@ -67,7 +67,7 @@ Both read the usual folders of the tools they find as soon as they open, and any
 - **Linux:** `tokentracky-<version>-linux-x86_64` or `tokentracky-<version>-linux-aarch64`, one static binary that runs on every distribution. Run `chmod +x` on it and put it on your `PATH` as `tokentracky`.
 - **Windows:** `tokentracky-<version>-windows-x86_64.exe`. It is not signed yet, so SmartScreen may say Windows protected your PC: choose **More info → Run anyway**. The npm install shows no warning.
 
-There is no menu bar app outside macOS, so keep `tokentracky serve` running, or run `tokentracky refresh` on a schedule, to keep your totals and your leaderboard row current.
+There is no menu bar app outside macOS, so on Linux and Windows `tokentracky login` keeps uploading in the background instead: a systemd user service on Linux, a sign-in item on Windows ([background job](crates/cli/README.md#background-job)).
 
 <details>
 <summary><b>"Tokentracky Not Opened": macOS can't check the app</b></summary>

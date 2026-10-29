@@ -9,7 +9,7 @@ const FAQ = [
   { q: 'Does it read my prompts or code?', a: 'It scans the logs your tools keep for usage numbers only. Prompts, responses and code are never kept or uploaded.' },
   { q: 'Does it slow my tools down?', a: 'No. It reads records your tools already write, in the background, and never installs hooks or changes a tool’s settings.' },
   { q: 'Why is cost estimated?', a: 'Tokens are priced at public API rates. It isn’t a bill and may differ from what you pay on a subscription. Models without a known price show cost as unknown.' },
-  { q: 'Does it work on Windows or Linux?', a: 'Yes, with the terminal install: it runs on Linux (x64 and Arm) and Windows (x64) with Node 18 or later. The menu bar app is Mac only, so keep tokentracky serve running, or run tokentracky refresh now and then, to keep your totals up to date.' },
+  { q: 'Does it work on Windows or Linux?', a: 'Yes, with the terminal install: it runs on Linux (x64 and Arm) and Windows (x64) with Node 18 or later. The menu bar app is Mac only; after you join, the CLI keeps uploading in the background instead.' },
   { q: 'Can I leave?', a: 'Yes. Delete your account on the Account page: your profile and public totals are removed. The history on your computer stays.' },
 ];
 /** Tools shown before "more"; the rest fold away. */
