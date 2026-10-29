@@ -1,5 +1,7 @@
 //! The `tokentracky` binary: connects the command library to process I/O, signals and the local service.
+use std::ffi::OsStr;
 use std::io::{BufRead, IsTerminal, Write};
+use std::path::PathBuf;
 use std::process::{Command, ExitCode, Stdio};
 use std::sync::Arc;
 use std::time::Duration;
@@ -34,17 +36,28 @@ fn open_url(url: &str) {
         .status();
 }
 
-/// The menu-bar app wherever macOS knows it is installed. A launch opens its window, and so does reopening it while it
-/// runs.
+/// The menu-bar app: by path in the Applications folders, where the npm launcher and the DMG put it (a path needs no
+/// lookup, so a copy made moments ago opens too), else wherever macOS knows it is. A launch opens its window, and so
+/// does reopening it while it runs.
 fn open_app() -> bool {
-    cfg!(target_os = "macos")
-        && Command::new("open")
-            .args(["-b", "com.tokentracky.desktop"])
+    if !cfg!(target_os = "macos") {
+        return false;
+    }
+    let open = |args: &[&OsStr]| {
+        Command::new("open")
+            .args(args)
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .status()
             .is_ok_and(|status| status.success())
+    };
+    let home = std::env::home_dir().unwrap_or_default();
+    [PathBuf::from("/Applications"), home.join("Applications")]
+        .iter()
+        .map(|folder| folder.join("Tokentracky.app"))
+        .any(|app| app.is_dir() && open(&[app.as_os_str()]))
+        || open(&[OsStr::new("-b"), OsStr::new("com.tokentracky.desktop")])
 }
 
 /// `y` or `yes`, any case, after the question on the terminal.

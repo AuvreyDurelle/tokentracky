@@ -3,9 +3,9 @@ import process from 'node:process';
 import { Buffer } from 'node:buffer';
 import { setTimeout, clearTimeout } from 'node:timers';
 import { createHash } from 'node:crypto';
-import { chmod, mkdir, readFile, rename, rm, stat } from 'node:fs/promises';
+import { chmod, mkdir, mkdtemp, readFile, rename, rm, stat } from 'node:fs/promises';
 import { realpathSync } from 'node:fs';
-import { homedir, release as kernelRelease } from 'node:os';
+import { homedir, tmpdir, release as kernelRelease } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { spawn } from 'node:child_process';
 import { URL, fileURLToPath } from 'node:url';
@@ -152,6 +152,77 @@ export async function installVerifiedBinary({ manifest, version = VERSION, platf
   return target;
 }
 
+/** Where the Mac app is looked for and put: the system's Applications folder, then the user's own. */
+export const APP_FOLDERS = ['/Applications', join(homedir(), 'Applications')];
+const APP = 'Tokentracky.app';
+
+/** `login` from a Mac terminal, where the launcher offers the app before the CLI starts. */
+export function offersApp(args, { platform = process.platform, interactive = Boolean(process.stdin.isTTY && process.stdout.isTTY) } = {}) {
+  return platform === 'darwin' && interactive && args.includes('login') && !args.some((arg) => ['-h', '--help', '-v', '--version'].includes(arg));
+}
+
+/** The installed Mac app, or null. */
+export async function installedApp(folders = APP_FOLDERS) {
+  for (const folder of folders) {
+    const app = join(folder, APP);
+    if (await stat(app).then((metadata) => metadata.isDirectory(), () => false)) return app;
+  }
+  return null;
+}
+
+function run(command, args) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, { stdio: 'ignore' });
+    child.once('error', reject);
+    child.once('exit', (code) => (code === 0 ? resolve() : reject(new Error(`${command} exited with ${code}.`))));
+  });
+}
+
+/** Downloads this version's DMG, checks it against the manifest, and copies the app into the first folder that takes it. */
+export async function installMacApp({ manifest, version = VERSION, folders = APP_FOLDERS, fetchImpl = fetch }) {
+  const file = `tokentracky-${version}-macos-arm64.dmg`;
+  const url = `https://github.com/${REPOSITORY}/releases/download/v${version}/${file}`;
+  const entry = manifest?.releases?.[version]?.macos?.arm64?.app;
+  if (manifest?.latest !== version || manifest.releases?.[version]?.verified !== true || entry?.file !== file || entry.url !== url || !/^[a-f0-9]{64}$/.test(entry.sha256 ?? '')) {
+    throw new Error(`No verified Tokentracky ${version} Mac app is published.`);
+  }
+  const temporary = await mkdtemp(join(tmpdir(), 'tokentracky-app-'));
+  try {
+    const image = join(temporary, file);
+    const actual = createHash('sha256').update(await download(url, image, fetchImpl)).digest('hex');
+    if (actual !== entry.sha256) throw new Error(`Tokentracky app integrity check failed (expected ${entry.sha256}, received ${actual}).`);
+    const volume = join(temporary, 'volume');
+    await run('hdiutil', ['attach', image, '-nobrowse', '-readonly', '-noautoopen', '-mountpoint', volume]);
+    try {
+      for (const folder of folders) {
+        await mkdir(folder, { recursive: true }).catch(() => {});
+        if (await run('ditto', [join(volume, APP), join(folder, APP)]).then(() => true, () => false)) return join(folder, APP);
+      }
+      throw new Error('Tokentracky.app could not be copied into Applications.');
+    } finally { await run('hdiutil', ['detach', volume, '-quiet']).catch(() => {}); }
+  } finally { await rm(temporary, { recursive: true, force: true }); }
+}
+
+/** On a Mac without the app, `login` offers it first: after approval the CLI opens it, and it keeps uploading from the
+ * menu bar. Without it the CLI keeps uploading itself while its terminal stays open. */
+async function offerMacApp(args) {
+  if (!offersApp(args) || (await installedApp())) return;
+  const { createInterface } = await import('node:readline/promises');
+  const terminal = createInterface({ input: process.stdin, output: process.stdout });
+  // Ctrl-C stops here, as it stops the CLI; Ctrl-D answers no.
+  terminal.once('SIGINT', () => { terminal.close(); process.stdout.write('\n'); process.exit(130); });
+  const answer = await terminal.question('Tokentracky for Mac keeps uploading from the menu bar after you close this terminal. Install it in Applications? [y/N] ').catch(() => '');
+  terminal.close();
+  if (!/^y(es)?$/i.test(answer.trim())) return;
+  try {
+    process.stdout.write('Downloading Tokentracky for Mac…\n');
+    const app = await installMacApp({ manifest: JSON.parse(await readFile(MANIFEST_PATH, 'utf8')) });
+    process.stdout.write(`Installed ${app}. It opens once you approve this computer.\n`);
+  } catch (error) {
+    process.stderr.write(`${error instanceof Error ? error.message : String(error)} Continuing without the app.\n`);
+  }
+}
+
 async function getBinary() {
   const manifest = JSON.parse(await readFile(MANIFEST_PATH, 'utf8'));
   return installVerifiedBinary({ manifest, cacheRoot: process.env.TOKENTRACKY_CACHE_DIR });
@@ -160,6 +231,7 @@ async function getBinary() {
 export async function main(args = process.argv.slice(2)) {
   try {
     const binary = await getBinary();
+    await offerMacApp(args);
     const child = spawn(binary, args, { stdio: 'inherit' });
     // Windows has no signals to pass on: the console sends Ctrl+C and Ctrl+Break to the CLI itself, and Node could
     // only end it outright. The launcher waits for it to stop.
