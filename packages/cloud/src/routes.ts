@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
-import { ALIAS_PATTERN, TOOL_IDS, type Period, type ToolId } from '@tokentracky/core';
+import { ALIAS_PATTERN, TOOL_IDS, type LeaderboardPeriod, type Period, type ToolId } from '@tokentracky/core';
 import { bearer, createAccountVerifier, type AccountIdentity, type AccountVerifier, type ManagedAuthConfig } from './auth.ts';
 import { CloudError, invalid } from './errors.ts';
 import { PostgresCloudRepository, type Liker } from './repository.ts';
@@ -19,6 +19,10 @@ function period(value: unknown): Period {
   if (value === undefined) return 'week';
   if (value !== 'week' && value !== 'month' && value !== 'all') invalid('Invalid ranking period');
   return value;
+}
+/** The leaderboard and profiles also rank the last 24 hours; badges and cards do not. */
+function leaderboardPeriod(value: unknown): LeaderboardPeriod {
+  return value === '24h' ? value : period(value);
 }
 declare module 'fastify' {
   interface FastifyContextConfig {cacheSeconds?: number}
@@ -79,12 +83,12 @@ export async function registerCloudRoutes(app: FastifyInstance, options: CloudRo
       if (![...TOOL_IDS, 'all'].includes(tool as 'all')) invalid('Invalid tool filter');
       if (q.sort !== undefined && q.sort !== 'tokens' && q.sort !== 'cost') invalid('Invalid sort');
       if (q.q !== undefined && (typeof q.q !== 'string' || q.q.length > 100)) invalid('Invalid alias search');
-      return repository.leaderboard({period: period(q.period), tool: tool as ToolId | 'all', q: (q.q as string | undefined) ?? '', page: positive(q.page, 1, 1000000), pageSize: positive(q.pageSize, 20, 100), sort: q.sort as 'tokens' | 'cost' | undefined});
+      return repository.leaderboard({period: leaderboardPeriod(q.period), tool: tool as ToolId | 'all', q: (q.q as string | undefined) ?? '', page: positive(q.page, 1, 1000000), pageSize: positive(q.pageSize, 20, 100), sort: q.sort as 'tokens' | 'cost' | undefined});
     });
     cloud.get<{Params: {alias: string}}>('/api/leaderboard/around/:alias', async request => {
       const q = object(request.query, ['period']);
       if (!ALIAS_PATTERN.test(request.params.alias)) throw notFound();
-      return repository.around(request.params.alias, period(q.period));
+      return repository.around(request.params.alias, leaderboardPeriod(q.period));
     });
     // One shared snapshot per minute for the landing page, however many visitors load it.
     const community = minuteSnapshot(() => repository.community());
@@ -156,7 +160,7 @@ export async function registerCloudRoutes(app: FastifyInstance, options: CloudRo
     cloud.get<{Params: {alias: string}}>('/api/profiles/:alias', async request => {
       const q = object(request.query, ['period']);
       if (!ALIAS_PATTERN.test(request.params.alias)) throw notFound();
-      return repository.profile(request.params.alias, period(q.period));
+      return repository.profile(request.params.alias, leaderboardPeriod(q.period));
     });
     cloud.get('/api/account', async request => repository.account(await account(request)));
     cloud.delete('/api/account', async (request, reply) => {

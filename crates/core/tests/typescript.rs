@@ -37,6 +37,7 @@ fn generates_typescript_types() {
     out += &render(BadgeId::docs(), BadgeId::decl(&cfg));
     for (docs, decl) in [
         (Period::docs(), Period::decl(&cfg)),
+        (LeaderboardPeriod::docs(), LeaderboardPeriod::decl(&cfg)),
         (TokenCounts::docs(), TokenCounts::decl(&cfg)),
         (CostParts::docs(), CostParts::decl(&cfg)),
         (UsageEvent::docs(), UsageEvent::decl(&cfg)),

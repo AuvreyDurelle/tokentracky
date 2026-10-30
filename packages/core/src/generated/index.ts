@@ -8,6 +8,8 @@ export const BADGE_IDS = ["token-titan", "big-day", "marathoner", "streak", "wee
 /** Achievements (F7), computed on the hosted side from published data only. */
 export type BadgeId = "token-titan" | "big-day" | "marathoner" | "streak" | "weekend-warrior" | "momentum" | "veteran" | "podium" | "multitool" | "polyglot" | "trendsetter";
 export type Period = "week" | "month" | "all";
+/** The leaderboard's windows: the profile periods, and the last 24 whole UTC hours for members whose computers send hours. */
+export type LeaderboardPeriod = "24h" | "week" | "month" | "all";
 export type TokenCounts = {
   /** Input excludes the separately counted cache buckets. */
   input: number;
@@ -118,16 +120,18 @@ export type PublicProfile = {
   rank: number;
   tokens: number;
   toolTokens?: Partial<Record<ToolId, number>>;
-  /** All-time tokens across every tool. Only on week and month rows; on all-time rows it would repeat the total. */
+  /** All-time tokens across every tool. Only on 24h, week and month rows; on all-time rows it would repeat the total. */
   lifetimeTokens?: number;
   /** Estimated cost across all tools in the window, even when ranked by one tool. */
   costMicrousd?: number | null;
-  /** Rank in the same window at the end of yesterday (UTC); null when the builder had no tokens before today. */
+  /** Rank in the same window at the end of yesterday (UTC); null when the builder had no tokens before today, and always on 24h rows. */
   previousRank: number | null;
   /** Tokens per UTC day for the 14 days ending today, oldest first. */
   daily: Array<number>;
   /** Tokens in the last 24 whole UTC hours across every tool, like `lifetime_tokens`; absent until one of the member's computers uploads hourly totals. */
   last24hTokens?: number;
+  /** Tokens per UTC hour for the 24 hours of the window, oldest first, in the ranked tool. Only on 24h rows. */
+  hourly?: Array<number>;
   /** The member's three highest-tier badges, ties in display order; absent without any. */
   topBadges?: Array<BadgeId>;
 };
@@ -138,7 +142,7 @@ export type LeaderboardResponse = {
   builders: number;
   page: number;
   pageSize: number;
-  period: Period;
+  period: LeaderboardPeriod;
   windowStart: string | null;
   updatedAt: string;
   totalTokens: number;

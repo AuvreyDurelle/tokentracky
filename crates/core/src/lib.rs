@@ -159,6 +159,17 @@ pub enum Period {
     All,
 }
 
+/// The leaderboard's windows: the profile periods, and the last 24 whole UTC hours for members whose computers send hours.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
+#[serde(rename_all = "lowercase")]
+pub enum LeaderboardPeriod {
+    #[serde(rename = "24h")]
+    Last24h,
+    Week,
+    Month,
+    All,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 pub struct TokenCounts {
@@ -407,7 +418,7 @@ pub struct PublicProfile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional, type = "Partial<Record<ToolId, number>>")]
     pub tool_tokens: Option<BTreeMap<ToolId, u64>>,
-    /// All-time tokens across every tool. Only on week and month rows; on all-time rows it would repeat the total.
+    /// All-time tokens across every tool. Only on 24h, week and month rows; on all-time rows it would repeat the total.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional, type = "number")]
     pub lifetime_tokens: Option<u64>,
@@ -415,7 +426,8 @@ pub struct PublicProfile {
     #[serde(default, deserialize_with = "present", skip_serializing_if = "Option::is_none")]
     #[ts(optional, type = "number | null")]
     pub cost_microusd: Option<Option<u64>>,
-    /// Rank in the same window at the end of yesterday (UTC); null when the builder had no tokens before today.
+    /// Rank in the same window at the end of yesterday (UTC); null when the builder had no tokens before today, and
+    /// always on 24h rows.
     pub previous_rank: Option<u32>,
     /// Tokens per UTC day for the 14 days ending today, oldest first.
     #[ts(type = "Array<number>")]
@@ -425,6 +437,10 @@ pub struct PublicProfile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional, type = "number")]
     pub last24h_tokens: Option<u64>,
+    /// Tokens per UTC hour for the 24 hours of the window, oldest first, in the ranked tool. Only on 24h rows.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional, type = "Array<number>")]
+    pub hourly: Option<Vec<u64>>,
     /// The member's three highest-tier badges, ties in display order; absent without any.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
@@ -441,7 +457,7 @@ pub struct LeaderboardResponse {
     pub builders: u32,
     pub page: u32,
     pub page_size: u32,
-    pub period: Period,
+    pub period: LeaderboardPeriod,
     pub window_start: Option<String>,
     pub updated_at: String,
     #[ts(type = "number")]

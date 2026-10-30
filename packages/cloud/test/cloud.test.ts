@@ -828,6 +828,38 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
     await upload(desktop, [bucket(30, {tool: 'claude', revision: 3})], [hour('23T10', Number.MAX_SAFE_INTEGER), hour('23T10', Number.MAX_SAFE_INTEGER, 'codex')]);
     expect(await last24h()).toEqual([['alice', undefined]]);
     expect(await sentHours()).toBeUndefined();
+    // The same member is left off the 24-hour board rather than failing it.
+    expect((await request('GET', '/api/leaderboard?period=24h')).json().items).toEqual([]);
+  });
+
+  it('ranks the last 24 whole UTC hours, hour by hour, among members whose computers send hours', async () => {
+    const a = await joined('alice');
+    const b = await joined('bob');
+    const c = await joined('carol');
+    // The hour under way does not count; the hour before the window is never stored.
+    await upload(a, [bucket(500, {tool: 'claude'})], [hour('22T11', 1000), hour('22T12', 2), hour('23T11', 4, 'codex'), hour('23T12', 1000)]);
+    await upload(b, [bucket(10, {tool: 'codex'})], [hour('23T10', 9, 'codex')]);
+    // An app from before hours ranks on the week board, never on this one.
+    await upload(c, [bucket(900)]);
+    const day = (await request('GET', '/api/leaderboard?period=24h')).json();
+    expect(day).toMatchObject({period: '24h', windowStart: '2026-10-22T12:00:00.000Z', builders: 2, total: 2, totalTokens: 15, totalCostMicrousd: null});
+    // Hours carry no cost and no earlier standing; the lifetime still covers every day.
+    expect(day.items.map((p: {alias: string; rank: number; tokens: number; toolTokens: object; previousRank: number | null; costMicrousd: number | null; lifetimeTokens: number}) =>
+      [p.alias, p.rank, p.tokens, p.toolTokens, p.previousRank, p.costMicrousd, p.lifetimeTokens]))
+      .toEqual([['bob', 1, 9, {codex: 9}, null, null, 10], ['alice', 2, 6, {claude: 2, codex: 4}, null, null, 500]]);
+    expect(day.items[1].hourly).toEqual([2, ...Array(22).fill(0), 4]);
+    // Ranked by one tool, the hours are that tool's, as the days are.
+    expect((await request('GET', '/api/leaderboard?period=24h&tool=claude')).json().items.map((p: {alias: string; tokens: number; hourly: number[]}) => [p.alias, p.tokens, p.hourly.filter(Boolean)]))
+      .toEqual([['alice', 2, [2]], ['bob', 0, []]]);
+    expect((await request('GET', '/api/leaderboard?period=week')).json().items.map((p: {alias: string; hourly?: number[]}) => [p.alias, p.hourly]))
+      .toEqual([['carol', undefined], ['alice', undefined], ['bob', undefined]]);
+    // A member's standing and the builders either side follow the same board.
+    expect((await request('GET', '/api/profiles/alice?period=24h')).json()).toMatchObject({rank: 2, tokens: 6});
+    expect((await request('GET', '/api/leaderboard/around/alice?period=24h')).json().items.map((p: {alias: string}) => p.alias)).toEqual(['bob', 'alice']);
+    expect((await request('GET', '/api/profiles/carol?period=24h')).statusCode).toBe(404);
+    // README badges and cards keep their periods.
+    expect((await request('GET', '/badge/alice.svg?period=24h')).statusCode).toBe(400);
+    expect((await request('GET', '/card/alice.svg?period=24h')).statusCode).toBe(400);
   });
 
   async function lockAlice(): Promise<PoolClient> {

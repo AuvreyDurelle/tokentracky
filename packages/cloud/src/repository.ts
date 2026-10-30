@@ -1,6 +1,6 @@
 import { createHash, randomBytes, randomInt, randomUUID } from 'node:crypto';
 import type { Pool, PoolClient } from 'pg';
-import { activityStats, BADGE_IDS, BADGE_TIERS, checkedSum, rankingWindow, type AchievementRarity, type BadgeId, type CommunityStats, type LeaderboardResponse, type Period, type ProfileStats, type Publication, type PublicBucket, type PublicProfile, type TokenCounts, type ToolId } from '@tokentracky/core';
+import { activityStats, BADGE_IDS, BADGE_TIERS, checkedSum, rankingWindow, type AchievementRarity, type BadgeId, type CommunityStats, type LeaderboardPeriod, type LeaderboardResponse, type ProfileStats, type Publication, type PublicBucket, type PublicProfile, type TokenCounts, type ToolId } from '@tokentracky/core';
 import type { AccountIdentity } from './auth.ts';
 import { CloudError, invalid, safe } from './errors.ts';
 import { checkedCost } from './cost-ceiling.ts';
@@ -19,7 +19,7 @@ export interface AccountResponse {publication: Publication | null; devices: Arra
  * `sort: 'cost'` reorders by estimated cost (unknown last); ranks always follow tokens. `around` replaces the page with
  * that alias and the builders ranked just above and below it.
  */
-export interface LeaderboardQuery {period: Period; tool: ToolId | 'all'; q: string; page: number; pageSize: number; sort?: 'tokens' | 'cost'; around?: string}
+export interface LeaderboardQuery {period: LeaderboardPeriod; tool: ToolId | 'all'; q: string; page: number; pageSize: number; sort?: 'tokens' | 'cost'; around?: string}
 export interface DeviceAuthorizationStart {pollToken: string; userCode: string; expiresAt: string; interval: number}
 export interface DeviceAuthorizationRequest {userCode: string; deviceName: string; expiresAt: string; approved: boolean; replaces: string | null}
 /** An open flag for review, with its figures when flagged and recomputed now against members who are visible today. */
@@ -511,10 +511,24 @@ export class PostgresCloudRepository {
   }
 
   /** One shared cohort calculation for exact ranks, independent of community-only statistics. */
-  private async cohort(client: PoolClient, period: Period, tool: ToolId | 'all', now: Date): Promise<PublicProfile[]> {
-    const windowStart = rankingWindow(period, now);
+  private async cohort(client: PoolClient, period: LeaderboardPeriod, tool: ToolId | 'all', now: Date): Promise<PublicProfile[]> {
+    type Row = {alias: string; share_tools: boolean; share_cost: boolean; tool: ToolId | 'all' | null; tokens: string | null; before: string | null; cost: string | null};
+    const windowStart = period === '24h' ? null : rankingWindow(period, now);
     const today = now.toISOString().slice(0, 10);
-    const result = await client.query<{alias: string; share_tools: boolean; share_cost: boolean; tool: ToolId | 'all' | null; tokens: string | null; before: string | null; cost: string | null}>(`
+    const {since, until} = lastDay(now);
+    // The last 24 hours rank members with a computer that sends hours, leaving out one whose hours add up beyond the
+    // safe range; hours carry no cost and no earlier standing.
+    const result = period === '24h' ? await client.query<Row>(`
+      WITH hours AS (
+        SELECT h.account_id, h.tool, h.tokens
+        FROM ${this.schema}.cloud_account_hours h JOIN ${this.schema}.cloud_publications p ON p.account_id = h.account_id
+        WHERE h.hour >= $1 AND h.hour < $2 AND (p.history_start IS NULL OR h.hour >= p.history_start))
+      SELECT p.alias, p.share_tools, p.share_cost, h.tool, sum(h.tokens) AS tokens, NULL AS before, NULL AS cost
+      FROM ${this.schema}.cloud_publications p LEFT JOIN hours h ON h.account_id = p.account_id
+      WHERE ($3 = 'all' OR p.share_tools) AND ${this.visible}
+        AND EXISTS (SELECT 1 FROM ${this.schema}.cloud_devices d WHERE d.account_id = p.account_id AND d.hours_at IS NOT NULL)
+        AND (SELECT coalesce(sum(t.tokens), 0) FROM hours t WHERE t.account_id = p.account_id) <= ${Number.MAX_SAFE_INTEGER}
+      GROUP BY p.account_id, p.alias, p.share_tools, p.share_cost, h.tool`, [since, until, tool]) : await client.query<Row>(`
       SELECT p.alias, p.share_tools, p.share_cost, b.tool, sum(b.tokens) AS tokens,
         sum(b.tokens) FILTER (WHERE b.day_key < $3 OR b.day_key = 'unknown') AS before,
         CASE WHEN count(*) FILTER (WHERE b.cost_microusd IS NULL) > 0 THEN NULL ELSE sum(b.cost_microusd) END AS cost
@@ -571,7 +585,7 @@ export class PostgresCloudRepository {
   }
 
   /** Only selected account data: no shared trend, tool sum or spend calculation. */
-  private async hydrateProfiles(client: PoolClient, items: PublicProfile[], period: Period, tool: ToolId | 'all', now: Date): Promise<void> {
+  private async hydrateProfiles(client: PoolClient, items: PublicProfile[], period: LeaderboardPeriod, tool: ToolId | 'all', now: Date): Promise<void> {
     if (!items.length) return;
     const days = recentDays(now, DAILY_DAYS);
     const daily = await client.query<{alias: string; day: string; tokens: string}>(`
@@ -604,6 +618,17 @@ export class PostgresCloudRepository {
       const tokens = lastHours.get(item.alias);
       if (tokens !== undefined && tokens <= BigInt(Number.MAX_SAFE_INTEGER)) item.last24hTokens = Number(tokens);
     }
+    // A 24-hour row's hours one by one, in the ranked tool like `daily`; the cohort keeps their total in the safe range.
+    if (period === '24h') {
+      const sent = await client.query<{alias: string; hour: Date; tokens: string}>(`
+        SELECT p.alias, h.hour, sum(h.tokens) AS tokens
+        FROM ${this.schema}.cloud_publications p JOIN ${this.schema}.cloud_account_hours h ON h.account_id = p.account_id
+        WHERE p.alias = ANY($1) AND h.hour >= $2 AND h.hour < $3 AND (p.history_start IS NULL OR h.hour >= p.history_start)
+          AND ($4 = 'all' OR h.tool = $4)
+        GROUP BY p.alias, h.hour`, [items.map(p => p.alias), since, until, tool]);
+      const byHour = new Map(sent.rows.map(row => [`${row.alias} ${row.hour.toISOString()}`, safe(row.tokens)]));
+      for (const item of items) item.hourly = Array.from({length: 24}, (_, index) => byHour.get(`${item.alias} ${new Date(since.getTime() + index * HOUR_MS).toISOString()}`) ?? 0);
+    }
     const top = await topBadges(client, this.schema, items.map(p => p.alias));
     for (const item of items) if (top.has(item.alias)) item.topBadges = top.get(item.alias);
   }
@@ -621,7 +646,7 @@ export class PostgresCloudRepository {
     const costs = cohort.flatMap(p => typeof p.costMicrousd === 'number' ? [p.costMicrousd] : []);
     return {
       items, total: searched.length, builders: cohort.length, page: query.page, pageSize: query.pageSize, period: query.period,
-      windowStart: rankingWindow(query.period, now), updatedAt: now.toISOString(),
+      windowStart: query.period === '24h' ? lastDay(now).since.toISOString() : rankingWindow(query.period, now), updatedAt: now.toISOString(),
       ...publicAggregates({totalTokens: sumWide(cohort.map(p => p.tokens)), totalCostMicrousd: costs.length ? sumWide(costs) : null,
         toolTotals: tools, trend: await this.publicTrend(client, query.tool, now)}),
     };
@@ -795,7 +820,7 @@ export class PostgresCloudRepository {
   }
 
   /** An alias and the builders ranked just above and below it in a window: two rows at either end of the board. */
-  async around(alias: string, period: Period): Promise<{items: PublicProfile[]}> {
+  async around(alias: string, period: LeaderboardPeriod): Promise<{items: PublicProfile[]}> {
     return this.snapshot(async client => {
       const now = this.now();
       const cohort = await this.cohort(client, period, 'all', now);
@@ -814,11 +839,11 @@ export class PostgresCloudRepository {
       ON CONFLICT (day, tag) DO UPDATE SET count = cloud_share_visits.count + 1`, [this.now().toISOString().slice(0, 10), tag]);
   }
 
-  async profile(alias: string, period: Period): Promise<PublicProfile> {
+  async profile(alias: string, period: LeaderboardPeriod): Promise<PublicProfile> {
     return this.snapshot(async client => (await this.ranked(client, alias, period, this.now())).profile);
   }
 
-  private async ranked(client: PoolClient, alias: string, period: Period, now: Date, hydrate = true): Promise<{profile: PublicProfile; builders: number}> {
+  private async ranked(client: PoolClient, alias: string, period: LeaderboardPeriod, now: Date, hydrate = true): Promise<{profile: PublicProfile; builders: number}> {
     const cohort = await this.cohort(client, period, 'all', now);
     const profile = cohort.find(p => p.alias === alias.toLowerCase());
     if (!profile) return this.unavailableProfile(client, alias);
