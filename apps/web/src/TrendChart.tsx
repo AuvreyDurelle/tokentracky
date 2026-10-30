@@ -68,15 +68,19 @@ export function TrendChart({ points, previous, stacks, label, value = formatExac
   </figure>;
 }
 
-/** Daily activity as tiny columns, oldest first, ending on `end`'s UTC day. Quiet days keep a baseline tick. */
-export function Sparkline({ values, end, size, mine }: { values: number[]; end: string; size?: 'lg'; mine?: boolean }) {
+/** Daily activity as tiny columns, oldest first, ending on `end`'s UTC day. Quiet days keep a baseline tick.
+ *  With `hours`, each column is an hour and `end` is the last one's first instant. */
+export function Sparkline({ values, end, size, mine, hours = false }: { values: number[]; end: string; size?: 'lg'; mine?: boolean; hours?: boolean }) {
   const max = Math.max(0, ...values);
   const endDay = Date.parse(`${end.slice(0, 10)}T00:00:00Z`);
-  const day = (index: number) => shortDay(new Date(endDay - (values.length - 1 - index) * 86_400_000).toISOString().slice(0, 10));
+  const day = (index: number) => hours
+    ? utcHourSpan(new Date(Date.parse(end) - (values.length - 1 - index) * 3_600_000).toISOString())
+    : shortDay(new Date(endDay - (values.length - 1 - index) * 86_400_000).toISOString().slice(0, 10));
+  const unit = hours ? 'hour' : 'day';
   const total = values.reduce((sum, value) => sum + value, 0);
   const active = values.filter(Boolean).length;
-  return <div className={`spark${size ? ` ${size}` : ''}${mine ? ' mine' : ''}`} role="img"
-    aria-label={`Last ${values.length} days: ${formatExact(total)} tokens over ${active} active ${active === 1 ? 'day' : 'days'}`}>
+  return <div className={`spark${size ? ` ${size}` : ''}${hours ? ' hours' : ''}${mine ? ' mine' : ''}`} role="img"
+    aria-label={`Last ${values.length} ${unit}s: ${formatExact(total)} tokens over ${active} active ${active === 1 ? unit : `${unit}s`}`}>
     {values.map((value, index) => <i key={index} className={value ? undefined : 'zero'} title={`${day(index)}: ${formatExact(value)} tokens`}
       style={value ? { height: `${Math.max(8, (value / max) * 100)}%` } : undefined} />)}
   </div>;

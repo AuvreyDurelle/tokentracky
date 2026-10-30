@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { type ExactTokenCounts, type CommunityStats, type LeaderboardResponse, type Period, type PublicProfile, type TokenCounts, type ToolId } from '@tokentracky/core';
+import { type ExactTokenCounts, type CommunityStats, type LeaderboardPeriod, type LeaderboardResponse, type PublicProfile, type TokenCounts, type ToolId } from '@tokentracky/core';
 import { ApiError, type ApiClient } from './api';
 import { KINDS, TOOLS, errorText, formatCompact, formatCost, formatExact, formatShare, shortDay, timeAgo, toolLabel, topPercent } from './format';
 import { toolColumns } from './columns';
@@ -9,8 +9,9 @@ import { Sparkline } from './TrendChart';
 import {countShare, publicKinds, sharedCounts, sumCounts} from './public-counts';
 import { lastSeven, otherTokens } from './mac/leaderboard';
 
-const PERIODS: Array<{ value: Period; label: string }> = [{ value: 'week', label: 'Week' }, { value: 'month', label: 'Month' }, { value: 'all', label: 'All time' }];
-const PHRASE: Record<Period, string> = { week: 'this week', month: 'this month', all: 'all time' };
+const PERIODS: Array<{ value: LeaderboardPeriod; label: string }> = [{ value: '24h', label: '24h' }, { value: 'week', label: 'Week' }, { value: 'month', label: 'Month' }, { value: 'all', label: 'All time' }];
+const PHRASE: Record<LeaderboardPeriod, string> = { '24h': 'in the last 24 hours', week: 'this week', month: 'this month', all: 'all time' };
+const HOUR_MS = 3_600_000;
 /** Builders per load; reaching the end of the list loads the next page. */
 const PAGE_SIZE = 50;
 const STEPS = [
@@ -34,11 +35,11 @@ const allTools = (item: PublicProfile, rankBy: RankBy) => rankBy === 'all' || ra
 const usedTools = (item: PublicProfile) => TOOLS.filter((tool) => (item.toolTokens?.[tool.id] ?? 0) > 0).sort((a, b) => item.toolTokens![b.id]! - item.toolTokens![a.id]!);
 
 /** The period is part of the address, so a shared link opens the same board. Week is the default and stays out of the URL. */
-function periodFromUrl(): Period {
+function periodFromUrl(): LeaderboardPeriod {
   const value = new URLSearchParams(window.location.search ?? '').get('period');
-  return value === 'month' || value === 'all' ? value : 'week';
+  return value === '24h' || value === 'month' || value === 'all' ? value : 'week';
 }
-function periodToUrl(period: Period) {
+function periodToUrl(period: LeaderboardPeriod) {
   const url = new URL(window.location.href);
   if (period === 'week') url.searchParams.delete('period'); else url.searchParams.set('period', period);
   window.history?.replaceState(null, '', url.pathname + url.search + url.hash);
@@ -71,14 +72,15 @@ export function mergeRows(first: PublicProfile[], more: PublicProfile[][]): Publ
   return rows;
 }
 
-/** When the current window resets: Monday 00:00 UTC for the week, the 1st for the month. */
-function resetText(period: Period, windowStart: string | null, now = Date.now()): { window: string; left: string } | null {
+/** When the current window moves on: the next whole hour for the last 24 hours, Monday 00:00 UTC for the week, the 1st for the month. */
+export function resetText(period: LeaderboardPeriod, windowStart: string | null, now = Date.now()): { window: string; verb: string; left: string } | null {
   if (period === 'all' || !windowStart) return null;
   const start = new Date(windowStart);
-  const end = period === 'week' ? start.getTime() + 7 * 86_400_000 : Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, 1);
+  const end = period === '24h' ? start.getTime() + 25 * HOUR_MS : period === 'week' ? start.getTime() + 7 * 86_400_000 : Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, 1);
   const minutes = Math.max(0, Math.round((end - now) / 60_000));
-  const left = minutes >= 1440 ? `${Math.floor(minutes / 1440)}d ${Math.floor((minutes % 1440) / 60)}h` : `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
-  return { window: `${period === 'week' ? 'Week' : 'Month'} of ${shortDay(windowStart.slice(0, 10))}`, left };
+  const left = minutes >= 1440 ? `${Math.floor(minutes / 1440)}d ${Math.floor((minutes % 1440) / 60)}h` : minutes >= 60 ? `${Math.floor(minutes / 60)}h ${minutes % 60}m` : `${minutes}m`;
+  if (period === '24h') return { window: 'Last 24 hours', verb: 'updates', left };
+  return { window: `${period === 'week' ? 'Week' : 'Month'} of ${shortDay(windowStart.slice(0, 10))}`, verb: 'resets', left };
 }
 
 /** Community tokens by type, all time, from every upload that reports types; reasoning is part of output. */
@@ -92,10 +94,11 @@ export function CommunityTypes({ breakdown, exact }: { breakdown: TokenCounts; e
 }
 
 export function Leaderboard({ api, me, join, onProfile, onGuide }: { api: ApiClient; me: string | null; join: Join | null; onProfile: (alias: string) => void; onGuide: () => void }) {
-  const [period, setPeriodState] = useState<Period>(periodFromUrl);
-  const setPeriod = (next: Period) => { setPeriodState(next); periodToUrl(next); };
-  const [community, setCommunity] = useState<CommunityStats | null>(null);
+  const [period, setPeriodState] = useState<LeaderboardPeriod>(periodFromUrl);
   const [rankBy, setRankBy] = useState<RankBy>('all');
+  // The last 24 hours have no cost to order by.
+  const setPeriod = (next: LeaderboardPeriod) => { setPeriodState(next); periodToUrl(next); if (next === '24h' && rankBy === 'cost') setRankBy('all'); };
+  const [community, setCommunity] = useState<CommunityStats | null>(null);
   const [search, setSearch] = useState('');
   // `overview` is the all-tools first page: community totals, the trend and the default rankings.
   const [overview, setOverview] = useState<LeaderboardResponse | null>(null);
@@ -186,7 +189,8 @@ export function Leaderboard({ api, me, join, onProfile, onGuide }: { api: ApiCli
   const rankable = TOOLS.filter((tool) => (overviewCounts?.toolTotals[tool.id] ?? 0n) > 0 || tools.includes(tool.id));
   // Shared tools without a column of their own add up in Other.
   const others = rankable.filter((tool) => !tools.includes(tool.id));
-  const columns: ColumnId[] = ['tokens', ...(period === 'all' ? [] : ['lifetime' as const]), 'cost', 'last24h', ...tools.map((id) => `tool:${id}` as const), ...(others.length ? ['other' as const] : []), 'last7'];
+  // The last 24 hours carry no cost, and their total is the tokens column.
+  const columns: ColumnId[] = ['tokens', ...(period === 'all' ? [] : ['lifetime' as const]), ...(period === '24h' ? [] : ['cost' as const, 'last24h' as const]), ...tools.map((id) => `tool:${id}` as const), ...(others.length ? ['other' as const] : []), 'last7'];
   const end = shown?.updatedAt ?? new Date().toISOString();
   const th = (id: ColumnId) => {
     if (id === 'lifetime') return <th key={id} scope="col" className="c-num c-life" title="All-time tokens across every tool">Lifetime</th>;
@@ -215,7 +219,7 @@ export function Leaderboard({ api, me, join, onProfile, onGuide }: { api: ApiCli
     const top = mine ? topPercent(item.rank, (extra === 'pinned' ? overview : shown)?.builders ?? 0) : null;
     const used = usedTools(item);
     return <tr key={`${extra ?? ''}${item.alias}`} className={[mine ? 'mine' : '', extra ?? ''].join(' ').trim() || undefined} onClick={() => onProfile(item.alias)}>
-      <td className="c-rank num"><span className="rk">{item.rank <= 3 ? <span className={`medal g${item.rank}`}>{item.rank}</span> : item.rank}<Move item={item} /></span></td>
+      <td className="c-rank num"><span className="rk">{item.rank <= 3 ? <span className={`medal g${item.rank}`}>{item.rank}</span> : item.rank}{period !== '24h' && <Move item={item} />}</span></td>
       <td className="c-who"><div className="who"><Avatar alias={item.alias} />
         <div className="who-text"><span className="who-line"><button type="button" onClick={(event) => { event.stopPropagation(); onProfile(item.alias); }}>{item.alias}</button>{mine && <span className="badge">You</span>}
             {used.length > 0 && <span className="tstack" title={used.map((tool) => tool.label).join(', ')}>{used.slice(0, 5).map((tool) => <ToolIcon key={tool.id} id={tool.id} />)}</span>}</span>
@@ -254,7 +258,7 @@ export function Leaderboard({ api, me, join, onProfile, onGuide }: { api: ApiCli
         <button type="button" className="chip" aria-pressed={rankBy === 'all' || rankBy === 'cost'} onClick={() => setRankBy('all')}>All tools</button>
         {rankable.map((tool) => <button key={tool.id} type="button" className="chip" aria-pressed={rankBy === tool.id} onClick={() => setRankBy(tool.id)}><ToolIcon id={tool.id} />{tool.label}</button>)}
       </div>
-      {reset && <p className="reset"><ClockIcon />{reset.window} · resets in <b>{reset.left}</b></p>}
+      {reset && <p className="reset"><ClockIcon />{reset.window} · {reset.verb} in <b>{reset.left}</b></p>}
     </div>
 
     {podium.length > 0 && <ol className="podium" aria-label={`Top ${podium.length}`}>
@@ -275,7 +279,7 @@ export function Leaderboard({ api, me, join, onProfile, onGuide }: { api: ApiCli
         : <Empty title="No one’s on the board yet" action={join && <button type="button" className="btn primary" onClick={join.onClick}>{join.label}</button>}>Be the first to put your tokens up.</Empty>)}
       {shown && (rows.length > 0 || pinned || slot !== null) && shown.total > 0 && <div className="table-wrap" style={{ opacity: loading ? 0.6 : 1 }}><table className="table">
         <thead><tr>
-          <th scope="col" className="c-rank" title="▲ ▼ rank change since the end of yesterday, UTC">Rank</th>
+          <th scope="col" className="c-rank" title={period === '24h' ? undefined : '▲ ▼ rank change since the end of yesterday, UTC'}>Rank</th>
           <th scope="col" className="c-who">Builder</th>
           {columns.map(th)}
         </tr></thead>
@@ -286,7 +290,7 @@ export function Leaderboard({ api, me, join, onProfile, onGuide }: { api: ApiCli
         </tbody>
       </table></div>}
       {/* What the headers' tooltips say, for touch screens that can't hover them. */}
-      {shown && shown.total > 0 && <p className="board-key">Tap a number for its exact value · ▲▼ rank change since the end of yesterday · 24h: the last 24 whole hours · 7 days: tokens per day{others.length > 0 && ` · Other: ${others.map((tool) => tool.label).join(', ')}`} · — not shared or unknown · UTC</p>}
+      {shown && shown.total > 0 && <p className="board-key">Tap a number for its exact value{period !== '24h' && ' · ▲▼ rank change since the end of yesterday · 24h: the last 24 whole hours'} · 7 days: tokens per day{others.length > 0 && ` · Other: ${others.map((tool) => tool.label).join(', ')}`} · — not shared or unknown · UTC</p>}
       {shown && shown.total > 0 && <footer className="board-foot" ref={foot}>
         <span className="num">Showing 1–{formatExact(rows.length)} of {formatExact(shown.total)} {shown.total === 1 ? 'builder' : 'builders'}</span>
         {hasMore && <span className="actions">{failed && !loadingMore && <span>Couldn’t load more.</span>}
@@ -318,9 +322,12 @@ function JoinStrip({ join }: { join: Join }) {
   </section>;
 }
 
-/** One of the top three. The gap is to the builder above; first place shows its lead. Week-over-week appears only for the week, where 14 days cover both. */
-export function PodiumCard({ item, above, next, period, rankBy, mine, end, onProfile, now = new Date() }: { item: PublicProfile; above: PublicProfile | null; next: PublicProfile | null; period: Period; rankBy: RankBy; mine: boolean; end: string; onProfile: (alias: string) => void; now?: Date }) {
+/** One of the top three. The gap is to the builder above; first place shows its lead. Week-over-week appears only for the week, where 14 days cover both.
+ * The last 24 hours show hour by hour, ending with the last whole hour before `end`, and the lifetime in place of a cost. */
+export function PodiumCard({ item, above, next, period, rankBy, mine, end, onProfile, now = new Date() }: { item: PublicProfile; above: PublicProfile | null; next: PublicProfile | null; period: LeaderboardPeriod; rankBy: RankBy; mine: boolean; end: string; onProfile: (alias: string) => void; now?: Date }) {
   const change = period === 'week' ? weekOverWeek(item.daily, now) : null;
+  const hourly = period === '24h' ? item.hourly ?? null : null;
+  const lastHour = new Date(Math.floor(Date.parse(end) / HOUR_MS) * HOUR_MS - HOUR_MS).toISOString();
   const used = usedTools(item);
   const gap = above ? `${formatCompact(above.tokens - item.tokens)} behind #${above.rank}` : next ? `Leads by ${formatCompact(item.tokens - next.tokens)}` : 'Leading';
   return <li className={`podium-card p${item.rank}${mine ? ' mine' : ''}`}>
@@ -330,10 +337,11 @@ export function PodiumCard({ item, above, next, period, rankBy, mine, end, onPro
       <span className="podium-figures">
         <span><strong className="podium-total num" title={`${formatExact(item.tokens)} tokens`}>{formatCompact(item.tokens)}</strong>
           <small>{rankBy !== 'all' && rankBy !== 'cost' ? `${toolLabel(rankBy)} tokens` : change === null ? `tokens ${PHRASE[period]}` : <span className={change >= 0 ? 'up' : 'down'}>{change >= 0 ? '↑' : '↓'} {formatShare(Math.abs(change), 1)} <span className="faint">vs same days last week</span></span>}</small></span>
-        <Sparkline values={item.daily} end={end} size="lg" mine={mine} />
+        {hourly ? <Sparkline values={hourly} end={lastHour} size="lg" mine={mine} hours /> : <Sparkline values={item.daily} end={end} size="lg" mine={mine} />}
       </span>
     </button>
-    <footer><span className="num">{gap}</span>{item.costMicrousd != null && <span className="num">{formatCost(item.costMicrousd)} est.</span>}</footer>
+    <footer><span className="num">{gap}</span>{item.costMicrousd != null && <span className="num">{formatCost(item.costMicrousd)} est.</span>}
+      {period === '24h' && item.lifetimeTokens !== undefined && <span className="num" title={`${formatExact(item.lifetimeTokens)} tokens all time`}>{formatCompact(item.lifetimeTokens)} lifetime</span>}</footer>
   </li>;
 }
 

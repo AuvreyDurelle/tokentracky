@@ -3,10 +3,10 @@ import type {
   CommunityStats,
   HourBreakdownRow,
   LeaderboardNeighbours,
+  LeaderboardPeriod,
   LeaderboardResponse,
   LocalSettings,
   MenuOverview,
-  Period,
   ProfileStats,
   ProjectSummary,
   PublicProfile,
@@ -139,13 +139,13 @@ export class ApiClient {
   }
 
   health() { return this.request<Health>('/api/health'); }
-  leaderboard(period: Period, tool: 'all' | ToolId, q: string, page: number, pageSize = 20, sort: LeaderboardSort = 'tokens') {
+  leaderboard(period: LeaderboardPeriod, tool: 'all' | ToolId, q: string, page: number, pageSize = 20, sort: LeaderboardSort = 'tokens') {
     return this.request<LeaderboardResponse>(`/api/leaderboard?${query({ period, tool, q, page, pageSize, sort: sort === 'tokens' ? undefined : sort })}`);
   }
-  profile(alias: string, period: Period) { return this.request<PublicProfile>(`/api/profiles/${encodeURIComponent(alias)}?${query({ period })}`); }
+  profile(alias: string, period: LeaderboardPeriod) { return this.request<PublicProfile>(`/api/profiles/${encodeURIComponent(alias)}?${query({ period })}`); }
   profileStats(alias: string) { return this.request<ProfileStats>(`/api/profiles/${encodeURIComponent(alias)}/stats`); }
   community() { return this.request<CommunityStats>('/api/community'); }
-  leaderboardAround(alias: string, period: Period) { return this.request<LeaderboardNeighbours>(`/api/leaderboard/around/${encodeURIComponent(alias)}?${query({ period })}`); }
+  leaderboardAround(alias: string, period: LeaderboardPeriod) { return this.request<LeaderboardNeighbours>(`/api/leaderboard/around/${encodeURIComponent(alias)}?${query({ period })}`); }
   achievementRarity() { return this.request<AchievementRarity>('/api/achievements/rarity'); }
   /** Likes on the website go through the signed-in account. */
   profileLikeStatus(alias: string) { return this.request<{ liked: boolean }>(`/api/profiles/${encodeURIComponent(alias)}/like`, {}, true); }
