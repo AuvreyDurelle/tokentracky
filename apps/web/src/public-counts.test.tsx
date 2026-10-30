@@ -3,7 +3,6 @@ import {renderToStaticMarkup} from 'react-dom/server';
 import type {CommunityStats} from '@tokentracky/core';
 import {averageCount, countRatio, countShare, cumulativeMonths, publicKinds, sharedCounts, sumCounts} from './public-counts';
 import {formatCompact, formatCost, formatCostCompact, formatExact} from './format';
-import {CommunityTypes} from './Leaderboard';
 import {CommunityHero} from './mac/LeaderboardView';
 import {IntegrityNotice} from './Account';
 import {toolColumns} from './columns';
@@ -57,11 +56,7 @@ describe('exact public counter rendering', () => {
     expect(html).toContain('↑ 0% vs last week');
     expect(html).not.toMatch(/NaN|Infinity|undefined/);
   });
-  it('renders exact web token kinds with reasoning inside output and an actionable integrity notice', () => {
-    const html = renderToStaticMarkup(<CommunityTypes breakdown={stats.breakdown!} exact={stats.exactAggregates!.breakdown} />);
-    expect(html).toContain(`${formatExact(large)} tokens · 100%`);
-    expect(html).toContain('reasoning');
-    expect(html).not.toMatch(/NaN|Infinity/);
+  it('renders an actionable integrity notice', () => {
     const notice = renderToStaticMarkup(<IntegrityNotice />);
     expect(notice).toContain('save your listing');
     expect(notice).toContain('not a ban');

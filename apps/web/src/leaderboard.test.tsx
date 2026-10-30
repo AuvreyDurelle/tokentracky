@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type { PublicProfile } from '@tokentracky/core';
-import { CommunityTypes, PodiumCard, ghostSlot, mergeRows, resetText, weekOverWeek } from './Leaderboard';
+import { PodiumCard, ghostSlot, mergeRows, resetText, weekOverWeek } from './Leaderboard';
 import { utcHourSpan } from './format';
 
 const builder = (rank: number, daily = Array<number>(14).fill(0)): PublicProfile => ({ alias: `builder-${rank}`, rank, tokens: 1000 - rank, previousRank: rank, daily });
@@ -61,13 +61,5 @@ describe('loading more builders', () => {
   });
   it('skips a builder already listed when rankings moved between loads', () => {
     expect(mergeRows([builder(1), builder(2)], [[builder(2), builder(3)]]).map((item) => item.alias)).toEqual(['builder-1', 'builder-2', 'builder-3']);
-  });
-});
-
-describe('community token types', () => {
-  it('shows every type, with reasoning inside output', () => {
-    const html = renderToStaticMarkup(<CommunityTypes breakdown={{ input: 1_000, output: 400, cacheRead: 8_000, cacheWrite: 600, reasoning: 150 }} />);
-    expect(html.replace(/<[^>]+>/g, '')).toBe('1K input · 400 output (150 reasoning) · 8K cache read · 600 cache write');
-    expect(html).toContain('title="8,000 tokens · 80%"');
   });
 });

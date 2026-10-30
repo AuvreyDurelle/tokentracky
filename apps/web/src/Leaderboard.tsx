@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { type ExactTokenCounts, type CommunityStats, type LeaderboardPeriod, type LeaderboardResponse, type PublicProfile, type TokenCounts, type ToolId } from '@tokentracky/core';
+import { type LeaderboardPeriod, type LeaderboardResponse, type PublicProfile, type ToolId } from '@tokentracky/core';
 import { ApiError, type ApiClient } from './api';
-import { KINDS, TOOLS, errorText, formatCompact, formatCost, formatExact, formatShare, shortDay, timeAgo, toolLabel, topPercent } from './format';
+import { TOOLS, errorText, formatCompact, formatCost, formatExact, formatShare, shortDay, toolLabel, topPercent } from './format';
 import { toolColumns } from './columns';
 import { INSTALL_COMMAND, MAC_DOWNLOAD } from './download-config';
 import { AppleIcon, Avatar, CopyCommand, Empty, Loading, Notice, SearchIcon, Segmented, ToolIcon, Tokens } from './ui';
 import { Sparkline } from './TrendChart';
-import {countShare, publicKinds, sharedCounts, sumCounts} from './public-counts';
+import {sharedCounts} from './public-counts';
 import { lastSeven, otherTokens } from './mac/leaderboard';
 
 const PERIODS: Array<{ value: LeaderboardPeriod; label: string }> = [{ value: '24h', label: '24h' }, { value: 'week', label: 'Week' }, { value: 'month', label: 'Month' }, { value: 'all', label: 'All time' }];
@@ -83,22 +83,11 @@ export function resetText(period: LeaderboardPeriod, windowStart: string | null,
   return { window: `${period === 'week' ? 'Week' : 'Month'} of ${shortDay(windowStart.slice(0, 10))}`, verb: 'resets', left };
 }
 
-/** Community tokens by type, all time, from every upload that reports types; reasoning is part of output. */
-export function CommunityTypes({ breakdown, exact }: { breakdown: TokenCounts; exact?: ExactTokenCounts }) {
-  const counts = publicKinds(breakdown, exact);
-  const total = sumCounts(KINDS.map(kind => counts[kind.key]));
-  return <p className="board-line" aria-label="Community tokens by type">{KINDS.map((kind, index) => <span key={kind.key}>
-    {index > 0 && ' · '}<strong className="num"><Tokens value={counts[kind.key]} title={`${formatExact(counts[kind.key])} tokens · ${countShare(counts[kind.key], total)}`} /></strong> {kind.label.toLowerCase()}
-    {kind.key === 'output' && <> (<strong className="num"><Tokens value={counts.reasoning} /></strong> reasoning)</>}
-  </span>)}</p>;
-}
-
 export function Leaderboard({ api, me, join, onProfile, onGuide }: { api: ApiClient; me: string | null; join: Join | null; onProfile: (alias: string) => void; onGuide: () => void }) {
   const [period, setPeriodState] = useState<LeaderboardPeriod>(periodFromUrl);
   const [rankBy, setRankBy] = useState<RankBy>('all');
   // The last 24 hours have no cost to order by.
   const setPeriod = (next: LeaderboardPeriod) => { setPeriodState(next); periodToUrl(next); if (next === '24h' && rankBy === 'cost') setRankBy('all'); };
-  const [community, setCommunity] = useState<CommunityStats | null>(null);
   const [search, setSearch] = useState('');
   // `overview` is the all-tools first page: community totals, the trend and the default rankings.
   const [overview, setOverview] = useState<LeaderboardResponse | null>(null);
@@ -114,12 +103,6 @@ export function Leaderboard({ api, me, join, onProfile, onGuide }: { api: ApiCli
   const query = search.trim();
   const custom = rankBy !== 'all' || query !== '';
 
-  // The headline counts every member.
-  useEffect(() => {
-    let live = true;
-    api.community().then((value) => { if (live) setCommunity(value); }).catch(() => { if (live) setCommunity(null); });
-    return () => { live = false; };
-  }, [api]);
   useEffect(() => {
     let live = true; setLoading(true);
     api.leaderboard(period, 'all', '', 1, PAGE_SIZE)
@@ -183,7 +166,6 @@ export function Leaderboard({ api, me, join, onProfile, onGuide }: { api: ApiCli
   const gap = standing && (rankBy === 'all' || rankBy === 'cost') ? standing.ahead ? `${formatCompact(standing.ahead.tokens - standing.mine.tokens + 1)} to pass ${standing.ahead.alias}` : 'Leading' : null;
   // The three tools with the most community tokens get a column; the tool being ranked by always has one.
   const overviewCounts = overview ? sharedCounts(overview) : null;
-  const communityCounts = community ? sharedCounts(community) : null;
   const tools = toolColumns(overviewCounts?.toolTotals ?? {}, rankBy);
   // Every shared tool can be ranked by, in the fixed tool order.
   const rankable = TOOLS.filter((tool) => (overviewCounts?.toolTotals[tool.id] ?? 0n) > 0 || tools.includes(tool.id));
@@ -231,7 +213,6 @@ export function Leaderboard({ api, me, join, onProfile, onGuide }: { api: ApiCli
   // later pages are plain lists.
   const podium = query === '' && rankBy !== 'cost' ? rows.slice(0, 3) : [];
   const slot = !custom && join ? ghostSlot(rows, me) : null;
-  const builders = community?.builders ?? overview?.total ?? null;
   const reset = shown ? resetText(period, shown.windowStart) : null;
 
   return <div className="page-stack">
@@ -239,14 +220,6 @@ export function Leaderboard({ api, me, join, onProfile, onGuide }: { api: ApiCli
       <div>
         <p className="eyebrow">The token leaderboard for AI coding</p>
         <h1>Waste tokens, not time.</h1>
-        <p className="board-line">{overview
-          ? <><span className="dot" aria-hidden="true" />
-            {community && <><strong className="num"><Tokens value={communityCounts!.totalTokens} /></strong> tokens · </>}
-            {builders !== null && <><strong className="num">{formatExact(builders)}</strong> {builders === 1 ? 'builder' : 'builders'} · </>}
-            {(period !== 'all' || !community) && <><strong className="num up">{period === 'all' ? '' : '+'}<Tokens value={overviewCounts!.totalTokens} /></strong> {PHRASE[period]} · </>}
-            updated {timeAgo(overview.updatedAt)}</>
-          : unavailable ? 'Leaderboard not connected' : error ? 'Rankings unavailable' : 'Loading…'}</p>
-        {overview && community?.breakdown && <CommunityTypes breakdown={community.breakdown} exact={community.exactAggregates?.breakdown} />}
       </div>
       <Segmented label="Period" value={period} options={PERIODS} onChange={setPeriod} />
     </header>
@@ -254,9 +227,9 @@ export function Leaderboard({ api, me, join, onProfile, onGuide }: { api: ApiCli
     {join && <JoinStrip join={join} />}
 
     <div className="board-filters">
-      <div className="chips" role="group" aria-label="Rank by tool">
-        <button type="button" className="chip" aria-pressed={rankBy === 'all' || rankBy === 'cost'} onClick={() => setRankBy('all')}>All tools</button>
-        {rankable.map((tool) => <button key={tool.id} type="button" className="chip" aria-pressed={rankBy === tool.id} onClick={() => setRankBy(tool.id)}><ToolIcon id={tool.id} />{tool.label}</button>)}
+      <div className="tool-tabs" role="group" aria-label="Rank by tool">
+        <button type="button" className="tool-tab" aria-pressed={rankBy === 'all' || rankBy === 'cost'} onClick={() => setRankBy('all')}>All tools</button>
+        {rankable.map((tool) => <button key={tool.id} type="button" className="tool-tab" aria-pressed={rankBy === tool.id} onClick={() => setRankBy(tool.id)}><ToolIcon id={tool.id} />{tool.label}</button>)}
       </div>
       {reset && <p className="reset"><ClockIcon />{reset.window} · {reset.verb} in <b>{reset.left}</b></p>}
     </div>
@@ -305,20 +278,20 @@ export function Leaderboard({ api, me, join, onProfile, onGuide }: { api: ApiCli
   </div>;
 }
 
-/** For visitors: how to get on the board, with the install command and the Mac app when this deploy offers them. */
+/** For visitors: how to get on the board, as one terminal line, with the Mac app when this deploy offers it. */
 function JoinStrip({ join }: { join: Join }) {
+  const other = MAC_DOWNLOAD
+    ? <a className="join-mac" href={MAC_DOWNLOAD}><AppleIcon />Download for Mac</a>
+    : <button type="button" className="join-mac" onClick={join.onClick}>{join.label}</button>;
   return <section className="join-strip" aria-label="Join the leaderboard">
-    <div className="join-q"><span className="join-ic" aria-hidden="true"><TrophyIcon /></span>
-      <div><strong>Where would you rank?</strong><small>{INSTALL_COMMAND ? 'One command, about a minute.' : 'It takes about a minute.'}</small></div></div>
-    <div>
-      {INSTALL_COMMAND && <CopyCommand text={INSTALL_COMMAND} />}
-      <p className="join-cap"><LockIcon />Prompts, code and project names never leave your computer.</p>
-    </div>
-    <div className="join-actions">
-      {MAC_DOWNLOAD
-        ? <>{INSTALL_COMMAND && <span className="faint">or</span>}<a className="btn" href={MAC_DOWNLOAD}><AppleIcon />Download for Mac</a></>
-        : <button type="button" className="btn primary" onClick={join.onClick}>{join.label}</button>}
-    </div>
+    <p className="join-label">Where would you rank?</p>
+    {INSTALL_COMMAND
+      ? <CopyCommand text={INSTALL_COMMAND} />
+      : !MAC_DOWNLOAD && <button type="button" className="btn primary" onClick={join.onClick}>{join.label}</button>}
+    <p className="join-sub">
+      {(INSTALL_COMMAND || MAC_DOWNLOAD) && <>{INSTALL_COMMAND && <span>or</span>}{other}<span aria-hidden="true">·</span></>}
+      <span>Prompts, code and project names never leave your computer.</span>
+    </p>
   </section>;
 }
 
@@ -377,11 +350,3 @@ function ClockIcon() {
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>;
 }
 
-function LockIcon() {
-  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>;
-}
-
-function TrophyIcon() {
-  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" /><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" /><path d="M4 22h16" /><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" /><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" /><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" /></svg>;
-}

@@ -435,31 +435,35 @@ td.c-total { font-weight: 500; }
 .board-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; padding: 40px 0 4px; }
 .board-head .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-4); }
 .board-head h1 { margin-top: 8px; font-size: 28px; font-weight: 600; letter-spacing: -0.025em; line-height: 1.2; }
-.board-line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 6px; color: var(--text-3); font-size: 13px; }
-.board-line .dot { margin-right: 6px; box-shadow: 0 0 0 3px rgba(76, 183, 130, 0.18); }
-.board-line strong { color: var(--text-2); font-weight: 500; }
-.board-line strong.up, .up { color: var(--green); }
+.up { color: var(--green); }
 .down { color: var(--red); }
 
 .cmd { display: flex; align-items: center; gap: 10px; min-width: 0; height: 40px; padding: 0 4px 0 12px; border: 1px solid var(--border-2); border-radius: var(--radius-md); background: var(--bg); }
 .cmd code { flex: 1; min-width: 0; overflow: hidden; color: var(--text-2); font-family: var(--mono); font-size: 12.5px; text-overflow: ellipsis; white-space: nowrap; }
 .cmd-prompt { color: var(--text-4); user-select: none; }
 
-.join-strip { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 460px) auto; align-items: center; gap: 20px; padding: 14px 14px 14px 18px; border: 1px solid rgba(123, 127, 246, 0.22); border-radius: var(--radius); background: linear-gradient(90deg, rgba(123, 127, 246, 0.1), rgba(123, 127, 246, 0.02) 55%, transparent), var(--surface); }
-.join-q { display: flex; align-items: center; gap: 14px; min-width: 0; }
-.join-ic { display: grid; place-items: center; flex: none; width: 34px; height: 34px; border-radius: 10px; color: #b4b6ff; background: linear-gradient(160deg, rgba(123, 127, 246, 0.24), rgba(123, 127, 246, 0.05)); box-shadow: inset 0 0 0 1px rgba(123, 127, 246, 0.35); }
-.join-ic svg { width: 17px; height: 17px; }
-.join-q strong { display: block; font-size: 14px; font-weight: 600; letter-spacing: -0.01em; }
-.join-q small { display: block; color: var(--text-3); font-size: 13px; }
-.join-cap { display: flex; align-items: center; gap: 6px; margin-top: 6px; padding-left: 2px; color: var(--text-4); font-size: 11.5px; }
-.join-cap svg { flex: none; width: 12px; height: 12px; }
-.join-actions { display: flex; align-items: center; gap: 10px; }
-.join-actions .faint { font-size: 12px; }
+/* The leaderboard's join strip: one terminal line, with a static block cursor after the command. */
+.join-strip { display: grid; justify-items: center; gap: 10px; margin: 4px 0 8px; }
+.join-label { color: var(--text-2); font-size: 13px; font-weight: 500; letter-spacing: -0.005em; }
+.join-strip .cmd { width: min(100%, 440px); height: 44px; gap: 12px; padding: 0 6px 0 16px; background: var(--surface); box-shadow: 0 1px 0 rgba(123, 127, 246, 0.06) inset, 0 12px 32px -20px rgba(123, 127, 246, 0.35); }
+.join-strip .cmd code { display: flex; align-items: center; color: var(--text); font-size: 13px; }
+.join-strip .cmd code::after { content: ""; flex: none; width: 8px; height: 16px; margin-left: 4px; border-radius: 1px; background: rgba(123, 127, 246, 0.75); }
+.join-strip .cmd-prompt { margin-right: 10px; color: var(--accent-text); }
+.join-strip .cmd .btn { height: 30px; padding: 0 12px; border-color: var(--border); background: var(--surface-2); color: var(--text-2); font-size: 12px; }
+.join-sub { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px 8px; color: var(--text-4); font-size: 12px; text-align: center; }
+.join-mac { display: inline-flex; align-items: center; gap: 6px; padding: 0; border: 0; background: none; color: var(--text-2); font-size: inherit; font-weight: 500; text-decoration: underline; text-decoration-color: var(--border-2); text-underline-offset: 3px; }
+.join-mac:hover { color: var(--text); }
+.join-mac svg { flex: none; width: 11px; height: 13px; margin-top: -2px; }
 
-.board-filters { display: flex; align-items: center; gap: 10px 16px; }
-.board-filters .chips { flex-wrap: nowrap; min-width: 0; overflow-x: auto; scrollbar-width: none; }
-.board-filters .chips::-webkit-scrollbar { display: none; }
-.board-filters .chip { flex: none; }
+/* Rank by tool: underline tabs on one hairline, the window's reset on the right. */
+.board-filters { display: flex; align-items: center; gap: 10px 16px; border-bottom: 1px solid var(--border); }
+.tool-tabs { display: flex; gap: 22px; min-width: 0; margin-bottom: -1px; overflow-x: auto; scrollbar-width: none; }
+.tool-tabs::-webkit-scrollbar { display: none; }
+.tool-tab { position: relative; display: inline-flex; flex: none; align-items: center; gap: 7px; height: 42px; padding: 0 1px; border: 0; background: transparent; color: var(--text-3); font-size: 13px; font-weight: 500; white-space: nowrap; }
+.tool-tab:hover { color: var(--text-2); }
+.tool-tab[aria-pressed="true"] { color: var(--text); }
+.tool-tab[aria-pressed="true"]::after { content: ""; position: absolute; right: 0; bottom: 0; left: 0; height: 2px; border-radius: 2px 2px 0 0; background: var(--text); }
+.tool-tab .tool-ic { width: 12px; height: 12px; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip { display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 12px; border: 1px solid var(--border-2); border-radius: 999px; background: transparent; color: var(--text-2); font-size: 12.5px; font-weight: 500; white-space: nowrap; }
 .chip:hover { color: var(--text); background: var(--hover); }
@@ -983,9 +987,7 @@ span.profile-like { cursor: default; }
   .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .stats > div:nth-child(3) { border-left: 0; }
   .stats > div:nth-child(n + 3) { border-top: 1px solid var(--border); }
-  .join-strip { grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 14px; }
-  .join-actions .btn { flex: 1; }
-  .board-filters { flex-direction: column; align-items: stretch; }
+  .board-filters { flex-direction: column-reverse; align-items: stretch; gap: 4px; }
   .reset { margin-left: 0; }
   .how-steps { grid-template-columns: minmax(0, 1fr); gap: 8px; }
   .podium { grid-template-columns: minmax(0, 1fr); }
@@ -997,6 +999,8 @@ span.profile-like { cursor: default; }
 }
 @media (max-width: 640px) {
   .topbar-inner, .site-nav-inner, .page, .footer-inner { padding-left: 16px; padding-right: 16px; }
+  .join-sub > [aria-hidden="true"] { display: none; }
+  .join-sub > span:last-child { flex-basis: 100%; }
   .topbar-inner, .site-nav-inner { gap: 12px; }
   .site-nav-main { padding-top: 6px; padding-bottom: 6px; row-gap: 2px; }
   .board-head { padding-top: 24px; }
