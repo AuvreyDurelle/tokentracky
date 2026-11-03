@@ -164,7 +164,7 @@ mod bundled_snapshot {
 
     /// The version of the snapshot's LiteLLM part alone, without the hand-maintained list: `litellm:` and the first
     /// 12 hex digits of the SHA-256 of the JSON of its `models`, as the test below computes it.
-    const TYPESCRIPT_VERSION: &str = "litellm:ebe634462118";
+    const TYPESCRIPT_VERSION: &str = "litellm:1579ff6b2bd7";
 
     #[test]
     fn is_pinned_licensed_and_large_enough_to_cover_real_tool_model_ids() {

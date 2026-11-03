@@ -55,7 +55,8 @@ fn no_tier_costs_more_than_the_ceiling() {
     for (id, ceiling) in ceilings {
         assert_eq!(table.ceiling(id, ToolId::Claude), Some(ceiling), "{id}");
         for tokens in mixes() {
-            if let Some(cost) = dearest(id, ToolId::Claude, &tokens) {
+            // Free ids (`-free`) cost a known 0 whatever their rates, which no ceiling can be below.
+            if let Some(cost) = dearest(id, ToolId::Claude, &tokens).filter(|&cost| cost > 0) {
                 assert!(cost <= bound(&tokens, ceiling), "{id} {tokens:?}: {cost}");
             }
         }
