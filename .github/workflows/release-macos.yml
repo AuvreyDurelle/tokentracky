@@ -24,23 +24,23 @@ on:
 # marks the release live and latest. Drafts are never "latest", so the website download
 # (releases/latest/download/Tokentracky.dmg) and the updater feed keep the previous release
 # until this one is complete.
-permissions:
-  contents: write
-  actions: read
+permissions: {}
 
 jobs:
   build-macos:
+    timeout-minutes: 120
     runs-on: macos-14
     environment: macos-release
     permissions:
       contents: read
       actions: read
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          persist-credentials: false
           ref: ${{ inputs.ref }}
           fetch-depth: 0
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: '22'
           cache: npm
@@ -48,7 +48,7 @@ jobs:
         with:
           toolchain: '1.99.0'
           components: rustfmt, clippy
-      - uses: Swatinem/rust-cache@bc2d2e71bd35c5549942babaa51a89c586b981d1 # v2.8.1
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - run: npm ci
       - run: node --test scripts/macos-release*.test.mjs scripts/cli-release*.test.mjs packaging/test/*.test.mjs
       - run: npm run test:harness --prefix packaging
@@ -60,7 +60,16 @@ jobs:
         env:
           TOKENTRACKY_TS_OUT: ${{ runner.temp }}/generated-types
       # Pinning the CLI gives deterministic updater artifact/signature behavior for this pipeline.
-      - run: cargo install tauri-cli --version 2.11.5 --locked
+      - name: Install the pinned prebuilt Tauri CLI
+        run: |
+          archive="$RUNNER_TEMP/cargo-tauri.zip"
+          curl --fail --location --silent --show-error --retry 3 \
+            https://github.com/tauri-apps/tauri/releases/download/tauri-cli-v2.11.5/cargo-tauri-aarch64-apple-darwin.zip \
+            --output "$archive"
+          echo "7734f1d942dbe6e5fea91c1575452f4bf2cc942e6902f2d9d78513baa8527b24  $archive" | shasum -a 256 --check
+          unzip -q "$archive" -d "$RUNNER_TEMP/tauri-cli"
+          install -m 755 "$RUNNER_TEMP/tauri-cli/cargo-tauri" "$HOME/.cargo/bin/cargo-tauri"
+          cargo tauri --version
       - name: Build, sign, notarize (Developer ID only), staple and inventory the candidate
         env:
           GH_TOKEN: ${{ github.token }}
@@ -89,6 +98,7 @@ jobs:
 
   # The CLI alone, unsigned, for each system it runs on. No secrets, so no environment approval.
   build-cli:
+    timeout-minutes: 45
     strategy:
       matrix:
         include:
@@ -105,13 +115,14 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          persist-credentials: false
           ref: ${{ inputs.ref }}
           fetch-depth: 0
       - if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y musl-tools
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: '22'
           cache: npm
@@ -119,7 +130,7 @@ jobs:
         with:
           toolchain: '1.99.0'
           targets: ${{ matrix.target }}
-      - uses: Swatinem/rust-cache@bc2d2e71bd35c5549942babaa51a89c586b981d1 # v2.8.1
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - run: npm ci
       - name: Build and check the candidate
         env:
@@ -134,14 +145,19 @@ jobs:
           if-no-files-found: error
 
   publish:
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: read
     needs: [build-macos, build-cli]
     runs-on: ubuntu-latest
     environment: macos-release
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          persist-credentials: false
           ref: ${{ inputs.ref }}
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: '22'
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
@@ -213,6 +229,7 @@ jobs:
           gh release edit "v${version}" --draft=false --latest
 
   homebrew:
+    timeout-minutes: 30
     needs: publish
     if: ${{ inputs.publish }}
     runs-on: macos-14
@@ -220,8 +237,9 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          persist-credentials: false
           ref: ${{ inputs.ref }}
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
@@ -262,6 +280,7 @@ jobs:
   # npm trusts this job's GitHub identity token instead of a stored token (trusted publishing). It is a
   # separate job so the build's third-party code (npm ci, cargo) never runs with id-token: write.
   publish-npm:
+    timeout-minutes: 10
     needs: publish
     if: ${{ inputs.publish }}
     runs-on: ubuntu-latest
@@ -270,11 +289,12 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          persist-credentials: false
           ref: ${{ inputs.ref }}
       # Trusted publishing needs npm 11.5.1 or later; Node 24 bundles it.
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'

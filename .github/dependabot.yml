@@ -1,0 +1,13 @@
+# Weekly, grouped, after a 7-day cooldown: most action compromises are
+# found within a week of the bad release.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns: ["*"]
