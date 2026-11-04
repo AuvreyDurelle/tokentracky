@@ -1,19 +1,88 @@
 name: CI
+
 on:
-  # Branches are covered by pull_request; pushing there too built every PR commit twice.
+  pull_request:
   push:
     branches: [main]
-  pull_request:
-  # Runs the full suite, native macOS included, on any branch: gh workflow run CI --ref <branch>
+  # Preserve the full manual gate, including native validation, on any branch.
   workflow_dispatch:
-permissions:
-  contents: read
-# A newer push to the same branch or PR cancels the run it supersedes.
+
+permissions: {}
+
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
+  verified:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+      checks: read
+    outputs:
+      ok: ${{ steps.check.outputs.ok }}
+    steps:
+      - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          echo "ok=false" >> "$GITHUB_OUTPUT"
+          # Missing metadata falls back to every quality area.
+          tree=$(gh api "repos/$REPO/git/commits/$SHA" --jq .tree.sha) || exit 0
+          heads=$(gh api "repos/$REPO/commits/$SHA/pulls" --jq '.[] | select(.merged_at != null and .base.ref == "main") | .head.sha') || exit 0
+          for head in $heads; do
+            head_tree=$(gh api "repos/$REPO/git/commits/$head" --jq .tree.sha) || continue
+            [ "$head_tree" = "$tree" ] || continue
+            passed=$(gh api "repos/$REPO/commits/$head/check-runs?check_name=ci-ok" --jq '
+              [.check_runs[] | select(.app.id == 15368 and .name == "ci-ok")]
+              | sort_by(.id) | last | .conclusion == "success"') || continue
+            if [ "$passed" = "true" ]; then
+              echo "ci-ok passed on PR head $head, same tree as $SHA"
+              echo "ok=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          done
+          echo "No passing ci-ok on this tree; running every CI area"
+
+  changes:
+    needs: verified
+    if: ${{ !cancelled() && !failure() && needs.verified.outputs.ok != 'true' }}
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      verify: ${{ github.event_name != 'pull_request' || steps.filter.outputs['verify'] == 'true' }}
+      rust: ${{ github.event_name != 'pull_request' || steps.filter.outputs['rust'] == 'true' }}
+      rust-windows: ${{ github.event_name != 'pull_request' || steps.filter.outputs['rust-windows'] == 'true' }}
+      native-cli: ${{ github.event_name != 'pull_request' || steps.filter.outputs['native-cli'] == 'true' }}
+      native-macos: ${{ github.event_name != 'pull_request' || steps.filter.outputs['native-macos'] == 'true' }}
+      mac-installer: ${{ github.event_name != 'pull_request' || steps.filter.outputs['mac-installer'] == 'true' }}
+      workflows: ${{ github.event_name != 'pull_request' || steps.filter.outputs['workflows'] == 'true' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4
+        id: filter
+        if: github.event_name == 'pull_request'
+        with:
+          filters: .github/filters.yml
+
   verify:
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.result == 'success' && needs.changes.outputs['verify'] == 'true' }}
+    permissions:
+      contents: read
+    env:
+      CARGO_INCREMENTAL: '0'
+      TEST_DATABASE_URL: postgres://tokentracky:test-only-password@127.0.0.1:5432/tokentracky_test
     runs-on: ubuntu-latest
     timeout-minutes: 20
     services:
@@ -27,18 +96,18 @@ jobs:
         options: >-
           --health-cmd "pg_isready -U tokentracky -d tokentracky_test"
           --health-interval 10s --health-timeout 5s --health-retries 5
-    env:
-      TEST_DATABASE_URL: postgres://tokentracky:test-only-password@127.0.0.1:5432/tokentracky_test
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: '22'
           cache: npm
       - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
         with:
           toolchain: '1.99.0'
-      - uses: Swatinem/rust-cache@bc2d2e71bd35c5549942babaa51a89c586b981d1 # v2.8.1
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
@@ -52,15 +121,23 @@ jobs:
       - run: npm run build
 
   rust:
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.result == 'success' && needs.changes.outputs['rust'] == 'true' }}
+    permissions:
+      contents: read
+    env:
+      CARGO_INCREMENTAL: '0'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
       - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
         with:
           toolchain: '1.99.0'
           components: rustfmt, clippy
-      - uses: Swatinem/rust-cache@bc2d2e71bd35c5549942babaa51a89c586b981d1 # v2.8.1
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - run: cargo fmt --all --check
       # Embedded CLI assets are checked in native-macos after the web build. Keep this job Rust-only.
       - run: cargo clippy --workspace --exclude tokentracky-cli --all-targets --all-features -- -D warnings
@@ -69,26 +146,42 @@ jobs:
         env:
           # Keep the checkout's generated types untouched so the check below compares against the committed files.
           TOKENTRACKY_TS_OUT: ${{ runner.temp }}/generated-types
-      - uses: EmbarkStudios/cargo-deny-action@b66acf5e9fe20f8aba065be86778a8a4c846f902 # v2
+          TOKENTRACKY_CEILINGS_OUT: ${{ runner.temp }}/generated-ceilings
+      - uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2.1.1
       - run: scripts/check-generated-types.sh
 
   rust-windows:
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.result == 'success' && needs.changes.outputs['rust-windows'] == 'true' }}
+    permissions:
+      contents: read
+    env:
+      CARGO_INCREMENTAL: '0'
     # The CLI's Windows build. The Mac app is macOS only.
     runs-on: windows-2022
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
       - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
         with:
           toolchain: '1.99.0'
           components: clippy
-      - uses: Swatinem/rust-cache@bc2d2e71bd35c5549942babaa51a89c586b981d1 # v2.8.1
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - run: cargo clippy --workspace --exclude tokentracky-mac --all-targets -- -D warnings
       - run: cargo test --workspace --exclude tokentracky-mac --no-fail-fast
         env:
           TOKENTRACKY_TS_OUT: ${{ runner.temp }}/generated-types
+          TOKENTRACKY_CEILINGS_OUT: ${{ runner.temp }}/generated-ceilings
 
   native-cli:
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.result == 'success' && needs.changes.outputs['native-cli'] == 'true' }}
+    permissions:
+      contents: read
+    env:
+      CARGO_INCREMENTAL: '0'
     # The distributed CLI with its dashboard, run as installed: static musl on Linux (one binary for every
     # distribution) and Windows. macOS runs the same check in native-macos.
     strategy:
@@ -107,10 +200,12 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
       - if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y musl-tools
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: '22'
           cache: npm
@@ -118,7 +213,7 @@ jobs:
         with:
           toolchain: '1.99.0'
           targets: ${{ matrix.target }}
-      - uses: Swatinem/rust-cache@bc2d2e71bd35c5549942babaa51a89c586b981d1 # v2.8.1
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - run: npm ci
       - run: npm run build --workspace=@tokentracky/web
       - run: cargo build --locked --release -p tokentracky-cli --features embed-web --target ${{ matrix.target }}
@@ -136,14 +231,21 @@ jobs:
           PYTHONDONTWRITEBYTECODE: '1'
 
   native-macos:
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.result == 'success' && needs.changes.outputs['native-macos'] == 'true' }}
+    permissions:
+      contents: read
+    env:
+      CARGO_INCREMENTAL: '0'
     # Builds the Tauri app, Rust CLI and React resources on Apple Silicon.
-    # macOS minutes bill at 10x, so this runs on main and manual dispatch only.
-    if: github.event_name != 'pull_request'
+    # Validate native inputs on the PR so a verified main tree can reuse the result.
     runs-on: macos-14
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: '22'
           cache: npm
@@ -151,17 +253,81 @@ jobs:
         with:
           toolchain: '1.99.0'
           components: rustfmt, clippy
-      - uses: Swatinem/rust-cache@bc2d2e71bd35c5549942babaa51a89c586b981d1 # v2.8.1
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - run: npm ci
       - run: npm run build --workspace=@tokentracky/web
-      - run: cargo fmt --all --check
       - run: cargo clippy -p tokentracky-cli --all-targets --features embed-web -- -D warnings
       - run: cargo test -p tokentracky-cli --features embed-web
       - run: cargo clippy -p tokentracky-mac --all-targets -- -D warnings
       - run: cargo test -p tokentracky-mac
         env:
           TOKENTRACKY_TS_OUT: ${{ runner.temp }}/generated-types
-      - run: cargo install tauri-cli --version 2.11.5 --locked
+          TOKENTRACKY_CEILINGS_OUT: ${{ runner.temp }}/generated-ceilings
+      - name: Install the pinned prebuilt Tauri CLI
+        run: |
+          archive="$RUNNER_TEMP/cargo-tauri.zip"
+          curl --fail --location --silent --show-error --retry 3 \
+            https://github.com/tauri-apps/tauri/releases/download/tauri-cli-v2.11.5/cargo-tauri-aarch64-apple-darwin.zip \
+            --output "$archive"
+          echo "7734f1d942dbe6e5fea91c1575452f4bf2cc942e6902f2d9d78513baa8527b24  $archive" | shasum -a 256 --check
+          unzip -q "$archive" -d "$RUNNER_TEMP/tauri-cli"
+          install -m 755 "$RUNNER_TEMP/tauri-cli/cargo-tauri" "$HOME/.cargo/bin/cargo-tauri"
+          cargo tauri --version
       - run: bash scripts/check-native-package.sh
-      - run: node --test scripts/macos-release*.test.mjs scripts/cli-release*.test.mjs packaging/test/*.test.mjs
-      - run: npm run test:harness --prefix packaging
+
+  mac-installer:
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.result == 'success' && needs.changes.outputs['mac-installer'] == 'true' }}
+    runs-on: macos-14
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '22'
+      # The only launcher test that requires macOS: attach/copy/detach a real DMG.
+      - run: node --test --test-name-pattern='installs the verified Mac app' packaging/test/launcher.test.mjs
+
+  workflows:
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.result == 'success' && needs.changes.outputs.workflows == 'true' }}
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - run: pipx run zizmor==1.32.0 --min-severity medium .github/workflows
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  ci-ok:
+    if: always()
+    needs: [verified, changes, verify, rust, rust-windows, native-cli, native-macos, mac-installer, workflows]
+    runs-on: ubuntu-slim
+    timeout-minutes: 2
+    permissions: {}
+    steps:
+      - env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          echo "$RESULTS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+          echo "$RESULTS" | jq -e '[.[].result] | any(. == "failure" or . == "cancelled") | not' || exit 1
+          if [ "$(jq -r '.verified.outputs.ok' <<< "$RESULTS")" = "true" ]; then
+            exit 0
+          fi
+          [ "$(jq -r '.changes.result' <<< "$RESULTS")" = "success" ] || exit 1
+          for area in verify rust rust-windows native-cli native-macos mac-installer workflows; do
+            selected=$(jq -r --arg area "$area" '.changes.outputs[$area]' <<< "$RESULTS")
+            result=$(jq -r --arg area "$area" '.[$area].result' <<< "$RESULTS")
+            if [ "$selected" = "true" ] && [ "$result" != "success" ]; then
+              echo "::error::Selected area $area did not pass ($result)"
+              exit 1
+            fi
+          done
