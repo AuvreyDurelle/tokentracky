@@ -24,7 +24,22 @@ jobs:
       checks: read
     outputs:
       ok: ${{ steps.check.outputs.ok }}
+      deps: ${{ steps.deps.outputs.changed }}
     steps:
+      # A pull request's caches serve only that pull request, and a verified tree skips
+      # CI here, so nothing would refill main's Rust and npm caches. A push that changes
+      # what they are keyed on runs CI on main once to save them.
+      - id: deps
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          BEFORE: ${{ github.event.before }}
+          SHA: ${{ github.sha }}
+        run: |
+          changed=$(gh api "repos/$REPO/compare/$BEFORE...$SHA" --jq '
+            [.files[].filename | select(test("^(Cargo\\.lock|rust-toolchain\\.toml|\\.cargo/.*|package-lock\\.json|\\.github/workflows/ci\\.yml)$"))]
+            | length > 0') || changed=true
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
       - id: check
         env:
           GH_TOKEN: ${{ github.token }}
@@ -51,7 +66,7 @@ jobs:
 
   changes:
     needs: verified
-    if: ${{ !cancelled() && !failure() && needs.verified.outputs.ok != 'true' }}
+    if: ${{ !cancelled() && !failure() && (needs.verified.outputs.ok != 'true' || needs.verified.outputs.deps == 'true') }}
     runs-on: ubuntu-slim
     timeout-minutes: 5
     permissions:
@@ -62,6 +77,7 @@ jobs:
       rust: ${{ github.event_name != 'pull_request' || steps.filter.outputs['rust'] == 'true' }}
       rust-windows: ${{ github.event_name != 'pull_request' || steps.filter.outputs['rust-windows'] == 'true' }}
       native-cli: ${{ github.event_name != 'pull_request' || steps.filter.outputs['native-cli'] == 'true' }}
+      native-cli-targets: ${{ steps.cli.outputs.targets }}
       native-macos: ${{ github.event_name != 'pull_request' || steps.filter.outputs['native-macos'] == 'true' }}
       mac-installer: ${{ github.event_name != 'pull_request' || steps.filter.outputs['mac-installer'] == 'true' }}
       workflows: ${{ github.event_name != 'pull_request' || steps.filter.outputs['workflows'] == 'true' }}
@@ -74,6 +90,16 @@ jobs:
         if: github.event_name == 'pull_request'
         with:
           filters: .github/filters.yml
+      # native-cli-windows is a subset of native-cli, so Linux builds whenever Windows does.
+      - id: cli
+        env:
+          WINDOWS: ${{ github.event_name != 'pull_request' || steps.filter.outputs['native-cli-windows'] == 'true' }}
+        run: |
+          targets='{"os":"ubuntu-24.04","target":"x86_64-unknown-linux-musl","binary":"tokentracky"}'
+          if [ "$WINDOWS" = true ]; then
+            targets="$targets,"'{"os":"windows-2022","target":"x86_64-pc-windows-msvc","binary":"tokentracky.exe"}'
+          fi
+          echo "targets=[$targets]" >> "$GITHUB_OUTPUT"
 
   verify:
     needs: changes
@@ -84,7 +110,7 @@ jobs:
       CARGO_INCREMENTAL: '0'
       TEST_DATABASE_URL: postgres://tokentracky:test-only-password@127.0.0.1:5432/tokentracky_test
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     services:
       postgres:
         image: postgres:17
@@ -107,7 +133,11 @@ jobs:
       - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
         with:
           toolchain: '1.99.0'
+      # Only main saves Rust caches, which every pull request restores. Pull request
+      # caches would serve one pull request each and crowd out main's in the quota.
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
@@ -128,7 +158,7 @@ jobs:
     env:
       CARGO_INCREMENTAL: '0'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -138,6 +168,8 @@ jobs:
           toolchain: '1.99.0'
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo fmt --all --check
       # Embedded CLI assets are checked in native-macos after the web build. Keep this job Rust-only.
       - run: cargo clippy --workspace --exclude tokentracky-cli --all-targets --all-features -- -D warnings
@@ -159,7 +191,7 @@ jobs:
       CARGO_INCREMENTAL: '0'
     # The CLI's Windows build. The Mac app is macOS only.
     runs-on: windows-2022
-    timeout-minutes: 45
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -169,6 +201,8 @@ jobs:
           toolchain: '1.99.0'
           components: clippy
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo clippy --workspace --exclude tokentracky-mac --all-targets -- -D warnings
       - run: cargo test --workspace --exclude tokentracky-mac --no-fail-fast
         env:
@@ -183,19 +217,13 @@ jobs:
     env:
       CARGO_INCREMENTAL: '0'
     # The distributed CLI with its dashboard, run as installed: static musl on Linux (one binary for every
-    # distribution) and Windows. macOS runs the same check in native-macos.
+    # distribution) and Windows. macOS runs the same check in native-macos. `changes` picks the targets.
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: ubuntu-24.04
-            target: x86_64-unknown-linux-musl
-            binary: tokentracky
-          - os: windows-2022
-            target: x86_64-pc-windows-msvc
-            binary: tokentracky.exe
+        include: ${{ fromJSON(needs.changes.outputs.native-cli-targets) }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 45
+    timeout-minutes: 20
     defaults:
       run:
         shell: bash
@@ -214,6 +242,8 @@ jobs:
           toolchain: '1.99.0'
           targets: ${{ matrix.target }}
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: npm ci
       - run: npm run build --workspace=@tokentracky/web
       - run: cargo build --locked --release -p tokentracky-cli --features embed-web --target ${{ matrix.target }}
@@ -240,7 +270,7 @@ jobs:
     # Builds the Tauri app, Rust CLI and React resources on Apple Silicon.
     # Validate native inputs on the PR so a verified main tree can reuse the result.
     runs-on: macos-14
-    timeout-minutes: 45
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -254,6 +284,8 @@ jobs:
           toolchain: '1.99.0'
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: npm ci
       - run: npm run build --workspace=@tokentracky/web
       - run: cargo clippy -p tokentracky-cli --all-targets --features embed-web -- -D warnings

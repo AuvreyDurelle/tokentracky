@@ -90,6 +90,27 @@ native-cli:
   - '.gitignore'
   - '.github/filters.yml'
   - '.github/workflows/**'
+# Dashboard source embeds the same way on every platform, and the Linux CLI build
+# checks it. The Windows CLI and Mac builds wait for native or dependency changes:
+# a lockfile can still break npm on one platform.
+native-cli-windows:
+  - 'Cargo.toml'
+  - 'Cargo.lock'
+  - '.cargo/**'
+  - 'rust-toolchain.toml'
+  - 'rustfmt.toml'
+  - 'package.json'
+  - 'package-lock.json'
+  - '.npmrc'
+  - 'apps/web/package.json'
+  - 'apps/server/package.json'
+  - 'packages/core/package.json'
+  - 'packages/cloud/package.json'
+  - 'crates/**'
+  - 'scripts/check-standalone-cli.py'
+  - '.gitignore'
+  - '.github/filters.yml'
+  - '.github/workflows/**'
 native-macos:
   - 'Cargo.toml'
   - 'Cargo.lock'
@@ -104,9 +125,6 @@ native-macos:
   - 'packages/core/package.json'
   - 'packages/cloud/package.json'
   - 'crates/**'
-  - 'apps/web/**'
-  - 'packages/core/**/*.{ts,json}'
-  - 'tsconfig.json'
   - 'scripts/check-standalone-cli.py'
   - '.gitignore'
   - 'apps/mac/**'
