@@ -110,7 +110,7 @@ jobs:
       CARGO_INCREMENTAL: '0'
       TEST_DATABASE_URL: postgres://tokentracky:test-only-password@127.0.0.1:5432/tokentracky_test
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     services:
       postgres:
         image: postgres:17
@@ -158,7 +158,7 @@ jobs:
     env:
       CARGO_INCREMENTAL: '0'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -191,7 +191,7 @@ jobs:
       CARGO_INCREMENTAL: '0'
     # The CLI's Windows build. The Mac app is macOS only.
     runs-on: windows-2022
-    timeout-minutes: 45
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -223,7 +223,7 @@ jobs:
       matrix:
         include: ${{ fromJSON(needs.changes.outputs.native-cli-targets) }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 45
+    timeout-minutes: 20
     defaults:
       run:
         shell: bash
@@ -270,7 +270,7 @@ jobs:
     # Builds the Tauri app, Rust CLI and React resources on Apple Silicon.
     # Validate native inputs on the PR so a verified main tree can reuse the result.
     runs-on: macos-14
-    timeout-minutes: 45
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
