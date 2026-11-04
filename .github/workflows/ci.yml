@@ -24,7 +24,22 @@ jobs:
       checks: read
     outputs:
       ok: ${{ steps.check.outputs.ok }}
+      deps: ${{ steps.deps.outputs.changed }}
     steps:
+      # A pull request's caches serve only that pull request, and a verified tree skips
+      # CI here, so nothing would refill main's Rust and npm caches. A push that changes
+      # what they are keyed on runs CI on main once to save them.
+      - id: deps
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          BEFORE: ${{ github.event.before }}
+          SHA: ${{ github.sha }}
+        run: |
+          changed=$(gh api "repos/$REPO/compare/$BEFORE...$SHA" --jq '
+            [.files[].filename | select(test("^(Cargo\\.lock|rust-toolchain\\.toml|\\.cargo/.*|package-lock\\.json|\\.github/workflows/ci\\.yml)$"))]
+            | length > 0') || changed=true
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
       - id: check
         env:
           GH_TOKEN: ${{ github.token }}
@@ -51,7 +66,7 @@ jobs:
 
   changes:
     needs: verified
-    if: ${{ !cancelled() && !failure() && needs.verified.outputs.ok != 'true' }}
+    if: ${{ !cancelled() && !failure() && (needs.verified.outputs.ok != 'true' || needs.verified.outputs.deps == 'true') }}
     runs-on: ubuntu-slim
     timeout-minutes: 5
     permissions:
@@ -107,7 +122,11 @@ jobs:
       - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
         with:
           toolchain: '1.99.0'
+      # Only main saves Rust caches, which every pull request restores. Pull request
+      # caches would serve one pull request each and crowd out main's in the quota.
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
@@ -138,6 +157,8 @@ jobs:
           toolchain: '1.99.0'
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo fmt --all --check
       # Embedded CLI assets are checked in native-macos after the web build. Keep this job Rust-only.
       - run: cargo clippy --workspace --exclude tokentracky-cli --all-targets --all-features -- -D warnings
@@ -169,6 +190,8 @@ jobs:
           toolchain: '1.99.0'
           components: clippy
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo clippy --workspace --exclude tokentracky-mac --all-targets -- -D warnings
       - run: cargo test --workspace --exclude tokentracky-mac --no-fail-fast
         env:
@@ -214,6 +237,8 @@ jobs:
           toolchain: '1.99.0'
           targets: ${{ matrix.target }}
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: npm ci
       - run: npm run build --workspace=@tokentracky/web
       - run: cargo build --locked --release -p tokentracky-cli --features embed-web --target ${{ matrix.target }}
@@ -254,6 +279,8 @@ jobs:
           toolchain: '1.99.0'
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: npm ci
       - run: npm run build --workspace=@tokentracky/web
       - run: cargo clippy -p tokentracky-cli --all-targets --features embed-web -- -D warnings
