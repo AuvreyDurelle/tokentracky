@@ -103,3 +103,5 @@ bash scripts/check-native-package.sh
 ```
 
 The last command produces an unsigned native build only. Do not represent it as a signed release candidate or use it to test the live updater.
+
+<!-- CI routing verification: documentation-only timing recheck. -->
