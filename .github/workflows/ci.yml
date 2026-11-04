@@ -77,6 +77,7 @@ jobs:
       rust: ${{ github.event_name != 'pull_request' || steps.filter.outputs['rust'] == 'true' }}
       rust-windows: ${{ github.event_name != 'pull_request' || steps.filter.outputs['rust-windows'] == 'true' }}
       native-cli: ${{ github.event_name != 'pull_request' || steps.filter.outputs['native-cli'] == 'true' }}
+      native-cli-targets: ${{ steps.cli.outputs.targets }}
       native-macos: ${{ github.event_name != 'pull_request' || steps.filter.outputs['native-macos'] == 'true' }}
       mac-installer: ${{ github.event_name != 'pull_request' || steps.filter.outputs['mac-installer'] == 'true' }}
       workflows: ${{ github.event_name != 'pull_request' || steps.filter.outputs['workflows'] == 'true' }}
@@ -89,6 +90,16 @@ jobs:
         if: github.event_name == 'pull_request'
         with:
           filters: .github/filters.yml
+      # native-cli-windows is a subset of native-cli, so Linux builds whenever Windows does.
+      - id: cli
+        env:
+          WINDOWS: ${{ github.event_name != 'pull_request' || steps.filter.outputs['native-cli-windows'] == 'true' }}
+        run: |
+          targets='{"os":"ubuntu-24.04","target":"x86_64-unknown-linux-musl","binary":"tokentracky"}'
+          if [ "$WINDOWS" = true ]; then
+            targets="$targets,"'{"os":"windows-2022","target":"x86_64-pc-windows-msvc","binary":"tokentracky.exe"}'
+          fi
+          echo "targets=[$targets]" >> "$GITHUB_OUTPUT"
 
   verify:
     needs: changes
@@ -206,17 +217,11 @@ jobs:
     env:
       CARGO_INCREMENTAL: '0'
     # The distributed CLI with its dashboard, run as installed: static musl on Linux (one binary for every
-    # distribution) and Windows. macOS runs the same check in native-macos.
+    # distribution) and Windows. macOS runs the same check in native-macos. `changes` picks the targets.
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: ubuntu-24.04
-            target: x86_64-unknown-linux-musl
-            binary: tokentracky
-          - os: windows-2022
-            target: x86_64-pc-windows-msvc
-            binary: tokentracky.exe
+        include: ${{ fromJSON(needs.changes.outputs.native-cli-targets) }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     defaults:
