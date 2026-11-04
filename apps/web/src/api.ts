@@ -1,3 +1,4 @@
+// CI routing probe: dashboard-only change. Not for merging.
 import type {
   AchievementRarity,
   CommunityStats,
