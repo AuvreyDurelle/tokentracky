@@ -91,3 +91,5 @@ it('cancels an upstream response rejected by its declared length',async()=>{
 });
 
 // CI routing verification: this hosted gateway test selects only verify.
+
+it('CI failure probe',()=>{expect(1).toBe(2);});
