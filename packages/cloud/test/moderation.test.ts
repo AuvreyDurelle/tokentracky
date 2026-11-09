@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {createModerationRules, parseModerationPolicy, type DaySignals, type StoredFlag} from '../src/moderation.ts';
+import {createModerationRules, parseModerationPolicy, type DaySignals, type Reason, type StoredFlag} from '../src/moderation.ts';
 import {TEST_MODERATION_POLICY as policy} from './moderation-policy.ts';
 
 const {assess, crossesLead, DAY_GATE, leadCheck, median, nextFlag} = createModerationRules(policy);
@@ -24,15 +24,15 @@ describe('private moderation configuration', () => {
     injected.hideFloor *= 2;
     const changed = createModerationRules(injected);
     const signals = day(policy.hideFloor, {cohort: policy.hideCohort, rival: 1});
-    expect(original.assess(signals)?.status).toBe('hidden');
+    expect(original.assess(signals)?.reasons).toEqual(['peers']);
     expect(changed.assess(signals)).toBeNull();
   });
 });
 
 describe('upload rules with synthetic policy', () => {
-  it('requires the configured floor, peer ratio and cohort before hiding', () => {
+  it('requires the configured floor, peer ratio and cohort for a peers review, and never hides', () => {
     const signals = day(policy.hideFloor, {rival: policy.hideFloor / policy.hideRatio, cohort: policy.hideCohort});
-    expect(assess(signals)).toMatchObject({status: 'hidden', reasons: ['peers']});
+    expect(assess(signals)).toMatchObject({status: 'review', reasons: ['peers']});
     expect(assess({...signals, tokens: signals.tokens - 1})).toBeNull();
     expect(assess({...signals, rival: signals.rival + 1})).toBeNull();
     expect(assess({...signals, cohort: signals.cohort - 1})).toBeNull();
@@ -72,19 +72,20 @@ describe('upload rules with synthetic policy', () => {
 });
 
 describe('flag transitions with synthetic policy', () => {
-  const finding = (status: 'review' | 'hidden', tokens = policy.hideFloor) => ({...day(tokens), status, reasons: status === 'hidden' ? ['peers' as const] : ['volume' as const]});
+  const finding = (reason: Reason, tokens = policy.hideFloor) => ({...day(tokens), status: 'review' as const, reasons: [reason]});
   const flag = (status: StoredFlag['status'], reviewed: boolean): StoredFlag => ({day: '2026-10-23', tokens: policy.hideFloor, status, reasons: ['volume'], reviewed});
-  it('raises new flags, escalates review and retains automatic hidden status', () => {
-    expect(nextFlag(undefined, finding('review'))).toMatchObject({status: 'review', detected: true});
-    expect(nextFlag(flag('review', false), finding('hidden'))).toMatchObject({status: 'hidden', reasons: ['volume', 'peers'], detected: true});
-    expect(nextFlag(flag('hidden', false), finding('review'))).toMatchObject({status: 'hidden', detected: false});
-    expect(nextFlag(flag('review', false), finding('review'))).toMatchObject({status: 'review', detected: false});
+  it('raises new flags as reviews and adds reasons to open flags without changing their status', () => {
+    expect(nextFlag(undefined, finding('peers'))).toMatchObject({status: 'review', detected: true});
+    expect(nextFlag(flag('review', false), finding('peers'))).toMatchObject({status: 'review', reasons: ['volume', 'peers'], detected: false});
+    // A day hidden before automatic hiding ended stays hidden until a person clears it.
+    expect(nextFlag(flag('hidden', false), finding('peers'))).toMatchObject({status: 'hidden', reasons: ['volume', 'peers'], detected: false});
+    expect(nextFlag(flag('review', false), finding('volume'))).toMatchObject({status: 'review', detected: false});
   });
   it('preserves human decisions and reflags cleared days at configured growth', () => {
     const grown = policy.hideFloor * policy.reflagGrowth;
-    expect(nextFlag(flag('cleared', true), finding('hidden', grown - 1))).toBeNull();
-    expect(nextFlag(flag('cleared', true), finding('hidden', grown))).toMatchObject({status: 'hidden', detected: true});
-    expect(nextFlag(flag('hidden', true), finding('review', grown))).toBeNull();
-    expect(nextFlag(flag('review', true), finding('hidden', grown))).toBeNull();
+    expect(nextFlag(flag('cleared', true), finding('peers', grown - 1))).toBeNull();
+    expect(nextFlag(flag('cleared', true), finding('peers', grown))).toMatchObject({status: 'review', detected: true});
+    expect(nextFlag(flag('hidden', true), finding('volume', grown))).toBeNull();
+    expect(nextFlag(flag('review', true), finding('peers', grown))).toBeNull();
   });
 });

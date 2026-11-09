@@ -1278,20 +1278,17 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
     'SELECT day_key, tokens::float AS tokens, rival_tokens::float AS rival, cohort_size AS cohort, reasons, status, reviewed_at FROM cloud_flags WHERE account_id = $1 ORDER BY day_key', [accountId(who)])).rows;
   const aliases = async () => (await board()).items.map((item: {alias: string}) => item.alias);
 
-  it('hides a day above the configured peer ratio during the upload, ignores hidden peers and still accepts the upload', async () => {
+  it('reviews a day above the configured peer ratio without hiding it, and ignores hidden peers', async () => {
     await peers(5, 0.5 * B);
     const [hiddenPeer] = await peers(1, 4 * B, 6);
     await flag('peer6', '2026-10-23', 'hidden');
     const alice = await joined();
     expect((await upload(alice, [bucket(5 * B)])).statusCode).toBe(200);
-    expect(await flags()).toEqual([{day_key: '2026-10-23', tokens: 5 * B, rival: 0.5 * B, cohort: 5, reasons: ['peers'], status: 'hidden', reviewed_at: null}]);
-    expect(events).toEqual([{event: 'moderation_flag', status: 'hidden', reasons: ['peers']}]);
+    expect(await flags()).toEqual([{day_key: '2026-10-23', tokens: 5 * B, rival: 0.5 * B, cohort: 5, reasons: ['peers'], status: 'review', reviewed_at: null}]);
+    expect(events).toEqual([{event: 'moderation_flag', status: 'review', reasons: ['peers']}]);
     expect(JSON.stringify(events)).not.toContain('alice');
-    expect(await aliases()).not.toContain('alice');
-    expect((await request('GET', '/api/account', 'alice')).json().moderation).toEqual({state: 'hidden', days: ['2026-10-23']});
-    // Uploads stay open; a later lower total does not unhide, only a person does.
-    expect((await upload(alice, [bucket(B, {revision: 2})])).statusCode).toBe(200);
-    expect((await flags())[0]).toMatchObject({status: 'hidden'});
+    expect(await aliases()).toContain('alice');
+    expect((await request('GET', '/api/account', 'alice')).json().moderation).toBeUndefined();
     expect(hiddenPeer).toBeDefined();
   });
 
@@ -1307,7 +1304,7 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
     expect((await aliases())[0]).toBe('alice');
   });
 
-  it('raises a review on its own to hidden as the day grows', async () => {
+  it('adds reasons to an open review as the day grows, without hiding', async () => {
     await peers(5, 2 * B);
     const alice = await joined();
     await upload(alice, [bucket(12 * B)]);
@@ -1316,8 +1313,9 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
     await upload(alice, [bucket(13 * B, {revision: 2})]);
     expect(await flags()).toMatchObject([{status: 'review', tokens: 13 * B}]);
     await upload(alice, [bucket(25 * B, {revision: 3})]);
-    expect(await flags()).toMatchObject([{status: 'hidden', reasons: ['volume', 'lead', 'peers'], tokens: 25 * B}]);
-    expect(events).toEqual([{event: 'moderation_flag', status: 'review', reasons: ['volume', 'lead']}, {event: 'moderation_flag', status: 'hidden', reasons: ['volume', 'lead', 'peers']}]);
+    expect(await flags()).toMatchObject([{status: 'review', reasons: ['volume', 'lead', 'peers'], tokens: 25 * B}]);
+    expect(events).toEqual([{event: 'moderation_flag', status: 'review', reasons: ['volume', 'lead']}]);
+    expect(await aliases()).toContain('alice');
   });
 
   it('sends repeated templates and self-baseline jumps to review without hiding', async () => {
@@ -1358,24 +1356,6 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
     expect(peer).toBeDefined();
   });
 
-  it('turns hides into reviews when several other accounts were hidden within the configured window', async () => {
-    await peers(5, 0.5 * B);
-    await peers(3, 0.1 * B, 6);
-    for (const who of ['peer6', 'peer7', 'peer8']) {
-      await pool.query(`INSERT INTO cloud_flags(account_id, day_key, tokens, rival_tokens, cohort_size, reasons, status, detected_at) VALUES ($1, '2026-10-22', 0, 0, 0, '{peers}', 'hidden', $2)`,
-        [accountId(who), new Date(now.getTime() - 10 * 60_000)]);
-    }
-    const alice = await joined();
-    await upload(alice, [bucket(5 * B)]);
-    expect(await flags()).toMatchObject([{status: 'review', reasons: ['peers']}]);
-    expect(events).toEqual([{event: 'moderation_breaker'}, {event: 'moderation_flag', status: 'review', reasons: ['peers']}]);
-    expect(await aliases()).toContain('alice');
-    // Once those hides are outside the configured window, the next upload hides as usual.
-    await pool.query(`UPDATE cloud_flags SET detected_at = $1 WHERE day_key = '2026-10-22'`, [new Date(now.getTime() - 2 * 3_600_000)]);
-    await upload(alice, [bucket(5.5 * B, {revision: 2})]);
-    expect(await flags()).toMatchObject([{status: 'hidden'}]);
-  });
-
   it('keeps a cleared day cleared until its total reaches the configured growth', async () => {
     await peers(5, 0.5 * B);
     const alice = await joined();
@@ -1385,7 +1365,7 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
     expect(await flags()).toMatchObject([{status: 'cleared', tokens: 5 * B}]);
     expect(await aliases()).toContain('alice');
     await upload(alice, [bucket(15 * B, {revision: 3})]);
-    expect(await flags()).toMatchObject([{status: 'hidden', reasons: ['peers', 'volume'], tokens: 15 * B, reviewed_at: null}]);
+    expect(await flags()).toMatchObject([{status: 'review', reasons: ['peers', 'volume'], tokens: 15 * B, reviewed_at: null}]);
     expect((await pool.query('SELECT note FROM cloud_flags')).rows).toEqual([{note: null}]);
   });
 
@@ -1397,24 +1377,25 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
     return {code, lines, asked, output: lines.join('\n')};
   }
 
-  it('lists open flags with the ratio now, which moves when a rival is cleared', async () => {
+  it('lists open flags with the ratio now, which moves when a hidden rival is cleared', async () => {
     await peers(5, 0.5 * B);
     await peers(1, 6 * B, 6);
+    // A day hidden before automatic hiding ended, so alice is flagged against the members still visible.
+    await pool.query(`UPDATE cloud_flags SET status = 'hidden' WHERE account_id = $1`, [accountId('peer6')]);
     const alice = await joined();
     await upload(alice, [bucket(5 * B)]);
-    expect((await flags('peer6'))[0]).toMatchObject({status: 'hidden'});
-    expect((await flags())[0]).toMatchObject({status: 'hidden', rival: 0.5 * B});
+    expect((await flags())[0]).toMatchObject({status: 'review', rival: 0.5 * B});
     let queue = await operator(['queue']);
     expect(queue.code).toBe(0);
     expect(queue.lines).toEqual([
-      'hidden peer6 2026-10-23 [peers] flagged 60M at 12.0× of 5 peers; now 60M at 12.0× of 5 visible peers',
-      'hidden alice 2026-10-23 [peers] flagged 50M at 10.0× of 5 peers; now 50M at 10.0× of 5 visible peers',
+      'hidden peer6 2026-10-23 [peers] flagged 60M at 12.0× of 5 peers; now 60M at 1.2× of 6 visible peers',
+      'review alice 2026-10-23 [peers] flagged 50M at 10.0× of 5 peers; now 50M at 10.0× of 5 visible peers',
     ]);
     // A verified heavy member is cleared; alice now sits beside a visible member who out-ran her.
     expect((await operator(['clear', 'peer6', '2026-10-23', '--note', 'verified build farm'], 'peer6')).code).toBe(0);
     expect(await flags('peer6')).toMatchObject([{status: 'cleared', reviewed_at: expect.any(Date)}]);
     queue = await operator(['queue']);
-    expect(queue.lines).toEqual(['hidden alice 2026-10-23 [peers] flagged 50M at 10.0× of 5 peers; now 50M at 0.8× of 6 visible peers (a visible member out-ran them: likely false positive)']);
+    expect(queue.lines).toEqual(['review alice 2026-10-23 [peers] flagged 50M at 10.0× of 5 peers; now 50M at 0.8× of 6 visible peers (a visible member out-ran them: likely false positive)']);
     expect(await aliases()).toContain('peer6');
     expect(await operator(['clear', 'alice', '2026-10-23', '--note', 'peer out-ran her'], 'alice')).toMatchObject({code: 0});
     expect(await aliases()).toContain('alice');

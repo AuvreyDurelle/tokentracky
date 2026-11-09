@@ -406,8 +406,8 @@ export class PostgresCloudRepository {
   }
 
   /**
-   * Upload checks, under the account lock, after the buckets are written. They only flag
-   * and hide; the upload is accepted either way, so a member can still send corrected totals.
+   * Upload checks, under the account lock, after the buckets are written. They only flag for
+   * review; the upload is accepted either way, so a member can still send corrected totals.
    */
   private async moderate(client: PoolClient, accountId: string, uploaded: string[], before: number, after: number): Promise<void> {
     const extra = new Map<string, Reason[]>();
@@ -446,22 +446,9 @@ export class PostgresCloudRepository {
       const previous = existing.get(finding.day);
       const write = this.rules.nextFlag(previous, finding);
       if (!write) continue;
-      if (write.status === 'hidden' && write.detected && await this.breakerTripped(client, accountId)) {
-        write.status = 'review';
-        write.detected = !previous || previous.reviewed || previous.status !== 'review';
-        this.log({event: 'moderation_breaker'});
-      }
       await this.writeFlag(client, accountId, write, write.detected);
       if (write.detected) this.log({event: 'moderation_flag', status: write.status, reasons: write.reasons});
     }
-  }
-
-  /** Serialized across accounts, so concurrent uploads cannot each slip under the limit. */
-  private async breakerTripped(client: PoolClient, accountId: string): Promise<boolean> {
-    await client.query('SELECT pg_advisory_xact_lock(hashtextextended($1, 0))', [`${this.schema}:tokentracky:moderation:breaker`]);
-    const recent = await client.query<{count: number}>(`SELECT count(DISTINCT account_id)::int AS count FROM cloud_flags
-      WHERE status = 'hidden' AND reviewed_at IS NULL AND account_id <> $1 AND detected_at > $2`, [accountId, new Date(this.now().getTime() - this.rules.LIMITS.breakerWindowMs)]);
-    return recent.rows[0]!.count >= this.rules.LIMITS.breakerHides;
   }
 
   private async writeFlag(client: PoolClient, accountId: string, flag: Finding, detected: boolean): Promise<void> {

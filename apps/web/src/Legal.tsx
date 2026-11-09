@@ -3,7 +3,7 @@ import './legal.css';
 
 export type LegalPageId = 'privacy' | 'terms' | 'support';
 
-const UPDATED = '28 October 2026';
+const UPDATED = '9 November 2026';
 const CONTACT = 'contact@tokentracky.com';
 const OPERATOR = 'XPO8 Limited';
 const ADDRESS = '1603, L. Plaza, 367–375 Queen’s Road Central, Sheung Wan, Hong Kong';
@@ -75,7 +75,7 @@ const privacy: Doc = {
     { id: 'purposes', title: 'How we use information', body: <>
       <p>We use information to run your account and leaderboard profile, publish your leaderboard profile and totals, keep the service secure, prevent abuse and cheating, answer messages and meet legal obligations.</p>
       <p>Where the GDPR, UK GDPR or a similar law applies, our legal grounds are performing our agreement with you (publishing your leaderboard profile and totals is part of the service you sign up for when you join the leaderboard), our legitimate interests in running a secure and fair leaderboard and answering enquiries, and legal obligations. Hong Kong’s Personal Data (Privacy) Ordinance also applies.</p>
-      <p>We check published totals automatically for unusual patterns, such as a day far above every other member’s that day. A profile that trips these checks may be hidden from public pages until a person reviews it, and your profile page tells you which days are under review. Your local data is never affected. Only a person can ban an account.</p>
+      <p>We check published totals automatically for unusual patterns, such as a day far above every other member’s that day. A person reviews what these checks flag and may hide a profile from public pages; if they do, your profile page tells you which days. Your local data is never affected. Only a person can ban an account.</p>
       <p>We do not sell personal information, show advertising, build marketing profiles or use your data to train AI models. Rankings are simple arithmetic on reported totals; no automated decision about you has legal or similarly significant effects.</p>
     </> },
     { id: 'providers', title: 'Service providers and disclosures', body: <>
@@ -141,7 +141,7 @@ const terms: Doc = {
     { id: 'fair-play', title: 'Names and fair play', body: <>
       <p>Your leaderboard name must not impersonate anyone, mislead people, offend, infringe someone else’s rights or reveal personal information about another person. We may change or remove a name that breaks these rules.</p>
       <p>Do not fabricate or inflate usage, manipulate uploads to misrepresent usage, run several accounts to move the rankings, or use AI tools in a way that breaks their providers’ terms to climb the leaderboard. Cheating means publishing usage that the app did not read from your real use of your tools, including by editing or inventing the logs they write.</p>
-      <p>We check totals automatically and may hide a profile while a person reviews it. If we find cheating, we may ban the account: it can no longer publish, and the same sign-in cannot rejoin.</p>
+      <p>We check totals automatically, and a person may hide a profile after reviewing it. If we find cheating, we may ban the account: it can no longer publish, and the same sign-in cannot rejoin.</p>
     </> },
     { id: 'acceptable-use', title: 'Acceptable use', body: <p>Use Tokentracky lawfully. Do not interfere with the service, bypass its security or rate limits, probe other people’s accounts or data, copy the leaderboard in bulk by automated means, or upload malicious code. These hosted-service rules do not limit your rights to inspect, modify or redistribute the software under its open-source licence.</p> },
     { id: 'estimates', title: 'Estimated costs', body: <p>Costs are estimated from public price tables. They may differ from what you are actually billed, and they do not reflect subscriptions, discounts or plan limits. Where we do not know a model’s price we show no estimate. Estimates are for information only and are not financial advice.</p> },

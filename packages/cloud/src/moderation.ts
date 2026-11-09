@@ -1,7 +1,7 @@
 // Pure upload checks. Deployments supply their own private policy; no production defaults are bundled.
 
 export interface ModerationPolicy {
-  /** Minimum day size, peer multiple, and number of other visible members required to hide a day. */
+  /** Minimum day size, peer multiple, and number of other visible members required for a peers review. */
   hideFloor: number; hideRatio: number; hideCohort: number;
   /** Large-day and recent-baseline review rules. */
   volumeFloor: number; jumpRatio: number; jumpFloor: number; baselineDays: number;
@@ -9,15 +9,12 @@ export interface ModerationPolicy {
   templateTokens: number; templateCount: number;
   /** All-time lead review and the total increment between lead queries. */
   leadRatio: number; leadFloor: number; leadStep: number;
-  /** Suppress automatic hiding after this many other hides within the window. */
-  breakerHides: number; breakerWindowMs: number;
   /** Growth required to reflag a cleared day, and the operator review deadline. */
   reflagGrowth: number; reviewWithinMs: number;
 }
 const POLICY_KEYS = [
   'hideFloor', 'hideRatio', 'hideCohort', 'volumeFloor', 'jumpRatio', 'jumpFloor', 'baselineDays',
-  'templateTokens', 'templateCount', 'leadRatio', 'leadFloor', 'leadStep', 'breakerHides', 'breakerWindowMs',
-  'reflagGrowth', 'reviewWithinMs',
+  'templateTokens', 'templateCount', 'leadRatio', 'leadFloor', 'leadStep', 'reflagGrowth', 'reviewWithinMs',
 ] as const;
 const RATIOS = new Set<string>(['hideRatio', 'jumpRatio', 'leadRatio', 'reflagGrowth']);
 
@@ -51,21 +48,20 @@ export interface Finding extends DaySignals {status: 'review' | 'hidden'; reason
 export interface StoredFlag {day: string; tokens: number; status: FlagStatus; reasons: Reason[]; reviewed: boolean}
 /** `detected` resets when the flag is first raised, escalated or raised again; it is when the flag reached its status. */
 export interface FlagWrite extends Finding {detected: boolean}
-export type ModerationEvent = {event: 'moderation_flag'; status: 'review' | 'hidden'; reasons: Reason[]} | {event: 'moderation_breaker'}
+export type ModerationEvent = {event: 'moderation_flag'; status: 'review' | 'hidden'; reasons: Reason[]}
   | {event: 'public_counter_overflow'; count: number} | {event: 'cost_capped'; count: number};
 
 export function createModerationRules(policy: ModerationPolicy) {
   const LIMITS = validatePolicy(policy);
   const DAY_GATE = Math.min(LIMITS.hideFloor, LIMITS.volumeFloor, LIMITS.jumpFloor);
-  /** The day's own rules, plus any account-wide reasons (`template`, `lead`) that point at this day. */
+  /** The day's own rules, plus any account-wide reasons (`template`, `lead`) that point at this day. Only a person hides. */
   function assess(s: DaySignals, extra: Reason[] = []): Finding | null {
-    const hide = s.tokens >= LIMITS.hideFloor && s.cohort >= LIMITS.hideCohort && s.tokens >= LIMITS.hideRatio * s.rival;
     const reasons: Reason[] = [];
-    if (hide) reasons.push('peers');
+    if (s.tokens >= LIMITS.hideFloor && s.cohort >= LIMITS.hideCohort && s.tokens >= LIMITS.hideRatio * s.rival) reasons.push('peers');
     if (s.tokens >= LIMITS.volumeFloor) reasons.push('volume');
     if (s.baseline !== null && s.baseline > 0 && s.tokens >= LIMITS.jumpFloor && s.tokens >= LIMITS.jumpRatio * s.baseline) reasons.push('jump');
     for (const reason of extra) if (!reasons.includes(reason)) reasons.push(reason);
-    return reasons.length ? {...s, status: hide ? 'hidden' : 'review', reasons} : null;
+    return reasons.length ? {...s, status: 'review', reasons} : null;
   }
 
   /** Median of the member's most recent dated day totals before `day` (at most `baselineDays` of them), or null without history. */
@@ -92,7 +88,7 @@ export function createModerationRules(policy: ModerationPolicy) {
   }
 
   /**
-   * What to store for a finding, given the day's existing flag. A flag only rises from review to hidden on its own;
+   * What to store for a finding, given the day's existing flag. An open flag keeps its status and gathers reasons;
    * a person's decision stands, except that a cleared day whose total has since grown `reflagGrowth`× is raised again.
    */
   function nextFlag(existing: StoredFlag | undefined, finding: Finding): FlagWrite | null {
@@ -100,9 +96,9 @@ export function createModerationRules(policy: ModerationPolicy) {
     if (existing.reviewed) {
       return existing.status === 'cleared' && finding.tokens >= LIMITS.reflagGrowth * existing.tokens ? {...finding, detected: true} : null;
     }
-    const status = existing.status === 'hidden' || finding.status === 'hidden' ? 'hidden' : 'review';
+    const status = existing.status === 'hidden' ? 'hidden' : 'review';
     const reasons = [...existing.reasons, ...finding.reasons.filter(reason => !existing.reasons.includes(reason))];
-    return {...finding, status, reasons, detected: status !== existing.status};
+    return {...finding, status, reasons, detected: false};
   }
 
   return {LIMITS, DAY_GATE, assess, median, leadCheck, crossesLead, nextFlag};
