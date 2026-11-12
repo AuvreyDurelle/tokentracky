@@ -269,7 +269,7 @@ jobs:
       CARGO_INCREMENTAL: '0'
     # Builds the Tauri app, Rust CLI and React resources on Apple Silicon.
     # Validate native inputs on the PR so a verified main tree can reuse the result.
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -310,7 +310,7 @@ jobs:
   mac-installer:
     needs: changes
     if: ${{ !cancelled() && needs.changes.result == 'success' && needs.changes.outputs['mac-installer'] == 'true' }}
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 5
     permissions:
       contents: read
