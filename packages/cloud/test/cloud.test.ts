@@ -1057,6 +1057,17 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
     expect(events).toEqual([{event: 'cost_capped', count: 1}]);
   });
 
+  it('fills a dropped cost when the same revision is sent again with one it can now check', async () => {
+    const join = await joined();
+    const honest = bucket(1_000, {tool: 'claude', model: 'claude-sonnet-4-6', costMicrousd: 15_000, breakdown: kinds(0, 1_000, 0, 0, 0)});
+    const inflated = {...honest, day: '2026-10-22', costMicrousd: 50_000_000_000};
+    await upload(join, [honest, inflated]);
+    // As if a hosted price table without the model's price had dropped the honest cost too.
+    await pool.query("UPDATE cloud_buckets SET cost_microusd = NULL WHERE day_key = '2026-10-23'");
+    expect((await upload(join, [honest, inflated])).json().accepted).toBe(1);
+    expect((await pool.query('SELECT day_key, cost_microusd FROM cloud_buckets ORDER BY day_key')).rows).toEqual([{day_key: '2026-10-22', cost_microusd: null}, {day_key: '2026-10-23', cost_microusd: '15000'}]);
+  });
+
   it('deduplicates copied token types consistently across profiles, community and moderation', async () => {
     const desktop = await joined();
     const laptop = {...desktop, device: await addComputer('alice', 'Laptop')};
