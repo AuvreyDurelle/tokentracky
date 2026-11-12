@@ -269,7 +269,7 @@ jobs:
       CARGO_INCREMENTAL: '0'
     # Builds the Tauri app, Rust CLI and React resources on Apple Silicon.
     # Validate native inputs on the PR so a verified main tree can reuse the result.
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -303,6 +303,8 @@ jobs:
             --output "$archive"
           echo "7734f1d942dbe6e5fea91c1575452f4bf2cc942e6902f2d9d78513baa8527b24  $archive" | shasum -a 256 --check
           unzip -q "$archive" -d "$RUNNER_TEMP/tauri-cli"
+          # macos-15 ships rustup outside ~/.cargo, so the directory cargo searches for subcommands may not exist.
+          mkdir -p "$HOME/.cargo/bin"
           install -m 755 "$RUNNER_TEMP/tauri-cli/cargo-tauri" "$HOME/.cargo/bin/cargo-tauri"
           cargo tauri --version
       - run: bash scripts/check-native-package.sh
@@ -310,7 +312,7 @@ jobs:
   mac-installer:
     needs: changes
     if: ${{ !cancelled() && needs.changes.result == 'success' && needs.changes.outputs['mac-installer'] == 'true' }}
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 5
     permissions:
       contents: read

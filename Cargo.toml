@@ -5,7 +5,7 @@ members = ["crates/core", "crates/collector", "crates/pricing", "crates/local-ap
 [workspace.package]
 version = "0.2.1"
 edition = "2024"
-rust-version = "1.88"
+rust-version = "1.89"
 publish = false
 
 [workspace.dependencies]
@@ -14,7 +14,7 @@ serde_json = "1"
 thiserror = "2"
 time = "0.3"
 ts-rs = "12"
-rusqlite = { version = "0.40", features = ["bundled"] }
+rusqlite = { version = "0.41", features = ["bundled"] }
 sha2 = "0.11"
 hex = "0.4"
 uuid = { version = "1", features = ["v4"] }

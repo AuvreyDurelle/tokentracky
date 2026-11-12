@@ -342,6 +342,8 @@ export class PostgresCloudRepository {
         if (cost !== b.costMicrousd) capped++;
         // Token kinds are always published with the bucket (no sharing flag); a bucket from an older app has none.
         const k = b.breakdown;
+        // The app resends unchanged buckets at the same revision, so a cost dropped before this table had the model's
+        // price is filled in once it can be checked.
         const result = await client.query(`
           INSERT INTO cloud_buckets(account_id, device_id, day_key, tool, model, tokens, cost_microusd, revision,
             input_tokens, output_tokens, cache_read_tokens, cache_write_tokens, reasoning_tokens)
@@ -349,7 +351,8 @@ export class PostgresCloudRepository {
           ON CONFLICT(account_id,device_id,day_key,tool,model) DO UPDATE SET tokens = EXCLUDED.tokens, cost_microusd = EXCLUDED.cost_microusd,
             revision = EXCLUDED.revision, input_tokens = EXCLUDED.input_tokens, output_tokens = EXCLUDED.output_tokens,
             cache_read_tokens = EXCLUDED.cache_read_tokens, cache_write_tokens = EXCLUDED.cache_write_tokens, reasoning_tokens = EXCLUDED.reasoning_tokens
-          WHERE cloud_buckets.revision < EXCLUDED.revision`,
+          WHERE cloud_buckets.revision < EXCLUDED.revision
+            OR (cloud_buckets.revision = EXCLUDED.revision AND cloud_buckets.cost_microusd IS NULL AND EXCLUDED.cost_microusd IS NOT NULL)`,
         [device.account_id, device.id, b.day ?? 'unknown', b.tool, b.model ?? '', b.tokens, cost, b.revision,
           k?.input ?? null, k?.output ?? null, k?.cacheRead ?? null, k?.cacheWrite ?? null, k?.reasoning ?? null]);
         accepted += result.rowCount ?? 0;
