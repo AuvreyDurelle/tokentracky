@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Resvg } from '@resvg/resvg-js';
-import { fitFacts, rankingWindow, windowActivity, type Period, type ProfileStats } from '@tokentracky/core';
+import { fitFacts, rankingWindow, TOOL_NAMES, windowActivity, wrapLabel, type Period, type ProfileStats, type ToolId, type Wrapped } from '@tokentracky/core';
 import { compactCount } from './badge.ts';
 
 /** Inter Medium and SemiBold, beside the source in development and copied beside the bundle (`dist/fonts`) by the server build. */
@@ -76,4 +76,31 @@ export function profileCardSvg(stats: ProfileStats | null, period: Period, site:
     + `<text x="82" y="340" fill="#ededef" font-size="120" font-weight="600">${compactCount(tokens)}</text>`
     + `<text x="88" y="390" fill="#a1a1a8" font-size="26" font-weight="500">${escape(fitFacts(facts, factsFit))}</text>${bars}`,
   site, `/u/${stats.alias}`, `${stats.alias}: ${compactCount(tokens)} tokens ${WINDOWS[period]}${rank > 0 ? `, #${rank}` : ''}`);
+}
+
+/**
+ * The 1200×630 wrap card: the month or year's tokens, rank among the builders active in it, activity and top tool or model,
+ * with its days as columns. `null` draws the leaderboard card.
+ */
+export function wrappedCardSvg(wrap: Wrapped | null, period: string, site: string): string {
+  if (!wrap) return profileCardSvg(null, 'all', site);
+  const label = wrapLabel(period);
+  const top = Object.entries(wrap.toolTokens ?? {}).sort((a, b) => b[1]! - a[1]! || a[0].localeCompare(b[0]))[0]?.[0] as ToolId | undefined;
+  const headline = [`tokens in ${label}`, ...(wrap.rank > 0 ? [`#${wrap.rank} of ${plural(wrap.builders, 'builder')}`] : [])].join(' · ');
+  const facts = [plural(wrap.activeDays, 'active day'), `longest streak ${plural(wrap.longestStreak, 'day')}`, ...(top ? [`mostly ${TOOL_NAMES[top]}`] : []),
+    ...(wrap.models?.[0] ? [`favourite ${wrap.models[0].model}`] : [])];
+  const max = Math.max(1, ...wrap.daily.map(day => day.tokens));
+  const width = 1024 / Math.max(1, wrap.daily.length);
+  const gap = wrap.daily.length > 60 ? 0.6 : 4;
+  const bars = wrap.daily.map((day, index) => {
+    const height = day.tokens ? Math.max(4, (day.tokens / max) * 80) : 2;
+    const fill = day.tokens ? `rgba(228,228,231,${(0.35 + 0.65 * (day.tokens / max)).toFixed(3)})` : '#202024';
+    return `<rect x="${(88 + index * width).toFixed(2)}" y="${(540 - height).toFixed(2)}" width="${Math.max(1, width - gap).toFixed(2)}" height="${height.toFixed(2)}" fill="${fill}"/>`;
+  }).join('');
+  return frame(`<text x="1112" y="110" fill="#7c7c85" font-size="24" font-weight="500" text-anchor="end">Wrapped · ${escape(label)}</text>`
+    + `<text x="88" y="205" fill="#ededef" font-size="56" font-weight="600">${escape(wrap.alias)}</text>`
+    + `<text x="82" y="340" fill="#ededef" font-size="120" font-weight="600">${compactCount(wrap.tokens)}</text>`
+    + `<text x="88" y="390" fill="#a1a1a8" font-size="26" font-weight="500">${escape(headline)}</text>`
+    + `<text x="88" y="428" fill="#7c7c85" font-size="22" font-weight="500">${escape(fitFacts(facts, text => text.length * 10.4 <= 1024))}</text>${bars}`,
+  site, `/wrapped/${wrap.alias}/${period}`, `${wrap.alias}'s ${label}: ${compactCount(wrap.tokens)} tokens${wrap.rank > 0 ? `, #${wrap.rank}` : ''}`);
 }

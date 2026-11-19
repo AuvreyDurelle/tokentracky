@@ -10,8 +10,10 @@
     { "source": "/card/(.*)", "destination": "/api/gateway" },
     { "source": "/og/(.*)", "destination": "/api/gateway" },
     { "source": "/u/([a-zA-Z0-9][a-zA-Z0-9_-]{2,29})", "has": [{ "type": "header", "key": "user-agent", "value": ".*(Twitterbot|facebookexternalhit|Facebot|LinkedInBot|Slackbot|Discordbot|TelegramBot|WhatsApp|redditbot|Mastodon|Bluesky|Cardyb|SkypeUriPreview|Embedly|Iframely|Pinterestbot|vkShare|Applebot).*" }], "destination": "/api/gateway" },
+    { "source": "/wrapped/([a-zA-Z0-9][a-zA-Z0-9_-]{2,29})/([0-9]{4}(?:-(?:0[1-9]|1[0-2]))?)", "has": [{ "type": "header", "key": "user-agent", "value": ".*(Twitterbot|facebookexternalhit|Facebot|LinkedInBot|Slackbot|Discordbot|TelegramBot|WhatsApp|redditbot|Mastodon|Bluesky|Cardyb|SkypeUriPreview|Embedly|Iframely|Pinterestbot|vkShare|Applebot).*" }], "destination": "/api/gateway" },
     { "source": "/(privacy|terms|support|leaderboard|you|join)", "destination": "/index.html" },
-    { "source": "/u/:alias([a-zA-Z0-9][a-zA-Z0-9_-]{2,29})", "destination": "/index.html" }
+    { "source": "/u/:alias([a-zA-Z0-9][a-zA-Z0-9_-]{2,29})", "destination": "/index.html" },
+    { "source": "/wrapped/([a-zA-Z0-9][a-zA-Z0-9_-]{2,29})/([0-9]{4}(?:-(?:0[1-9]|1[0-2]))?)", "destination": "/index.html" }
   ],
   "headers": [
     {

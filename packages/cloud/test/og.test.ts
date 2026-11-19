@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { BADGE_IDS, type ProfileStats } from '@tokentracky/core';
-import { pngFromSvg, profileCardSvg, publicSite } from '../src/og.ts';
+import { BADGE_IDS, type ProfileStats, type Wrapped } from '@tokentracky/core';
+import { pngFromSvg, profileCardSvg, publicSite, wrappedCardSvg } from '../src/og.ts';
 
 /** A profile whose 365 days end on Thursday 2026-10-22, active on the last three. */
 function stats(overrides: Partial<ProfileStats> = {}): ProfileStats {
@@ -57,5 +57,24 @@ describe('public site', () => {
     expect(publicSite({'x-tokentracky-host': 'evil.example/"><x', host: 'site.example'})).toBe('https://site.example');
     expect(publicSite({'x-tokentracky-host': ['a.example', 'b.example']})).toBe('https://tokentracky.com');
     expect(publicSite({})).toBe('https://tokentracky.com');
+  });
+});
+
+describe('wrap preview card', () => {
+  const wrap: Wrapped = {alias: 'token-wizard', period: '2026-11', from: '2026-11-01', to: '2026-11-19', tokens: 3_400_000_000, rank: 4, builders: 120, previousTokens: 1,
+    activeDays: 16, longestStreak: 6, bestDay: null, daily: Array.from({length: 19}, (_, index) => ({day: `2026-11-${String(index + 1).padStart(2, '0')}`, tokens: index % 7 === 6 ? 0 : 1e8})),
+    toolTokens: {codex: 5, claude: 9}, models: [{model: 'claude-fable-5-2', tokens: 9}]};
+  it('names the period, the rank among builders active in it, the activity and the top tool and model', () => {
+    const svg = wrappedCardSvg(wrap, '2026-11', 'https://tokentracky.com');
+    expect(svg).toContain('>Wrapped · November 2026<');
+    expect(svg).toContain('>3.4B<');
+    expect(svg).toContain('>tokens in November 2026 · #4 of 120 builders<');
+    expect(svg).toContain('>16 active days · longest streak 6 days · mostly Claude Code · favourite claude-fable-5-2<');
+    expect(svg).toContain('>tokentracky.com/wrapped/token-wizard/2026-11<');
+    expect(svg.match(/<rect /g)).toHaveLength(2 + 19);
+  });
+  it('leaves out the rank without usage and draws the leaderboard card without a wrap', () => {
+    expect(wrappedCardSvg({...wrap, rank: 0, tokens: 0, toolTokens: undefined, models: undefined}, '2026', 'https://tokentracky.com')).toContain('>tokens in 2026<');
+    expect(wrappedCardSvg(null, '2026', 'https://tokentracky.com')).toContain('>The token leaderboard<');
   });
 });

@@ -16,6 +16,7 @@ import type {
   ToolId,
   UsageBreakdownRow,
   UsageSummary,
+  Wrapped,
 } from '@tokentracky/core';
 import type { PublicationRequest } from './publication';
 import type { LinkTag } from './route';
@@ -145,6 +146,8 @@ export class ApiClient {
   profile(alias: string, period: LeaderboardPeriod) { return this.request<PublicProfile>(`/api/profiles/${encodeURIComponent(alias)}?${query({ period })}`); }
   profileStats(alias: string) { return this.request<ProfileStats>(`/api/profiles/${encodeURIComponent(alias)}/stats`); }
   community() { return this.request<CommunityStats>('/api/community'); }
+  /** A month (`YYYY-MM`) or year (`YYYY`) wrap; the hosted site only. */
+  wrapped(alias: string, period: string) { return this.request<Wrapped>(`/api/wrapped/${encodeURIComponent(alias)}/${encodeURIComponent(period)}`); }
   leaderboardAround(alias: string, period: LeaderboardPeriod) { return this.request<LeaderboardNeighbours>(`/api/leaderboard/around/${encodeURIComponent(alias)}?${query({ period })}`); }
   achievementRarity() { return this.request<AchievementRarity>('/api/achievements/rarity'); }
   /** Likes on the website go through the signed-in account. */

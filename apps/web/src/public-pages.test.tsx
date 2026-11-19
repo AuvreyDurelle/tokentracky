@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import { parseRoute, routePath, takeLinkTag } from './route';
 import { toolColumns, TOOL_COLUMNS } from './columns';
-import { fitFacts, TOOL_IDS, TOOL_NAMES, windowActivity, type ToolId, type ProfileStats } from '@tokentracky/core';
-import { badgeMarkdown, ProfileView, ProfileTypes, xShareUrl } from './Profile';
+import { fitFacts, TOOL_IDS, TOOL_NAMES, windowActivity, type ToolId, type ProfileStats, type Wrapped } from '@tokentracky/core';
+import { badgeMarkdown, ProfileView, ProfileTypes, wrapPeriods, xShareUrl } from './Profile';
+import { wrapChange, wrapShareUrl, WrappedView } from './Wrapped';
 import { runningTotals } from './ProfileUsage';
 import { TOOLS, toolLabel, topPercent } from './format';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -19,6 +20,39 @@ describe('shareable addresses', () => {
     for (const path of ['/u/x', '/u/a/b', '/u/-bad', '/nope']) expect(parseRoute(path), path).toEqual({ page: 'missing' });
     expect(routePath({ page: 'profile', alias: 'token-wizard' })).toBe('/u/token-wizard');
     expect(routePath({ page: 'home' })).toBe('/');
+    expect(parseRoute('/wrapped/Token-Wizard/2026-11')).toEqual({ page: 'wrapped', alias: 'token-wizard', period: '2026-11' });
+    expect(parseRoute('/wrapped/token-wizard/2026')).toEqual({ page: 'wrapped', alias: 'token-wizard', period: '2026' });
+    for (const path of ['/wrapped/token-wizard', '/wrapped/token-wizard/2026-13', '/wrapped/token-wizard/26', '/wrapped/x/2026']) expect(parseRoute(path), path).toEqual({ page: 'missing' });
+    expect(routePath({ page: 'wrapped', alias: 'token-wizard', period: '2026-11' })).toBe('/wrapped/token-wizard/2026-11');
+  });
+});
+
+describe('wraps', () => {
+  const wrap: Wrapped = { alias: 'marenh', period: '2026-10', from: '2026-10-01', to: '2026-10-31', tokens: 3_400_000, rank: 4, builders: 120, previousTokens: 2_000_000,
+    activeDays: 16, longestStreak: 6, bestDay: { day: '2026-10-25', tokens: 600_000 }, daily: [], costMicrousd: 12_340_000, toolTokens: { claude: 3_000_000, codex: 400_000 }, models: [{ model: 'claude-fable-5-2', tokens: 3_000_000 }] };
+  it('shows the card, highlights, change on the month before, top tools and models', () => {
+    const html = renderToStaticMarkup(<WrappedView wrap={wrap} origin="https://tokentracky.test" onProfile={() => {}} onPeriod={() => {}} />);
+    expect(html).toContain('marenh’s October 2026');
+    expect(html).toContain('src="/og/wrapped/marenh/2026-10.png"');
+    expect(html).toContain('#4');
+    expect(html).toContain('of 120 active builders');
+    expect(html).toContain('+70% since');
+    expect(html).toContain('← September 2026');
+    expect(html).toContain('All of 2026');
+    expect(html).toContain('Claude Code');
+    expect(html).toContain('claude-fable-5-2');
+  });
+  it('compares only a finished period, and posts its headline with the tagged link', () => {
+    expect(wrapChange(wrap)).toBe('+70%');
+    expect(wrapChange({ ...wrap, period: '2026', from: '2026-01-01' })).toBeNull();
+    expect(wrapChange({ ...wrap, previousTokens: 0 })).toBeNull();
+    expect(wrapChange({ ...wrap, tokens: 1_000_000 })).toBe('−50%');
+    const url = new URL(wrapShareUrl(wrap, 'https://tokentracky.test'));
+    expect(url.searchParams.get('text')).toBe('marenh\'s October 2026 on Tokentracky: 3.4M tokens, #4 of 120 builders.');
+    expect(url.searchParams.get('url')).toBe('https://tokentracky.test/wrapped/marenh/2026-10?ref=share');
+  });
+  it('links a profile to last month, this month and this year', () => {
+    expect(wrapPeriods('2026-01-05')).toEqual(['2025-12', '2026-01', '2026']);
   });
 });
 

@@ -21,17 +21,20 @@ describe('static hosting config',()=>{
     expect(destination('/card/(.*)')).toBe('/api/gateway');
     expect(destination('/og/(.*)')).toBe('/api/gateway');
   });
-  it('sends only link-preview crawlers to the API for profile pages, before the page rewrite',()=>{
-    const crawler=config.rewrites.findIndex(rewrite=>rewrite.has);
-    const page=config.rewrites.findIndex(rewrite=>rewrite.source.startsWith('/u/')&&!rewrite.has);
-    const rule=config.rewrites[crawler]!;
-    expect(crawler).toBeGreaterThanOrEqual(0);
-    expect(crawler).toBeLessThan(page);
-    // An unnamed group, so Vercel adds no query field to the gateway request.
-    expect(rule).toMatchObject({source:`/u/(${ALIAS_PATTERN.source.slice(1,-1)})`,destination:'/api/gateway'});
-    expect(rule.has).toHaveLength(1);
-    expect(rule.has![0]).toMatchObject({type:'header',key:'user-agent'});
-    const crawls=new RegExp(`^${rule.has![0]!.value}$`);
+  it('sends only link-preview crawlers to the API for profile and wrap pages, before the page rewrites',()=>{
+    const alias=ALIAS_PATTERN.source.slice(1,-1);
+    // Unnamed groups, so Vercel adds no query field to the gateway request.
+    const pages=[`/u/(${alias})`,`/wrapped/(${alias})/([0-9]{4}(?:-(?:0[1-9]|1[0-2]))?)`];
+    const crawlers=config.rewrites.filter(rewrite=>rewrite.has);
+    expect(crawlers.map(rule=>rule.source)).toEqual(pages);
+    expect(destination(pages[1]!)).toBe('/index.html');
+    expect(destination(`/u/:alias(${alias})`)).toBe('/index.html');
+    for (const rule of crawlers) {
+      expect(rule.destination).toBe('/api/gateway');
+      expect(config.rewrites.indexOf(rule)).toBeLessThan(config.rewrites.findIndex(rewrite=>!rewrite.has&&rewrite.destination==='/index.html'&&rewrite.source.startsWith(rule.source.slice(0,3))));
+      expect(rule.has).toEqual([{type:'header',key:'user-agent',value:crawlers[0]!.has![0]!.value}]);
+    }
+    const crawls=new RegExp(`^${crawlers[0]!.has![0]!.value}$`);
     for (const agent of ['Twitterbot/1.0','facebookexternalhit/1.1 Facebot Twitterbot/1.0','Slackbot-LinkExpanding 1.0 (+https://api.slack.com/robots)','Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)','LinkedInBot/1.0 (compatible; Mozilla/5.0; Apache-HttpClient +http://www.linkedin.com)','TelegramBot (like TwitterBot)','WhatsApp/2.23.20.0','Mozilla/5.0 (compatible; Bluesky Cardyb/1.1; +mailto:support@bsky.app)']) expect(crawls.test(agent),agent).toBe(true);
     for (const agent of ['Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36']) expect(crawls.test(agent),agent).toBe(false);
   });

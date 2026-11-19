@@ -399,6 +399,36 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
     expect((await request('GET', '/og/bob.png?period=24h')).statusCode).toBe(400);
   });
 
+  it('wraps a month or year with the rank among builders active in it and what the member shares', async () => {
+    await upload(await joined('alice'), [
+      bucket(100, {tool: 'claude', model: 'claude-sonnet-4-6', costMicrousd: 5_000}),
+      bucket(50, {day: '2026-10-21', tool: 'codex', model: 'gpt-6-sol', costMicrousd: 1_000}),
+      bucket(70, {day: '2026-09-30', tool: 'claude', model: 'claude-sonnet-4-6', costMicrousd: 700}),
+    ]);
+    await upload(await joined('bob'), [bucket(300, {tool: 'claude', model: 'claude-sonnet-4-6', costMicrousd: 2_000})]);
+    await joined('carol');
+    const month = await request('GET', '/api/wrapped/Alice/2026-10');
+    expect(month.statusCode).toBe(200);
+    expect(month.headers['cache-control']).toBe('public, max-age=300');
+    const wrap = month.json();
+    expect(wrap).toMatchObject({alias: 'alice', period: '2026-10', from: '2026-10-01', to: '2026-10-23', tokens: 150, rank: 2, builders: 2, previousTokens: 70,
+      activeDays: 2, longestStreak: 1, bestDay: {day: '2026-10-23', tokens: 100}, costMicrousd: 6_000, toolTokens: {claude: 100, codex: 50},
+      models: [{model: 'claude-sonnet-4-6', tokens: 100}, {model: 'gpt-6-sol', tokens: 50}]});
+    expect(wrap.daily).toHaveLength(23);
+    expect(wrap.daily.at(-3)).toEqual({day: '2026-10-21', tokens: 50});
+    expect((await request('GET', '/api/wrapped/alice/2026')).json()).toMatchObject({from: '2026-01-01', to: '2026-10-23', tokens: 220, rank: 2, previousTokens: 0, activeDays: 3, longestStreak: 1});
+    expect((await request('GET', '/api/wrapped/alice/2026-09')).json()).toMatchObject({tokens: 70, rank: 1, builders: 1, previousTokens: 0});
+    // Published without usage in the period: no rank, still a wrap.
+    expect((await request('GET', '/api/wrapped/carol/2026-10')).json()).toMatchObject({tokens: 0, rank: 0, builders: 2, activeDays: 0, bestDay: null});
+    for (const period of ['2026-11', '2027', '2026-13', 'october', '2026-10-01']) expect((await request('GET', `/api/wrapped/alice/${period}`)).statusCode, period).toBe(400);
+    expect((await request('GET', '/api/wrapped/nobody/2026-10')).statusCode).toBe(404);
+    expect((await request('GET', '/api/wrapped/alice/2026-10?x=1')).statusCode).toBe(400);
+    const card = await request('GET', '/og/wrapped/alice/2026-10.png');
+    expect([card.statusCode, card.headers['content-type'], card.rawPayload.readUInt32BE(16), card.rawPayload.readUInt32BE(20)]).toEqual([200, 'image/png', 1200, 630]);
+    expect((await request('GET', '/og/wrapped/nobody/2026-10.png')).headers['content-type']).toBe('image/png');
+    for (const path of ['/og/wrapped/alice/october.png', '/og/wrapped/alice/2026-10.svg']) expect((await request('GET', path)).statusCode, path).toBe(404);
+  });
+
   it('denies SQL access to untrusted roles with ACLs and RLS as defense in depth', async () => {
     await joined();
     const role = `cloud_role_${randomUUID().replaceAll('-', '')}`;

@@ -1,3 +1,4 @@
+import {wrapLabel} from '@tokentracky/core';
 import {compactCount, type PostgresCloudRepository} from '@tokentracky/cloud';
 
 /** What a link preview shows for a shareable page: its title, a line of text, the 1200×630 image and the page's address. */
@@ -37,6 +38,19 @@ export async function profileMeta(repository: Pick<PostgresCloudRepository, 'pro
     return {...page, title: `${profile.alias} on Tokentracky`, description: `#${profile.rank} all time with ${compactCount(profile.tokens)} AI coding tokens. See where you rank on the token leaderboard.`};
   } catch {
     // The page still loads for people; only the preview falls back to the site's text.
+    return {...page, title: 'Tokentracky — the token leaderboard', description: SITE_DESCRIPTION};
+  }
+}
+
+/** A wrap's preview: its tokens and rank in the month or year, or the site's own text when it cannot be read. */
+export async function wrappedMeta(repository: Pick<PostgresCloudRepository, 'wrapped'>, alias: string, period: string, site: string): Promise<ShareMeta> {
+  const name = alias.toLowerCase();
+  const label = wrapLabel(period);
+  const page = {image: `${site}/og/wrapped/${name}/${period}.png`, url: `${site}/wrapped/${name}/${period}`};
+  try {
+    const wrap = await repository.wrapped(name, period);
+    return {...page, title: `${wrap.alias}'s ${label} on Tokentracky`, description: `${compactCount(wrap.tokens)} AI coding tokens${wrap.rank > 0 ? `, #${wrap.rank} of ${wrap.builders} builders` : ''} in ${label}. See where you rank on the token leaderboard.`};
+  } catch {
     return {...page, title: 'Tokentracky — the token leaderboard', description: SITE_DESCRIPTION};
   }
 }

@@ -221,6 +221,13 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('hosted GitHub username wiring',
       const unknown=(await app.inject({url:'/u/nobody-at-all',headers:{'x-tokentracky-host':'evil.example/"><script>'}})).body;
       expect(unknown).toContain('<title>Tokentracky — the token leaderboard</title>');
       expect(unknown).toContain('<meta property="og:image" content="http://localhost:80/og/nobody-at-all.png" />');
+      const month=new Date().toISOString().slice(0,7);
+      const wrap=(await app.inject({url:`/wrapped/${alias}/${month}`,headers:{'x-tokentracky-host':'tokentracky.com'}})).body;
+      expect(wrap).toMatch(new RegExp(`<title>${alias}&#39;s \\w+ \\d{4} on Tokentracky</title>`));
+      expect(wrap).toMatch(/<meta name="description" content="0 AI coding tokens in \w+ \d{4}\. See where you rank/);
+      expect(wrap).toContain(`<meta property="og:image" content="https://tokentracky.com/og/wrapped/${alias}/${month}.png" />`);
+      expect((await app.inject(`/wrapped/${alias}/2999`)).body).toContain('<title>Tokentracky — the token leaderboard</title>');
+      for (const path of [`/wrapped/${alias}/2026-13`,`/wrapped/${alias}`,'/wrapped/x/2026']) expect((await app.inject(path)).statusCode,path).toBe(404);
     } finally {expect((await member('DELETE','/api/account')).statusCode).toBe(204);}
   });
   it.each([

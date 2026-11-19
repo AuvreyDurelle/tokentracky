@@ -5,7 +5,7 @@ import { CloudError, invalid } from './errors.ts';
 import { PostgresCloudRepository, type Liker } from './repository.ts';
 import { object } from './validation.ts';
 import { badgeOptions, badgeSvg, cardSvg, compactCount, formatUsd } from './badge.ts';
-import { pngFromSvg, profileCardSvg, publicSite } from './og.ts';
+import { pngFromSvg, profileCardSvg, publicSite, wrappedCardSvg } from './og.ts';
 import type { GithubLogin } from './github.ts';
 
 export interface CloudRoutesOptions {
@@ -66,7 +66,7 @@ export async function registerCloudRoutes(app: FastifyInstance, options: CloudRo
   await app.register(async cloud => {
     cloud.setErrorHandler((error, request, reply) => {
       if (error instanceof CloudError) {
-        if (error.code === 'COUNTER_OVERFLOW' && ['GET', 'HEAD'].includes(request.method) && /^(?:\/api\/(?:leaderboard|profiles|community)(?:[/?]|$)|\/(?:badge|card|og)\/)/.test(request.url)) repository.publicCounterFailure();
+        if (error.code === 'COUNTER_OVERFLOW' && ['GET', 'HEAD'].includes(request.method) && /^(?:\/api\/(?:leaderboard|profiles|community|wrapped)(?:[/?]|$)|\/(?:badge|card|og)\/)/.test(request.url)) repository.publicCounterFailure();
         return reply.code(error.statusCode).send({error: {code: error.code, message: error.message}});
       }
       const status = error && typeof error === 'object' && 'statusCode' in error ? error.statusCode : undefined;
@@ -167,6 +167,20 @@ export async function registerCloudRoutes(app: FastifyInstance, options: CloudRo
       let stats = null;
       try { stats = await repository.profileStats(alias); } catch (error) { if (!(error instanceof CloudError && error.statusCode === 404)) throw error; }
       return reply.type('image/png').send(pngFromSvg(profileCardSvg(stats, window, publicSite(request.headers))));
+    });
+    // Wraps of a calendar month (`YYYY-MM`) or year (`YYYY`), and their preview cards.
+    cloud.get<{Params: {alias: string; period: string}}>('/api/wrapped/:alias/:period', cached(300), async request => {
+      object(request.query, []);
+      if (!ALIAS_PATTERN.test(request.params.alias)) throw notFound();
+      return repository.wrapped(request.params.alias, request.params.period);
+    });
+    cloud.get<{Params: {alias: string; file: string}}>('/og/wrapped/:alias/:file', cached(300), async (request, reply) => {
+      object(request.query, []);
+      const period = request.params.file.endsWith('.png') ? request.params.file.slice(0, -4) : '';
+      if (!ALIAS_PATTERN.test(request.params.alias) || !/^\d{4}(?:-\d{2})?$/.test(period)) throw notFound();
+      let wrap = null;
+      try { wrap = await repository.wrapped(request.params.alias, period); } catch (error) { if (!(error instanceof CloudError && error.statusCode === 404)) throw error; }
+      return reply.type('image/png').send(pngFromSvg(wrappedCardSvg(wrap, period, publicSite(request.headers))));
     });
     cloud.get<{Params: {alias: string}}>('/api/profiles/:alias', async request => {
       const q = object(request.query, ['period']);

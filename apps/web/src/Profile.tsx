@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { fitFacts, rankingWindow, totalTokens, windowActivity, type BadgeProgress, type Period, type ProfileStats, type TokenCounts } from '@tokentracky/core';
+import { adjacentWrap, fitFacts, rankingWindow, totalTokens, windowActivity, wrapLabel, type BadgeProgress, type Period, type ProfileStats, type TokenCounts } from '@tokentracky/core';
 import { ApiError, type ApiClient } from './api';
 import { INSTALL_COMMAND, MAC_DOWNLOAD } from './download-config';
 import { KINDS, TOOLS, errorText, formatCompact, formatCost, formatCostCompact, formatExact, formatShare, shortDay, topPercent } from './format';
@@ -253,6 +253,9 @@ function ShareCard({ stats, origin }: { stats: ProfileStats; origin: string | nu
         {origin && <button type="button" className="btn sm" onClick={() => void copy(() => navigator.clipboard.writeText(`${origin}/u/${stats.alias}?ref=share`), 'Link copied.')}>Copy link</button>}
         {origin && <button type="button" className="btn sm" onClick={postOnX}>Post on X</button>}
       </div>
+      <div className="field">Wrapped
+        <div className="actions">{wrapPeriods(new Date().toISOString().slice(0, 10)).map((wrap) => <a key={wrap} className="btn sm" href={`/wrapped/${stats.alias}/${wrap}`}>{wrapLabel(wrap)}</a>)}</div>
+      </div>
       {markdown && <div className="field">README badge
         {hosted && <img className="badge-preview" src={`/badge/${stats.alias}.svg`} alt={`Tokentracky badge for ${stats.alias}`} />}
         <div className="copy-row"><code>{markdown}</code><button type="button" className="btn sm" onClick={() => void copy(() => navigator.clipboard.writeText(markdown), 'Badge markdown copied.')}>Copy</button></div>
@@ -261,6 +264,11 @@ function ShareCard({ stats, origin }: { stats: ProfileStats; origin: string | nu
       {message && <p className="faint" role="status">{message}</p>}
     </div>
   </section>;
+}
+
+/** The wraps a profile links to: last month, this month so far and this year so far. */
+export function wrapPeriods(today: string): string[] {
+  return [adjacentWrap(today.slice(0, 7), -1), today.slice(0, 7), today.slice(0, 4)];
 }
 
 /** 1200×630 Open Graph-sized card in the graphite theme: name, rank and tokens in the chosen window, and a year of activity. */

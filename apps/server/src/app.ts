@@ -1,4 +1,4 @@
-import {type FastifyInstance} from 'fastify';
+import {type FastifyInstance,type FastifyReply} from 'fastify';
 import {ALIAS_PATTERN} from '@tokentracky/core';
 import {createHttpServer} from './http-server.ts';
 import staticFiles from '@fastify/static';
@@ -10,7 +10,7 @@ import type {GatewayAuthConfig} from './gateway-auth.ts';
 import {readFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {publicSite} from '@tokentracky/cloud';
-import {profileMeta, withShareMeta, type ShareMeta} from './share-page.ts';
+import {profileMeta, withShareMeta, wrappedMeta, type ShareMeta} from './share-page.ts';
 
 export interface HostedOptions {
   databaseUrl: string;
@@ -37,8 +37,13 @@ export function parseAuthProviders(value: string | undefined): AuthProvider[] {
 }
 /** Pages the web app renders at their own addresses; static hosting (vercel.json) must rewrite the same set. */
 export const SPA_PAGES = ['/privacy','/terms','/support','/leaderboard','/you','/join'] as const;
+/** Preview tags for the pages people share; link previews read them (on Vercel, only their crawlers reach these routes). */
+interface SharePages {
+  profile(alias: string, site: string): Promise<ShareMeta>;
+  wrapped(alias: string, period: string, site: string): Promise<ShareMeta>;
+}
 export const contentSecurityPolicy = (authOrigin?: string) => `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'${authOrigin ? ' '+authOrigin : ''}; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'`;
-async function baseApp(webRoot: string, authOrigin?: string, trustedProxies?: string[], rateLimitStore?: FastifyRateLimitStoreCtor, gateway?: GatewayAuthConfig, pageMeta?: (alias: string, site: string) => Promise<ShareMeta>): Promise<FastifyInstance> {
+async function baseApp(webRoot: string, authOrigin?: string, trustedProxies?: string[], rateLimitStore?: FastifyRateLimitStoreCtor, gateway?: GatewayAuthConfig, pages?: SharePages): Promise<FastifyInstance> {
   // No request logging: headers, query strings and local paths may contain secrets.
   const app = await createHttpServer({trustedProxies,store:rateLimitStore,gateway});
   app.addHook('onRequest', async (_request,reply) => {
@@ -59,15 +64,18 @@ async function baseApp(webRoot: string, authOrigin?: string, trustedProxies?: st
   app.get('/',(_request,reply)=>reply.sendFile('index.html'));
   // Legal and support pages are rendered by the web app at their own addresses.
   for (const page of SPA_PAGES) app.get(page,(_request,reply)=>reply.sendFile('index.html'));
-  // Public profiles have shareable addresses; the web app shows its own not-found state for unknown names. The page carries
-  // the profile's preview tags, which link previews read (on Vercel, only their crawlers are sent here).
+  // Public profiles and wraps have shareable addresses; the web app shows its own not-found state for unknown names. Each
+  // page carries its preview tags.
   let index: Promise<string> | undefined;
-  app.get<{Params:{alias:string}}>('/u/:alias',async(request,reply)=>{
-    if (!ALIAS_PATTERN.test(request.params.alias)) return reply.callNotFound();
-    if (!pageMeta) return reply.sendFile('index.html');
+  const shared = async (reply: FastifyReply, meta: () => Promise<ShareMeta>) => {
+    if (!pages) return reply.sendFile('index.html');
     index ??= readFile(join(webRoot,'index.html'),'utf8');
-    return reply.type('text/html; charset=utf-8').send(withShareMeta(await index,await pageMeta(request.params.alias,publicSite(request.headers))));
-  });
+    return reply.type('text/html; charset=utf-8').send(withShareMeta(await index,await meta()));
+  };
+  app.get<{Params:{alias:string}}>('/u/:alias',async(request,reply)=>ALIAS_PATTERN.test(request.params.alias)
+    ? shared(reply,()=>pages!.profile(request.params.alias,publicSite(request.headers))) : reply.callNotFound());
+  app.get<{Params:{alias:string;period:string}}>('/wrapped/:alias/:period',async(request,reply)=>ALIAS_PATTERN.test(request.params.alias) && /^\d{4}(?:-(?:0[1-9]|1[0-2]))?$/.test(request.params.period)
+    ? shared(reply,()=>pages!.wrapped(request.params.alias,request.params.period,publicSite(request.headers))) : reply.callNotFound());
   app.setNotFoundHandler((_request,reply)=>reply.code(404).send({error:{code:'NOT_FOUND',message:'This endpoint does not exist.'}}));
   return app;
 }
@@ -92,7 +100,7 @@ export async function createHostedApp(options: HostedOptions): Promise<FastifyIn
   // Moderation events go to Cloud Logging as structured lines for the log-based alert; they carry no alias or account id.
   const logModeration = (event:object)=>{process.stdout.write(`${JSON.stringify({severity:'NOTICE',...event})}\n`);};
   const repository = new PostgresCloudRepository(pool,undefined,undefined,logModeration,moderationPolicy);
-  const app = await baseApp(options.webRoot,publicAuth,options.trustedProxies,postgresRateLimitStore(pool),options.gateway,(alias,site)=>profileMeta(repository,alias,site)).catch(async error => {await pool.end();throw error;});
+  const app = await baseApp(options.webRoot,publicAuth,options.trustedProxies,postgresRateLimitStore(pool),options.gateway,{profile:(alias,site)=>profileMeta(repository,alias,site),wrapped:(alias,period,site)=>wrappedMeta(repository,alias,period,site)}).catch(async error => {await pool.end();throw error;});
   app.addHook('onClose',async()=>{await pool.end();});
   try {
     await migrateCloud(pool);
