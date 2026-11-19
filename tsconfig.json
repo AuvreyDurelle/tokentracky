@@ -25,6 +25,8 @@
     "apps/web/**/*.ts",
     "apps/web/**/*.tsx",
     "packages/core/**/*.ts",
+    "packages/town/**/*.ts",
+    "packages/town/**/*.tsx",
     "packages/cloud/**/*.ts",
     "tests/**/*.ts",
     "vitest.config.ts"

@@ -5,6 +5,7 @@
   "type": "module",
   "workspaces": [
     "packages/core",
+    "packages/town",
     "packages/cloud",
     "apps/server",
     "apps/web"
