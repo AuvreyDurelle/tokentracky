@@ -1,16 +1,9 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { heatLevels } from '@tokentracky/core';
 import { formatExact, shortDay } from './format';
 
 const WEEKDAYS = ['Mon', '', 'Wed', '', 'Fri', '', ''];
 const LEVELS = 4;
-
-/** 0 for no usage, else 1–4 by quartile of the active days, so one huge day doesn't flatten the rest. */
-export function heatLevels(values: number[]): number[] {
-  const active = values.filter((value) => value > 0).sort((a, b) => a - b);
-  const cut = (share: number) => active[Math.max(0, Math.ceil(active.length * share) - 1)]!;
-  const bounds = active.length ? [cut(0.25), cut(0.5), cut(0.75)] : [];
-  return values.map((value) => value <= 0 ? 0 : 1 + bounds.filter((bound) => value > bound).length);
-}
 
 /** Calendar of daily tokens, Monday-first UTC weeks as columns. Hover, focus and arrow keys read each day; a hidden table carries every value. */
 export function Heatmap({ days, label }: { days: Array<{ day: string; tokens: number }>; label: string }) {

@@ -12,5 +12,5 @@ export function totalTokens(tokens: TokenCounts): number {
 
 export { rankingWindow, isUtcDay, isSafeCount, checkedSum } from './ranking.ts';
 export { activityStats } from './activity.ts';
-export { windowActivity, fitFacts, wrapRange, wrapLabel, adjacentWrap } from './share.ts';
+export { windowActivity, fitFacts, wrapRange, wrapLabel, adjacentWrap, heatLevels } from './share.ts';
 export { BADGE_TIERS, badgeInputs, badgeProgress, type BadgeInputs } from './badges.ts';

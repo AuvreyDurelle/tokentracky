@@ -50,3 +50,11 @@ export function adjacentWrap(period: string, step: -1 | 1): string {
   if (!match[2]) return String(Number(match[1]) + step);
   return utcDay(Number(match[1]), Number(match[2]) + step, 1).slice(0, 7);
 }
+
+/** 0 for no usage, else 1–4 by quartile of the active days, so one huge day doesn't flatten the rest. */
+export function heatLevels(values: number[]): number[] {
+  const active = values.filter((value) => value > 0).sort((a, b) => a - b);
+  const cut = (share: number) => active[Math.max(0, Math.ceil(active.length * share) - 1)]!;
+  const bounds = active.length ? [cut(0.25), cut(0.5), cut(0.75)] : [];
+  return values.map((value) => value <= 0 ? 0 : 1 + bounds.filter((bound) => value > bound).length);
+}

@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
-import type { HourBreakdownRow, MenuOverview, SessionSummary, UsageSummary } from '@tokentracky/core';
+import { heatLevels, type HourBreakdownRow, type MenuOverview, type SessionSummary, type UsageSummary } from '@tokentracky/core';
 import type { ApiClient, LocalStatus } from '../api';
 import { errorText, formatCompact, formatCost, formatExact, formatShare, shortDay, timeAgo, toolLabel } from '../format';
-import { heatLevels } from '../Heatmap';
 import { addDays, fillRange, hourList, utcToday } from '../ranges';
 import { usageRevision } from '../refresh';
 import { Avatar, ToolIcon } from '../ui';

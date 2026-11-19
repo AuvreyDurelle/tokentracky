@@ -259,7 +259,7 @@ function ShareCard({ stats, origin }: { stats: ProfileStats; origin: string | nu
       {markdown && <div className="field">README badge
         {hosted && <img className="badge-preview" src={`/badge/${stats.alias}.svg`} alt={`Tokentracky badge for ${stats.alias}`} />}
         <div className="copy-row"><code>{markdown}</code><button type="button" className="btn sm" onClick={() => void copy(() => navigator.clipboard.writeText(markdown), 'Badge markdown copied.')}>Copy</button></div>
-        <small>Add <code>?metric=cost</code> or <code>?metric=rank</code>, and <code>&amp;period=week</code> or <code>month</code>, to change what it shows.</small>
+        <small>Add <code>?metric=cost</code>, <code>?metric=rank</code> or <code>?metric=streak</code>, and <code>&amp;period=week</code> or <code>month</code>, to change what it shows. The heatmap is at <code>/card/heatmap/{stats.alias}.svg</code>.</small>
       </div>}
       {message && <p className="faint" role="status">{message}</p>}
     </div>

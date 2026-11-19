@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { badgeOptions, badgeSvg, cardSvg } from '../src/badge.ts';
+import { badgeOptions, badgeSvg, cardSvg, heatmapSvg } from '../src/badge.ts';
 
 describe('badge options', () => {
   it('defaults to a flat tokentracky badge in the accent colour', () => {
@@ -49,5 +49,29 @@ describe('README card', () => {
     expect(svg).toContain('>This week<');
     expect(svg).toContain('fill="#ffffff"');
     expect(cardSvg(null, 'dark', 'all')).toContain('>private<');
+  });
+});
+
+describe('README heatmap', () => {
+  // 365 days ending Thursday 2026-10-22: Monday-first weeks put the first day, Thursday 2025-10-23, in row 3.
+  const daily = Array.from({length: 365}, (_, index) => ({day: new Date(Date.UTC(2025, 9, 23) + index * 86_400_000).toISOString().slice(0, 10), tokens: index >= 361 ? 10 ** (index - 360) : 0}));
+  it('draws a cell per day in the site\'s quartile levels, with month and weekday labels, the year\'s total and the streak', () => {
+    const svg = heatmapSvg({alias: 'token-wizard', daily, currentStreak: 4}, 'dark');
+    expect(svg.match(/<rect x="\d+" y="\d+" width="10" height="10" rx="2" fill="[^"]+"><title>/g)).toHaveLength(365);
+    expect(svg).toContain('<rect x="52" y="103" width="10" height="10" rx="2" fill="#161719"><title>2025-10-23: 0 tokens</title>');
+    expect(svg).toContain('fill="#eceef0"><title>2026-10-22: 10,000 tokens</title>');
+    expect(svg).toContain('fill="#2c2e31"><title>2026-10-19: 10 tokens</title>');
+    expect(svg).toContain('>Nov<');
+    expect(svg).toContain('>Mon<');
+    expect(svg).toContain('token-wizard<tspan');
+    expect(svg).toContain(' · 11K tokens in the last year<');
+    expect(svg).toContain('>4-day streak<');
+    expect(svg).toContain('width="761"');
+  });
+  it('uses light colours on the light theme, escapes the name and draws the private placeholder', () => {
+    expect(heatmapSvg({alias: 'a<b', daily, currentStreak: 0}, 'light')).toContain('a&#60;b');
+    expect(heatmapSvg({alias: 'x', daily, currentStreak: 0}, 'light')).toContain('fill="#ebedf0"><title>2025-10-23');
+    expect(heatmapSvg({alias: 'x', daily, currentStreak: 0}, 'dark')).toContain('>No current streak<');
+    expect(heatmapSvg(null, 'dark')).toContain('>private<');
   });
 });

@@ -371,7 +371,9 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
     expect((await request('GET', '/badge/alice.svg?metric=cost')).body).toContain('>$0.01<');
     expect((await request('GET', '/badge/bob.svg?metric=rank&period=week')).body).toContain('>#1 this week<');
     expect((await request('GET', '/badge/nobody.svg')).body).toContain('>private<');
-    expect((await request('GET', '/badge/bob.svg?metric=streak')).statusCode).toBe(400);
+    expect((await request('GET', '/badge/bob.svg?metric=streak')).body).toContain('>1-day streak<');
+    expect((await request('GET', '/badge/nobody.svg?metric=streak')).body).toContain('>private<');
+    expect((await request('GET', '/badge/bob.svg?metric=likes')).statusCode).toBe(400);
     expect((await request('GET', '/badge/bob.png')).statusCode).toBe(404);
     const styled = (await request('GET', '/badge/bob.svg?style=flat-square&label=AI%20tokens&color=ff8800')).body;
     expect(styled).toContain('>AI tokens<');
@@ -388,6 +390,12 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
     expect((await request('GET', '/card/nobody.svg')).body).toContain('>private<');
     for (const query of ['theme=blue', 'period=year', 'size=2']) expect((await request('GET', `/card/bob.svg?${query}`)).statusCode).toBe(400);
     expect((await request('GET', '/card/bob.png')).statusCode).toBe(404);
+    const heatmap = await request('GET', '/card/heatmap/bob.svg?theme=light');
+    expect([heatmap.statusCode, heatmap.headers['content-type'], heatmap.headers['cache-control']]).toEqual([200, 'image/svg+xml; charset=utf-8', 'public, max-age=60']);
+    expect(heatmap.body).toContain('<title>2026-10-23: 300 tokens</title>');
+    expect(heatmap.body).toContain('>1-day streak<');
+    expect((await request('GET', '/card/heatmap/nobody.svg')).body).toContain('>private<');
+    for (const [path, status] of [['/card/heatmap/bob.svg?theme=blue', 400], ['/card/heatmap/bob.svg?period=week', 400], ['/card/heatmap/bob.png', 404]] as const) expect((await request('GET', path)).statusCode, path).toBe(status);
     const preview = await request('GET', '/og/bob.png?period=week');
     expect(preview.statusCode).toBe(200);
     expect(preview.headers['content-type']).toBe('image/png');

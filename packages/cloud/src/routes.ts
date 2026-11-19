@@ -4,7 +4,7 @@ import { bearer, createAccountVerifier, type AccountIdentity, type AccountVerifi
 import { CloudError, invalid } from './errors.ts';
 import { PostgresCloudRepository, type Liker } from './repository.ts';
 import { object } from './validation.ts';
-import { badgeOptions, badgeSvg, cardSvg, compactCount, formatUsd } from './badge.ts';
+import { badgeOptions, badgeSvg, cardSvg, compactCount, formatUsd, heatmapSvg } from './badge.ts';
 import { pngFromSvg, profileCardSvg, publicSite, wrappedCardSvg } from './og.ts';
 import type { GithubLogin } from './github.ts';
 
@@ -131,18 +131,21 @@ export async function registerCloudRoutes(app: FastifyInstance, options: CloudRo
     cloud.get<{Params: {file: string}}>('/badge/:file', cached(60), async (request, reply) => {
       const q = object(request.query, ['metric', 'period', 'style', 'label', 'color']);
       const metric = q.metric ?? 'tokens';
-      if (metric !== 'tokens' && metric !== 'cost' && metric !== 'rank') invalid('Invalid badge metric');
+      if (metric !== 'tokens' && metric !== 'cost' && metric !== 'rank' && metric !== 'streak') invalid('Invalid badge metric');
       const window = period(q.period ?? 'all');
       const options = badgeOptions(q);
       const alias = request.params.file.endsWith('.svg') ? request.params.file.slice(0, -4) : '';
       if (!ALIAS_PATTERN.test(alias)) throw notFound();
       let value = 'private';
       try {
-        const profile = await repository.profile(alias, window);
-        const label = window === 'all' ? '' : ` this ${window}`;
-        value = metric === 'rank' ? `#${profile.rank}${label}`
-          : metric === 'cost' ? (typeof profile.costMicrousd === 'number' ? `${formatUsd(profile.costMicrousd)}${label}` : 'private')
-          : `${compactCount(profile.tokens)} tokens${label}`;
+        if (metric === 'streak') value = `${(await repository.profileStats(alias)).activity.currentStreak}-day streak`;
+        else {
+          const profile = await repository.profile(alias, window);
+          const label = window === 'all' ? '' : ` this ${window}`;
+          value = metric === 'rank' ? `#${profile.rank}${label}`
+            : metric === 'cost' ? (typeof profile.costMicrousd === 'number' ? `${formatUsd(profile.costMicrousd)}${label}` : 'private')
+            : `${compactCount(profile.tokens)} tokens${label}`;
+        }
       } catch (error) { if (!(error instanceof CloudError && error.statusCode === 404)) throw error; }
       return reply.type('image/svg+xml; charset=utf-8').send(badgeSvg(value, options));
     });
@@ -157,6 +160,20 @@ export async function registerCloudRoutes(app: FastifyInstance, options: CloudRo
       let data = null;
       try { data = await repository.profile(alias, window); } catch (error) { if (!(error instanceof CloudError && error.statusCode === 404)) throw error; }
       return reply.type('image/svg+xml; charset=utf-8').send(cardSvg(data && {alias: data.alias, rank: data.rank, tokens: data.tokens, costMicrousd: data.costMicrousd, tools: data.toolTokens}, theme, window));
+    });
+    // README heatmaps: a year of daily tokens, with the same placeholder rule as badges.
+    cloud.get<{Params: {file: string}}>('/card/heatmap/:file', cached(60), async (request, reply) => {
+      const q = object(request.query, ['theme']);
+      const theme = q.theme ?? 'dark';
+      if (theme !== 'dark' && theme !== 'light') invalid('Heatmap theme must be dark or light');
+      const alias = request.params.file.endsWith('.svg') ? request.params.file.slice(0, -4) : '';
+      if (!ALIAS_PATTERN.test(alias)) throw notFound();
+      let data = null;
+      try {
+        const stats = await repository.profileStats(alias);
+        data = {alias: stats.alias, daily: stats.daily, currentStreak: stats.activity.currentStreak};
+      } catch (error) { if (!(error instanceof CloudError && error.statusCode === 404)) throw error; }
+      return reply.type('image/svg+xml; charset=utf-8').send(heatmapSvg(data, theme));
     });
     // Link previews: the 1200×630 profile card as PNG, and the leaderboard card for a private or unknown name, as badges do.
     cloud.get<{Params: {file: string}}>('/og/:file', cached(300), async (request, reply) => {
