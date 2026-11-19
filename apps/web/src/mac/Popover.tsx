@@ -85,14 +85,15 @@ export function Popover({ api, status, site }: { api: ApiClient; status: LocalSt
       .catch((value: unknown) => { if (live) setError(errorText(value)); });
     return () => { live = false; };
   }, [api, today, revision, reloads]);
-  // The published profile, through the app, for the milestone banner; it waits for the alias and is read once a cycle.
+  // The published profile, through the app, for the milestone banner; it waits for the alias and is read again each cycle
+  // and on Refresh now.
   const alias = status?.alias ?? null;
   useEffect(() => {
     if (!alias || !site) { setStats(null); return; }
     let live = true;
     api.profileStats(alias).then((value) => { if (live) setStats(value); }, () => {});
     return () => { live = false; };
-  }, [api, alias, site, revision]);
+  }, [api, alias, site, revision, reloads]);
   const act = async (name: 'refresh' | 'pause', action: () => Promise<unknown>) => {
     setBusy(name); setError(null);
     try { await action(); } catch (value) { setError(errorText(value)); } finally { setBusy(null); }

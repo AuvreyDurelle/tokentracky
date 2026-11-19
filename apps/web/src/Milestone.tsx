@@ -38,22 +38,23 @@ export const browserSeen: SeenStore = {
  */
 export function MilestoneBanner({ stats, site, mac = false, store = browserSeen }: { stats: ProfileStats; site: string; mac?: boolean; store?: SeenStore }) {
   const [milestone, setMilestone] = useState<Milestone | null>(null);
-  // Checked once a mount: the profile is read again as it refreshes, and a second check would find this one seen.
-  const checked = useRef(false);
+  // A banner stays up until Dismiss or Share: the profile is read again as it refreshes, and a check then would find the
+  // banner's milestone seen. Without one up, each refresh checks again, so one reached meanwhile shows.
+  const showing = useRef(false);
   useEffect(() => {
-    if (checked.current) return;
-    checked.current = true;
+    if (showing.current) return;
     // Without the ids shown, nothing shows: an unreadable store must not bring every milestone back.
     store.read().then((stored) => {
+      if (showing.current) return;
       const next = nextMilestone(milestones(stats, rankingWindow('week')!.slice(0, 10)), stored);
       // Shown once: one write records it as it appears, so closing the popover or opening the browser loses nothing.
       if (stored === null || next.show) void store.write(next.show ? [...next.seen, next.show.id] : next.seen).catch(() => {});
-      setMilestone(next.show);
+      if (next.show) { showing.current = true; setMilestone(next.show); }
     }, () => {});
   }, [stats, store]);
   if (!milestone) return null;
   const copy = milestoneCopy(milestone);
-  const dismiss = () => setMilestone(null);
+  const dismiss = () => { showing.current = false; setMilestone(null); };
   const share = () => {
     const profile = `${site}/u/${stats.alias}`;
     window.open(mac ? `${profile}#share` : `https://x.com/intent/post?${new URLSearchParams({ text: copy.post, url: `${profile}?ref=share` }).toString()}`, '_blank', 'noopener');
