@@ -4,6 +4,7 @@ import { toolColumns, TOOL_COLUMNS } from './columns';
 import { fitFacts, TOOL_IDS, TOOL_NAMES, windowActivity, type ToolId, type ProfileStats, type Wrapped } from '@tokentracky/core';
 import { badgeMarkdown, ProfileView, ProfileTypes, wrapPeriods, xShareUrl } from './Profile';
 import { wrapChange, wrapShareUrl, WrappedView } from './Wrapped';
+import { compareShareUrl, CompareView, leadLine } from './Compare';
 import { runningTotals } from './ProfileUsage';
 import { TOOLS, toolLabel, topPercent } from './format';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -24,6 +25,9 @@ describe('shareable addresses', () => {
     expect(parseRoute('/wrapped/token-wizard/2026')).toEqual({ page: 'wrapped', alias: 'token-wizard', period: '2026' });
     for (const path of ['/wrapped/token-wizard', '/wrapped/token-wizard/2026-13', '/wrapped/token-wizard/26', '/wrapped/x/2026']) expect(parseRoute(path), path).toEqual({ page: 'missing' });
     expect(routePath({ page: 'wrapped', alias: 'token-wizard', period: '2026-11' })).toBe('/wrapped/token-wizard/2026-11');
+    expect(parseRoute('/vs/Alice/bob')).toEqual({ page: 'vs', a: 'alice', b: 'bob' });
+    for (const path of ['/vs/alice', '/vs/alice/b', '/vs/alice/bob/c']) expect(parseRoute(path), path).toEqual({ page: 'missing' });
+    expect(routePath({ page: 'vs', a: 'alice', b: 'bob' })).toBe('/vs/alice/bob');
   });
 });
 
@@ -253,5 +257,35 @@ describe('join page', () => {
       vi.doUnmock('./download-config');
       vi.resetModules();
     }
+  });
+});
+
+describe('head to head', () => {
+  const base: ProfileStats = {
+    alias: 'marenh', likes: 0, memberSince: '2026-01-01', badges: [], daily: [],
+    periods: { week: { rank: 3, tokens: 2_000, builders: 40 }, month: { rank: 2, tokens: 9_000, builders: 60 }, all: { rank: 1, tokens: 1_100_000, builders: 200 } },
+    activity: { activeDays: 20, currentStreak: 2, longestStreak: 9, bestDay: { day: '2026-10-25', tokens: 600 }, averagePerActiveDay: 500 },
+    toolTokens: { claude: 800_000, codex: 300_000 }, models: [{ model: 'claude-opus-5-5', tokens: 900_000 }],
+  };
+  const rival: ProfileStats = { ...base, alias: 'rival', periods: { ...base.periods, all: { rank: 7, tokens: 550_000, builders: 200 } }, activity: { ...base.activity, longestStreak: 12 }, toolTokens: { codex: 9 }, models: undefined };
+  it('lines up both builders, bolding whoever is ahead on each row, and links the card', () => {
+    const html = renderToStaticMarkup(<CompareView a={base} b={rival} origin="https://tokentracky.test" onProfile={() => {}} />);
+    expect(html).toContain('marenh vs rival');
+    expect(html).toContain('marenh leads by 100%');
+    expect(html).toContain('src="/og/vs/marenh/rival.png"');
+    expect(html).toContain('<td class="ahead">1.1M</td><td>550K</td>');
+    expect(html).toContain('<td class="ahead">#1</td><td>#7</td>');
+    expect(html).toContain('<td>9 d</td><td class="ahead">12 d</td>');
+    expect(html).toContain('<td>Claude Code</td><td>Codex</td>');
+  });
+  it('posts the lead with the tagged link, and offers Compare with me on someone else\'s profile', () => {
+    expect(leadLine({ alias: 'a', tokens: 3 }, { alias: 'b', tokens: 3 })).toBe('Dead even');
+    const url = new URL(compareShareUrl(base, rival, 'all', 'https://tokentracky.test'));
+    expect(url.searchParams.get('text')).toBe('marenh vs rival on Tokentracky, all time: 1.1M to 550K tokens. marenh leads by 100%.');
+    expect(url.searchParams.get('url')).toBe('https://tokentracky.test/vs/marenh/rival?ref=share');
+    const profile = (me: string | null) => renderToStaticMarkup(<ProfileView stats={base} me={me} origin="https://tokentracky.test" join={null} onLeaderboard={() => {}} />);
+    expect(profile('rival')).toContain('href="/vs/rival/marenh"');
+    expect(profile('marenh')).not.toContain('Compare with me');
+    expect(profile(null)).not.toContain('Compare with me');
   });
 });

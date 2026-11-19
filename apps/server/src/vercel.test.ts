@@ -24,10 +24,11 @@ describe('static hosting config',()=>{
   it('sends only link-preview crawlers to the API for profile and wrap pages, before the page rewrites',()=>{
     const alias=ALIAS_PATTERN.source.slice(1,-1);
     // Unnamed groups, so Vercel adds no query field to the gateway request.
-    const pages=[`/u/(${alias})`,`/wrapped/(${alias})/([0-9]{4}(?:-(?:0[1-9]|1[0-2]))?)`];
+    const pages=[`/u/(${alias})`,`/wrapped/(${alias})/([0-9]{4}(?:-(?:0[1-9]|1[0-2]))?)`,`/vs/(${alias})/(${alias})`];
     const crawlers=config.rewrites.filter(rewrite=>rewrite.has);
     expect(crawlers.map(rule=>rule.source)).toEqual(pages);
     expect(destination(pages[1]!)).toBe('/index.html');
+    expect(destination(pages[2]!)).toBe('/index.html');
     expect(destination(`/u/:alias(${alias})`)).toBe('/index.html');
     for (const rule of crawlers) {
       expect(rule.destination).toBe('/api/gateway');

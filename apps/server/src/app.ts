@@ -10,7 +10,7 @@ import type {GatewayAuthConfig} from './gateway-auth.ts';
 import {readFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {publicSite} from '@tokentracky/cloud';
-import {profileMeta, withShareMeta, wrappedMeta, type ShareMeta} from './share-page.ts';
+import {compareMeta, profileMeta, withShareMeta, wrappedMeta, type ShareMeta} from './share-page.ts';
 
 export interface HostedOptions {
   databaseUrl: string;
@@ -41,6 +41,7 @@ export const SPA_PAGES = ['/privacy','/terms','/support','/leaderboard','/you','
 interface SharePages {
   profile(alias: string, site: string): Promise<ShareMeta>;
   wrapped(alias: string, period: string, site: string): Promise<ShareMeta>;
+  compare(a: string, b: string, site: string): Promise<ShareMeta>;
 }
 export const contentSecurityPolicy = (authOrigin?: string) => `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'${authOrigin ? ' '+authOrigin : ''}; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'`;
 async function baseApp(webRoot: string, authOrigin?: string, trustedProxies?: string[], rateLimitStore?: FastifyRateLimitStoreCtor, gateway?: GatewayAuthConfig, pages?: SharePages): Promise<FastifyInstance> {
@@ -64,7 +65,7 @@ async function baseApp(webRoot: string, authOrigin?: string, trustedProxies?: st
   app.get('/',(_request,reply)=>reply.sendFile('index.html'));
   // Legal and support pages are rendered by the web app at their own addresses.
   for (const page of SPA_PAGES) app.get(page,(_request,reply)=>reply.sendFile('index.html'));
-  // Public profiles and wraps have shareable addresses; the web app shows its own not-found state for unknown names. Each
+  // Public profiles, wraps and head-to-heads have shareable addresses; the web app shows its own not-found state for unknown names. Each
   // page carries its preview tags.
   let index: Promise<string> | undefined;
   const shared = async (reply: FastifyReply, meta: () => Promise<ShareMeta>) => {
@@ -76,6 +77,8 @@ async function baseApp(webRoot: string, authOrigin?: string, trustedProxies?: st
     ? shared(reply,()=>pages!.profile(request.params.alias,publicSite(request.headers))) : reply.callNotFound());
   app.get<{Params:{alias:string;period:string}}>('/wrapped/:alias/:period',async(request,reply)=>ALIAS_PATTERN.test(request.params.alias) && /^\d{4}(?:-(?:0[1-9]|1[0-2]))?$/.test(request.params.period)
     ? shared(reply,()=>pages!.wrapped(request.params.alias,request.params.period,publicSite(request.headers))) : reply.callNotFound());
+  app.get<{Params:{a:string;b:string}}>('/vs/:a/:b',async(request,reply)=>ALIAS_PATTERN.test(request.params.a) && ALIAS_PATTERN.test(request.params.b)
+    ? shared(reply,()=>pages!.compare(request.params.a,request.params.b,publicSite(request.headers))) : reply.callNotFound());
   app.setNotFoundHandler((_request,reply)=>reply.code(404).send({error:{code:'NOT_FOUND',message:'This endpoint does not exist.'}}));
   return app;
 }
@@ -100,7 +103,7 @@ export async function createHostedApp(options: HostedOptions): Promise<FastifyIn
   // Moderation events go to Cloud Logging as structured lines for the log-based alert; they carry no alias or account id.
   const logModeration = (event:object)=>{process.stdout.write(`${JSON.stringify({severity:'NOTICE',...event})}\n`);};
   const repository = new PostgresCloudRepository(pool,undefined,undefined,logModeration,moderationPolicy);
-  const app = await baseApp(options.webRoot,publicAuth,options.trustedProxies,postgresRateLimitStore(pool),options.gateway,{profile:(alias,site)=>profileMeta(repository,alias,site),wrapped:(alias,period,site)=>wrappedMeta(repository,alias,period,site)}).catch(async error => {await pool.end();throw error;});
+  const app = await baseApp(options.webRoot,publicAuth,options.trustedProxies,postgresRateLimitStore(pool),options.gateway,{profile:(alias,site)=>profileMeta(repository,alias,site),wrapped:(alias,period,site)=>wrappedMeta(repository,alias,period,site),compare:(a,b,site)=>compareMeta(repository,a,b,site)}).catch(async error => {await pool.end();throw error;});
   app.addHook('onClose',async()=>{await pool.end();});
   try {
     await migrateCloud(pool);

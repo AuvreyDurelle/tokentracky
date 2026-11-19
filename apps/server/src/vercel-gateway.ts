@@ -25,8 +25,8 @@ export function parseGatewayOrigin(value: string | undefined): URL | null {
   } catch { return null; }
 }
 
-/** The API, badges, cards and preview images, and profile and wrap pages for link-preview crawlers (vercel.json sends only those). */
-const ROUTED = ['/api/', '/badge/', '/card/', '/og/', '/u/', '/wrapped/'];
+/** The API, badges, cards and preview images, and the pages people share, for link-preview crawlers (vercel.json sends only those). */
+const ROUTED = ['/api/', '/badge/', '/card/', '/og/', '/u/', '/wrapped/', '/vs/'];
 const routed = (path: string) => ROUTED.some(prefix => path.startsWith(prefix));
 
 export function routeFromGatewayUrl(url: URL): string | null {

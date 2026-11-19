@@ -17,7 +17,7 @@ describe('Vercel authenticated gateway',()=>{
       const expected=value.includes('badge')?'/badge/alice.svg?theme=dark':value.includes('card')?'/card/alice.svg?theme=light':'/api/health?detail=1';
       expect(routeFromGatewayUrl(new URL(value))).toBe(expected);
     }
-    for (const [value,expected] of [['https://site.example/og/alice.png?period=week','/og/alice.png?period=week'],['https://site.example/u/alice?ref=share','/u/alice?ref=share'],['https://site.example/api/gateway/og/alice.png','/og/alice.png'],['https://site.example/wrapped/alice/2026-11','/wrapped/alice/2026-11']]) {
+    for (const [value,expected] of [['https://site.example/og/alice.png?period=week','/og/alice.png?period=week'],['https://site.example/u/alice?ref=share','/u/alice?ref=share'],['https://site.example/api/gateway/og/alice.png','/og/alice.png'],['https://site.example/wrapped/alice/2026-11','/wrapped/alice/2026-11'],['https://site.example/vs/alice/bob','/vs/alice/bob']]) {
       expect(routeFromGatewayUrl(new URL(value))).toBe(expected);
     }
   });

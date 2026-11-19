@@ -5,7 +5,7 @@ import { CloudError, invalid } from './errors.ts';
 import { PostgresCloudRepository, type Liker } from './repository.ts';
 import { object } from './validation.ts';
 import { badgeOptions, badgeSvg, cardSvg, compactCount, formatUsd, heatmapSvg } from './badge.ts';
-import { pngFromSvg, profileCardSvg, publicSite, wrappedCardSvg } from './og.ts';
+import { compareCardSvg, pngFromSvg, profileCardSvg, publicSite, wrappedCardSvg } from './og.ts';
 import type { GithubLogin } from './github.ts';
 
 export interface CloudRoutesOptions {
@@ -184,6 +184,16 @@ export async function registerCloudRoutes(app: FastifyInstance, options: CloudRo
       let stats = null;
       try { stats = await repository.profileStats(alias); } catch (error) { if (!(error instanceof CloudError && error.statusCode === 404)) throw error; }
       return reply.type('image/png').send(pngFromSvg(profileCardSvg(stats, window, publicSite(request.headers))));
+    });
+    // Head-to-head cards: two published profiles side by side, and the leaderboard card when either is not public.
+    cloud.get<{Params: {a: string; file: string}}>('/og/vs/:a/:file', cached(300), async (request, reply) => {
+      const q = object(request.query, ['period']);
+      const window = period(q.period ?? 'all');
+      const b = request.params.file.endsWith('.png') ? request.params.file.slice(0, -4) : '';
+      if (!ALIAS_PATTERN.test(request.params.a) || !ALIAS_PATTERN.test(b)) throw notFound();
+      const read = (alias: string) => repository.profileStats(alias).catch((error: unknown) => { if (error instanceof CloudError && error.statusCode === 404) return null; throw error; });
+      const [left, right] = await Promise.all([read(request.params.a), read(b)]);
+      return reply.type('image/png').send(pngFromSvg(compareCardSvg(left, right, window, publicSite(request.headers))));
     });
     // Wraps of a calendar month (`YYYY-MM`) or year (`YYYY`), and their preview cards.
     cloud.get<{Params: {alias: string; period: string}}>('/api/wrapped/:alias/:period', cached(300), async request => {

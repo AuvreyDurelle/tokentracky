@@ -101,6 +101,7 @@ export function ProfileView({ stats, me, origin, join, onLeaderboard, likes = st
               ? <button type="button" className="btn profile-like" aria-pressed={like.liked} disabled={like.pending} onClick={onLike}><Heart /><span className="sr-only">Like {stats.alias}, </span><b className="num">{formatExact(likes)}</b></button>
               : <span className="btn profile-like" title={`${formatExact(likes)} ${likes === 1 ? 'like' : 'likes'}${me === stats.alias ? '' : ' · sign in to like'}`}><Heart /><b className="num">{formatExact(likes)}</b></span>}
             <button type="button" className="btn" onClick={share}>Share</button>
+            {me && me !== stats.alias && <a className="btn" href={`/vs/${me}/${stats.alias}`}>Compare with me</a>}
           </div>
         </div>
         <dl className="stats profile-stats">

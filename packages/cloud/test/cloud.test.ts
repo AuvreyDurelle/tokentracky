@@ -405,6 +405,10 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
     expect((await request('GET', '/og/nobody.png')).headers['content-type']).toBe('image/png');
     for (const path of ['/og/bob.svg', '/og/b.png']) expect((await request('GET', path)).statusCode).toBe(404);
     expect((await request('GET', '/og/bob.png?period=24h')).statusCode).toBe(400);
+    const versus = await request('GET', '/og/vs/alice/bob.png?period=week');
+    expect([versus.statusCode, versus.headers['content-type'], versus.rawPayload.readUInt32BE(16)]).toEqual([200, 'image/png', 1200]);
+    expect((await request('GET', '/og/vs/alice/nobody.png')).headers['content-type']).toBe('image/png');
+    for (const [path, status] of [['/og/vs/alice/b.png', 404], ['/og/vs/alice/bob.svg', 404], ['/og/vs/alice/bob.png?period=24h', 400]] as const) expect((await request('GET', path)).statusCode, path).toBe(status);
   });
 
   it('wraps a month or year with the rank among builders active in it and what the member shares', async () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BADGE_IDS, type ProfileStats, type Wrapped } from '@tokentracky/core';
-import { pngFromSvg, profileCardSvg, publicSite, wrappedCardSvg } from '../src/og.ts';
+import { compareCardSvg, leadText, pngFromSvg, profileCardSvg, publicSite, wrappedCardSvg } from '../src/og.ts';
 
 /** A profile whose 365 days end on Thursday 2026-10-22, active on the last three. */
 function stats(overrides: Partial<ProfileStats> = {}): ProfileStats {
@@ -76,5 +76,25 @@ describe('wrap preview card', () => {
   it('leaves out the rank without usage and draws the leaderboard card without a wrap', () => {
     expect(wrappedCardSvg({...wrap, rank: 0, tokens: 0, toolTokens: undefined, models: undefined}, '2026', 'https://tokentracky.com')).toContain('>tokens in 2026<');
     expect(wrappedCardSvg(null, '2026', 'https://tokentracky.com')).toContain('>The token leaderboard<');
+  });
+});
+
+describe('head-to-head card', () => {
+  it('puts both names, tokens and ranks in the window side by side, with who leads', () => {
+    const svg = compareCardSvg(stats(), stats({alias: 'rival', periods: {...stats().periods, all: {rank: 30, tokens: 500_000_000, builders: 40}}}), 'all', 'https://tokentracky.com');
+    expect(svg).toContain('>Head to head · all time<');
+    expect(svg).toContain('>token-wizard<');
+    expect(svg).toContain('>rival<');
+    expect(svg).toContain('>1.3B<');
+    expect(svg).toContain('>500M<');
+    expect(svg).toContain('>#30 all time<');
+    expect(svg).toContain('>token-wizard leads by 150%<');
+    expect(svg).toContain('<rect x="88" y="430" width="731" height="14"');
+    expect(svg).toContain('>tokentracky.com/vs/token-wizard/rival<');
+  });
+  it('words a tie and a lead over nothing, and draws the leaderboard card when either profile is missing', () => {
+    expect(leadText({alias: 'a', tokens: 5}, {alias: 'b', tokens: 5})).toBe('Dead even');
+    expect(leadText({alias: 'a', tokens: 0}, {alias: 'b', tokens: 5})).toBe('b leads');
+    expect(compareCardSvg(stats(), null, 'week', 'https://tokentracky.com')).toContain('>The token leaderboard<');
   });
 });

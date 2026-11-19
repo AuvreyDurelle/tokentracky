@@ -6,6 +6,6 @@ export { CloudError } from './errors.ts';
 export { moderationCommand } from './operator.ts';
 export { supabaseGithubLogin } from './github.ts';
 export { compactCount } from './badge.ts';
-export { publicSite } from './og.ts';
+export { leadText, publicSite } from './og.ts';
 
 export {parseModerationPolicy, type ModerationPolicy} from './moderation.ts';

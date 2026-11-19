@@ -104,3 +104,29 @@ export function wrappedCardSvg(wrap: Wrapped | null, period: string, site: strin
     + `<text x="88" y="428" fill="#7c7c85" font-size="22" font-weight="500">${escape(fitFacts(facts, text => text.length * 10.4 <= 1024))}</text>${bars}`,
   site, `/wrapped/${wrap.alias}/${period}`, `${wrap.alias}'s ${label}: ${compactCount(wrap.tokens)} tokens${wrap.rank > 0 ? `, #${wrap.rank}` : ''}`);
 }
+
+/** "alice leads by 33%", "Dead even", or the leader alone when the other has no tokens. */
+export function leadText(a: {alias: string; tokens: number}, b: {alias: string; tokens: number}): string {
+  if (a.tokens === b.tokens) return 'Dead even';
+  const [ahead, behind] = a.tokens > b.tokens ? [a, b] : [b, a];
+  return behind.tokens ? `${ahead.alias} leads by ${Math.round(((ahead.tokens - behind.tokens) / behind.tokens) * 100).toLocaleString('en-US')}%` : `${ahead.alias} leads`;
+}
+
+/** The 1200×630 head-to-head card: both names, tokens and ranks in the window, and their split as one bar. */
+export function compareCardSvg(a: ProfileStats | null, b: ProfileStats | null, period: Period, site: string): string {
+  if (!a || !b) return profileCardSvg(null, period, site);
+  const side = (stats: ProfileStats, x: number, anchor: 'start' | 'end') => {
+    const {rank, tokens} = stats.periods[period];
+    return `<text x="${x}" y="215" fill="#ededef" font-size="44" font-weight="600" text-anchor="${anchor}">${escape(stats.alias)}</text>`
+      + `<text x="${x}" y="320" fill="#ededef" font-size="96" font-weight="600" text-anchor="${anchor}">${compactCount(tokens)}</text>`
+      + `<text x="${x}" y="366" fill="#a1a1a8" font-size="26" font-weight="500" text-anchor="${anchor}">${rank > 0 ? `#${rank} ${WINDOWS[period]}` : `no rank ${WINDOWS[period]}`}</text>`;
+  };
+  const [left, right] = [a.periods[period].tokens, b.periods[period].tokens];
+  const split = left + right ? Math.round((1024 * left) / (left + right)) : 512;
+  return frame(`<text x="1112" y="110" fill="#7c7c85" font-size="24" font-weight="500" text-anchor="end">Head to head · ${WINDOWS[period]}</text>`
+    + side(a, 88, 'start') + side(b, 1112, 'end')
+    + `<text x="600" y="300" fill="#7c7c85" font-size="32" font-weight="600" text-anchor="middle">vs</text>`
+    + `<rect x="88" y="430" width="${split}" height="14" fill="#eceef0"/><rect x="${88 + split}" y="430" width="${1024 - split}" height="14" fill="#55585d"/>`
+    + `<text x="88" y="500" fill="#a1a1a8" font-size="26" font-weight="500">${escape(leadText({alias: a.alias, tokens: left}, {alias: b.alias, tokens: right}))}</text>`,
+  site, `/vs/${a.alias}/${b.alias}`, `${a.alias} vs ${b.alias}: ${compactCount(left)} to ${compactCount(right)} tokens ${WINDOWS[period]}`);
+}

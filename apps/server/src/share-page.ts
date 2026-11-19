@@ -1,5 +1,5 @@
 import {wrapLabel} from '@tokentracky/core';
-import {compactCount, type PostgresCloudRepository} from '@tokentracky/cloud';
+import {compactCount, leadText, type PostgresCloudRepository} from '@tokentracky/cloud';
 
 /** What a link preview shows for a shareable page: its title, a line of text, the 1200×630 image and the page's address. */
 export interface ShareMeta {title: string; description: string; image: string; url: string}
@@ -50,6 +50,19 @@ export async function wrappedMeta(repository: Pick<PostgresCloudRepository, 'wra
   try {
     const wrap = await repository.wrapped(name, period);
     return {...page, title: `${wrap.alias}'s ${label} on Tokentracky`, description: `${compactCount(wrap.tokens)} AI coding tokens${wrap.rank > 0 ? `, #${wrap.rank} of ${wrap.builders} builders` : ''} in ${label}. See where you rank on the token leaderboard.`};
+  } catch {
+    return {...page, title: 'Tokentracky — the token leaderboard', description: SITE_DESCRIPTION};
+  }
+}
+
+/** A head-to-head preview: both all-time totals and ranks and who leads, or the site's own text when either is not public. */
+export async function compareMeta(repository: Pick<PostgresCloudRepository, 'profile'>, a: string, b: string, site: string): Promise<ShareMeta> {
+  const [left, right] = [a.toLowerCase(), b.toLowerCase()];
+  const page = {image: `${site}/og/vs/${left}/${right}.png`, url: `${site}/vs/${left}/${right}`};
+  try {
+    const [one, two] = await Promise.all([repository.profile(left, 'all'), repository.profile(right, 'all')]);
+    return {...page, title: `${one.alias} vs ${two.alias} on Tokentracky`,
+      description: `${one.alias}: ${compactCount(one.tokens)} tokens (#${one.rank}) · ${two.alias}: ${compactCount(two.tokens)} tokens (#${two.rank}), all time. ${leadText(one, two)}.`};
   } catch {
     return {...page, title: 'Tokentracky — the token leaderboard', description: SITE_DESCRIPTION};
   }
