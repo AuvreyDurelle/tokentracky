@@ -13,7 +13,8 @@ export type Tracking = 'collecting' | 'paused' | 'off';
 export interface Today { tokens: number; costMicrousd: number | null; spark: number[] }
 
 // A profile opens as a dialog over the leaderboard, so the frame still shows the leaderboard.
-const TITLES: Partial<Record<Page, string>> = { leaderboard: 'Leaderboard', tokens: 'Tokens', you: 'Tokens', achievements: 'Achievements', settings: 'Settings', profile: 'Leaderboard', join: 'How it works', missing: 'Page not found' };
+const TITLES: Partial<Record<Page, string>> = { leaderboard: 'Leaderboard', tokens: 'Tokens', you: 'Tokens', achievements: 'Achievements', settings: 'Settings', profile: 'Leaderboard', join: 'How it works', missing: 'Page not found',
+  town: 'Town', 'town-map': 'Town map', 'town-visit': 'Town' };
 
 /** Where a page's controls go: the window toolbar, before the jump button. */
 const ToolbarSlot = createContext<HTMLElement | null>(null);
@@ -71,12 +72,14 @@ const NAV = [
   { page: 'leaderboard', label: 'Leaderboard', icon: icon(<><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" /><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" /><path d="M4 22h16" /><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" /><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" /><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" /></>) },
   { page: 'tokens', label: 'Tokens', icon: icon(<><path d="M3 3v16a2 2 0 0 0 2 2h16" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></>) },
   { page: 'achievements', label: 'Achievements', icon: icon(<><circle cx="12" cy="8" r="6" /><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11" /></>) },
+  { page: 'town', label: 'Town', icon: icon(<><path d="M3 21h18" /><path d="M5 21V11l4-3 4 3v10" /><path d="M13 21v-6h6v6" /><path d="M16 15v-3" /><path d="M9 21v-4" /><path d="M9 8V4l3 1.5L9 7" /></>) },
 ] as const;
 const SETTINGS_ICON = icon(<><path d="M20 7h-9" /><path d="M14 17H5" /><circle cx="17" cy="17" r="3" /><circle cx="7" cy="7" r="3" /></>);
 
 export function Sidebar({ page, go, today, tracking, syncedAt, me, rank }: { page: Page; go: (route: Route) => void; today: Today | null; tracking: Tracking; syncedAt: string | null; me: string | null; rank: number | null }) {
   // `/you` is the Tokens page under its older address; a profile sits over the leaderboard.
-  const current = (target: Page) => page === target || (target === 'tokens' && page === 'you') || (target === 'leaderboard' && page === 'profile') ? 'page' : undefined;
+  const current = (target: Page) => page === target || (target === 'tokens' && page === 'you') || (target === 'leaderboard' && page === 'profile')
+    || (target === 'town' && (page === 'town-map' || page === 'town-visit')) ? 'page' : undefined;
   return <aside className="sidebar">
     <div className="brand"><span className="brand-mark" aria-hidden="true" />Tokentracky</div>
     <nav className="nav" aria-label="Primary">

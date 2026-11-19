@@ -14,6 +14,9 @@ import type {
   SessionSummary,
   SourceStatus,
   ToolId,
+  TownMapResponse,
+  TownPublic,
+  TownSelf,
   UsageBreakdownRow,
   UsageSummary,
   Wrapped,
@@ -194,6 +197,12 @@ export class ApiClient {
   likeStatus(alias: string) { return this.request<{ liked: boolean }>(`/api/local/likes/${encodeURIComponent(alias)}`); }
   like(alias: string) { return this.request<void>(`/api/local/likes/${encodeURIComponent(alias)}`, { method: 'PUT' }); }
   unlike(alias: string) { return this.request<void>(`/api/local/likes/${encodeURIComponent(alias)}`, { method: 'DELETE' }); }
+  /** Token Town: the map and visited towns through the hosted proxies; your own town through the linked device's credential. */
+  townMap(area: { x0: number; y0: number; x1: number; y1: number }) { return this.request<TownMapResponse>(`/api/town/map?${query(area)}`); }
+  townOf(alias: string) { return this.request<TownPublic>(`/api/town/u/${encodeURIComponent(alias)}`); }
+  townMe() { return this.request<TownSelf>('/api/local/town/me'); }
+  townAct(path: 'collect' | 'plots' | 'jobs' | 'move' | 'trade', body: object = {}) { return this.request<TownSelf>(`/api/local/town/${path}`, { method: 'POST', body: JSON.stringify(body) }); }
+  townCancel(jobId: string) { return this.request<TownSelf>(`/api/local/town/jobs/${encodeURIComponent(jobId)}`, { method: 'DELETE' }); }
   async exportCsv(range: UsageRange, tool: 'all' | ToolId = 'all'): Promise<Blob> {
     const response = await fetch(`/api/local/export?${query({ ...range, tool })}`, { credentials: 'include' });
     if (!response.ok) throw await readError(response);

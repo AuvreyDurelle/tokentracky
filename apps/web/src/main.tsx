@@ -21,6 +21,7 @@ import { AchievementsView } from './mac/AchievementsView';
 import { TokensView } from './mac/TokensView';
 import { SettingsView } from './mac/SettingsView';
 import { Popover } from './mac/Popover';
+import { TownView } from './mac/TownView';
 import { JoinPrompt, askToJoin } from './mac/JoinPrompt';
 import { ProfilePage } from './Profile';
 import { WrappedPage } from './Wrapped';
@@ -158,7 +159,7 @@ function App() {
   const join = canJoin ? { label: 'Join the board', onClick: go('you', true) } : null;
   const home = () => { setConnectCode(null); navigate({ page: 'home' }); };
   // The Mac app's own pages bring their layout (.m-page); the website's keep the site's column.
-  const ported = local && (['leaderboard', 'profile', 'achievements', 'tokens', 'you', 'settings', 'popover'] as const).some((mac) => mac === page);
+  const ported = local && (['leaderboard', 'profile', 'achievements', 'tokens', 'you', 'settings', 'popover', 'town', 'town-map', 'town-visit'] as const).some((mac) => mac === page);
   const body = <main className={ported ? undefined : 'page'}>
       {healthError && <Notice tone="error">{healthError}</Notice>}
       {authError && <Notice tone="error">Sign-in: {authError}</Notice>}
@@ -179,6 +180,7 @@ function App() {
         : <HostedAccount key={authState} api={api} auth={auth} authState={authState} account={account} accountLoading={accountLoading} accountError={accountError} refreshAccount={refreshAccount} refreshAuth={refreshAuth} deleteAccount={deleteAccount} onViewBoard={go('leaderboard')} onProfile={(alias) => navigate({ page: 'profile', alias })} signUp={signUp} />)}
       {page === 'settings' && <SettingsView api={api} health={health} status={localStatus} refresh={refreshLocal} />}
       {page === 'popover' && <Popover api={api} status={localStatus} site={health.cloudUrl} />}
+      {local && (page === 'town' || page === 'town-map' || page === 'town-visit') && <TownView api={api} route={route} me={me} go={navigate} />}
       {page === 'connect' && connectCode && <Connect api={api} auth={auth} authState={authState} account={account} accountLoading={accountLoading} accountError={accountError} refreshAccount={refreshAccount} code={connectCode} origin={window.location.origin} onFinish={finishConnect} onProfile={connectedProfile} />}
       </>}
     </main>;
@@ -188,7 +190,8 @@ function App() {
         { id: 'leaderboard', label: 'Leaderboard', hint: 'Page', run: go('leaderboard') },
         ...(local ? [] : [{ id: 'join', label: 'Join the leaderboard', hint: 'Page', run: go('join') }]),
         { id: 'you', label: local ? 'Tokens' : 'Your profile', hint: 'Page', run: go('you') },
-        ...(local ? [{ id: 'achievements', label: 'Achievements', hint: 'Page', run: () => navigate({ page: 'achievements' }) }, { id: 'settings', label: 'Settings', hint: 'Page', run: () => navigate({ page: 'settings' }) }] : []),
+        ...(local ? [{ id: 'achievements', label: 'Achievements', hint: 'Page', run: () => navigate({ page: 'achievements' }) }, { id: 'town', label: 'Town', hint: 'Page', run: () => navigate({ page: 'town' }) },
+          { id: 'town-map', label: 'Town map', hint: 'Page', run: () => navigate({ page: 'town-map' }) }, { id: 'settings', label: 'Settings', hint: 'Page', run: () => navigate({ page: 'settings' }) }] : []),
         ...(me ? [{ id: 'profile', label: 'Your public profile', hint: 'Page', run: () => navigate({ page: 'profile', alias: me }) }] : []),
         { id: 'privacy', label: 'Privacy policy', hint: 'Page', run: () => { window.location.href = '/privacy'; } },
         { id: 'terms', label: 'Terms of service', hint: 'Page', run: () => { window.location.href = '/terms'; } },

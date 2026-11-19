@@ -168,3 +168,9 @@
 .mac .m-bar { display: flex; gap: 2px; height: 6px; overflow: hidden; border-radius: 3px; background: var(--surface-3); }
 .mac .m-bar > span { display: block; height: 100%; background: var(--c, var(--text-3)); }
 .mac .m-tip { padding: 10px 12px; border-radius: var(--radius-md); background: rgba(24, 25, 27, 0.96); box-shadow: var(--shadow-pop); font-size: 12px; backdrop-filter: blur(12px); }
+/* Token Town fills the content pane; its own stylesheet draws the rest. */
+.mac .m-town { height: 100%; }
+.mac .m-town-join { height: 100%; display: grid; place-content: center; justify-items: center; gap: 12px; padding: 32px; text-align: center; background: radial-gradient(ellipse at 50% 120%, #6a3e78, #17184a 55%, #070823); color: #eef0ff; }
+.mac .m-town-join strong { font-size: 20px; }
+.mac .m-town-join p { max-width: 420px; margin: 0; color: #c9c6ee; }
+.mac .m-town-actions { display: flex; gap: 8px; }
