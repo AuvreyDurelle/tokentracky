@@ -75,9 +75,9 @@ export interface TownSelf {
   now: string;
 }
 export interface TownPlot {x: number; y: number}
-/** `GET /api/town/u/:alias`: someone's town, read-only. */
+/** `GET /api/town/u/:alias`: someone's town, read-only, with the profile's likes and current streak for its card. */
 export interface TownPublic {alias: string; level: number; plots: TownPlot[]; buildings: Array<{kind: BuildingId; x: number; y: number; level: number}>;
-  rarest: BuildingId | null}
+  rarest: BuildingId | null; likes: number; streak: number}
 /** A town on the public map. A hidden member's land shows with no name. */
 export interface TownMapTown {alias: string | null; level: number; plots: number; wonder: boolean}
 /** `GET /api/town/map?x0&y0&x1&y1`: claimed plots in view, each as `[x, y, index into towns]`. */
