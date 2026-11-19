@@ -153,14 +153,17 @@ export function TownScene({layout, plots, buildings, jobs = [], map, selected, c
     });
   }, [P, layout, own, others]);
 
-  const bubbles = harvest ? RESOURCE_IDS.filter(id => harvest.resources[id] > 0).map((id, i) => {
-    const source = buildings.find(b => b.kind === SOURCE[id]) ?? buildings.find(b => b.kind === 'town-hall') ?? buildings[0];
-    if (!source) return null;
+  // Each bubble floats over the building that makes its resource, or over the Town Hall; bubbles sharing a building sit side by side.
+  const placed = harvest ? RESOURCE_IDS.filter(id => harvest.resources[id] > 0).map(id => ({id, source: buildings.find(b => b.kind === SOURCE[id]) ?? buildings.find(b => b.kind === 'town-hall') ?? buildings[0]}))
+    .filter((b): b is {id: ResourceId; source: SceneBuilding} => !!b.source) : [];
+  const bubbles = placed.map(({id, source}) => {
+    const sharing = placed.filter(other => other.source === source);
     const [tx, ty] = tile(source.x, source.y);
     const top = P(tx + 1, ty + 1, BUILDING_HEIGHT[source.kind] + 40);
-    const shift = source.kind === SOURCE[id] ? 0 : (i - 1.5) * 56;
-    return {id, x: top[0] + shift, y: top[1], value: harvest.resources[id], spill: harvest.spill[id]};
-  }).filter(b => b !== null) : [];
+    const shift = (sharing.findIndex(other => other.id === id) - (sharing.length - 1) / 2) * 64;
+    // Spill warnings alternate in height so neighbouring ones never overlap.
+    return {id, x: top[0] + shift, y: top[1], value: harvest!.resources[id], spill: harvest!.spill[id], lift: sharing.findIndex(other => other.id === id) % 2 * 20};
+  });
 
   const activate = (selection: Selection) => onSelect?.(selection);
   const keyed = (selection: Selection) => (event: KeyboardEvent) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); activate(selection); } };
@@ -236,8 +239,8 @@ export function TownScene({layout, plots, buildings, jobs = [], map, selected, c
       <path d={`M${b.x - 13},${b.y - 6}a14,14 0 0 1 8,-9`} stroke="#fff" strokeWidth={2.4} strokeOpacity={0.75} fill="none" strokeLinecap="round" />
       <rect x={b.x - 27} y={b.y + 12} width={54} height={19} rx={9.5} fill={BUBBLE[b.id]} />
       <text x={b.x} y={b.y + 25.5} textAnchor="middle" fill="#1a1530" fontSize={12.5} fontWeight={800}>+{compact(b.value)}</text>
-      {b.spill > 0 && <g><rect x={b.x + 26} y={b.y - 30} width={compact(b.spill).length * 7 + 74} height={20} rx={10} fill="#ff5a4a" filter="url(#tt-gl)" />
-        <text x={b.x + 36} y={b.y - 16} fill="#fff" fontSize={11} fontWeight={800}>{compact(b.spill)} will spill</text></g>}
+      {b.spill > 0 && <g><rect x={b.x - (compact(b.spill).length * 6.2 + 74) / 2} y={b.y - 52 - b.lift} width={compact(b.spill).length * 6.2 + 74} height={18} rx={9} fill="#ff5a4a" filter="url(#tt-gl)" />
+        <text x={b.x} y={b.y - 39.5 - b.lift} textAnchor="middle" fill="#fff" fontSize={10.5} fontWeight={800}>{compact(b.spill)} will spill</text><title>{`${count(b.spill)} will spill: the store is full`}</title></g>}
     </g>)}
   </svg>;
 }

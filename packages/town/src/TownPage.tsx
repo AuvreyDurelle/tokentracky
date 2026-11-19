@@ -121,15 +121,15 @@ export function TownPage({api, onMap}: {api: TownApi; onMap: () => void}) {
         onShow={job => { setSelected(job.buildingId ? {type: 'building', id: job.buildingId} : {type: 'plot', x: job.x, y: job.y}); }} />}
     </Drawer>
 
-    {building && <Popover svg={svg} stage={stage} point={anchor} onClose={() => setSelected(null)}>
+    {building && <Popover svg={svg} stage={stage} point={anchor} reserve={tab ? 340 : 80} onClose={() => setSelected(null)}>
       <BuildingPanel town={town} building={building} reach={reach} busy={busy} now={now}
         onUpgrade={() => void run(() => api.upgrade(building.id), building.next && covered(reach, building.next.cost) ? `Upgrading to Lv ${building.level + 1}` : 'Queued. It starts by itself once you have enough.')}
         onCancel={id => void run(() => api.cancel(id), 'Removed from the queue')} />
     </Popover>}
-    {plot && plotState === 'own' && <Popover svg={svg} stage={stage} point={anchor} onClose={() => setSelected(null)}>
+    {plot && plotState === 'own' && <Popover svg={svg} stage={stage} point={anchor} reserve={tab ? 340 : 80} onClose={() => setSelected(null)}>
       <EmptyPlotPanel town={town} plot={plot} now={now} onBuild={() => openBuild(plot)} onCancel={id => void run(() => api.cancel(id), 'Removed from the queue')} />
     </Popover>}
-    {plot && plotState === 'claimable' && <Popover svg={svg} stage={stage} point={anchor} onClose={() => setSelected(null)}>
+    {plot && plotState === 'claimable' && <Popover svg={svg} stage={stage} point={anchor} reserve={tab ? 340 : 80} onClose={() => setSelected(null)}>
       <ClaimPanel town={town} reach={reach} busy={busy} onClaim={() => { setSelected(null); void run(() => api.claim(plot.x, plot.y), `Plot #${town.nextPlot.number} is yours`, true); }} />
     </Popover>}
 
@@ -172,7 +172,7 @@ function LandPane({town, reach, claimable, busy, onClaim, onMove}: {town: TownSe
   const pace = paceText(daysToAfford(price - reach.bricks, town.bricksPerDay));
   const move = town.move.cost.bricks ?? 0;
   return <>
-    <div className="tt-ph"><b>Your land</b><span className="tt-mu">{town.plots.length} plots · {town.buildings.length} built</span></div>
+    <div className="tt-ph"><b>Your land</b><span className="tt-mu">{town.plots.length} {town.plots.length === 1 ? 'plot' : 'plots'} · {town.buildings.length} built</span></div>
     <div className="tt-kv"><span>Next plot #{town.nextPlot.number}</span><b><CostChips cost={town.nextPlot.cost} /></b></div>
     <Progress have={town.wallet.bricks} need={price} />
     <div className="tt-kv tt-mu"><span>You have {count(town.wallet.bricks)}</span>{short > 0 ? <span className="tt-sh">{count(short)} short</span> : <span className="tt-ok">Ready</span>}</div>
@@ -230,9 +230,10 @@ function QueuePane({town, now, busy, onCancel, onShow}: {town: TownSelf; now: nu
 }
 
 /** A glass card next to a point in the scene, with a short line pointing at it. On narrow screens it becomes a bottom sheet. */
-function Popover({svg, stage, point, onClose, children}: {svg: RefObject<SVGSVGElement | null>; stage: RefObject<HTMLDivElement | null>; point: [number, number] | null; onClose: () => void; children: ReactNode}) {
+function Popover({svg, stage, point, reserve, onClose, children}: {svg: RefObject<SVGSVGElement | null>; stage: RefObject<HTMLDivElement | null>; point: [number, number] | null; reserve: number; onClose: () => void; children: ReactNode}) {
   const at = usePoint(svg, stage, point);
-  const width = stage.current?.clientWidth ?? 0;
+  // Opens to the right of the point unless that would run into the drawer (`reserve` pixels at the right edge).
+  const width = (stage.current?.clientWidth ?? 0) - reserve;
   const left = at ? at.left + 26 + 290 > width ? Math.max(8, at.left - 26 - 290) : at.left + 26 : 20;
   const top = at ? Math.min(Math.max(70, at.top - 120), (stage.current?.clientHeight ?? 600) - 360) : 74;
   const side = at && left < at.left ? 'right' : 'left';

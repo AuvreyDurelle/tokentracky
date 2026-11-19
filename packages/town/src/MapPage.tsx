@@ -110,7 +110,8 @@ function draw(canvas: HTMLCanvasElement, view: MapView, data: TownMapResponse | 
     ctx.font = `${gold ? 800 : 700} ${gold ? 13 : 11.5}px Inter, system-ui, sans-serif`;
     const w = ctx.measureText(text).width + (gold ? 22 : 34), h = gold ? 26 : 22;
     const box: [number, number, number, number] = [x - w / 2, y - h / 2, x + w / 2, y + h / 2];
-    if (!gold && (box[0] < 4 || box[2] > width - 4 || box[1] < 70 || box[3] > height - 90 || placed.some(p => box[0] < p[2] && box[2] > p[0] && box[1] < p[3] && box[3] > p[1]))) return;
+    // Clear of the panels: the name plate and key at the top, the zoom buttons on the right, the dock at the bottom.
+    if (!gold && (box[0] < 4 || box[2] > width - 64 || box[1] < 150 || box[3] > height - 90 || placed.some(p => box[0] < p[2] && box[2] > p[0] && box[1] < p[3] && box[3] > p[1]))) return;
     placed.push(box);
     ctx.fillStyle = gold ? '#ffd36b' : 'rgba(14,12,40,.86)'; ctx.strokeStyle = gold ? '#fff3c4' : 'rgba(200,195,255,.3)'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.roundRect(box[0], box[1], w, h, h / 2); ctx.fill(); ctx.stroke();
@@ -121,7 +122,8 @@ function draw(canvas: HTMLCanvasElement, view: MapView, data: TownMapResponse | 
   const centres = new Map<number, [number, number, number]>();
   for (const [x, y, town] of data?.plots ?? []) { const c = centres.get(town) ?? [0, 0, 0]; centres.set(town, [c[0] + x + 0.5, c[1] + y + 0.5, c[2] + 1]); }
   const at = (town: number) => { const c = centres.get(town)!; return screenOf(view, width, height, c[0] / c[2], c[1] / c[2]); };
-  if (mine >= 0 && centres.has(mine)) { const [x, y] = at(mine); label('You', x, y, '#ffd36b', true); }
+  // "You" sits just above your land so the land itself stays in view.
+  if (mine >= 0 && centres.has(mine)) { const [x, y] = at(mine); label('You', x, y - Math.max(22, cell * 0.9), '#ffd36b', true); }
   const order = [...centres.keys()].filter(t => t !== mine && towns[t]?.alias).sort((a, b) => (b === chosen ? 1 : 0) - (a === chosen ? 1 : 0) || (towns[b]!.plots - towns[a]!.plots));
   for (const town of order) {
     const t = towns[town]!;
