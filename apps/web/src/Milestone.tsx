@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { milestones, nextMilestone, rankingWindow, type Milestone, type ProfileStats } from '@tokentracky/core';
 import { formatCompact } from './format';
 import { ACHIEVEMENT_COPY, TIER_NAMES } from './mac/achievement-copy';
@@ -32,26 +32,28 @@ export const browserSeen: SeenStore = {
 };
 
 /**
- * A banner for the member's newest milestone, with a share action, shown once. `mac` opens the profile's share panel in
+ * A banner for the member's newest milestone, with a share action, shown once: it counts as seen as soon as it shows,
+ * and Dismiss or Share only hide it. `mac` opens the profile's share panel in
  * the browser, as the app may send links only to the hosted site; the website opens X's composer.
  */
 export function MilestoneBanner({ stats, site, mac = false, store = browserSeen }: { stats: ProfileStats; site: string; mac?: boolean; store?: SeenStore }) {
-  const [state, setState] = useState<{ show: Milestone | null; seen: string[] } | null>(null);
+  const [milestone, setMilestone] = useState<Milestone | null>(null);
+  // Checked once a mount: the profile is read again as it refreshes, and a second check would find this one seen.
+  const checked = useRef(false);
   useEffect(() => {
-    let live = true;
+    if (checked.current) return;
+    checked.current = true;
     // Without the ids shown, nothing shows: an unreadable store must not bring every milestone back.
     store.read().then((stored) => {
-      if (!live) return;
       const next = nextMilestone(milestones(stats, rankingWindow('week')!.slice(0, 10)), stored);
-      if (stored === null) void store.write(next.seen).catch(() => {});
-      setState(next);
+      // Shown once: one write records it as it appears, so closing the popover or opening the browser loses nothing.
+      if (stored === null || next.show) void store.write(next.show ? [...next.seen, next.show.id] : next.seen).catch(() => {});
+      setMilestone(next.show);
     }, () => {});
-    return () => { live = false; };
   }, [stats, store]);
-  if (!state?.show) return null;
-  const milestone = state.show;
+  if (!milestone) return null;
   const copy = milestoneCopy(milestone);
-  const dismiss = () => { const seen = [...state.seen, milestone.id]; void store.write(seen).catch(() => {}); setState({ show: null, seen }); };
+  const dismiss = () => setMilestone(null);
   const share = () => {
     const profile = `${site}/u/${stats.alias}`;
     window.open(mac ? `${profile}#share` : `https://x.com/intent/post?${new URLSearchParams({ text: copy.post, url: `${profile}?ref=share` }).toString()}`, '_blank', 'noopener');
