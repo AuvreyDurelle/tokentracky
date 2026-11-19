@@ -34,4 +34,5 @@ export const ICONS = {
   play: icon(<path d="M7 4.5v15l12-7.5z" />, 1.7),
   power: icon(<><path d="M12 2v10" /><path d="M18.4 6.6a9 9 0 1 1-12.77.04" /></>, 1.7),
   synced: icon(<><circle cx="12" cy="12" r="9.5" /><path d="m8.5 12 2.5 2.5 4.5-5" /></>, 2),
+  share: icon(<><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="m8.59 13.51 6.83 3.98" /><path d="m15.41 6.51-6.82 3.98" /></>),
 };

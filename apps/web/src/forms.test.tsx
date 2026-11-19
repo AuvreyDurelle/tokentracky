@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type { Publication } from '@tokentracky/core';
 import { ApiError, type ApiClient } from './api';
-import { badgeUrl, cardUrl, HostedAccount, ModerationNotice, ProfileForm, SignIn } from './Account';
+import { badgeUrl, cardUrl, heatmapUrl, HostedAccount, ModerationNotice, ProfileForm, SignIn } from './Account';
 import type { AuthAdapter, AuthState } from './auth';
 import { Connect, connectComputer, prefill } from './Connect';
 import { CONNECT_NOTICE } from './publication';
@@ -120,6 +120,9 @@ describe('account page', () => {
     expect(badgeUrl('https://tokentracky.test', 'builder', 'tokens', 'month')).toBe('https://tokentracky.test/badge/builder.svg?period=month');
     expect(cardUrl('https://tokentracky.test', 'builder', 'dark', 'all')).toBe('https://tokentracky.test/card/builder.svg');
     expect(cardUrl('https://tokentracky.test', 'builder', 'light', 'week')).toBe('https://tokentracky.test/card/builder.svg?theme=light&period=week');
+    expect(badgeUrl('https://tokentracky.test', 'builder', 'streak', 'week')).toBe('https://tokentracky.test/badge/builder.svg?metric=streak');
+    expect(heatmapUrl('https://tokentracky.test', 'builder', 'dark')).toBe('https://tokentracky.test/card/heatmap/builder.svg');
+    expect(heatmapUrl('https://tokentracky.test', 'builder', 'light')).toBe('https://tokentracky.test/card/heatmap/builder.svg?theme=light');
   });
 });
 

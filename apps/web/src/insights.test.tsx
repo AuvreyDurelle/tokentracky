@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import type { UsageBreakdownRow } from '@tokentracky/core';
+import { heatLevels, type UsageBreakdownRow } from '@tokentracky/core';
 import { dayRange, fillRange, previousLabel, previousRange, rangeLabel, rangeLength } from './ranges';
-import { Heatmap, heatLevels } from './Heatmap';
+import { Heatmap } from './Heatmap';
 import { costGroups } from './Insights';
 import { TrendChart } from './TrendChart';
 import { formatCostCompact, timeUntil, utcHourSpan } from './format';

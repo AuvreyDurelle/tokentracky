@@ -1,7 +1,6 @@
 import { useMemo, useState, type KeyboardEvent, type ReactNode } from 'react';
-import type { ActivityStats } from '@tokentracky/core';
+import { heatLevels, type ActivityStats } from '@tokentracky/core';
 import { formatCompact, formatExact, shortDay } from '../format';
-import { heatLevels } from '../Heatmap';
 
 // The mockup's geometry: 15px cells on a 19px pitch, after the weekday labels and below the month labels.
 const CELL = 15, PITCH = 19, LEFT = 34, TOP = 22;

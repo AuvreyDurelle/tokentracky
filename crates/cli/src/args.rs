@@ -19,6 +19,7 @@ pub enum Command {
     Login,
     Unlink,
     Uninstall,
+    Share,
 }
 
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -148,6 +149,7 @@ where
         Some("login") => Some(Command::Login),
         Some("unlink") => Some(Command::Unlink),
         Some("uninstall") => Some(Command::Uninstall),
+        Some("share") => Some(Command::Share),
         Some(other) => return Err(CliError::Usage(format!("Unknown command {other}"))),
     };
     let flags = Flags {

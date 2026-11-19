@@ -371,7 +371,9 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
     expect((await request('GET', '/badge/alice.svg?metric=cost')).body).toContain('>$0.01<');
     expect((await request('GET', '/badge/bob.svg?metric=rank&period=week')).body).toContain('>#1 this week<');
     expect((await request('GET', '/badge/nobody.svg')).body).toContain('>private<');
-    expect((await request('GET', '/badge/bob.svg?metric=streak')).statusCode).toBe(400);
+    expect((await request('GET', '/badge/bob.svg?metric=streak')).body).toContain('>1-day streak<');
+    expect((await request('GET', '/badge/nobody.svg?metric=streak')).body).toContain('>private<');
+    expect((await request('GET', '/badge/bob.svg?metric=likes')).statusCode).toBe(400);
     expect((await request('GET', '/badge/bob.png')).statusCode).toBe(404);
     const styled = (await request('GET', '/badge/bob.svg?style=flat-square&label=AI%20tokens&color=ff8800')).body;
     expect(styled).toContain('>AI tokens<');
@@ -388,6 +390,55 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
     expect((await request('GET', '/card/nobody.svg')).body).toContain('>private<');
     for (const query of ['theme=blue', 'period=year', 'size=2']) expect((await request('GET', `/card/bob.svg?${query}`)).statusCode).toBe(400);
     expect((await request('GET', '/card/bob.png')).statusCode).toBe(404);
+    const heatmap = await request('GET', '/card/heatmap/bob.svg?theme=light');
+    expect([heatmap.statusCode, heatmap.headers['content-type'], heatmap.headers['cache-control']]).toEqual([200, 'image/svg+xml; charset=utf-8', 'public, max-age=60']);
+    expect(heatmap.body).toContain('<title>2026-10-23: 300 tokens</title>');
+    expect(heatmap.body).toContain('>1-day streak<');
+    expect((await request('GET', '/card/heatmap/nobody.svg')).body).toContain('>private<');
+    for (const [path, status] of [['/card/heatmap/bob.svg?theme=blue', 400], ['/card/heatmap/bob.svg?period=week', 400], ['/card/heatmap/bob.png', 404]] as const) expect((await request('GET', path)).statusCode, path).toBe(status);
+    const preview = await request('GET', '/og/bob.png?period=week');
+    expect(preview.statusCode).toBe(200);
+    expect(preview.headers['content-type']).toBe('image/png');
+    expect(preview.headers['cache-control']).toBe('public, max-age=60');
+    expect([preview.rawPayload.subarray(1, 4).toString(), preview.rawPayload.readUInt32BE(16), preview.rawPayload.readUInt32BE(20)]).toEqual(['PNG', 1200, 630]);
+    // A private or unknown name still gets an image, so a pasted link never shows a broken preview.
+    expect((await request('GET', '/og/nobody.png')).headers['content-type']).toBe('image/png');
+    for (const path of ['/og/bob.svg', '/og/b.png']) expect((await request('GET', path)).statusCode).toBe(404);
+    expect((await request('GET', '/og/bob.png?period=24h')).statusCode).toBe(400);
+    const versus = await request('GET', '/og/vs/alice/bob.png?period=week');
+    expect([versus.statusCode, versus.headers['content-type'], versus.rawPayload.readUInt32BE(16)]).toEqual([200, 'image/png', 1200]);
+    expect((await request('GET', '/og/vs/alice/nobody.png')).headers['content-type']).toBe('image/png');
+    for (const [path, status] of [['/og/vs/alice/b.png', 404], ['/og/vs/alice/bob.svg', 404], ['/og/vs/alice/bob.png?period=24h', 400]] as const) expect((await request('GET', path)).statusCode, path).toBe(status);
+  });
+
+  it('wraps a month or year with the rank among builders active in it and what the member shares', async () => {
+    await upload(await joined('alice'), [
+      bucket(100, {tool: 'claude', model: 'claude-sonnet-4-6', costMicrousd: 5_000}),
+      bucket(50, {day: '2026-10-21', tool: 'codex', model: 'gpt-6-sol', costMicrousd: 1_000}),
+      bucket(70, {day: '2026-09-30', tool: 'claude', model: 'claude-sonnet-4-6', costMicrousd: 700}),
+    ]);
+    await upload(await joined('bob'), [bucket(300, {tool: 'claude', model: 'claude-sonnet-4-6', costMicrousd: 2_000})]);
+    await joined('carol');
+    const month = await request('GET', '/api/wrapped/Alice/2026-10');
+    expect(month.statusCode).toBe(200);
+    expect(month.headers['cache-control']).toBe('public, max-age=60');
+    const wrap = month.json();
+    expect(wrap).toMatchObject({alias: 'alice', period: '2026-10', from: '2026-10-01', to: '2026-10-23', tokens: 150, rank: 2, builders: 2, previousTokens: 70,
+      activeDays: 2, longestStreak: 1, bestDay: {day: '2026-10-23', tokens: 100}, costMicrousd: 6_000, toolTokens: {claude: 100, codex: 50},
+      models: [{model: 'claude-sonnet-4-6', tokens: 100}, {model: 'gpt-6-sol', tokens: 50}]});
+    expect(wrap.daily).toHaveLength(23);
+    expect(wrap.daily.at(-3)).toEqual({day: '2026-10-21', tokens: 50});
+    expect((await request('GET', '/api/wrapped/alice/2026')).json()).toMatchObject({from: '2026-01-01', to: '2026-10-23', tokens: 220, rank: 2, previousTokens: 0, activeDays: 3, longestStreak: 1});
+    expect((await request('GET', '/api/wrapped/alice/2026-09')).json()).toMatchObject({tokens: 70, rank: 1, builders: 1, previousTokens: 0});
+    // Published without usage in the period: no rank, still a wrap.
+    expect((await request('GET', '/api/wrapped/carol/2026-10')).json()).toMatchObject({tokens: 0, rank: 0, builders: 2, activeDays: 0, bestDay: null});
+    for (const period of ['2026-11', '2027', '2026-13', 'october', '2026-10-01']) expect((await request('GET', `/api/wrapped/alice/${period}`)).statusCode, period).toBe(400);
+    expect((await request('GET', '/api/wrapped/nobody/2026-10')).statusCode).toBe(404);
+    expect((await request('GET', '/api/wrapped/alice/2026-10?x=1')).statusCode).toBe(400);
+    const card = await request('GET', '/og/wrapped/alice/2026-10.png');
+    expect([card.statusCode, card.headers['content-type'], card.rawPayload.readUInt32BE(16), card.rawPayload.readUInt32BE(20)]).toEqual([200, 'image/png', 1200, 630]);
+    expect((await request('GET', '/og/wrapped/nobody/2026-10.png')).headers['content-type']).toBe('image/png');
+    for (const path of ['/og/wrapped/alice/october.png', '/og/wrapped/alice/2026-10.svg']) expect((await request('GET', path)).statusCode, path).toBe(404);
   });
 
   it('denies SQL access to untrusted roles with ACLs and RLS as defense in depth', async () => {

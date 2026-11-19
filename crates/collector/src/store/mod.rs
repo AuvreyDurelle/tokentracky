@@ -821,6 +821,24 @@ impl UsageStore {
         )?;
         Ok(())
     }
+    /// The milestone ids the app has shown (the popover's banner); `None` until some are saved, and when the saved value
+    /// can't be read.
+    pub fn milestones_seen(&self) -> Result<Option<Vec<String>>> {
+        let value: Option<String> = self
+            .db
+            .query_row("SELECT value FROM metadata WHERE key='milestones_seen'", [], |row| {
+                row.get(0)
+            })
+            .optional()?;
+        Ok(value.and_then(|value| serde_json::from_str(&value).ok()))
+    }
+    pub fn set_milestones_seen(&mut self, seen: &[String]) -> Result<()> {
+        self.db.execute(
+            "INSERT INTO metadata(key,value) VALUES('milestones_seen',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+            [serde_json::to_string(seen)?],
+        )?;
+        Ok(())
+    }
     /// Folders detection has given an enabled source, so one removed by hand is not given again.
     pub fn offered_folders(&self) -> Result<Vec<String>> {
         let value: Option<String> = self

@@ -16,6 +16,7 @@ import type {
   ToolId,
   UsageBreakdownRow,
   UsageSummary,
+  Wrapped,
 } from '@tokentracky/core';
 import type { PublicationRequest } from './publication';
 import type { LinkTag } from './route';
@@ -145,6 +146,8 @@ export class ApiClient {
   profile(alias: string, period: LeaderboardPeriod) { return this.request<PublicProfile>(`/api/profiles/${encodeURIComponent(alias)}?${query({ period })}`); }
   profileStats(alias: string) { return this.request<ProfileStats>(`/api/profiles/${encodeURIComponent(alias)}/stats`); }
   community() { return this.request<CommunityStats>('/api/community'); }
+  /** A month (`YYYY-MM`) or year (`YYYY`) wrap; the hosted site only. */
+  wrapped(alias: string, period: string) { return this.request<Wrapped>(`/api/wrapped/${encodeURIComponent(alias)}/${encodeURIComponent(period)}`); }
   leaderboardAround(alias: string, period: LeaderboardPeriod) { return this.request<LeaderboardNeighbours>(`/api/leaderboard/around/${encodeURIComponent(alias)}?${query({ period })}`); }
   achievementRarity() { return this.request<AchievementRarity>('/api/achievements/rarity'); }
   /** Likes on the website go through the signed-in account. */
@@ -184,6 +187,9 @@ export class ApiClient {
   /** The app's own settings, kept with the local history. */
   localSettings() { return this.request<LocalSettings>('/api/local/settings'); }
   setLocalSettings(settings: LocalSettings) { return this.request<LocalSettings>('/api/local/settings', { method: 'PUT', body: JSON.stringify(settings) }); }
+  /** The milestone ids the app's popover has shown; its window keeps no storage between openings. */
+  milestonesSeen() { return this.request<{ seen: string[] | null }>('/api/local/milestones'); }
+  setMilestonesSeen(seen: string[]) { return this.request<{ seen: string[] }>('/api/local/milestones', { method: 'PUT', body: JSON.stringify({ seen }) }); }
   /** Likes go through the linked device's credential, never an account token. */
   likeStatus(alias: string) { return this.request<{ liked: boolean }>(`/api/local/likes/${encodeURIComponent(alias)}`); }
   like(alias: string) { return this.request<void>(`/api/local/likes/${encodeURIComponent(alias)}`, { method: 'PUT' }); }

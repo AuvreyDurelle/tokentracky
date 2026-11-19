@@ -5,6 +5,7 @@ Waste tokens, not time. The `tokentracky` command tracks AI coding tokens from t
 ```sh
 tokentracky serve          # private dashboard on a loopback port; reads the tools it finds
 tokentracky status         # totals, tracked tools, leaderboard link, last refresh
+tokentracky share          # your profile, wrap and README links to share
 tokentracky login          # join the leaderboard in the browser, then keep uploading
 tokentracky open           # the dashboard of the Tokentracky running on this computer
 ```
@@ -27,6 +28,7 @@ cargo run -q -p tokentracky-cli -- status   # or run it in place
 | `doctor [--json]` | Checks the runtime, SQLite, the data folder, the database, detected tools (by checking default folders exist, never reading them), the link and the last refresh. Exits 1 if a check fails. |
 | `login [--cloud-url URL]` | Browser approval: prints a code, opens the approval page and waits (checking every 3 seconds). Meanwhile it turns on the tools found in their usual folders, as `serve` does the first time, and reads them, so the upload on approval holds their history. Then it opens the Mac app when it is installed, which keeps uploading (not with `TOKENTRACKY_HOME` set: the app opens with the system's environment and would not find that credential). On Linux and Windows it leaves `serve` running in the background instead (see [Background job](#background-job)) and opens its dashboard. Otherwise, or when the background job cannot start, it carries on as `serve` until Ctrl-C. While a `serve` or the Mac app holds the data folder, `login` opens its dashboard or window instead. A saved link keeps its server; otherwise `--cloud-url` takes precedence over `TOKENTRACKY_CLOUD_URL`, with `https://tokentracky.com` as the distributed CLI default. The credential goes into `cloud-link.json` in the data folder (`$TOKENTRACKY_HOME`, else `~/.tokentracky`; `--data-dir` does not move it), readable only by you, and the Mac app reads the same file. |
 | `unlink` | Removes the credential. Your public profile stays until you leave on the website. |
+| `share [--json]` | Prints your public profile link (its link preview shows your card), this month's and this year's wraps, an X post link and README badge and heatmap markdown. It reads your alias from the leaderboard with this computer's credential, so it needs `login` first. |
 | `uninstall [--yes]` | Deletes the data folder and the credential after confirmation (`--yes`, or `y` at the prompt on a terminal). It first stops a running `serve` at once, without waiting for the refresh in progress, and removes the background job and its copy of the CLI. Tokentracky never edits your tools' settings, so nothing else needs undoing. |
 
 Options: `--data-dir <dir>`, `--cloud-url <url>` (the hosted leaderboard origin), `--port <port>` (0 to 65535; default a random loopback port), `--background` (for `serve` without a terminal, as the background job runs it: no browser, no Enter), `-h, --help`, `-v, --version`. Any option is accepted with any command. Exit codes: 0 success, 1 failure (including no command), 2 usage error (the message, then the usage, on stderr).

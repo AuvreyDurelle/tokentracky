@@ -1,4 +1,4 @@
-import { TOOL_NAMES, type Period, type ToolId } from '@tokentracky/core';
+import { heatLevels, TOOL_NAMES, type Period, type ToolId } from '@tokentracky/core';
 import { invalid } from './errors.ts';
 
 /** Compact token count for small surfaces: 950, 12.3K, 4.5M, 1.2B. */
@@ -84,4 +84,43 @@ export function cardSvg(data: CardData | null, theme: CardTheme, window: Period)
     + `<text x="24" y="38" fill="${t.muted}" font-size="13" font-weight="600">tokentracky</text>`
     + `<text x="576" y="38" fill="${t.muted}" font-size="13" text-anchor="end">${WINDOW_LABELS[window]}</text>`
     + `${body}<text x="24" y="160" fill="${t.muted}" font-size="11">Client-reported usage</text></g></svg>`;
+}
+
+const HEAT: Record<CardTheme, string[]> = {dark: ['#161719', '#2c2e31', '#55585d', '#9a9ea5', '#eceef0'], light: ['#ebedf0', '#c6c8cc', '#9a9ea5', '#55585d', '#18181b']};
+
+export interface HeatmapData { alias: string; daily: Array<{day: string; tokens: number}>; currentStreak: number }
+
+/**
+ * A README heatmap like the profile's: a year of daily tokens as Monday-first UTC weeks in the site's quartile levels, the
+ * year's total and the current streak. `null` draws the private placeholder.
+ */
+export function heatmapSvg(data: HeatmapData | null, theme: CardTheme): string {
+  const t = THEMES[theme];
+  const font = 'font-family="Inter,-apple-system,Segoe UI,Helvetica,Arial,sans-serif"';
+  const days = data?.daily ?? [];
+  const lead = days.length ? (new Date(`${days[0]!.day}T00:00:00Z`).getUTCDay() + 6) % 7 : 0;
+  const weeks = Math.max(53, Math.ceil((lead + days.length) / 7));
+  const width = 52 + weeks * 13 + 20;
+  const total = days.reduce((sum, day) => sum + day.tokens, 0);
+  const title = escape(data ? `${data.alias}: ${compactCount(total)} tokens in the last year` : 'Tokentracky: private');
+  let body: string;
+  if (!data) body = `<text x="20" y="110" fill="${t.muted}" font-size="16">private</text>`;
+  else {
+    const levels = heatLevels(days.map(day => day.tokens));
+    const cells = days.map((day, index) => `<rect x="${52 + Math.floor((lead + index) / 7) * 13}" y="${64 + ((lead + index) % 7) * 13}" width="10" height="10" rx="2" fill="${HEAT[theme][levels[index]!]}"><title>${day.day}: ${day.tokens.toLocaleString('en-US')} tokens</title></rect>`).join('');
+    const months = days.flatMap((day, index) => day.day.endsWith('-01') || index === 0
+      ? [{column: Math.floor((lead + index) / 7), name: new Date(`${day.day}T00:00:00Z`).toLocaleString('en-US', {month: 'short', timeZone: 'UTC'})}] : [])
+      .filter((month, index, all) => index + 1 >= all.length || all[index + 1]!.column - month.column >= 3)
+      .map(month => `<text x="${52 + month.column * 13}" y="56" fill="${t.muted}" font-size="11">${month.name}</text>`).join('');
+    const weekdays = [['Mon', 0], ['Wed', 2], ['Fri', 4]].map(([name, row]) => `<text x="20" y="${73 + (row as number) * 13}" fill="${t.muted}" font-size="10">${name}</text>`).join('');
+    const legend = HEAT[theme].map((color, index) => `<rect x="${width - 20 - 34 - (5 - index) * 13}" y="170" width="10" height="10" rx="2" fill="${color}"/>`).join('');
+    body = `<text x="20" y="32" fill="${t.text}" font-size="14" font-weight="600">${escape(data.alias)}<tspan fill="${t.muted}" font-weight="400"> · ${compactCount(total)} tokens in the last year</tspan></text>`
+      + months + weekdays + cells
+      + `<text x="20" y="179" fill="${t.muted}" font-size="11">${data.currentStreak > 0 ? `${data.currentStreak}-day streak` : 'No current streak'}</text>`
+      + `<text x="${width - 20 - 34 - 5 * 13 - 6}" y="179" fill="${t.muted}" font-size="11" text-anchor="end">Less</text>${legend}`
+      + `<text x="${width - 20}" y="179" fill="${t.muted}" font-size="11" text-anchor="end">More</text>`;
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="196" viewBox="0 0 ${width} 196" role="img" aria-label="${title}"><title>${title}</title>`
+    + `<rect x="0.5" y="0.5" width="${width - 1}" height="195" rx="10" fill="${t.background}" stroke="${t.border}"/><g ${font}>`
+    + `<text x="${width - 20}" y="32" fill="${t.muted}" font-size="13" font-weight="600" text-anchor="end">tokentracky</text>${body}</g></svg>`;
 }

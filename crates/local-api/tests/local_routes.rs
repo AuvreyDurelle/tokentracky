@@ -184,7 +184,7 @@ fn source_name(id: &str) -> &'static str {
 }
 
 /// The collector-backed routes.
-const LOCAL_ROUTES: [(&str, &str); 15] = [
+const LOCAL_ROUTES: [(&str, &str); 17] = [
     ("GET", "/api/local/status"),
     ("GET", "/api/local/detect"),
     ("PUT", "/api/local/sources/claude"),
@@ -192,6 +192,8 @@ const LOCAL_ROUTES: [(&str, &str); 15] = [
     ("PUT", "/api/local/collection"),
     ("GET", "/api/local/settings"),
     ("PUT", "/api/local/settings"),
+    ("GET", "/api/local/milestones"),
+    ("PUT", "/api/local/milestones"),
     ("GET", "/api/local/summary"),
     ("GET", "/api/local/sessions"),
     ("GET", "/api/local/breakdown"),
@@ -211,6 +213,7 @@ fn sample(method: &'static str, path: &str) -> Init {
         "/api/local/settings" if method == "PUT" => {
             init.json(json!({"menuBar": "tokens", "menuBarPeriod": "today", "priceRefresh": true}))
         }
+        "/api/local/milestones" if method == "PUT" => init.json(json!({"seen": []})),
         _ => init,
     }
 }
@@ -2213,6 +2216,45 @@ async fn serve_tcp_serves_loopback_behind_the_session_and_closes_gracefully() {
         .close()
         .await
         .unwrap();
+}
+
+/// Rust only. The milestones the popover has shown outlive its window, which keeps no storage: none until saved, then
+/// exactly the ids sent, the newest 500 of a longer list.
+#[tokio::test]
+async fn milestones_seen_are_kept_for_the_popover() {
+    let (server, app) = Server::local(|_| {}).await;
+    let put = |body: Value| server.request("/api/local/milestones", Init::method("PUT").json(body));
+    assert_eq!(server.get("/api/local/milestones").await.json(), json!({"seen": null}));
+    assert_eq!(server.get("/api/local/milestones?x=1").await.status, 400);
+    let seen = json!({"seen": ["week-1:2026-11-16", "tokens-1000000000", "badge-streak-2"]});
+    let reply = put(seen.clone()).await;
+    assert_eq!((reply.status, reply.json()), (200, seen.clone()));
+    assert_eq!(server.get("/api/local/milestones").await.json(), seen);
+    let many: Vec<String> = (0..510).map(|n| format!("badge-{n}-1")).collect();
+    let kept = put(json!({"seen": many})).await.json();
+    assert_eq!(kept["seen"].as_array().unwrap().len(), 500);
+    assert_eq!(kept["seen"][0], "badge-10-1");
+    for body in [
+        json!({"seen": "week-1:2026-11-16"}),
+        json!({"seen": [1]}),
+        json!({"seen": ["<script>"]}),
+        json!({"seen": [""]}),
+        json!({"seen": [], "extra": true}),
+        json!(["week-1"]),
+    ] {
+        let reply = put(body.clone()).await;
+        assert_eq!(reply.status, 400, "{body}");
+        assert_eq!(reply.json()["error"]["code"], "INVALID_REQUEST");
+    }
+    assert_eq!(
+        server.get("/api/local/milestones").await.json()["seen"]
+            .as_array()
+            .unwrap()
+            .len(),
+        500
+    );
+    drop(server);
+    app.close().await.unwrap();
 }
 
 /// Rust only. The app's settings start at their defaults, save exactly as given, and reach the menu bar at once.

@@ -166,7 +166,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('hosted GitHub username wiring',
     cleanup.push(async()=>{vi.unstubAllGlobals();});
     await mkdir('.runtime',{recursive:true});const webRoot=await mkdtemp(resolve('.runtime/hosted-test-'));
     cleanup.push(()=>rm(webRoot,{recursive:true,force:true}));
-    await writeFile(join(webRoot,'index.html'),'<html><body>hosted</body></html>');
+    await writeFile(join(webRoot,'index.html'),'<html><head><title>Tokentracky</title><meta name="description" content="site" /></head><body>hosted</body></html>');
     // createHostedApp migrates the default schema; each test erases the member it created.
     const app=await createHostedApp({databaseUrl:url.toString(),webRoot,moderationPolicy:TEST_MODERATION_POLICY,auth:{issuer,audience:'authenticated',jwksUrl},...settings});
     cleanup.push(()=>app.close());
@@ -202,6 +202,46 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('hosted GitHub username wiring',
       expect((await app.inject(page)).statusCode,page).toBe(404);
     }
     expect((await app.inject('/api/health')).json()).toMatchObject({mode:'hosted',authConfigured:false});
+  });
+  it('gives profile pages the published profile\'s preview tags, and the site\'s own for unknown names',async()=>{
+    const {app,alias,member,publish}=await hosted({});
+    try {
+      expect((await publish()).statusCode).toBe(200);
+      const page=await app.inject({url:`/u/${alias.toUpperCase()}?ref=share`,headers:{'x-tokentracky-host':'tokentracky.com'}});
+      expect(page.statusCode).toBe(200);
+      expect(page.headers['content-type']).toBe('text/html; charset=utf-8');
+      expect(page.headers['content-security-policy']).toContain("frame-ancestors 'none'");
+      expect(page.body).toContain(`<title>${alias} on Tokentracky</title>`);
+      expect(page.body).toMatch(/<meta name="description" content="#\d+ all time with 0 AI coding tokens\. See where you rank on the token leaderboard\." \/>/);
+      expect(page.body).toContain(`<meta property="og:url" content="https://tokentracky.com/u/${alias}" />`);
+      expect(page.body).toContain(`<meta property="og:image" content="https://tokentracky.com/og/${alias}.png" />`);
+      expect(page.body).toContain('<meta name="twitter:card" content="summary_large_image" />');
+      expect(page.body).not.toContain('content="site"');
+      const profileWeek=(await app.inject({url:`/u/${alias}?period=week&ref=share`,headers:{'x-tokentracky-host':'tokentracky.com'}})).body;
+      expect(profileWeek).toMatch(/<meta name="description" content="#\d+ this week with 0 AI coding tokens\./);
+      expect(profileWeek).toContain(`<meta property="og:image" content="https://tokentracky.com/og/${alias}.png?period=week" />`);
+      expect(page.body).toContain('hosted');
+      const unknown=(await app.inject({url:'/u/nobody-at-all',headers:{'x-tokentracky-host':'evil.example/"><script>'}})).body;
+      expect(unknown).toContain('<title>Tokentracky — the token leaderboard</title>');
+      expect(unknown).toContain('<meta property="og:image" content="http://localhost:80/og/nobody-at-all.png" />');
+      const month=new Date().toISOString().slice(0,7);
+      const wrap=(await app.inject({url:`/wrapped/${alias}/${month}`,headers:{'x-tokentracky-host':'tokentracky.com'}})).body;
+      expect(wrap).toMatch(new RegExp(`<title>${alias}&#39;s \\w+ \\d{4} on Tokentracky</title>`));
+      expect(wrap).toMatch(/<meta name="description" content="0 AI coding tokens in \w+ \d{4}\. See where you rank/);
+      expect(wrap).toContain(`<meta property="og:image" content="https://tokentracky.com/og/wrapped/${alias}/${month}.png" />`);
+      expect((await app.inject(`/wrapped/${alias}/2999`)).body).toContain('<title>Tokentracky — the token leaderboard</title>');
+      for (const path of [`/wrapped/${alias}/2026-13`,`/wrapped/${alias}`,'/wrapped/x/2026']) expect((await app.inject(path)).statusCode,path).toBe(404);
+      const versus=(await app.inject({url:`/vs/${alias}/${alias}`,headers:{'x-tokentracky-host':'tokentracky.com'}})).body;
+      expect(versus).toContain(`<title>${alias} vs ${alias} on Tokentracky</title>`);
+      expect(versus).toMatch(/<meta name="description" content="[^"]+: 0 tokens \(#\d+\) · [^"]+: 0 tokens \(#\d+\), all time\. Dead even\." \/>/);
+      expect(versus).toContain(`<meta property="og:image" content="https://tokentracky.com/og/vs/${alias}/${alias}.png" />`);
+      expect((await app.inject(`/vs/${alias}/nobody-at-all`)).body).toContain('<title>Tokentracky — the token leaderboard</title>');
+      const weekly=(await app.inject({url:`/vs/${alias}/${alias}?period=week&ref=share`,headers:{'x-tokentracky-host':'tokentracky.com'}})).body;
+      expect(weekly).toContain(`<meta property="og:image" content="https://tokentracky.com/og/vs/${alias}/${alias}.png?period=week" />`);
+      expect(weekly).toMatch(/0 tokens \(#\d+\), this week\. Dead even\./);
+      expect((await app.inject(`/vs/${alias}/${alias}?period=year`)).body).toContain(`/og/vs/${alias}/${alias}.png" />`);
+      expect((await app.inject(`/vs/${alias}/x`)).statusCode).toBe(404);
+    } finally {expect((await member('DELETE','/api/account')).statusCode).toBe(204);}
   });
   it.each([
     ['without the service-role key',{supabaseUrl:supabase,supabaseAnonKey:anonKey}],

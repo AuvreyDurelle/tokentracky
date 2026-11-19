@@ -54,6 +54,10 @@ const INVALID_SETTINGS: LocalError = LocalError::new(
     "INVALID_REQUEST",
     "Choose what the menu bar shows and for which period.",
 );
+const INVALID_MILESTONES: LocalError =
+    LocalError::new(400, "INVALID_REQUEST", "Send the milestones shown as a list of ids.");
+/// Milestone ids kept: the newest, when more are sent.
+const MAX_MILESTONES: usize = 500;
 const INVALID_FILTER: LocalError =
     LocalError::new(400, "INVALID_FILTER", "Choose a supported reporting period and tool.");
 const RANGE_DAYS: [f64; 4] = [7.0, 30.0, 90.0, 365.0];
@@ -360,6 +364,7 @@ pub(crate) fn local_routes() -> Router<LocalState> {
         .route("/api/local/refresh", post(refresh))
         .route("/api/local/collection", put(collection))
         .route("/api/local/settings", get(get_settings).put(put_settings))
+        .route("/api/local/milestones", get(get_milestones).put(put_milestones))
         .route("/api/local/summary", get(summary))
         .route("/api/local/sessions", get(sessions))
         .route("/api/local/breakdown", get(breakdown))
@@ -582,6 +587,46 @@ async fn put_settings(State(state): State<LocalState>, JsonBody(body): JsonBody)
         callback(overview);
     }
     Ok(json(StatusCode::OK, &settings))
+}
+
+/// `GET /api/local/milestones`, with no parameters: `{seen}`, the milestone ids the popover has shown, null until it saves
+/// some. The app's windows keep no storage of their own between openings.
+async fn get_milestones(State(state): State<LocalState>, uri: Uri) -> Result<Response, LocalError> {
+    object(Some(&params(uri.query())), &[])?;
+    let store = state.collection().collector.store().clone();
+    let seen = blocking(move || lock(&store).milestones_seen())
+        .await?
+        .map_err(|_| LocalError::internal())?;
+    Ok(json(StatusCode::OK, &serde_json::json!({ "seen": seen })))
+}
+
+/// `PUT /api/local/milestones`: exactly `{seen}`, a list of ids of 1 to 100 letters, digits, `-`, `:` and `.`. Keeps the
+/// newest 500 and answers with what it kept.
+async fn put_milestones(State(state): State<LocalState>, JsonBody(body): JsonBody) -> Result<Response, LocalError> {
+    fn id(value: &Value) -> Option<&str> {
+        value.as_str().filter(|id| {
+            (1..=100).contains(&id.len()) && id.bytes().all(|c| c.is_ascii_alphanumeric() || b"-:.".contains(&c))
+        })
+    }
+    let ids = body
+        .as_ref()
+        .and_then(Value::as_object)
+        .filter(|body| body.len() == 1)
+        .and_then(|body| body.get("seen"))
+        .and_then(Value::as_array)
+        .ok_or(INVALID_MILESTONES)?;
+    let mut seen = ids
+        .iter()
+        .map(|value| id(value).map(str::to_owned))
+        .collect::<Option<Vec<_>>>()
+        .ok_or(INVALID_MILESTONES)?;
+    seen.drain(..seen.len().saturating_sub(MAX_MILESTONES));
+    let store = state.collection().collector.store().clone();
+    let saved = seen.clone();
+    blocking(move || lock(&store).set_milestones_seen(&saved))
+        .await?
+        .map_err(|_| LocalError::internal())?;
+    Ok(json(StatusCode::OK, &serde_json::json!({ "seen": seen })))
 }
 
 /// `Number(text)`: decimal literals and `Infinity` with an optional sign, or `0x`, `0o` and `0b` integers, between

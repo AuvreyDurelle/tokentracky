@@ -17,9 +17,12 @@ describe('Vercel authenticated gateway',()=>{
       const expected=value.includes('badge')?'/badge/alice.svg?theme=dark':value.includes('card')?'/card/alice.svg?theme=light':'/api/health?detail=1';
       expect(routeFromGatewayUrl(new URL(value))).toBe(expected);
     }
+    for (const [value,expected] of [['https://site.example/og/alice.png?period=week','/og/alice.png?period=week'],['https://site.example/u/alice?ref=share','/u/alice?ref=share'],['https://site.example/api/gateway/og/alice.png','/og/alice.png'],['https://site.example/wrapped/alice/2026-11','/wrapped/alice/2026-11'],['https://site.example/vs/alice/bob','/vs/alice/bob']]) {
+      expect(routeFromGatewayUrl(new URL(value))).toBe(expected);
+    }
   });
   it('rejects gateway recursion and paths outside the API and badge surfaces',()=>{
-    for (const path of ['/api/gateway','/api/gateway/api/gateway/api/health','/api/gateway/foo','/assets/app.js','/apiary/health']) {
+    for (const path of ['/api/gateway','/api/gateway/api/gateway/api/health','/api/gateway/foo','/assets/app.js','/apiary/health','/user/alice','/og','/u']) {
       expect(routeFromGatewayUrl(new URL(path,'https://site.example'))).toBeNull();
     }
   });
@@ -29,11 +32,12 @@ describe('Vercel authenticated gateway',()=>{
       const headers=new Headers(init?.headers);
       expect(headers.get('authorization')).toBe('Bearer retained-token');
       expect(headers.get('x-forwarded-for')).toBeNull();
+      expect(headers.get('x-tokentracky-host')).toBe('tokentracky.com');
       expect(headers.get('x-tokentracky-gateway-signature')).toBe(gatewayHeaders(secret,'POST','/api/ingest?batch=1','198.51.100.7')['x-tokentracky-gateway-signature']);
       expect(await new Response(init?.body).text()).toBe('{"buckets":[]}');
       return new Response('accepted',{status:201,headers:{'cache-control':'no-store','retry-after':'2'}});
     });
-    const response=await proxyVercelGateway(new Request('https://site.example/api/gateway/api/ingest?batch=1',{method:'POST',headers:{authorization:'Bearer retained-token','content-type':'application/json','x-vercel-forwarded-for':'198.51.100.7','x-forwarded-for':'203.0.113.99','x-tokentracky-gateway-signature':'forged'},body:'{"buckets":[]}'}),environment,forwarded);
+    const response=await proxyVercelGateway(new Request('https://site.example/api/gateway/api/ingest?batch=1',{method:'POST',headers:{authorization:'Bearer retained-token','content-type':'application/json','x-vercel-forwarded-for':'198.51.100.7','x-forwarded-for':'203.0.113.99','x-forwarded-host':'tokentracky.com','x-tokentracky-gateway-signature':'forged'},body:'{"buckets":[]}'}),environment,forwarded);
     expect(response.status).toBe(201);
     expect(response.headers.get('retry-after')).toBe('2');
     expect(await response.text()).toBe('accepted');

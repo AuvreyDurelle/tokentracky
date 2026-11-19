@@ -338,7 +338,7 @@ fn alias_segment(alias: &str) -> Result<String, LocalError> {
 }
 
 /// `encodeURIComponent`.
-pub(crate) fn encode_uri_component(value: &str) -> String {
+pub fn encode_uri_component(value: &str) -> String {
     value
         .bytes()
         .map(|byte| match byte {

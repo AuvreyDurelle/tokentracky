@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { ALIAS_PATTERN } from '@tokentracky/core';
 
 /** Shareable addresses. `/` and `/leaderboard` both show the leaderboard; `/join` explains how to get on it. */
-export type Route = { page: 'home' } | { page: 'leaderboard' } | { page: 'join' } | { page: 'you' } | { page: (typeof MAC_PAGES)[number] } | { page: 'profile'; alias: string } | { page: 'missing' };
+export type Route = { page: 'home' } | { page: 'leaderboard' } | { page: 'join' } | { page: 'you' } | { page: (typeof MAC_PAGES)[number] } | { page: 'profile'; alias: string } | { page: 'wrapped'; alias: string; period: string } | { page: 'vs'; a: string; b: string } | { page: 'missing' };
 
 /** The Mac app's own pages. Only the local app serves them; the website shows its missing page instead. */
 const MAC_PAGES = ['tokens', 'achievements', 'settings', 'popover'] as const;
@@ -19,11 +19,17 @@ export function parseRoute(pathname: string): Route {
   if (mac) return { page: mac };
   const profile = /^\/u\/([^/]+)$/.exec(path);
   if (profile && ALIAS_PATTERN.test(profile[1]!)) return { page: 'profile', alias: profile[1]!.toLowerCase() };
+  // A month (`YYYY-MM`) or year (`YYYY`) wrap; the website only.
+  const wrapped = /^\/wrapped\/([^/]+)\/(\d{4}(?:-(?:0[1-9]|1[0-2]))?)$/.exec(path);
+  if (wrapped && ALIAS_PATTERN.test(wrapped[1]!)) return { page: 'wrapped', alias: wrapped[1]!.toLowerCase(), period: wrapped[2]! };
+  // Two builders head to head; the website only.
+  const vs = /^\/vs\/([^/]+)\/([^/]+)$/.exec(path);
+  if (vs && ALIAS_PATTERN.test(vs[1]!) && ALIAS_PATTERN.test(vs[2]!)) return { page: 'vs', a: vs[1]!.toLowerCase(), b: vs[2]!.toLowerCase() };
   return { page: 'missing' };
 }
 
 export function routePath(route: Route): string {
-  return route.page === 'home' || route.page === 'missing' ? '/' : route.page === 'profile' ? `/u/${route.alias}` : `/${route.page}`;
+  return route.page === 'home' || route.page === 'missing' ? '/' : route.page === 'profile' ? `/u/${route.alias}` : route.page === 'wrapped' ? `/wrapped/${route.alias}/${route.period}` : route.page === 'vs' ? `/vs/${route.a}/${route.b}` : `/${route.page}`;
 }
 
 /** The current route, kept in step with the address bar and Back/Forward. */

@@ -7,6 +7,7 @@ import { errorText, formatCost, shortDay, timeAgo } from './format';
 import { AppleIcon, Avatar, Empty, Loading, Notice, Segmented, Spinner, Tokens } from './ui';
 import { PasswordResetRequest } from './PasswordRecovery';
 import { MAC_DOWNLOAD } from './download-config';
+import { MilestoneBanner } from './Milestone';
 
 /** Only the providers enabled in Supabase Auth are offered; email uses a password (sign in or create an account). `signUp` opens on Create account. */
 export function SignIn({ auth, signUp = false }: { auth: AuthAdapter; signUp?: boolean }) {
@@ -205,6 +206,7 @@ export function HostedAccount({ api, auth, authState, account, accountLoading, a
     <SectionNav named={Boolean(alias)} />
     <div className="page-stack">
       <Title>{signedInWith && <p>Signed in{alias ? ` as ${alias}` : ''} with {PROVIDERS[signedInWith.provider] ?? signedInWith.provider}</p>}</Title>
+      {stats && <MilestoneBanner stats={stats} site={window.location.origin} />}
       {error && <Notice tone="error">{error}</Notice>}
       {accountError && <Notice tone="error">Could not load your account: {accountError} <button type="button" className="btn sm" onClick={() => void refreshAccount().catch(() => {})}>Retry</button></Notice>}
       {account?.moderation && ready && <ModerationNotice moderation={account.moderation} />}
@@ -320,12 +322,12 @@ function SectionNav({ named }: { named: boolean }) {
 }
 
 const NEIGHBOUR_PAGE = 20;
-type BadgeMetric = 'tokens' | 'rank' | 'cost';
+type BadgeMetric = 'tokens' | 'rank' | 'cost' | 'streak';
 type BadgePeriod = 'all' | 'month' | 'week';
 
-/** The badge URL for a metric and window; the defaults (tokens, all time) add no query. */
+/** The badge URL for a metric and window; the defaults (tokens, all time) add no query, and a streak has no window. */
 export function badgeUrl(origin: string, alias: string, metric: BadgeMetric, period: BadgePeriod): string {
-  const query = new URLSearchParams({ ...(metric === 'tokens' ? {} : { metric }), ...(period === 'all' ? {} : { period }) }).toString();
+  const query = new URLSearchParams({ ...(metric === 'tokens' ? {} : { metric }), ...(period === 'all' || metric === 'streak' ? {} : { period }) }).toString();
   return `${origin}/badge/${alias}.svg${query ? `?${query}` : ''}`;
 }
 
@@ -335,24 +337,29 @@ export function cardUrl(origin: string, alias: string, theme: 'dark' | 'light', 
   return `${origin}/card/${alias}.svg${query ? `?${query}` : ''}`;
 }
 
+/** The README heatmap's address: a year of daily tokens, dark or light. */
+export function heatmapUrl(origin: string, alias: string, theme: 'dark' | 'light'): string {
+  return `${origin}/card/heatmap/${alias}.svg${theme === 'dark' ? '' : '?theme=light'}`;
+}
+
 function BadgePicker({ alias }: { alias: string }) {
-  const [kind, setKind] = useState<'badge' | 'card'>('badge');
+  const [kind, setKind] = useState<'badge' | 'card' | 'heatmap'>('badge');
   const [metric, setMetric] = useState<BadgeMetric>('tokens');
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [period, setPeriod] = useState<BadgePeriod>('all');
   const [copied, setCopied] = useState(false);
   const origin = window.location.origin;
-  const url = kind === 'badge' ? badgeUrl(origin, alias, metric, period) : cardUrl(origin, alias, theme, period);
+  const url = kind === 'badge' ? badgeUrl(origin, alias, metric, period) : kind === 'card' ? cardUrl(origin, alias, theme, period) : heatmapUrl(origin, alias, theme);
   const markdown = `[![Tokentracky](${url})](${origin}/u/${alias}?ref=readme)`;
   const change = <T,>(set: (value: T) => void) => (value: T) => { set(value); setCopied(false); };
   return <div className="panel panel-body">
     <div className="embed-preview"><img className={kind === 'badge' ? 'badge-preview' : 'card-preview'} src={url.slice(origin.length)} alt={`Tokentracky ${kind} for ${alias}`} /></div>
     <div className="actions">
-      <Segmented label="Embed" value={kind} options={[{ value: 'badge', label: 'Badge' }, { value: 'card', label: 'Card' }]} onChange={change(setKind)} />
+      <Segmented label="Embed" value={kind} options={[{ value: 'badge', label: 'Badge' }, { value: 'card', label: 'Card' }, { value: 'heatmap', label: 'Heatmap' }]} onChange={change(setKind)} />
       {kind === 'badge'
-        ? <Segmented label="Badge shows" value={metric} options={[{ value: 'tokens', label: 'Tokens' }, { value: 'rank', label: 'Rank' }, { value: 'cost', label: 'Est. cost' }]} onChange={change(setMetric)} />
-        : <Segmented label="Card theme" value={theme} options={[{ value: 'dark', label: 'Dark' }, { value: 'light', label: 'Light' }]} onChange={change(setTheme)} />}
-      <Segmented label="Window" value={period} options={[{ value: 'all', label: 'All time' }, { value: 'month', label: 'This month' }, { value: 'week', label: 'This week' }]} onChange={change(setPeriod)} />
+        ? <Segmented label="Badge shows" value={metric} options={[{ value: 'tokens', label: 'Tokens' }, { value: 'rank', label: 'Rank' }, { value: 'cost', label: 'Est. cost' }, { value: 'streak', label: 'Streak' }]} onChange={change(setMetric)} />
+        : <Segmented label={kind === 'card' ? 'Card theme' : 'Heatmap theme'} value={theme} options={[{ value: 'dark', label: 'Dark' }, { value: 'light', label: 'Light' }]} onChange={change(setTheme)} />}
+      {kind !== 'heatmap' && !(kind === 'badge' && metric === 'streak') && <Segmented label="Window" value={period} options={[{ value: 'all', label: 'All time' }, { value: 'month', label: 'This month' }, { value: 'week', label: 'This week' }]} onChange={change(setPeriod)} />}
     </div>
     <div className="copy-row"><code>{markdown}</code><button type="button" className="btn sm" onClick={() => void navigator.clipboard?.writeText(markdown).then(() => setCopied(true)).catch(() => {})}>{copied ? 'Copied' : 'Copy'}</button></div>
   </div>;

@@ -214,6 +214,33 @@ export type ProfileStats = {
   /** Every badge, in display order (`BADGE_IDS`). */
   badges: Array<BadgeProgress>;
 };
+/** One builder's wrap of a calendar month (`period` `YYYY-MM`) or year (`YYYY`) in UTC days, limited to what they share. A period still under way counts up to today. */
+export type Wrapped = {
+  alias: string;
+  period: string;
+  /** The first UTC day of the period. */
+  from: string;
+  /** The last UTC day counted: the period's last, or today while it is under way. */
+  to: string;
+  tokens: number;
+  /** Rank among the builders with tokens in the period; 0 without tokens. */
+  rank: number;
+  /** Builders with tokens in the period. */
+  builders: number;
+  /** Tokens in the whole period before (the month or year before). */
+  previousTokens: number;
+  /** Estimated cost in the period, when shared; null when any of its days lacks a price. */
+  costMicrousd?: number | null;
+  activeDays: number;
+  longestStreak: number;
+  bestDay: { day: string, tokens: number } | null;
+  /** Tokens per UTC day from `from` to `to`, oldest first. */
+  daily: Array<{ day: string, tokens: number }>;
+  /** Tokens per tool in the period, when the tool split is shared. */
+  toolTokens?: Partial<Record<ToolId, number>>;
+  /** The period's five largest models, largest first, when the model mix is shared. They carry no cost. */
+  models?: Array<{ model: string, tokens: number, costMicrousd?: number | null }>;
+};
 /** Landing-page totals across every published builder. */
 export type CommunityStats = {
   builders: number;

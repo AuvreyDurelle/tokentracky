@@ -555,6 +555,55 @@ async fn logs_in_through_browser_approval_stores_the_credential_syncs_and_unlink
     assert_eq!(f.secrets.get().await.unwrap(), None);
 }
 
+#[tokio::test(flavor = "multi_thread")]
+async fn shares_the_published_profile_wraps_and_readme_embeds() {
+    let mut f = Fixture::new();
+    let unlinked = f.run(&["share"]).await;
+    assert_eq!(unlinked.code, 1);
+    assert!(
+        unlinked.stderr.contains("not on the leaderboard yet"),
+        "{}",
+        unlinked.stderr
+    );
+    let (origin, _hosted) = hosted(200).await;
+    f.secrets
+        .set(CloudLink {
+            url: origin.clone(),
+            device_token: format!("ttd_{}", "x".repeat(40)),
+            history_start: None,
+            share_tools: false,
+            share_cost: false,
+            share_models: false,
+            generation: "00000000-0000-4000-8000-000000000001".to_owned(),
+        })
+        .await
+        .unwrap();
+    let shared = f.run(&["share"]).await;
+    assert_eq!(shared.code, 0, "{}", shared.stderr);
+    assert!(
+        shared.stdout.starts_with(&format!("Profile: {origin}/u/cli-builder\n")),
+        "{}",
+        shared.stdout
+    );
+    assert!(shared.stdout.contains(&format!(
+        "README heatmap: [![Tokentracky activity]({origin}/card/heatmap/cli-builder.svg)]"
+    )));
+    let json = parse(&f.run(&["share", "--json"]).await.stdout);
+    assert_eq!(json["alias"], "cli-builder");
+    assert!(
+        json["month"]
+            .as_str()
+            .unwrap()
+            .starts_with(&format!("{origin}/wrapped/cli-builder/20"))
+    );
+    assert!(
+        json["postOnX"]
+            .as_str()
+            .unwrap()
+            .starts_with("https://x.com/intent/post?text=cli-builder%20on%20the")
+    );
+}
+
 /// On a computer that never ran Tokentracky, `login` turns on the tools in their usual folders and reads them while the
 /// code waits for approval, so the first upload already holds the history.
 #[tokio::test(flavor = "multi_thread")]

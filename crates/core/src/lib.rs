@@ -643,6 +643,46 @@ pub struct ProfileStats {
     /// Every badge, in display order (`BADGE_IDS`).
     pub badges: Vec<BadgeProgress>,
 }
+/// One builder's wrap of a calendar month (`period` `YYYY-MM`) or year (`YYYY`) in UTC days, limited to what they share.
+/// A period still under way counts up to today.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+pub struct Wrapped {
+    pub alias: String,
+    pub period: String,
+    /// The first UTC day of the period.
+    pub from: String,
+    /// The last UTC day counted: the period's last, or today while it is under way.
+    pub to: String,
+    #[ts(type = "number")]
+    pub tokens: u64,
+    /// Rank among the builders with tokens in the period; 0 without tokens.
+    pub rank: u32,
+    /// Builders with tokens in the period.
+    pub builders: u32,
+    /// Tokens in the whole period before (the month or year before).
+    #[ts(type = "number")]
+    pub previous_tokens: u64,
+    /// Estimated cost in the period, when shared; null when any of its days lacks a price.
+    #[serde(default, deserialize_with = "present", skip_serializing_if = "Option::is_none")]
+    #[ts(optional, type = "number | null")]
+    pub cost_microusd: Option<Option<u64>>,
+    pub active_days: u32,
+    pub longest_streak: u32,
+    #[ts(inline)]
+    pub best_day: Option<DayTokens>,
+    /// Tokens per UTC day from `from` to `to`, oldest first.
+    #[ts(inline)]
+    pub daily: Vec<DayTokens>,
+    /// Tokens per tool in the period, when the tool split is shared.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional, type = "Partial<Record<ToolId, number>>")]
+    pub tool_tokens: Option<BTreeMap<ToolId, u64>>,
+    /// The period's five largest models, largest first, when the model mix is shared. They carry no cost.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional, inline)]
+    pub models: Option<Vec<ModelTokens>>,
+}
 /// Rank and tokens in each leaderboard window (`ProfileStats.periods`, a `Record<Period, …>`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct PeriodRanks {

@@ -1,6 +1,6 @@
 import { createHash, randomBytes, randomInt, randomUUID } from 'node:crypto';
 import type { Pool, PoolClient } from 'pg';
-import { activityStats, BADGE_IDS, BADGE_TIERS, checkedSum, rankingWindow, type AchievementRarity, type BadgeId, type CommunityStats, type LeaderboardPeriod, type LeaderboardResponse, type ProfileStats, type Publication, type PublicBucket, type PublicProfile, type TokenCounts, type ToolId } from '@tokentracky/core';
+import { activityStats, BADGE_IDS, BADGE_TIERS, checkedSum, rankingWindow, wrapRange, type AchievementRarity, type BadgeId, type CommunityStats, type LeaderboardPeriod, type LeaderboardResponse, type ProfileStats, type Publication, type PublicBucket, type PublicProfile, type TokenCounts, type ToolId, type Wrapped } from '@tokentracky/core';
 import type { AccountIdentity } from './auth.ts';
 import { CloudError, invalid, safe } from './errors.ts';
 import { checkedCost } from './cost-ceiling.ts';
@@ -787,6 +787,49 @@ export class PostgresCloudRepository {
       const kinds = (await client.query<KindSums>(`SELECT ${KIND_SUMS} ${scope}`, [name])).rows[0]!;
       if (Number(kinds.buckets) > 0 && kinds.typed === kinds.buckets) stats.breakdown = kindSums(kinds);
       return stats;
+    });
+  }
+
+  /**
+   * A builder's wrap of a calendar month or year: tokens and rank among the builders with tokens in it, its days, and the
+   * tool split, model mix and cost when shared. A period under way counts up to today.
+   */
+  async wrapped(alias: string, period: string): Promise<Wrapped> {
+    const range = wrapRange(period, this.now().toISOString().slice(0, 10));
+    if (!range) invalid('Invalid wrap period');
+    return this.snapshot(async client => {
+      const name = alias.toLowerCase();
+      const shared = (await client.query<{share_tools: boolean; share_cost: boolean; share_models: boolean}>(`
+        SELECT p.share_tools, p.share_cost, p.share_models FROM ${this.schema}.cloud_publications p WHERE p.alias = $1 AND ${this.visible}`, [name])).rows[0];
+      if (!shared) return this.unavailableProfile(client, name);
+      const scope = `FROM ${this.schema}.cloud_publications p JOIN ${this.buckets} b ON b.account_id = p.account_id
+        WHERE ${this.visible} AND b.day_key <> 'unknown' AND b.day_key >= $1 AND b.day_key <= $2
+          AND (p.history_start IS NULL OR b.day_key >= to_char(p.history_start AT TIME ZONE 'UTC', 'YYYY-MM-DD'))`;
+      const mine = `${scope} AND p.alias = $3`;
+      const totals = await client.query<{alias: string; tokens: string}>(`SELECT p.alias, sum(b.tokens) AS tokens ${scope} GROUP BY p.alias HAVING sum(b.tokens) > 0`, [range.from, range.to]);
+      const ranked = totals.rows.map(row => ({alias: row.alias, tokens: safe(row.tokens)}))
+        .sort((a, b) => b.tokens - a.tokens || (a.alias < b.alias ? -1 : a.alias > b.alias ? 1 : 0));
+      const at = ranked.findIndex(row => row.alias === name);
+      const byDay = new Map((await client.query<{day: string; tokens: string}>(`SELECT b.day_key AS day, sum(b.tokens) AS tokens ${mine} GROUP BY b.day_key`, [range.from, range.to, name])).rows.map(row => [row.day, safe(row.tokens)]));
+      const daily: Wrapped['daily'] = [];
+      for (let day = range.from; day <= range.to; day = new Date(Date.parse(`${day}T00:00:00.000Z`) + 86_400_000).toISOString().slice(0, 10)) daily.push({day, tokens: byDay.get(day) ?? 0});
+      const previous = (await client.query<{tokens: string}>(`SELECT coalesce(sum(b.tokens), 0) AS tokens ${mine}`, [range.previous.from, range.previous.to, name])).rows[0]!;
+      const {activeDays, longestStreak, bestDay} = activityStats(daily, range.to);
+      const wrap: Wrapped = {alias: name, period, from: range.from, to: range.to, tokens: at < 0 ? 0 : ranked[at]!.tokens, rank: at + 1, builders: ranked.length,
+        previousTokens: safe(previous.tokens), activeDays, longestStreak, bestDay, daily};
+      if (shared.share_cost) {
+        const cost = (await client.query<{cost: string | null}>(`SELECT CASE WHEN count(*) FILTER (WHERE b.cost_microusd IS NULL) > 0 THEN NULL ELSE coalesce(sum(b.cost_microusd), 0) END AS cost ${mine}`, [range.from, range.to, name])).rows[0]!;
+        wrap.costMicrousd = cost.cost === null ? null : safe(cost.cost);
+      }
+      if (shared.share_tools) {
+        const tools = await client.query<{tool: ToolId; tokens: string}>(`SELECT b.tool, sum(b.tokens) AS tokens ${mine} AND b.tool <> 'all' GROUP BY b.tool HAVING sum(b.tokens) > 0`, [range.from, range.to, name]);
+        wrap.toolTokens = Object.fromEntries(tools.rows.map(row => [row.tool, safe(row.tokens)]));
+      }
+      if (shared.share_models) {
+        const models = await client.query<{model: string; tokens: string}>(`SELECT b.model, sum(b.tokens) AS tokens ${mine} AND b.model <> '' GROUP BY b.model HAVING sum(b.tokens) > 0`, [range.from, range.to, name]);
+        wrap.models = models.rows.map(row => ({model: row.model, tokens: safe(row.tokens)})).sort((a, b) => b.tokens - a.tokens || a.model.localeCompare(b.model)).slice(0, 5);
+      }
+      return wrap;
     });
   }
 

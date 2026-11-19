@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { rankingWindow, totalTokens, type BadgeProgress, type Period, type ProfileStats, type TokenCounts } from '@tokentracky/core';
+import { adjacentWrap, fitFacts, rankingWindow, totalTokens, windowActivity, wrapLabel, type BadgeProgress, type Period, type ProfileStats, type TokenCounts } from '@tokentracky/core';
 import { ApiError, type ApiClient } from './api';
 import { INSTALL_COMMAND, MAC_DOWNLOAD } from './download-config';
 import { KINDS, TOOLS, errorText, formatCompact, formatCost, formatCostCompact, formatExact, formatShare, shortDay, topPercent } from './format';
@@ -19,11 +19,12 @@ export function badgeMarkdown(origin: string, alias: string): string {
 
 const WINDOWS: Record<Period, string> = { week: 'this week', month: 'this month', all: 'all time' };
 
-/** X's post composer with the window's rank and tokens and the tagged profile link. A link cannot attach the card, so the member pastes it. */
+/** X's post composer with the window's rank and tokens and the tagged profile link, whose preview shows the card in that window. */
 export function xShareUrl(stats: ProfileStats, origin: string, period: Period): string {
   const { rank, tokens } = stats.periods[period];
   const text = `${stats.alias} is #${rank} on the Tokentracky leaderboard ${WINDOWS[period]}, with ${formatCompact(tokens)} tokens.`;
-  return `https://x.com/intent/post?${new URLSearchParams({ text, url: `${origin}/u/${stats.alias}?ref=share` }).toString()}`;
+  const url = `${origin}/u/${stats.alias}?${new URLSearchParams({ ...(period === 'all' ? {} : { period }), ref: 'share' }).toString()}`;
+  return `https://x.com/intent/post?${new URLSearchParams({ text, url }).toString()}`;
 }
 
 /** A shareable `/u/:alias` page with everything the builder publishes. A signed-in visitor can like it. */
@@ -101,6 +102,7 @@ export function ProfileView({ stats, me, origin, join, onLeaderboard, likes = st
               ? <button type="button" className="btn profile-like" aria-pressed={like.liked} disabled={like.pending} onClick={onLike}><Heart /><span className="sr-only">Like {stats.alias}, </span><b className="num">{formatExact(likes)}</b></button>
               : <span className="btn profile-like" title={`${formatExact(likes)} ${likes === 1 ? 'like' : 'likes'}${me === stats.alias ? '' : ' · sign in to like'}`}><Heart /><b className="num">{formatExact(likes)}</b></span>}
             <button type="button" className="btn" onClick={share}>Share</button>
+            {me && me !== stats.alias && <a className="btn" href={`/vs/${me}/${stats.alias}`}>Compare with me</a>}
           </div>
         </div>
         <dl className="stats profile-stats">
@@ -226,6 +228,8 @@ function ShareCard({ stats, origin }: { stats: ProfileStats; origin: string | nu
   const [message, setMessage] = useState<string | null>(null);
   const [period, setPeriod] = useState<Period>('all');
   useEffect(() => { if (canvas.current) void drawShareCard(canvas.current, stats, origin, period); }, [stats, origin, period]);
+  // The app's "Card and Post on X" opens the profile at #share; the panel appears only once the profile has loaded.
+  useEffect(() => { if (window.location.hash === '#share') document.getElementById('share')?.scrollIntoView({ block: 'start' }); }, []);
   const blob = () => new Promise<Blob>((resolve, reject) => canvas.current!.toBlob((value) => value ? resolve(value) : reject(new Error('The image could not be created.')), 'image/png'));
   const save = async () => {
     const link = document.createElement('a'); link.href = URL.createObjectURL(await blob()); link.download = `tokentracky-${stats.alias}.png`; link.click(); URL.revokeObjectURL(link.href);
@@ -235,12 +239,10 @@ function ShareCard({ stats, origin }: { stats: ProfileStats; origin: string | nu
   };
   const markdown = origin ? badgeMarkdown(origin, stats.alias) : null;
   const canCopyImage = typeof ClipboardItem !== 'undefined';
-  // Opened in the click itself so the browser allows the window; the image copy runs alongside.
+  // Opened in the click itself so the browser allows the window. X shows the card from the link's preview.
   const postOnX = () => {
     if (!origin) return;
-    const copied = canCopyImage ? navigator.clipboard.write([new ClipboardItem({ 'image/png': blob() })]) : Promise.reject(new Error('unavailable'));
     window.open(xShareUrl(stats, origin, period), '_blank', 'noopener');
-    copied.then(() => setMessage('Image copied. Paste it into your post.'), () => setMessage('Save the image, then attach it to your post.'));
   };
   // The badge image is served by the hosted site, so the preview shows only there.
   const hosted = typeof window !== 'undefined' && origin === window.location.origin;
@@ -255,31 +257,22 @@ function ShareCard({ stats, origin }: { stats: ProfileStats; origin: string | nu
         {origin && <button type="button" className="btn sm" onClick={() => void copy(() => navigator.clipboard.writeText(`${origin}/u/${stats.alias}?ref=share`), 'Link copied.')}>Copy link</button>}
         {origin && <button type="button" className="btn sm" onClick={postOnX}>Post on X</button>}
       </div>
+      <div className="field">Wrapped
+        <div className="actions">{wrapPeriods(new Date().toISOString().slice(0, 10)).map((wrap) => <a key={wrap} className="btn sm" href={`/wrapped/${stats.alias}/${wrap}`}>{wrapLabel(wrap)}</a>)}</div>
+      </div>
       {markdown && <div className="field">README badge
         {hosted && <img className="badge-preview" src={`/badge/${stats.alias}.svg`} alt={`Tokentracky badge for ${stats.alias}`} />}
         <div className="copy-row"><code>{markdown}</code><button type="button" className="btn sm" onClick={() => void copy(() => navigator.clipboard.writeText(markdown), 'Badge markdown copied.')}>Copy</button></div>
-        <small>Add <code>?metric=cost</code> or <code>?metric=rank</code>, and <code>&amp;period=week</code> or <code>month</code>, to change what it shows.</small>
+        <small>Add <code>?metric=cost</code>, <code>?metric=rank</code> or <code>?metric=streak</code>, and <code>&amp;period=week</code> or <code>month</code>, to change what it shows. The heatmap is at <code>/card/heatmap/{stats.alias}.svg</code>.</small>
       </div>}
       {message && <p className="faint" role="status">{message}</p>}
     </div>
   </section>;
 }
 
-/** Active days and the longest run of consecutive active days in `daily` from the UTC day `from` on. */
-export function windowActivity(daily: ProfileStats['daily'], from: string): { activeDays: number; longestStreak: number } {
-  let activeDays = 0, run = 0, longestStreak = 0;
-  for (const { day, tokens } of daily) {
-    if (day < from) continue;
-    if (tokens > 0) { activeDays += 1; run += 1; longestStreak = Math.max(longestStreak, run); } else run = 0;
-  }
-  return { activeDays, longestStreak };
-}
-
-/** The facts joined by middots, dropping trailing ones until the line fits. */
-export function fitFacts(facts: string[], fits: (text: string) => boolean): string {
-  let shown = facts;
-  while (shown.length > 1 && !fits(shown.join(' · '))) shown = shown.slice(0, -1);
-  return shown.join(' · ');
+/** The wraps a profile links to: last month, this month so far and this year so far. */
+export function wrapPeriods(today: string): string[] {
+  return [adjacentWrap(today.slice(0, 7), -1), today.slice(0, 7), today.slice(0, 4)];
 }
 
 /** 1200×630 Open Graph-sized card in the graphite theme: name, rank and tokens in the chosen window, and a year of activity. */

@@ -23,6 +23,8 @@ import { SettingsView } from './mac/SettingsView';
 import { Popover } from './mac/Popover';
 import { JoinPrompt, askToJoin } from './mac/JoinPrompt';
 import { ProfilePage } from './Profile';
+import { WrappedPage } from './Wrapped';
+import { ComparePage } from './Compare';
 import { PasswordRecovery } from './PasswordRecovery';
 import '@fontsource-variable/inter/opsz.css';
 import './styles.css';
@@ -151,7 +153,7 @@ function App() {
   // Joining opens /you on Create account; every other way there opens on Sign in.
   const go = (page: 'leaderboard' | 'join' | 'you', joining = false) => () => { if (connectCode) setConnectCode(null); setSignUp(joining); navigate({ page }); };
   // `/` is the leaderboard everywhere; the Mac app's pages exist only locally.
-  const page: Route['page'] | 'connect' = connectCode ? 'connect' : route.page === 'home' ? 'leaderboard' : !local && isMacPage(route.page) ? 'missing' : route.page;
+  const page: Route['page'] | 'connect' = connectCode ? 'connect' : route.page === 'home' ? 'leaderboard' : (!local && isMacPage(route.page)) || (local && (route.page === 'wrapped' || route.page === 'vs')) ? 'missing' : route.page;
   // On the website, joining starts with signing in; the app joins from its Settings page.
   const join = canJoin ? { label: 'Join the board', onClick: go('you', true) } : null;
   const home = () => { setConnectCode(null); navigate({ page: 'home' }); };
@@ -169,12 +171,14 @@ function App() {
       {local && page === 'achievements' && <AchievementsView api={api} me={me} revision={`${usageRevision(localStatus)}|${localStatus?.lastSyncAt ?? ''}`} />}
       {!local && page === 'leaderboard' && <Leaderboard api={api} me={me} join={join} onProfile={(alias) => navigate({ page: 'profile', alias })} onGuide={go('join')} />}
       {!local && page === 'profile' && route.page === 'profile' && <ProfilePage key={route.alias} api={api} alias={route.alias} me={me} signedIn={authState === 'signed_in'} origin={window.location.origin} join={join} onLeaderboard={go('leaderboard')} />}
+      {page === 'wrapped' && route.page === 'wrapped' && <WrappedPage key={route.alias} api={api} alias={route.alias} period={route.period} origin={window.location.origin} onProfile={() => navigate({ page: 'profile', alias: route.alias })} onPeriod={(period) => navigate({ page: 'wrapped', alias: route.alias, period })} />}
+      {page === 'vs' && route.page === 'vs' && <ComparePage key={`${route.a}/${route.b}`} api={api} a={route.a} b={route.b} origin={window.location.origin} onProfile={(alias) => navigate({ page: 'profile', alias })} />}
       {page === 'missing' && <div className="empty page-missing"><strong>This page does not exist</strong><button type="button" className="btn" onClick={go('leaderboard')}>Go to the leaderboard</button></div>}
       {(page === 'you' || page === 'tokens') && (local
         ? <TokensView api={api} status={localStatus} />
         : <HostedAccount key={authState} api={api} auth={auth} authState={authState} account={account} accountLoading={accountLoading} accountError={accountError} refreshAccount={refreshAccount} refreshAuth={refreshAuth} deleteAccount={deleteAccount} onViewBoard={go('leaderboard')} onProfile={(alias) => navigate({ page: 'profile', alias })} signUp={signUp} />)}
       {page === 'settings' && <SettingsView api={api} health={health} status={localStatus} refresh={refreshLocal} />}
-      {page === 'popover' && <Popover api={api} status={localStatus} />}
+      {page === 'popover' && <Popover api={api} status={localStatus} site={health.cloudUrl} />}
       {page === 'connect' && connectCode && <Connect api={api} auth={auth} authState={authState} account={account} accountLoading={accountLoading} accountError={accountError} refreshAccount={refreshAccount} code={connectCode} origin={window.location.origin} onFinish={finishConnect} onProfile={connectedProfile} />}
       </>}
     </main>;

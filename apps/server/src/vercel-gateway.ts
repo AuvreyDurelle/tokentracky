@@ -25,6 +25,10 @@ export function parseGatewayOrigin(value: string | undefined): URL | null {
   } catch { return null; }
 }
 
+/** The API, badges, cards and preview images, and the pages people share, for link-preview crawlers (vercel.json sends only those). */
+const ROUTED = ['/api/', '/badge/', '/card/', '/og/', '/u/', '/wrapped/', '/vs/'];
+const routed = (path: string) => ROUTED.some(prefix => path.startsWith(prefix));
+
 export function routeFromGatewayUrl(url: URL): string | null {
   // Depending on the Vercel runtime, IncomingMessage.url may expose either the
   // rewrite destination or the visitor-facing source path. Both map to the
@@ -32,12 +36,12 @@ export function routeFromGatewayUrl(url: URL): string | null {
   let route: string;
   if (url.pathname.startsWith(VERCEL_GATEWAY_PREFIX + '/')) {
     route = url.pathname.slice(VERCEL_GATEWAY_PREFIX.length);
-  } else if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/badge/') || url.pathname.startsWith('/card/')) {
+  } else if (routed(url.pathname)) {
     route = url.pathname;
   } else {
     return null;
   }
-  if (!(route.startsWith('/api/') || route.startsWith('/badge/') || route.startsWith('/card/')) || route === VERCEL_GATEWAY_PREFIX || route.startsWith(VERCEL_GATEWAY_PREFIX + '/')) return null;
+  if (!routed(route) || route === VERCEL_GATEWAY_PREFIX || route.startsWith(VERCEL_GATEWAY_PREFIX + '/')) return null;
   return route + url.search;
 }
 
@@ -50,6 +54,9 @@ function vercelClientIp(headers: Headers): string | null {
 function requestHeaders(headers: Headers): Headers {
   const forwarded = new Headers();
   for (const [name, value] of headers) if (name === 'accept' || name === 'accept-language' || name === 'authorization' || name === 'content-type' || name === 'if-none-match') forwarded.set(name, value);
+  // The visitor-facing host, for the absolute links in preview tags and cards; the API checks it is a plain host name.
+  const site = headers.get('x-forwarded-host');
+  if (site) forwarded.set('x-tokentracky-host', site);
   return forwarded;
 }
 
@@ -82,7 +89,7 @@ function bounded(stream: ReadableStream<Uint8Array>, limit: number, exceeded: ()
 
 function bodyLimit(route: string): number { return route.split('?', 1)[0] === '/api/ingest' ? INGEST_BODY_LIMIT : DEFAULT_BODY_LIMIT; }
 
-/** Fixed-origin Vercel function core. It forwards only documented API, badge and card paths and never logs request data. */
+/** Fixed-origin Vercel function core. It forwards only documented API, badge, card, preview and profile paths and never logs request data. */
 export async function proxyVercelGateway(request: Request, environment: GatewayEnvironment, requestFetch: GatewayFetch = fetch): Promise<Response> {
   const origin = parseGatewayOrigin(environment.origin);
   const secret = environment.secret;

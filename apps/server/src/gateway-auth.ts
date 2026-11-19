@@ -48,7 +48,7 @@ export function validClientIp(ip: string): boolean {
 
 export function isGatewayRoute(url: string): boolean {
   const path = url.split('?', 1)[0]!;
-  return path === '/api' || path.startsWith('/api/') || path === '/badge' || path.startsWith('/badge/') || path === '/card' || path.startsWith('/card/');
+  return ['/api', '/badge', '/card', '/og', '/u', '/wrapped', '/vs'].some(prefix => path === prefix || path.startsWith(prefix + '/'));
 }
 
 /** Returns the signed client address only after every signed field has been verified. */
