@@ -26,7 +26,7 @@ function classNames(source: string): string[] {
   return names;
 }
 // The website pages hosted by the shell, with the components they render. The leaderboard and profiles are ported.
-const hosted = new Set(['../You.tsx', '../Insights.tsx', '../Heatmap.tsx', '../TrendChart.tsx', '../Join.tsx', '../ui.tsx'].flatMap((file) => classNames(read(file))));
+const hosted = new Set(['../You.tsx', '../Insights.tsx', '../Heatmap.tsx', '../TrendChart.tsx', '../ui.tsx'].flatMap((file) => classNames(read(file))));
 // A rule rooted at one of the shell's own containers, or at an m- primitive (no website markup carries the prefix), cannot reach the website's pages.
 // Classes of the website's stylesheet, and the community pages that must not pick up its rules.
 const legacy = new Set([...read('../styles.css').replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/\.([a-zA-Z][\w-]*)/g)].map((match) => match[1]!));

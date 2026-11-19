@@ -286,7 +286,7 @@ Badges and cards show "private" until the name is published, so an embed never b
 
 ## Native release status
 
-The Mac app targets Apple Silicon on macOS 13+. It is ad-hoc signed, not notarized, until a Developer ID certificate exists; see [Mac releases](docs/MAC_RELEASE.md) and [release prerequisites](docs/RELEASE_PREREQUISITES.md). The CLI is also released for Linux (static x86_64 and aarch64) and Windows (x86_64), unsigned with SHA-256 checksums. The hosted API stays TypeScript. The collector, local API, CLI and Mac shell run in Rust; their old TypeScript and Electron implementations have been removed. Linux and Windows menu bar apps, widgets, Cursor and the Limits page are later work.
+The Mac app targets Apple Silicon on macOS 13+. It is ad-hoc signed, not notarized, until a Developer ID certificate exists; see [Mac releases](docs/MAC_RELEASE.md) and [release prerequisites](docs/RELEASE_PREREQUISITES.md). The CLI is also released for Linux (static x86_64 and aarch64) and Windows (x86_64), unsigned with SHA-256 checksums. The website and its hosted API are developed in a separate, private repository. The collector, local API, CLI and Mac shell run in Rust; their old TypeScript and Electron implementations have been removed. Linux and Windows menu bar apps, widgets, Cursor and the Limits page are later work.
 
 ## Development
 
@@ -304,23 +304,21 @@ Open the one-use private launch URL printed by the server. Tracking stays privat
 
 On macOS, `npm run desktop` starts the native menu-bar app. `npm run cli -- status --json` runs a CLI command. Both use the Rust implementation.
 
-For UI development, run `npm run dev:web` in another terminal; it rebuilds assets as they change, then refresh the authenticated local page. To develop the hosted API, configure the variables in `.env.example` and run `npm run dev:hosted`; this Node service only runs the hosted API.
+For UI development, run `npm run dev:web` in another terminal; it rebuilds assets as they change, then refresh the authenticated local page.
 
 Native builds use `npm run build --workspace=@tokentracky/web`, then `cargo build --release -p tokentracky-mac -p tokentracky-cli --features tokentracky-cli/embed-web`; installed Rust executables include the dashboard and do not require Node. These commands produce unsigned development binaries.
 
 ### Verification
 
-Use an isolated PostgreSQL database named `tokentracky_test`, with user `tokentracky`, on loopback. Tests create and remove their own schemas. The test role needs schema and role creation privileges for isolation checks; this is not the production application role.
-
 ```sh
-TEST_DATABASE_URL=postgres://tokentracky:test-only-password@127.0.0.1:5432/tokentracky_test npm test
+npm test
 npm run typecheck
 npm run lint
 npm run build
 npm audit
 ```
 
-`npm test` builds the Rust contract server and runs the TypeScript UI and hosted tests, including the local-to-hosted flow against that server. Run `cargo test --workspace` for the native implementation tests, the local API's included. Without `TEST_DATABASE_URL`, database integration tests are explicitly skipped. Fixtures are synthetic; tests do not inspect personal tool logs. CI supplies PostgreSQL 17 and runs the complete suite, including fresh migrations and the local-to-hosted API workflow.
+`npm test` runs the TypeScript tests of the app's interface and the shared core. Run `cargo test --workspace` for the native implementation tests, the local API's included. Fixtures are synthetic; tests do not inspect personal tool logs.
 
 See [the API contract](docs/IMPLEMENTATION_CONTRACT.md), [accounting limitations](docs/ACCOUNTING_PUBLICATION_SCOPE.md), [distribution](docs/DISTRIBUTION.md), and [release prerequisites](docs/RELEASE_PREREQUISITES.md). Release availability is determined by the published artifacts; local builds and CI do not establish that a public installer is available.
 

@@ -4,8 +4,6 @@ import type {CommunityStats} from '@tokentracky/core';
 import {averageCount, countRatio, countShare, cumulativeMonths, publicKinds, sharedCounts, sumCounts} from './public-counts';
 import {formatCompact, formatCost, formatCostCompact, formatExact} from './format';
 import {CommunityHero} from './mac/LeaderboardView';
-import {IntegrityNotice} from './Account';
-import {toolColumns} from './columns';
 
 const MAX = Number.MAX_SAFE_INTEGER;
 const large = 2n ** 80n + 12345n;
@@ -46,7 +44,6 @@ describe('exact public counter rendering', () => {
     expect(countShare(large, large * 2n)).toBe('50%');
     expect(countShare(1n, large)).toBe('<0.1%');
     expect(countShare(15n, 200n)).toBe('7.5%');
-    expect(toolColumns(sharedCounts(stats).toolTotals, 'all')).toEqual(['codex', 'claude']);
   });
   it('renders the Mac community hero with exact titles, normalized geometry and correct weekly sums', () => {
     const html = renderToStaticMarkup(<CommunityHero stats={stats} />);
@@ -55,11 +52,6 @@ describe('exact public counter rendering', () => {
     expect(html).toContain('Claude Code <b>50%</b>');
     expect(html).toContain('↑ 0% vs last week');
     expect(html).not.toMatch(/NaN|Infinity|undefined/);
-  });
-  it('renders an actionable integrity notice', () => {
-    const notice = renderToStaticMarkup(<IntegrityNotice />);
-    expect(notice).toContain('save your listing');
-    expect(notice).toContain('not a ban');
   });
 });
 

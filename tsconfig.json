@@ -20,13 +20,9 @@
     "allowImportingTsExtensions": true
   },
   "include": [
-    "api/**/*.ts",
-    "apps/server/**/*.ts",
     "apps/web/**/*.ts",
     "apps/web/**/*.tsx",
     "packages/core/**/*.ts",
-    "packages/cloud/**/*.ts",
-    "tests/**/*.ts",
     "vitest.config.ts"
   ],
   "exclude": [

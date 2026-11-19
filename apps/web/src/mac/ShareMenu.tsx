@@ -1,7 +1,11 @@
 import { useState } from 'react';
 import { wrapLabel } from '@tokentracky/core';
 import { errorText } from '../format';
-import { badgeMarkdown } from '../Profile';
+
+/** README markdown for a profile badge that links back to the profile. */
+export function badgeMarkdown(origin: string, alias: string): string {
+  return `[![Tokentracky](${origin}/badge/${alias}.svg)](${origin}/u/${alias}?ref=readme)`;
+}
 
 /** What the app shares, all on the hosted site: links leave the app for the browser only at that origin. */
 export function shareLinks(site: string, alias: string, today: string) {

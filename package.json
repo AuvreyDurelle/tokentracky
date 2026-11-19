@@ -5,23 +5,20 @@
   "type": "module",
   "workspaces": [
     "packages/core",
-    "packages/cloud",
-    "apps/server",
     "apps/web"
   ],
   "engines": {
     "node": ">=22.18.0"
   },
   "scripts": {
-    "build": "npm run build --workspace=@tokentracky/web && npm run build --workspace=@tokentracky/server",
+    "build": "npm run build --workspace=@tokentracky/web",
     "typecheck": "tsc --noEmit",
-    "test": "cargo build -p tokentracky-local-api --bin contract-server && vitest run",
+    "test": "vitest run",
     "lint": "eslint .",
     "dev": "cargo run -p tokentracky-cli -- serve",
     "dev:web": "npm run dev --workspace=@tokentracky/web",
     "desktop": "cargo run -p tokentracky-mac",
-    "cli": "cargo run -p tokentracky-cli --",
-    "dev:hosted": "tsx apps/server/src/main.ts"
+    "cli": "cargo run -p tokentracky-cli --"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

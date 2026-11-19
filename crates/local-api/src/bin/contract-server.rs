@@ -1,4 +1,4 @@
-//! The Rust local server for `CONTRACT_SERVER_CMD` (`tests/contract/README.md`): [`serve_from_env`] with the device
+//! The Rust local server for `CONTRACT_SERVER_CMD` (tokentracky-web's `tests/contract/README.md`): [`serve_from_env`] with the device
 //! credential kept in memory. Runs until SIGINT or SIGTERM (Ctrl-Break on Windows), then closes gracefully.
 use std::io::IsTerminal;
 use std::process::ExitCode;

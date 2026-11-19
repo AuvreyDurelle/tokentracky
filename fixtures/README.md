@@ -108,7 +108,7 @@ For every case and step the tests assert that no expected file contains `PRIVATE
 cargo test -p tokentracky-collector --test golden
 ```
 
-The suite checks exact outputs, independent hand-written totals, accounting invariants, revision behavior, ordering, and privacy canaries. Other collector integration tests cover permissions, symlinks, crash recovery, read-only databases and accounting reconciliation. `tests/contract/fixtures.ts` and `fixtures/sqlite.ts` supply synthetic input builders and SQLite materialization for TypeScript HTTP-contract tests.
+The suite checks exact outputs, independent hand-written totals, accounting invariants, revision behavior, ordering, and privacy canaries. Other collector integration tests cover permissions, symlinks, crash recovery, read-only databases and accounting reconciliation. `fixtures/sqlite.ts` supplies SQLite materialization for TypeScript HTTP-contract tests.
 
 **Goldens change only with a documented accounting change.** A changed reader behavior in `crates/collector/src/readers` must be explained as an accounting change before updating the affected goldens in the same commit. Review the diff as a change of what the product counts. Never edit `expected/` by hand, and never regenerate to make a failing test pass without understanding the difference. Inputs (`root/`, `step.json`, `case.json`) are edited by hand; `tokens` in `step.json` is the independent check on the generated totals.
 

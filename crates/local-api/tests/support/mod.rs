@@ -1,5 +1,5 @@
 //! Shared test doubles: a scripted [`HttpClient`], a recording stand-in for the hosted API, a client for the
-//! assembled router that sends what `tests/contract/runner.ts` sends, and the `contract-server` binary on loopback TCP.
+//! assembled router that sends what tokentracky-web's `tests/contract/runner.ts` sends, and the `contract-server` binary on loopback TCP.
 #![allow(dead_code)]
 use axum::Router;
 use axum::body::{Body, to_bytes};
@@ -160,7 +160,7 @@ pub fn commit(store: &Mutex<UsageStore>, path: &str, events: &[UsageEvent]) {
         .unwrap();
 }
 
-/// One Claude Code record of `claude(id, input, output)` in `tests/contract/fixtures.ts`: 100 cache reads and
+/// One Claude Code record of `claude(id, input, output)` in tokentracky-web's `tests/contract/fixtures.ts`: 100 cache reads and
 /// 30 cache writes on top, so `claude('msg-1', 11, 20)` is 161 tokens on 2026-10-20.
 pub fn claude(session: &str, project: &str, input: u64, output: u64) -> UsageEvent {
     UsageEvent {
@@ -336,7 +336,7 @@ impl Stub {
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-// The assembled router, driven as `tests/contract/runner.ts` drives a server.
+// The assembled router, driven as tokentracky-web's `tests/contract/runner.ts` drives a server.
 
 pub const ORIGIN: &str = "http://127.0.0.1:4771";
 
@@ -573,7 +573,7 @@ impl Server {
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-// The `contract-server` binary on loopback TCP, started as `tests/contract/runner.ts` starts it.
+// The `contract-server` binary on loopback TCP, started as tokentracky-web's `tests/contract/runner.ts` starts it.
 
 /// The `contract-server` process: local mode on a free loopback port, with a fresh database, a `HOME` and a web root
 /// holding `index.html` and `assets/contract.js` of its own, no pricing download, the hourly cycle, no hosted service
