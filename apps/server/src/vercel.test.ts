@@ -3,9 +3,9 @@ import {access,readFile} from 'node:fs/promises';
 import {ALIAS_PATTERN} from '@tokentracky/core';
 import {SPA_PAGES,contentSecurityPolicy} from './app.ts';
 
-interface VercelConfig {rewrites:Array<{source:string;destination:string}>;headers:Array<{source:string;headers:Array<{key:string;value:string}>}>}
+interface VercelConfig {rewrites:Array<{source:string;destination:string;has?:Array<{type:string;key:string;value:string}>}>;headers:Array<{source:string;headers:Array<{key:string;value:string}>}>}
 const config=JSON.parse(await readFile(new URL('../../../vercel.json',import.meta.url),'utf8')) as VercelConfig;
-const destination=(source:string)=>config.rewrites.find(rewrite=>rewrite.source===source)?.destination;
+const destination=(source:string)=>config.rewrites.find(rewrite=>rewrite.source===source&&!rewrite.has)?.destination;
 
 describe('static hosting config',()=>{
   it('rewrites the same app pages the server serves',()=>{
@@ -19,6 +19,21 @@ describe('static hosting config',()=>{
     expect(destination('/api/(.*)')).toBe('/api/gateway');
     expect(destination('/badge/(.*)')).toBe('/api/gateway');
     expect(destination('/card/(.*)')).toBe('/api/gateway');
+    expect(destination('/og/(.*)')).toBe('/api/gateway');
+  });
+  it('sends only link-preview crawlers to the API for profile pages, before the page rewrite',()=>{
+    const crawler=config.rewrites.findIndex(rewrite=>rewrite.has);
+    const page=config.rewrites.findIndex(rewrite=>rewrite.source.startsWith('/u/')&&!rewrite.has);
+    const rule=config.rewrites[crawler]!;
+    expect(crawler).toBeGreaterThanOrEqual(0);
+    expect(crawler).toBeLessThan(page);
+    // An unnamed group, so Vercel adds no query field to the gateway request.
+    expect(rule).toMatchObject({source:`/u/(${ALIAS_PATTERN.source.slice(1,-1)})`,destination:'/api/gateway'});
+    expect(rule.has).toHaveLength(1);
+    expect(rule.has![0]).toMatchObject({type:'header',key:'user-agent'});
+    const crawls=new RegExp(`^${rule.has![0]!.value}$`);
+    for (const agent of ['Twitterbot/1.0','facebookexternalhit/1.1 Facebot Twitterbot/1.0','Slackbot-LinkExpanding 1.0 (+https://api.slack.com/robots)','Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)','LinkedInBot/1.0 (compatible; Mozilla/5.0; Apache-HttpClient +http://www.linkedin.com)','TelegramBot (like TwitterBot)','WhatsApp/2.23.20.0','Mozilla/5.0 (compatible; Bluesky Cardyb/1.1; +mailto:support@bsky.app)']) expect(crawls.test(agent),agent).toBe(true);
+    for (const agent of ['Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36']) expect(crawls.test(agent),agent).toBe(false);
   });
   it('imports the gateway function\'s modules by the .js names Vercel compiles them to',async()=>{
     // Vercel compiles each file to .js without rewriting import specifiers, so a .ts specifier fails at runtime.

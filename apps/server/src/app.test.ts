@@ -166,7 +166,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('hosted GitHub username wiring',
     cleanup.push(async()=>{vi.unstubAllGlobals();});
     await mkdir('.runtime',{recursive:true});const webRoot=await mkdtemp(resolve('.runtime/hosted-test-'));
     cleanup.push(()=>rm(webRoot,{recursive:true,force:true}));
-    await writeFile(join(webRoot,'index.html'),'<html><body>hosted</body></html>');
+    await writeFile(join(webRoot,'index.html'),'<html><head><title>Tokentracky</title><meta name="description" content="site" /></head><body>hosted</body></html>');
     // createHostedApp migrates the default schema; each test erases the member it created.
     const app=await createHostedApp({databaseUrl:url.toString(),webRoot,moderationPolicy:TEST_MODERATION_POLICY,auth:{issuer,audience:'authenticated',jwksUrl},...settings});
     cleanup.push(()=>app.close());
@@ -202,6 +202,26 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('hosted GitHub username wiring',
       expect((await app.inject(page)).statusCode,page).toBe(404);
     }
     expect((await app.inject('/api/health')).json()).toMatchObject({mode:'hosted',authConfigured:false});
+  });
+  it('gives profile pages the published profile\'s preview tags, and the site\'s own for unknown names',async()=>{
+    const {app,alias,member,publish}=await hosted({});
+    try {
+      expect((await publish()).statusCode).toBe(200);
+      const page=await app.inject({url:`/u/${alias.toUpperCase()}?ref=share`,headers:{'x-tokentracky-host':'tokentracky.com'}});
+      expect(page.statusCode).toBe(200);
+      expect(page.headers['content-type']).toBe('text/html; charset=utf-8');
+      expect(page.headers['content-security-policy']).toContain("frame-ancestors 'none'");
+      expect(page.body).toContain(`<title>${alias} on Tokentracky</title>`);
+      expect(page.body).toMatch(/<meta name="description" content="#\d+ all time with 0 AI coding tokens\. See where you rank on the token leaderboard\." \/>/);
+      expect(page.body).toContain(`<meta property="og:url" content="https://tokentracky.com/u/${alias}" />`);
+      expect(page.body).toContain(`<meta property="og:image" content="https://tokentracky.com/og/${alias}.png" />`);
+      expect(page.body).toContain('<meta name="twitter:card" content="summary_large_image" />');
+      expect(page.body).not.toContain('content="site"');
+      expect(page.body).toContain('hosted');
+      const unknown=(await app.inject({url:'/u/nobody-at-all',headers:{'x-tokentracky-host':'evil.example/"><script>'}})).body;
+      expect(unknown).toContain('<title>Tokentracky — the token leaderboard</title>');
+      expect(unknown).toContain('<meta property="og:image" content="http://localhost:80/og/nobody-at-all.png" />');
+    } finally {expect((await member('DELETE','/api/account')).statusCode).toBe(204);}
   });
   it.each([
     ['without the service-role key',{supabaseUrl:supabase,supabaseAnonKey:anonKey}],

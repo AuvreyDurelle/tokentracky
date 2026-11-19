@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { parseRoute, routePath, takeLinkTag } from './route';
 import { toolColumns, TOOL_COLUMNS } from './columns';
-import { TOOL_IDS, TOOL_NAMES, type ToolId, type ProfileStats } from '@tokentracky/core';
-import { badgeMarkdown, fitFacts, ProfileView, ProfileTypes, windowActivity, xShareUrl } from './Profile';
+import { fitFacts, TOOL_IDS, TOOL_NAMES, windowActivity, type ToolId, type ProfileStats } from '@tokentracky/core';
+import { badgeMarkdown, ProfileView, ProfileTypes, xShareUrl } from './Profile';
 import { runningTotals } from './ProfileUsage';
 import { TOOLS, toolLabel, topPercent } from './format';
 import { renderToStaticMarkup } from 'react-dom/server';

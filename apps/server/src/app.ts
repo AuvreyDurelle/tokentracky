@@ -7,6 +7,10 @@ import {migrateCloud, PostgresCloudRepository, registerCloudRoutes, CloudError, 
 import {postgresRateLimitStore} from './rate-limit-store.ts';
 import type {FastifyRateLimitStoreCtor} from '@fastify/rate-limit';
 import type {GatewayAuthConfig} from './gateway-auth.ts';
+import {readFile} from 'node:fs/promises';
+import {join} from 'node:path';
+import {publicSite} from '@tokentracky/cloud';
+import {profileMeta, withShareMeta, type ShareMeta} from './share-page.ts';
 
 export interface HostedOptions {
   databaseUrl: string;
@@ -34,7 +38,7 @@ export function parseAuthProviders(value: string | undefined): AuthProvider[] {
 /** Pages the web app renders at their own addresses; static hosting (vercel.json) must rewrite the same set. */
 export const SPA_PAGES = ['/privacy','/terms','/support','/leaderboard','/you','/join'] as const;
 export const contentSecurityPolicy = (authOrigin?: string) => `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'${authOrigin ? ' '+authOrigin : ''}; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'`;
-async function baseApp(webRoot: string, authOrigin?: string, trustedProxies?: string[], rateLimitStore?: FastifyRateLimitStoreCtor, gateway?: GatewayAuthConfig): Promise<FastifyInstance> {
+async function baseApp(webRoot: string, authOrigin?: string, trustedProxies?: string[], rateLimitStore?: FastifyRateLimitStoreCtor, gateway?: GatewayAuthConfig, pageMeta?: (alias: string, site: string) => Promise<ShareMeta>): Promise<FastifyInstance> {
   // No request logging: headers, query strings and local paths may contain secrets.
   const app = await createHttpServer({trustedProxies,store:rateLimitStore,gateway});
   app.addHook('onRequest', async (_request,reply) => {
@@ -55,8 +59,15 @@ async function baseApp(webRoot: string, authOrigin?: string, trustedProxies?: st
   app.get('/',(_request,reply)=>reply.sendFile('index.html'));
   // Legal and support pages are rendered by the web app at their own addresses.
   for (const page of SPA_PAGES) app.get(page,(_request,reply)=>reply.sendFile('index.html'));
-  // Public profiles have shareable addresses; the web app shows its own not-found state for unknown names.
-  app.get<{Params:{alias:string}}>('/u/:alias',(request,reply)=>ALIAS_PATTERN.test(request.params.alias) ? reply.sendFile('index.html') : reply.callNotFound());
+  // Public profiles have shareable addresses; the web app shows its own not-found state for unknown names. The page carries
+  // the profile's preview tags, which link previews read (on Vercel, only their crawlers are sent here).
+  let index: Promise<string> | undefined;
+  app.get<{Params:{alias:string}}>('/u/:alias',async(request,reply)=>{
+    if (!ALIAS_PATTERN.test(request.params.alias)) return reply.callNotFound();
+    if (!pageMeta) return reply.sendFile('index.html');
+    index ??= readFile(join(webRoot,'index.html'),'utf8');
+    return reply.type('text/html; charset=utf-8').send(withShareMeta(await index,await pageMeta(request.params.alias,publicSite(request.headers))));
+  });
   app.setNotFoundHandler((_request,reply)=>reply.code(404).send({error:{code:'NOT_FOUND',message:'This endpoint does not exist.'}}));
   return app;
 }
@@ -78,14 +89,15 @@ export async function createHostedApp(options: HostedOptions): Promise<FastifyIn
   }
   const moderationPolicy = options.moderationPolicy ?? parseModerationPolicy(process.env.TOKENTRACKY_MODERATION_POLICY);
   const pool = new Pool({connectionString:options.databaseUrl,max:10});
-  const app = await baseApp(options.webRoot,publicAuth,options.trustedProxies,postgresRateLimitStore(pool),options.gateway).catch(async error => {await pool.end();throw error;});
+  // Moderation events go to Cloud Logging as structured lines for the log-based alert; they carry no alias or account id.
+  const logModeration = (event:object)=>{process.stdout.write(`${JSON.stringify({severity:'NOTICE',...event})}\n`);};
+  const repository = new PostgresCloudRepository(pool,undefined,undefined,logModeration,moderationPolicy);
+  const app = await baseApp(options.webRoot,publicAuth,options.trustedProxies,postgresRateLimitStore(pool),options.gateway,(alias,site)=>profileMeta(repository,alias,site)).catch(async error => {await pool.end();throw error;});
   app.addHook('onClose',async()=>{await pool.end();});
   try {
     await migrateCloud(pool);
-    // Moderation events go to Cloud Logging as structured lines for the log-based alert; they carry no alias or account id.
-    const logModeration = (event:object)=>{process.stdout.write(`${JSON.stringify({severity:'NOTICE',...event})}\n`);};
     const githubLogin = publicAuth && options.supabaseServiceRoleKey ? supabaseGithubLogin(publicAuth,options.supabaseServiceRoleKey) : undefined;
-    await registerCloudRoutes(app,{repository:new PostgresCloudRepository(pool,undefined,undefined,logModeration,moderationPolicy),auth:options.auth,githubLogin});
+    await registerCloudRoutes(app,{repository,auth:options.auth,githubLogin});
     const authProviders = publicAuth ? options.authProviders ?? ['email'] : [];
     app.get('/api/health',()=>({mode:'hosted',authConfigured:!!publicAuth,version:'0.1.0',cloudUrl:null,supabaseUrl:publicAuth ?? null,supabaseAnonKey:options.supabaseAnonKey ?? null,authProviders}));
     await app.ready();

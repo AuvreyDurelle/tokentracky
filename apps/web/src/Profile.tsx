@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { rankingWindow, totalTokens, type BadgeProgress, type Period, type ProfileStats, type TokenCounts } from '@tokentracky/core';
+import { fitFacts, rankingWindow, totalTokens, windowActivity, type BadgeProgress, type Period, type ProfileStats, type TokenCounts } from '@tokentracky/core';
 import { ApiError, type ApiClient } from './api';
 import { INSTALL_COMMAND, MAC_DOWNLOAD } from './download-config';
 import { KINDS, TOOLS, errorText, formatCompact, formatCost, formatCostCompact, formatExact, formatShare, shortDay, topPercent } from './format';
@@ -19,7 +19,7 @@ export function badgeMarkdown(origin: string, alias: string): string {
 
 const WINDOWS: Record<Period, string> = { week: 'this week', month: 'this month', all: 'all time' };
 
-/** X's post composer with the window's rank and tokens and the tagged profile link. A link cannot attach the card, so the member pastes it. */
+/** X's post composer with the window's rank and tokens and the tagged profile link, whose preview shows the profile's card. */
 export function xShareUrl(stats: ProfileStats, origin: string, period: Period): string {
   const { rank, tokens } = stats.periods[period];
   const text = `${stats.alias} is #${rank} on the Tokentracky leaderboard ${WINDOWS[period]}, with ${formatCompact(tokens)} tokens.`;
@@ -235,12 +235,10 @@ function ShareCard({ stats, origin }: { stats: ProfileStats; origin: string | nu
   };
   const markdown = origin ? badgeMarkdown(origin, stats.alias) : null;
   const canCopyImage = typeof ClipboardItem !== 'undefined';
-  // Opened in the click itself so the browser allows the window; the image copy runs alongside.
+  // Opened in the click itself so the browser allows the window. X shows the card from the link's preview.
   const postOnX = () => {
     if (!origin) return;
-    const copied = canCopyImage ? navigator.clipboard.write([new ClipboardItem({ 'image/png': blob() })]) : Promise.reject(new Error('unavailable'));
     window.open(xShareUrl(stats, origin, period), '_blank', 'noopener');
-    copied.then(() => setMessage('Image copied. Paste it into your post.'), () => setMessage('Save the image, then attach it to your post.'));
   };
   // The badge image is served by the hosted site, so the preview shows only there.
   const hosted = typeof window !== 'undefined' && origin === window.location.origin;
@@ -263,23 +261,6 @@ function ShareCard({ stats, origin }: { stats: ProfileStats; origin: string | nu
       {message && <p className="faint" role="status">{message}</p>}
     </div>
   </section>;
-}
-
-/** Active days and the longest run of consecutive active days in `daily` from the UTC day `from` on. */
-export function windowActivity(daily: ProfileStats['daily'], from: string): { activeDays: number; longestStreak: number } {
-  let activeDays = 0, run = 0, longestStreak = 0;
-  for (const { day, tokens } of daily) {
-    if (day < from) continue;
-    if (tokens > 0) { activeDays += 1; run += 1; longestStreak = Math.max(longestStreak, run); } else run = 0;
-  }
-  return { activeDays, longestStreak };
-}
-
-/** The facts joined by middots, dropping trailing ones until the line fits. */
-export function fitFacts(facts: string[], fits: (text: string) => boolean): string {
-  let shown = facts;
-  while (shown.length > 1 && !fits(shown.join(' · '))) shown = shown.slice(0, -1);
-  return shown.join(' · ');
 }
 
 /** 1200×630 Open Graph-sized card in the graphite theme: name, rank and tokens in the chosen window, and a year of activity. */

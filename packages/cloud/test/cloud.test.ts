@@ -388,6 +388,15 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
     expect((await request('GET', '/card/nobody.svg')).body).toContain('>private<');
     for (const query of ['theme=blue', 'period=year', 'size=2']) expect((await request('GET', `/card/bob.svg?${query}`)).statusCode).toBe(400);
     expect((await request('GET', '/card/bob.png')).statusCode).toBe(404);
+    const preview = await request('GET', '/og/bob.png?period=week');
+    expect(preview.statusCode).toBe(200);
+    expect(preview.headers['content-type']).toBe('image/png');
+    expect(preview.headers['cache-control']).toBe('public, max-age=300');
+    expect([preview.rawPayload.subarray(1, 4).toString(), preview.rawPayload.readUInt32BE(16), preview.rawPayload.readUInt32BE(20)]).toEqual(['PNG', 1200, 630]);
+    // A private or unknown name still gets an image, so a pasted link never shows a broken preview.
+    expect((await request('GET', '/og/nobody.png')).headers['content-type']).toBe('image/png');
+    for (const path of ['/og/bob.svg', '/og/b.png']) expect((await request('GET', path)).statusCode).toBe(404);
+    expect((await request('GET', '/og/bob.png?period=24h')).statusCode).toBe(400);
   });
 
   it('denies SQL access to untrusted roles with ACLs and RLS as defense in depth', async () => {

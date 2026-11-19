@@ -5,6 +5,7 @@ import { CloudError, invalid } from './errors.ts';
 import { PostgresCloudRepository, type Liker } from './repository.ts';
 import { object } from './validation.ts';
 import { badgeOptions, badgeSvg, cardSvg, compactCount, formatUsd } from './badge.ts';
+import { pngFromSvg, profileCardSvg, publicSite } from './og.ts';
 import type { GithubLogin } from './github.ts';
 
 export interface CloudRoutesOptions {
@@ -65,7 +66,7 @@ export async function registerCloudRoutes(app: FastifyInstance, options: CloudRo
   await app.register(async cloud => {
     cloud.setErrorHandler((error, request, reply) => {
       if (error instanceof CloudError) {
-        if (error.code === 'COUNTER_OVERFLOW' && ['GET', 'HEAD'].includes(request.method) && /^(?:\/api\/(?:leaderboard|profiles|community)(?:[/?]|$)|\/(?:badge|card)\/)/.test(request.url)) repository.publicCounterFailure();
+        if (error.code === 'COUNTER_OVERFLOW' && ['GET', 'HEAD'].includes(request.method) && /^(?:\/api\/(?:leaderboard|profiles|community)(?:[/?]|$)|\/(?:badge|card|og)\/)/.test(request.url)) repository.publicCounterFailure();
         return reply.code(error.statusCode).send({error: {code: error.code, message: error.message}});
       }
       const status = error && typeof error === 'object' && 'statusCode' in error ? error.statusCode : undefined;
@@ -156,6 +157,16 @@ export async function registerCloudRoutes(app: FastifyInstance, options: CloudRo
       let data = null;
       try { data = await repository.profile(alias, window); } catch (error) { if (!(error instanceof CloudError && error.statusCode === 404)) throw error; }
       return reply.type('image/svg+xml; charset=utf-8').send(cardSvg(data && {alias: data.alias, rank: data.rank, tokens: data.tokens, costMicrousd: data.costMicrousd, tools: data.toolTokens}, theme, window));
+    });
+    // Link previews: the 1200×630 profile card as PNG, and the leaderboard card for a private or unknown name, as badges do.
+    cloud.get<{Params: {file: string}}>('/og/:file', cached(300), async (request, reply) => {
+      const q = object(request.query, ['period']);
+      const window = period(q.period ?? 'all');
+      const alias = request.params.file.endsWith('.png') ? request.params.file.slice(0, -4) : '';
+      if (!ALIAS_PATTERN.test(alias)) throw notFound();
+      let stats = null;
+      try { stats = await repository.profileStats(alias); } catch (error) { if (!(error instanceof CloudError && error.statusCode === 404)) throw error; }
+      return reply.type('image/png').send(pngFromSvg(profileCardSvg(stats, window, publicSite(request.headers))));
     });
     cloud.get<{Params: {alias: string}}>('/api/profiles/:alias', async request => {
       const q = object(request.query, ['period']);
