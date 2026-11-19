@@ -81,7 +81,8 @@ const link = (server: Server, hosted: Hosted, token: string, change: Record<stri
 const TOTALS_ONLY = {shareTools: false, shareCost: false, shareModels: false};
 /** The board row of a member whose Claude Code usage is published with its tool split and estimated cost. */
 // The app sends hours, so the 24-hour figure is there; the fixture's usage is days old.
-const row = (alias: string, tokens: number) => ({alias, rank: 1, previousRank: 1, tokens, daily: expect.any(Array), last24hTokens: 0, toolTokens: {claude: tokens}, costMicrousd: expect.any(Number), topBadges: ['podium']});
+// Day-count badges such as veteran arrive as FIXTURE_DAY ages, so only podium, earned on the first upload, is pinned.
+const row = (alias: string, tokens: number) => ({alias, rank: 1, previousRank: 1, tokens, daily: expect.any(Array), last24hTokens: 0, toolTokens: {claude: tokens}, costMicrousd: expect.any(Number), topBadges: expect.arrayContaining(['podium'])});
 
 describe.skipIf(SKIP !== null)(`local-to-hosted flow${SKIP ? ` (skipped: ${SKIP})` : ''}`, () => {
   it('imports, uploads, retries, corrects downwards and leaves by deleting the account, without private payloads', async () => {
@@ -178,7 +179,7 @@ describe.skipIf(SKIP !== null)(`local-to-hosted flow${SKIP ? ` (skipped: ${SKIP}
     expect((await link(server, hosted, device.token, TOTALS_ONLY)).status).toBe(200);
     expect((await server.request('/api/local/sync', {method: 'POST'})).status).toBe(200);
     expect(hosted.uploads.at(-1).buckets).toEqual([{day: FIXTURE_DAY, tool: 'all', tokens: 161, breakdown: {input: 11, output: 20, cacheRead: 100, cacheWrite: 30, reasoning: 7}, costMicrousd: null, revision: expect.any(Number)}]);
-    expect(await board(server)).toEqual([{alias: 'contract-builder', rank: 1, previousRank: 1, tokens: 161, daily: expect.any(Array), last24hTokens: 0, topBadges: ['podium']}]);
+    expect(await board(server)).toEqual([{alias: 'contract-builder', rank: 1, previousRank: 1, tokens: 161, daily: expect.any(Array), last24hTokens: 0, topBadges: expect.arrayContaining(['podium'])}]);
 
     // The migration widens the publication under a new generation and clears its totals. Uploading the wider scope needs
     // the device to be linked again, to exactly the published scope.
