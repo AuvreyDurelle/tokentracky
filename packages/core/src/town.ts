@@ -72,6 +72,8 @@ export interface TownSelf {
   /** Water per Brick at the Market, when the town has one. */
   trade: {rate: number} | null;
   catalogue: TownCatalogueEntry[];
+  /** Why the town can't collect, claim or build right now (a profile under review), or null. */
+  paused: string | null;
   now: string;
 }
 export interface TownPlot {x: number; y: number}
