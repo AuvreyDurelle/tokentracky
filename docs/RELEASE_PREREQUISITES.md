@@ -27,7 +27,7 @@ Repository checks establish code behavior on synthetic inputs. They do not estab
 - Enable only sign-in providers actually configured in Supabase. Verify GitHub/Google OAuth, email sign-up and password reset, SMTP delivery, and PKCE callbacks on staging. Reissue legacy implicit-flow links after the PKCE migration.
 - Run fresh migrations and upgrades, including fixed-sharing migration `0010` and counter-integrity migration `0015`. PostgreSQL 15+ is required; CI uses 17. Previously narrower publications require reconnecting after fixed sharing.
 - Test local-to-hosted linking and uploads, retries/lost responses, generation resets, source exclusions, multiple computers, revocation, account deletion and public-cache expiry. Keep the limitations in [accounting publication scope](ACCOUNTING_PUBLICATION_SCOPE.md) visible.
-- Confirm aggregate-only logs, monitoring, moderation queue/audit ownership, backup/restore drills, retention and incident/rollback procedures in private operations records. `npx tsx scripts/moderation.ts counter-audit` provides count-only integrity diagnostics.
+- Confirm aggregate-only logs, monitoring, moderation queue/audit ownership, backup/restore drills, retention and incident/rollback procedures in private operations records. `npx tsx scripts/moderation.ts counter-audit`, in the private tokentracky-web repo with the rest of the hosted service, provides count-only integrity diagnostics.
 - Treat client-reported usage as unverified. Moderation and deduplication do not prove real spending, independent requests, or one person per account. This accepted architectural limit remains after the security fixes.
 
 ## Publication
