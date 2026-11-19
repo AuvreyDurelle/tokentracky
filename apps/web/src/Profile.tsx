@@ -19,11 +19,12 @@ export function badgeMarkdown(origin: string, alias: string): string {
 
 const WINDOWS: Record<Period, string> = { week: 'this week', month: 'this month', all: 'all time' };
 
-/** X's post composer with the window's rank and tokens and the tagged profile link, whose preview shows the profile's card. */
+/** X's post composer with the window's rank and tokens and the tagged profile link, whose preview shows the card in that window. */
 export function xShareUrl(stats: ProfileStats, origin: string, period: Period): string {
   const { rank, tokens } = stats.periods[period];
   const text = `${stats.alias} is #${rank} on the Tokentracky leaderboard ${WINDOWS[period]}, with ${formatCompact(tokens)} tokens.`;
-  return `https://x.com/intent/post?${new URLSearchParams({ text, url: `${origin}/u/${stats.alias}?ref=share` }).toString()}`;
+  const url = `${origin}/u/${stats.alias}?${new URLSearchParams({ ...(period === 'all' ? {} : { period }), ref: 'share' }).toString()}`;
+  return `https://x.com/intent/post?${new URLSearchParams({ text, url }).toString()}`;
 }
 
 /** A shareable `/u/:alias` page with everything the builder publishes. A signed-in visitor can like it. */

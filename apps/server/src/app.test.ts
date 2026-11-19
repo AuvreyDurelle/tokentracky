@@ -217,6 +217,9 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('hosted GitHub username wiring',
       expect(page.body).toContain(`<meta property="og:image" content="https://tokentracky.com/og/${alias}.png" />`);
       expect(page.body).toContain('<meta name="twitter:card" content="summary_large_image" />');
       expect(page.body).not.toContain('content="site"');
+      const profileWeek=(await app.inject({url:`/u/${alias}?period=week&ref=share`,headers:{'x-tokentracky-host':'tokentracky.com'}})).body;
+      expect(profileWeek).toMatch(/<meta name="description" content="#\d+ this week with 0 AI coding tokens\./);
+      expect(profileWeek).toContain(`<meta property="og:image" content="https://tokentracky.com/og/${alias}.png?period=week" />`);
       expect(page.body).toContain('hosted');
       const unknown=(await app.inject({url:'/u/nobody-at-all',headers:{'x-tokentracky-host':'evil.example/"><script>'}})).body;
       expect(unknown).toContain('<title>Tokentracky — the token leaderboard</title>');

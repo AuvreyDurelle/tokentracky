@@ -27,15 +27,17 @@ export function withShareMeta(html: string, meta: ShareMeta): string {
   return html.replace(/\s*<meta name="description"[^>]*>/, '').replace(/<title>[^<]*<\/title>/, tags);
 }
 
+const WINDOWS: Record<Period, string> = {week: 'this week', month: 'this month', all: 'all time'};
 const SITE_DESCRIPTION = 'The token leaderboard. See how many AI coding tokens the community burns, and where you rank.';
 
-/** A profile's preview: its all-time rank and tokens, or the site's own text for a private or unknown name. */
-export async function profileMeta(repository: Pick<PostgresCloudRepository, 'profile'>, alias: string, site: string): Promise<ShareMeta> {
+/** A profile's preview in a window: its rank and tokens there, or the site's own text for a private or unknown name. */
+export async function profileMeta(repository: Pick<PostgresCloudRepository, 'profile'>, alias: string, period: Period, site: string): Promise<ShareMeta> {
   const name = alias.toLowerCase();
-  const page = {image: `${site}/og/${name}.png`, url: `${site}/u/${name}`};
+  const query = period === 'all' ? '' : `?period=${period}`;
+  const page = {image: `${site}/og/${name}.png${query}`, url: `${site}/u/${name}${query}`};
   try {
-    const profile = await repository.profile(name, 'all');
-    return {...page, title: `${profile.alias} on Tokentracky`, description: `#${profile.rank} all time with ${compactCount(profile.tokens)} AI coding tokens. See where you rank on the token leaderboard.`};
+    const profile = await repository.profile(name, period);
+    return {...page, title: `${profile.alias} on Tokentracky`, description: `#${profile.rank} ${WINDOWS[period]} with ${compactCount(profile.tokens)} AI coding tokens. See where you rank on the token leaderboard.`};
   } catch {
     // The page still loads for people; only the preview falls back to the site's text.
     return {...page, title: 'Tokentracky — the token leaderboard', description: SITE_DESCRIPTION};
@@ -54,8 +56,6 @@ export async function wrappedMeta(repository: Pick<PostgresCloudRepository, 'wra
     return {...page, title: 'Tokentracky — the token leaderboard', description: SITE_DESCRIPTION};
   }
 }
-
-const WINDOWS: Record<Period, string> = {week: 'this week', month: 'this month', all: 'all time'};
 
 /** A head-to-head preview in a window: both totals and ranks and who leads, or the site's own text when either is not public. */
 export async function compareMeta(repository: Pick<PostgresCloudRepository, 'profile'>, a: string, b: string, period: Period, site: string): Promise<ShareMeta> {

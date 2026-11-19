@@ -152,7 +152,9 @@ describe('public profile', () => {
     const url = new URL(xShareUrl(stats, 'https://tokentracky.test', 'week'));
     expect(url.origin + url.pathname).toBe('https://x.com/intent/post');
     expect(url.searchParams.get('text')).toBe('marenh is #3 on the Tokentracky leaderboard this week, with 2K tokens.');
-    expect(url.searchParams.get('url')).toBe('https://tokentracky.test/u/marenh?ref=share');
+    // The window travels with the link, so its preview shows the numbers the post gives.
+    expect(url.searchParams.get('url')).toBe('https://tokentracky.test/u/marenh?period=week&ref=share');
+    expect(new URL(xShareUrl(stats, 'https://tokentracky.test', 'all')).searchParams.get('url')).toBe('https://tokentracky.test/u/marenh?ref=share');
   });
   it('offers the join card to a viewer who has not joined, and hides it from a joined one', () => {
     expect(view(null)).toContain('Think you can catch marenh?');

@@ -39,7 +39,7 @@ export function parseAuthProviders(value: string | undefined): AuthProvider[] {
 export const SPA_PAGES = ['/privacy','/terms','/support','/leaderboard','/you','/join'] as const;
 /** Preview tags for the pages people share; link previews read them (on Vercel, only their crawlers reach these routes). */
 interface SharePages {
-  profile(alias: string, site: string): Promise<ShareMeta>;
+  profile(alias: string, period: Period, site: string): Promise<ShareMeta>;
   wrapped(alias: string, period: string, site: string): Promise<ShareMeta>;
   compare(a: string, b: string, period: Period, site: string): Promise<ShareMeta>;
 }
@@ -72,16 +72,14 @@ async function baseApp(webRoot: string, authOrigin: string | undefined, trustedP
     index ??= readFile(join(webRoot,'index.html'),'utf8');
     return reply.type('text/html; charset=utf-8').send(withShareMeta(await index,await meta()));
   };
-  app.get<{Params:{alias:string}}>('/u/:alias',async(request,reply)=>ALIAS_PATTERN.test(request.params.alias)
-    ? shared(reply,()=>pages.profile(request.params.alias,publicSite(request.headers))) : reply.callNotFound());
+  // A page shared in a window (`?period=week|month`) previews that window.
+  const window = (period: unknown): Period => period === 'week' || period === 'month' ? period : 'all';
+  app.get<{Params:{alias:string};Querystring:{period?:string}}>('/u/:alias',async(request,reply)=>ALIAS_PATTERN.test(request.params.alias)
+    ? shared(reply,()=>pages.profile(request.params.alias,window(request.query.period),publicSite(request.headers))) : reply.callNotFound());
   app.get<{Params:{alias:string;period:string}}>('/wrapped/:alias/:period',async(request,reply)=>ALIAS_PATTERN.test(request.params.alias) && /^\d{4}(?:-(?:0[1-9]|1[0-2]))?$/.test(request.params.period)
     ? shared(reply,()=>pages.wrapped(request.params.alias,request.params.period,publicSite(request.headers))) : reply.callNotFound());
-  // A head-to-head shared in a window (`?period=week|month`) previews that window.
-  app.get<{Params:{a:string;b:string};Querystring:{period?:string}}>('/vs/:a/:b',async(request,reply)=>{
-    const {period} = request.query;
-    return ALIAS_PATTERN.test(request.params.a) && ALIAS_PATTERN.test(request.params.b)
-      ? shared(reply,()=>pages.compare(request.params.a,request.params.b,period === 'week' || period === 'month' ? period : 'all',publicSite(request.headers))) : reply.callNotFound();
-  });
+  app.get<{Params:{a:string;b:string};Querystring:{period?:string}}>('/vs/:a/:b',async(request,reply)=>ALIAS_PATTERN.test(request.params.a) && ALIAS_PATTERN.test(request.params.b)
+    ? shared(reply,()=>pages.compare(request.params.a,request.params.b,window(request.query.period),publicSite(request.headers))) : reply.callNotFound());
   app.setNotFoundHandler((_request,reply)=>reply.code(404).send({error:{code:'NOT_FOUND',message:'This endpoint does not exist.'}}));
   return app;
 }
@@ -106,7 +104,7 @@ export async function createHostedApp(options: HostedOptions): Promise<FastifyIn
   // Moderation events go to Cloud Logging as structured lines for the log-based alert; they carry no alias or account id.
   const logModeration = (event:object)=>{process.stdout.write(`${JSON.stringify({severity:'NOTICE',...event})}\n`);};
   const repository = new PostgresCloudRepository(pool,undefined,undefined,logModeration,moderationPolicy);
-  const app = await baseApp(options.webRoot,publicAuth,options.trustedProxies,postgresRateLimitStore(pool),options.gateway,{profile:(alias,site)=>profileMeta(repository,alias,site),wrapped:(alias,period,site)=>wrappedMeta(repository,alias,period,site),compare:(a,b,period,site)=>compareMeta(repository,a,b,period,site)}).catch(async error => {await pool.end();throw error;});
+  const app = await baseApp(options.webRoot,publicAuth,options.trustedProxies,postgresRateLimitStore(pool),options.gateway,{profile:(alias,period,site)=>profileMeta(repository,alias,period,site),wrapped:(alias,period,site)=>wrappedMeta(repository,alias,period,site),compare:(a,b,period,site)=>compareMeta(repository,a,b,period,site)}).catch(async error => {await pool.end();throw error;});
   app.addHook('onClose',async()=>{await pool.end();});
   try {
     await migrateCloud(pool);
