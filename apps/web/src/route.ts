@@ -6,8 +6,6 @@ export type Route = { page: 'home' } | { page: 'leaderboard' } | { page: 'join' 
 
 /** The Mac app's own pages. Only the local app serves them; the website shows its missing page instead. */
 const MAC_PAGES = ['tokens', 'achievements', 'settings', 'popover'] as const;
-/** True for a page only the local app has, which the website answers as missing. */
-export const isMacPage = (page: Route['page']) => (MAC_PAGES as readonly string[]).includes(page);
 
 export function parseRoute(pathname: string): Route {
   const path = pathname.replace(/\/+$/, '') || '/';
@@ -47,15 +45,4 @@ export function useRoute(): [Route, (route: Route) => void] {
     window.scrollTo(0, 0);
   };
   return [route, navigate];
-}
-
-export type LinkTag = 'share' | 'readme';
-/** Shared links carry `?ref=share` and README links `?ref=readme`. Takes the tag off the address bar so a reload is not counted twice. */
-export function takeLinkTag(location: Pick<Location, 'href'>, history: Pick<History, 'replaceState'>): LinkTag | null {
-  const url = new URL(location.href);
-  const tag = url.searchParams.get('ref');
-  if (tag === null) return null;
-  url.searchParams.delete('ref');
-  history.replaceState(null, '', url.pathname + url.search + url.hash);
-  return tag === 'share' || tag === 'readme' ? tag : null;
 }

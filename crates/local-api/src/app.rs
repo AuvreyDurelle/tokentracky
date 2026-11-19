@@ -48,8 +48,8 @@ const LIKES_NOT_LINKED: LocalError = LocalError::new(
     "Link a publishing device before liking profiles.",
 );
 const LIKES_UNAVAILABLE: LocalError = LocalError::new(502, "CLOUD_UNAVAILABLE", "Hosted likes are unavailable.");
-/// Pages the web app renders at their own addresses (`SPA_PAGES`; static hosting, `vercel.json`, rewrites the first six).
-/// The last four are the Mac app's local-only pages and are not in `vercel.json`.
+/// Pages the web app renders at their own addresses (`SPA_PAGES`; the website's `vercel.json`, in tokentracky-web,
+/// rewrites the first six). The last four are the Mac app's local-only pages and are not in that file.
 const SPA_PAGES: [&str; 10] = [
     "/privacy",
     "/terms",

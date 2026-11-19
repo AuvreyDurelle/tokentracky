@@ -101,6 +101,6 @@ Sync lineage: persist a frozen pending aggregate snapshot and its random receipt
 
 ## Hosted policy and integrity
 
-The hosted service and operator commands require private `TOKENTRACKY_MODERATION_POLICY` configuration; see [the cloud package](../packages/cloud/README.md#moderation-policy). Policy values never enter health responses or browser configuration. Moderation can hide/review implausible totals, but usage and identity remain client reported; neither spending authenticity nor one-person-per-account is guaranteed.
+The hosted service and operator commands require private `TOKENTRACKY_MODERATION_POLICY` configuration, documented with the hosted service. Policy values never enter health responses or browser configuration. Moderation can hide/review implausible totals, but usage and identity remain client reported; neither spending authenticity nor one-person-per-account is guaranteed.
 
 Shared public sums use exact integer arithmetic. When a community sum exceeds JavaScript’s safe range, numeric fields remain safe lower bounds and `exactAggregates` decimal strings carry exact values. Per-account invalid totals are isolated rather than making public pages unavailable. PostgreSQL 15+ is required for the invoker-security views; CI uses PostgreSQL 17.

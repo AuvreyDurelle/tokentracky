@@ -10,16 +10,12 @@ import type {
   ProfileStats,
   ProjectSummary,
   PublicProfile,
-  Publication,
   SessionSummary,
   SourceStatus,
   ToolId,
   UsageBreakdownRow,
   UsageSummary,
-  Wrapped,
 } from '@tokentracky/core';
-import type { PublicationRequest } from './publication';
-import type { LinkTag } from './route';
 
 export interface Health {
   mode: 'local' | 'hosted';
@@ -30,15 +26,6 @@ export interface Health {
   supabaseAnonKey: string | null;
   /** Sign-in methods the hosted auth project has enabled. Older servers omit it: email only. */
   authProviders?: Array<'email' | 'github' | 'google'>;
-}
-
-export interface Account {
-  publication: Publication | null;
-  devices: Array<{ id: string; name: string; lastSeenAt: string | null }>;
-  /** Absent unless the profile is hidden for review or the account is banned. */
-  moderation?: { state: 'banned' } | { state: 'hidden'; days: string[] };
-  /** An automatic data integrity hold; corrected totals restore publication without a moderation decision. */
-  integrity?: {state: 'unavailable'; reason: 'COUNTER_OVERFLOW'};
 }
 
 export interface LocalStatus {
@@ -66,13 +53,6 @@ export interface DetectedTool { id: ToolId; name: string; paths: string[] }
 export type UsageRange = { days: 7 | 30 | 90 | 365 } | { from: string; to: string } | { since: number; until: number };
 export type LeaderboardSort = 'tokens' | 'cost';
 
-export interface DeviceAuthorization {
-  userCode: string;
-  deviceName: string;
-  expiresAt: string;
-  approved: boolean;
-  replaces: string | null;
-}
 export interface ConnectStart { userCode: string; verificationUrl: string; expiresAt: string }
 export type ConnectStatus = { status: 'pending' } | { status: 'expired' } | { status: 'connected'; alias: string };
 
@@ -93,8 +73,6 @@ export class ApiError extends Error {
   }
 }
 
-type AccessToken = () => Promise<string | null>;
-
 function query(params: Record<string, string | number | undefined>): string {
   const search = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
@@ -113,28 +91,13 @@ async function readError(response: Response): Promise<ApiError> {
   return new ApiError(response.status, body?.error?.code ?? 'request_failed', body?.error?.message ?? `Request failed (${response.status}).`);
 }
 
-/** HTTP boundary. Bearer credentials are allowlisted to hosted account routes only. */
+/** HTTP boundary to the local server, with its session cookie and never an account credential. */
 export class ApiClient {
-  constructor(private readonly accessToken: AccessToken = async () => null, private readonly onUnauthorized: (error: ApiError) => void = () => {}) {}
-
-  private async request<T>(path: string, init: RequestInit = {}, accountAuth = false): Promise<T> {
+  private async request<T>(path: string, init: RequestInit = {}): Promise<T> {
     const headers = new Headers(init.headers);
     if (init.body) headers.set('content-type', 'application/json');
-    if (accountAuth) {
-      const token = await this.accessToken();
-      if (!token) {
-        const error = new ApiError(401, 'SIGN_IN_REQUIRED', 'Your session ended. Sign in again to manage publication.');
-        this.onUnauthorized(error);
-        throw error;
-      }
-      headers.set('authorization', `Bearer ${token}`);
-    }
     const response = await fetch(path, { ...init, headers, credentials: 'include' });
-    if (!response.ok) {
-      const error = await readError(response);
-      if (accountAuth && response.status === 401) this.onUnauthorized(error);
-      throw error;
-    }
+    if (!response.ok) throw await readError(response);
     if (response.status === 204) return undefined as T;
     return response.json() as Promise<T>;
   }
@@ -146,27 +109,8 @@ export class ApiClient {
   profile(alias: string, period: LeaderboardPeriod) { return this.request<PublicProfile>(`/api/profiles/${encodeURIComponent(alias)}?${query({ period })}`); }
   profileStats(alias: string) { return this.request<ProfileStats>(`/api/profiles/${encodeURIComponent(alias)}/stats`); }
   community() { return this.request<CommunityStats>('/api/community'); }
-  /** A month (`YYYY-MM`) or year (`YYYY`) wrap; the hosted site only. */
-  wrapped(alias: string, period: string) { return this.request<Wrapped>(`/api/wrapped/${encodeURIComponent(alias)}/${encodeURIComponent(period)}`); }
   leaderboardAround(alias: string, period: LeaderboardPeriod) { return this.request<LeaderboardNeighbours>(`/api/leaderboard/around/${encodeURIComponent(alias)}?${query({ period })}`); }
   achievementRarity() { return this.request<AchievementRarity>('/api/achievements/rarity'); }
-  /** Likes on the website go through the signed-in account. */
-  profileLikeStatus(alias: string) { return this.request<{ liked: boolean }>(`/api/profiles/${encodeURIComponent(alias)}/like`, {}, true); }
-  likeProfile(alias: string) { return this.request<void>(`/api/profiles/${encodeURIComponent(alias)}/like`, { method: 'PUT' }, true); }
-  unlikeProfile(alias: string) { return this.request<void>(`/api/profiles/${encodeURIComponent(alias)}/like`, { method: 'DELETE' }, true); }
-  /** Counts one arrival from a tagged link; nothing about the visitor is sent. */
-  visit(tag: LinkTag) { return this.request<void>('/api/visits', { method: 'POST', body: JSON.stringify({ tag }) }); }
-
-  account() { return this.request<Account>('/api/account', {}, true); }
-  deleteAccount() { return this.request<void>('/api/account', { method: 'DELETE' }, true); }
-  publication(value: PublicationRequest) {
-    return this.request<{ publication: Publication }>('/api/publication', { method: 'PUT', body: JSON.stringify(value) }, true);
-  }
-  renameDevice(id: string, name: string) { return this.request<void>(`/api/devices/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify({ name }) }, true); }
-  revokeDevice(id: string) { return this.request<void>(`/api/devices/${encodeURIComponent(id)}`, { method: 'DELETE' }, true); }
-  deviceAuthorization(code: string) { return this.request<DeviceAuthorization>(`/api/device-auth/${encodeURIComponent(code)}`, {}, true); }
-  approveDevice(code: string) { return this.request<void>(`/api/device-auth/${encodeURIComponent(code)}/approve`, { method: 'POST' }, true); }
-
   localStatus() { return this.request<LocalStatus>('/api/local/status'); }
   /** With an IANA zone `tz`, days and `byHour` are local there; UTC without one. */
   localSummary(range: UsageRange, tool: 'all' | ToolId = 'all', tz?: string) { return this.request<UsageSummary>(`/api/local/summary?${query({ ...range, tool, tz })}`); }

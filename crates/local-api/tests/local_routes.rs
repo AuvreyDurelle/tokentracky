@@ -53,7 +53,7 @@ const FIXTURE_DAY: &str = "2026-10-20";
 const DAY: &str = "from=2026-10-20&to=2026-10-20";
 const ROUTES: [&str; 5] = ["summary", "sessions", "breakdown", "projects", "export"];
 
-/// `claude(id, input, output)` of `tests/contract/fixtures.ts`: 100 cache reads and 30 cache writes on top.
+/// `claude(id, input, output)` of tokentracky-web's `tests/contract/fixtures.ts`: 100 cache reads and 30 cache writes on top.
 fn claude(id: &str, input: u64, output: u64) -> Value {
     json!({"type": "assistant", "sessionId": "claude-session", "cwd": "/synthetic/private-project", "timestamp": "2026-10-20T12:00:00.000Z",
     "requestId": format!("req-{id}"), "message": {"id": id, "model": "claude-sonnet-4-6", "content": [{"type": "text", "text": "PRIVATE_PROMPT_MARKER"}], "usage": {
