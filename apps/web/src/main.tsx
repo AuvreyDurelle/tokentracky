@@ -176,7 +176,7 @@ function App() {
         ? <TokensView api={api} status={localStatus} />
         : <HostedAccount key={authState} api={api} auth={auth} authState={authState} account={account} accountLoading={accountLoading} accountError={accountError} refreshAccount={refreshAccount} refreshAuth={refreshAuth} deleteAccount={deleteAccount} onViewBoard={go('leaderboard')} onProfile={(alias) => navigate({ page: 'profile', alias })} signUp={signUp} />)}
       {page === 'settings' && <SettingsView api={api} health={health} status={localStatus} refresh={refreshLocal} />}
-      {page === 'popover' && <Popover api={api} status={localStatus} />}
+      {page === 'popover' && <Popover api={api} status={localStatus} site={health.cloudUrl} />}
       {page === 'connect' && connectCode && <Connect api={api} auth={auth} authState={authState} account={account} accountLoading={accountLoading} accountError={accountError} refreshAccount={refreshAccount} code={connectCode} origin={window.location.origin} onFinish={finishConnect} onProfile={connectedProfile} />}
       </>}
     </main>;

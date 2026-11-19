@@ -226,6 +226,8 @@ function ShareCard({ stats, origin }: { stats: ProfileStats; origin: string | nu
   const [message, setMessage] = useState<string | null>(null);
   const [period, setPeriod] = useState<Period>('all');
   useEffect(() => { if (canvas.current) void drawShareCard(canvas.current, stats, origin, period); }, [stats, origin, period]);
+  // The app's "Card and Post on X" opens the profile at #share; the panel appears only once the profile has loaded.
+  useEffect(() => { if (window.location.hash === '#share') document.getElementById('share')?.scrollIntoView({ block: 'start' }); }, []);
   const blob = () => new Promise<Blob>((resolve, reject) => canvas.current!.toBlob((value) => value ? resolve(value) : reject(new Error('The image could not be created.')), 'image/png'));
   const save = async () => {
     const link = document.createElement('a'); link.href = URL.createObjectURL(await blob()); link.download = `tokentracky-${stats.alias}.png`; link.click(); URL.revokeObjectURL(link.href);

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { addDays } from '../ranges';
 import { personalFixtures } from './personal-fixtures';
 import { PopoverPanel, hourBars, latestSessions, sameTimeYesterday, streakOf } from './Popover';
+import { shareLinks } from './ShareMenu';
 
 const f = personalFixtures();
 const noop = () => {};
@@ -15,6 +16,19 @@ const panel = (overrides: Partial<Parameters<typeof PopoverPanel>[0]> = {}) => r
 const text = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 
 describe('PopoverPanel', () => {
+  it('offers sharing once the app knows the alias and the hosted site', () => {
+    expect(panel({ site: 'https://tokentracky.com' })).toContain('aria-label="Share"');
+    expect(panel()).not.toContain('aria-label="Share"');
+    expect(panel({ site: 'https://tokentracky.com', overview: { ...f.overview, alias: null }, status: { ...f.status!, alias: null } })).not.toContain('aria-label="Share"');
+  });
+  it('shares links on the hosted site: the tagged profile, the README badge, the share panel and this month\'s wrap', () => {
+    expect(shareLinks('https://tokentracky.com', 'example-builder', '2026-11-19')).toEqual({
+      profile: 'https://tokentracky.com/u/example-builder?ref=share',
+      badge: '[![Tokentracky](https://tokentracky.com/badge/example-builder.svg)](https://tokentracky.com/u/example-builder?ref=readme)',
+      card: 'https://tokentracky.com/u/example-builder#share',
+      wrap: 'https://tokentracky.com/wrapped/example-builder/2026-11',
+    });
+  });
   it("leads with today's compact total and cost, under who you are and your rank", () => {
     const html = text(panel());
     expect(html).toMatch(/^EX example-builder #42 this week/);

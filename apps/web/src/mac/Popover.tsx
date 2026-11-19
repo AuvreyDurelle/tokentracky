@@ -5,6 +5,7 @@ import { errorText, formatCompact, formatCost, formatExact, formatShare, shortDa
 import { addDays, fillRange, hourList, utcToday } from '../ranges';
 import { usageRevision } from '../refresh';
 import { Avatar, ToolIcon } from '../ui';
+import { ShareMenu } from './ShareMenu';
 import { ICONS } from './icons';
 import { changeVsPrevious } from './insights';
 import './personal.css';
@@ -48,7 +49,7 @@ export function latestSessions(sessions: SessionSummary[], count: number): Sessi
 const projectName = (path: string | null) => path?.split(/[\\/]/).filter(Boolean).at(-1) ?? 'No project';
 
 /** The menu bar popover: today, the periods, this month's tools, the streak, recent sessions and the three actions. It has no shell and a transparent page, so the window's vibrancy shows through. */
-export function Popover({ api, status }: { api: ApiClient; status: LocalStatus | null }) {
+export function Popover({ api, status, site }: { api: ApiClient; status: LocalStatus | null; site: string | null }) {
   const [overview, setOverview] = useState<MenuOverview | null>(null);
   const [recent, setRecent] = useState<UsageSummary | null>(null);
   const [month, setMonth] = useState<UsageSummary | null>(null);
@@ -85,17 +86,18 @@ export function Popover({ api, status }: { api: ApiClient; status: LocalStatus |
     try { await action(); } catch (value) { setError(errorText(value)); } finally { setBusy(null); }
   };
   const fail = (action: () => Promise<unknown>) => () => { action().catch((value: unknown) => setError(errorText(value))); };
-  return <PopoverPanel overview={overview} recent={recent} month={month} sessions={sessions} hours={hours} yesterday={yesterday} status={status} today={today} now={Date.now()} busy={busy} error={error}
+  return <PopoverPanel overview={overview} recent={recent} month={month} sessions={sessions} hours={hours} yesterday={yesterday} status={status} today={today} now={Date.now()} busy={busy} error={error} site={site}
     onGear={fail(() => api.gearMenu())} onOpen={fail(() => api.openDashboard('/'))} onSessions={fail(() => api.openDashboard('/tokens'))}
     onRefresh={() => void act('refresh', async () => { await api.refresh(); setReloads((value) => value + 1); })}
     onPause={() => void act('pause', async () => { if (!overview) return; const { paused } = await api.setCollectionPaused(!overview.paused); setOverview({ ...overview, paused }); })} />;
 }
 
-export function PopoverPanel({ overview, recent, month, sessions, hours, yesterday, status, today, now, busy, error, onGear, onOpen, onSessions, onRefresh, onPause }: {
+export function PopoverPanel({ overview, recent, month, sessions, hours, yesterday, status, today, now, busy, error, site = null, onGear, onOpen, onSessions, onRefresh, onPause }: {
   overview: MenuOverview | null; recent: UsageSummary | null; month: UsageSummary | null; sessions: SessionSummary[] | null;
   hours: HourBreakdownRow[] | null; yesterday: number | null; status: LocalStatus | null; today: string; now: number;
-  busy: 'refresh' | 'pause' | null; error: string | null; onGear: () => void; onOpen: () => void; onSessions: () => void; onRefresh: () => void; onPause: () => void;
+  busy: 'refresh' | 'pause' | null; error: string | null; site?: string | null; onGear: () => void; onOpen: () => void; onSessions: () => void; onRefresh: () => void; onPause: () => void;
 }) {
+  const [sharing, setSharing] = useState(false);
   const alias = overview?.alias ?? status?.alias ?? null;
   const days = recent ? fillRange(recent.daily, { from: addDays(today, 1 - WINDOW), to: today }) : null;
   const bars = hours ? hourBars(hours, today, now) : [];
@@ -116,8 +118,10 @@ export function PopoverPanel({ overview, recent, month, sessions, hours, yesterd
       <div className="po-head">
         {alias ? <Avatar alias={alias} /> : <span className="avatar" aria-hidden="true" />}
         <div className="po-who"><b>{alias ?? 'Not on the leaderboard'}</b><span>{overview?.rank ? `#${formatExact(overview.rank)} this week` : alias ? 'No rank this week yet' : 'Join from Settings'}</span></div>
+        {alias && site && <button type="button" className="po-icon-btn" aria-label="Share" aria-expanded={sharing} onClick={() => setSharing((value) => !value)}>{ICONS.share}</button>}
         <button type="button" className="po-icon-btn" aria-label="Menu" onClick={onGear}>{ICONS.gear}</button>
       </div>
+      {sharing && alias && site && <ShareMenu site={site} alias={alias} today={today} />}
       <div className="po-body">
         {error && <p className="po-error" role="alert">{error}</p>}
         <div className="po-hero">

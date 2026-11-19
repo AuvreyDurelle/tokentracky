@@ -5,6 +5,7 @@ mod commands;
 mod control;
 mod report;
 mod serve;
+mod share;
 
 use args::Command;
 use std::ffi::OsString;
@@ -32,6 +33,7 @@ Commands:
   login               Connect this computer to the leaderboard through your browser, then keep uploading
   unlink              Stop uploading from this computer and remove its credential
   uninstall [--yes]   Delete local Tokentracky data and the credential
+  share [--json]      Your profile, wrap and README links to share
 
 Options:
   --data-dir <dir>    Data folder (default: $TOKENTRACKY_HOME or ~/.tokentracky)
@@ -278,6 +280,7 @@ where
         Command::Login => commands::login(&directory, &flags, context).await,
         Command::Unlink => commands::unlink(context).await,
         Command::Uninstall => commands::uninstall(&directory, &flags, context).await,
+        Command::Share => share::share(&flags, context).await,
     };
     match result {
         Err(CliError::Locked) => {

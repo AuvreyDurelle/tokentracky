@@ -65,7 +65,8 @@ mod session;
 mod sync;
 
 pub use app::{
-    BODY_LIMIT, LocalState, PROXY_TIMEOUT, RATE_LIMIT, RATE_WINDOW, base_router, content_security_policy, secure,
+    BODY_LIMIT, LocalState, PROXY_TIMEOUT, RATE_LIMIT, RATE_WINDOW, base_router, content_security_policy,
+    encode_uri_component, secure,
 };
 pub use body::{JsonBody, REQUEST_TIMEOUT};
 pub use connect::{
