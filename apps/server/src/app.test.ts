@@ -233,6 +233,10 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('hosted GitHub username wiring',
       expect(versus).toMatch(/<meta name="description" content="[^"]+: 0 tokens \(#\d+\) · [^"]+: 0 tokens \(#\d+\), all time\. Dead even\." \/>/);
       expect(versus).toContain(`<meta property="og:image" content="https://tokentracky.com/og/vs/${alias}/${alias}.png" />`);
       expect((await app.inject(`/vs/${alias}/nobody-at-all`)).body).toContain('<title>Tokentracky — the token leaderboard</title>');
+      const weekly=(await app.inject({url:`/vs/${alias}/${alias}?period=week&ref=share`,headers:{'x-tokentracky-host':'tokentracky.com'}})).body;
+      expect(weekly).toContain(`<meta property="og:image" content="https://tokentracky.com/og/vs/${alias}/${alias}.png?period=week" />`);
+      expect(weekly).toMatch(/0 tokens \(#\d+\), this week\. Dead even\./);
+      expect((await app.inject(`/vs/${alias}/${alias}?period=year`)).body).toContain(`/og/vs/${alias}/${alias}.png" />`);
       expect((await app.inject(`/vs/${alias}/x`)).statusCode).toBe(404);
     } finally {expect((await member('DELETE','/api/account')).statusCode).toBe(204);}
   });

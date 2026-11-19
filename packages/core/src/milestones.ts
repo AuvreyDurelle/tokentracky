@@ -33,5 +33,10 @@ export function milestones(stats: Pick<ProfileStats, 'periods' | 'badges'>, week
  */
 export function nextMilestone(reached: Milestone[], seen: readonly string[] | null): {show: Milestone | null; seen: string[]} {
   const known = seen ?? reached.slice(1).map((milestone) => milestone.id);
-  return {show: reached.find((milestone) => !known.includes(milestone.id)) ?? null, seen: [...known]};
+  // A placing seen this week covers weaker ones: #1, then dropping to #2, is not news.
+  const covered = (milestone: Milestone) => known.includes(milestone.id) || (milestone.kind === 'week' && known.some((id) => {
+    const match = /^week-(\d+):(.+)$/.exec(id);
+    return !!match && match[2] === milestone.id.slice(milestone.id.indexOf(':') + 1) && Number(match[1]) <= milestone.rank;
+  }));
+  return {show: reached.find((milestone) => !covered(milestone)) ?? null, seen: [...known]};
 }

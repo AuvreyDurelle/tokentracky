@@ -36,7 +36,8 @@ describe('static hosting config',()=>{
       expect(rule.has).toEqual([{type:'header',key:'user-agent',value:crawlers[0]!.has![0]!.value}]);
     }
     const crawls=new RegExp(`^${crawlers[0]!.has![0]!.value}$`);
-    for (const agent of ['Twitterbot/1.0','facebookexternalhit/1.1 Facebot Twitterbot/1.0','Slackbot-LinkExpanding 1.0 (+https://api.slack.com/robots)','Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)','LinkedInBot/1.0 (compatible; Mozilla/5.0; Apache-HttpClient +http://www.linkedin.com)','TelegramBot (like TwitterBot)','WhatsApp/2.23.20.0','Mozilla/5.0 (compatible; Bluesky Cardyb/1.1; +mailto:support@bsky.app)']) expect(crawls.test(agent),agent).toBe(true);
+    // Apple Messages fetches previews as Safari with facebookexternalhit and Twitterbot appended.
+    for (const agent of ['Twitterbot/1.0','Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_1) AppleWebKit/601.2.4 (KHTML, like Gecko) Version/9.0.1 Safari/601.2.4 facebookexternalhit/1.1 Facebot Twitterbot/1.0','Slackbot-LinkExpanding 1.0 (+https://api.slack.com/robots)','Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)','LinkedInBot/1.0 (compatible; Mozilla/5.0; Apache-HttpClient +http://www.linkedin.com)','TelegramBot (like TwitterBot)','WhatsApp/2.23.20.0','Mozilla/5.0 (compatible; Bluesky Cardyb/1.1; +mailto:support@bsky.app)']) expect(crawls.test(agent),agent).toBe(true);
     for (const agent of ['Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36']) expect(crawls.test(agent),agent).toBe(false);
   });
   it('imports the gateway function\'s modules by the .js names Vercel compiles them to',async()=>{

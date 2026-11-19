@@ -399,7 +399,7 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
     const preview = await request('GET', '/og/bob.png?period=week');
     expect(preview.statusCode).toBe(200);
     expect(preview.headers['content-type']).toBe('image/png');
-    expect(preview.headers['cache-control']).toBe('public, max-age=300');
+    expect(preview.headers['cache-control']).toBe('public, max-age=60');
     expect([preview.rawPayload.subarray(1, 4).toString(), preview.rawPayload.readUInt32BE(16), preview.rawPayload.readUInt32BE(20)]).toEqual(['PNG', 1200, 630]);
     // A private or unknown name still gets an image, so a pasted link never shows a broken preview.
     expect((await request('GET', '/og/nobody.png')).headers['content-type']).toBe('image/png');
@@ -421,7 +421,7 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
     await joined('carol');
     const month = await request('GET', '/api/wrapped/Alice/2026-10');
     expect(month.statusCode).toBe(200);
-    expect(month.headers['cache-control']).toBe('public, max-age=300');
+    expect(month.headers['cache-control']).toBe('public, max-age=60');
     const wrap = month.json();
     expect(wrap).toMatchObject({alias: 'alice', period: '2026-10', from: '2026-10-01', to: '2026-10-23', tokens: 150, rank: 2, builders: 2, previousTokens: 70,
       activeDays: 2, longestStreak: 1, bestDay: {day: '2026-10-23', tokens: 100}, costMicrousd: 6_000, toolTokens: {claude: 100, codex: 50},

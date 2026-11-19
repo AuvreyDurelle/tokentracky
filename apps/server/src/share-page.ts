@@ -1,4 +1,4 @@
-import {wrapLabel} from '@tokentracky/core';
+import {wrapLabel, type Period} from '@tokentracky/core';
 import {compactCount, leadText, type PostgresCloudRepository} from '@tokentracky/cloud';
 
 /** What a link preview shows for a shareable page: its title, a line of text, the 1200×630 image and the page's address. */
@@ -55,14 +55,17 @@ export async function wrappedMeta(repository: Pick<PostgresCloudRepository, 'wra
   }
 }
 
-/** A head-to-head preview: both all-time totals and ranks and who leads, or the site's own text when either is not public. */
-export async function compareMeta(repository: Pick<PostgresCloudRepository, 'profile'>, a: string, b: string, site: string): Promise<ShareMeta> {
+const WINDOWS: Record<Period, string> = {week: 'this week', month: 'this month', all: 'all time'};
+
+/** A head-to-head preview in a window: both totals and ranks and who leads, or the site's own text when either is not public. */
+export async function compareMeta(repository: Pick<PostgresCloudRepository, 'profile'>, a: string, b: string, period: Period, site: string): Promise<ShareMeta> {
   const [left, right] = [a.toLowerCase(), b.toLowerCase()];
-  const page = {image: `${site}/og/vs/${left}/${right}.png`, url: `${site}/vs/${left}/${right}`};
+  const query = period === 'all' ? '' : `?period=${period}`;
+  const page = {image: `${site}/og/vs/${left}/${right}.png${query}`, url: `${site}/vs/${left}/${right}${query}`};
   try {
-    const [one, two] = await Promise.all([repository.profile(left, 'all'), repository.profile(right, 'all')]);
+    const [one, two] = await Promise.all([repository.profile(left, period), repository.profile(right, period)]);
     return {...page, title: `${one.alias} vs ${two.alias} on Tokentracky`,
-      description: `${one.alias}: ${compactCount(one.tokens)} tokens (#${one.rank}) · ${two.alias}: ${compactCount(two.tokens)} tokens (#${two.rank}), all time. ${leadText(one, two)}.`};
+      description: `${one.alias}: ${compactCount(one.tokens)} tokens (#${one.rank}) · ${two.alias}: ${compactCount(two.tokens)} tokens (#${two.rank}), ${WINDOWS[period]}. ${leadText(one, two)}.`};
   } catch {
     return {...page, title: 'Tokentracky — the token leaderboard', description: SITE_DESCRIPTION};
   }

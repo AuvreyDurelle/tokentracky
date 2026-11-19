@@ -187,6 +187,9 @@ export class ApiClient {
   /** The app's own settings, kept with the local history. */
   localSettings() { return this.request<LocalSettings>('/api/local/settings'); }
   setLocalSettings(settings: LocalSettings) { return this.request<LocalSettings>('/api/local/settings', { method: 'PUT', body: JSON.stringify(settings) }); }
+  /** The milestone ids the app's popover has shown; its window keeps no storage between openings. */
+  milestonesSeen() { return this.request<{ seen: string[] | null }>('/api/local/milestones'); }
+  setMilestonesSeen(seen: string[]) { return this.request<{ seen: string[] }>('/api/local/milestones', { method: 'PUT', body: JSON.stringify({ seen }) }); }
   /** Likes go through the linked device's credential, never an account token. */
   likeStatus(alias: string) { return this.request<{ liked: boolean }>(`/api/local/likes/${encodeURIComponent(alias)}`); }
   like(alias: string) { return this.request<void>(`/api/local/likes/${encodeURIComponent(alias)}`, { method: 'PUT' }); }

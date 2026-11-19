@@ -32,6 +32,11 @@ describe('next milestone', () => {
     expect(nextMilestone(reached, ['week-10:2026-11-16']).show).toEqual(reached[1]);
     expect(nextMilestone(reached, reached.map((milestone) => milestone.id)).show).toBeNull();
   });
+  it('counts a weaker placing in the same week as seen once a stronger one has been', () => {
+    expect(nextMilestone(milestones(stats(2, 0), '2026-11-16'), ['week-1:2026-11-16']).show).toBeNull();
+    expect(nextMilestone(milestones(stats(2, 0), '2026-11-16'), ['week-1:2026-11-09']).show?.id).toBe('week-3:2026-11-16');
+    expect(nextMilestone(milestones(stats(1, 0), '2026-11-16'), ['week-3:2026-11-16']).show?.id).toBe('week-1:2026-11-16');
+  });
   it('shows a placing again in a new week and a badge again at a new tier', () => {
     const seen = reached.map((milestone) => milestone.id);
     expect(nextMilestone(milestones(stats(10, 1.2e10, {veteran: 1}), '2026-11-23'), seen).show?.id).toBe('week-10:2026-11-23');

@@ -283,6 +283,9 @@ describe('head to head', () => {
     const url = new URL(compareShareUrl(base, rival, 'all', 'https://tokentracky.test'));
     expect(url.searchParams.get('text')).toBe('marenh vs rival on Tokentracky, all time: 1.1M to 550K tokens. marenh leads by 100%.');
     expect(url.searchParams.get('url')).toBe('https://tokentracky.test/vs/marenh/rival?ref=share');
+    // A window other than all time travels with the link, so its preview and page show what the post says.
+    expect(new URL(compareShareUrl(base, rival, 'week', 'https://tokentracky.test')).searchParams.get('url')).toBe('https://tokentracky.test/vs/marenh/rival?period=week&ref=share');
+    expect(renderToStaticMarkup(<CompareView a={base} b={rival} origin="https://tokentracky.test" onProfile={() => {}} initial="week" />)).toContain('src="/og/vs/marenh/rival.png?period=week"');
     const profile = (me: string | null) => renderToStaticMarkup(<ProfileView stats={base} me={me} origin="https://tokentracky.test" join={null} onLeaderboard={() => {}} />);
     expect(profile('rival')).toContain('href="/vs/rival/marenh"');
     expect(profile('marenh')).not.toContain('Compare with me');

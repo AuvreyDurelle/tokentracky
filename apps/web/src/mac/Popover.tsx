@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { heatLevels, type HourBreakdownRow, type MenuOverview, type ProfileStats, type SessionSummary, type UsageSummary } from '@tokentracky/core';
 import type { ApiClient, LocalStatus } from '../api';
 import { errorText, formatCompact, formatCost, formatExact, formatShare, shortDay, timeAgo, toolLabel } from '../format';
@@ -6,7 +6,7 @@ import { addDays, fillRange, hourList, utcToday } from '../ranges';
 import { usageRevision } from '../refresh';
 import { Avatar, ToolIcon } from '../ui';
 import { ShareMenu } from './ShareMenu';
-import { MilestoneBanner } from '../Milestone';
+import { MilestoneBanner, type SeenStore } from '../Milestone';
 import { ICONS } from './icons';
 import { changeVsPrevious } from './insights';
 import './personal.css';
@@ -61,6 +61,8 @@ export function Popover({ api, status, site }: { api: ApiClient; status: LocalSt
   const [error, setError] = useState<string | null>(null);
   const [reloads, setReloads] = useState(0);
   const [stats, setStats] = useState<ProfileStats | null>(null);
+  // The popover's window is private and closes for good, so the ids shown are kept by the app.
+  const seenStore = useMemo<SeenStore>(() => ({ read: () => api.milestonesSeen().then((value) => value.seen), write: (seen) => api.setMilestonesSeen(seen) }), [api]);
   const today = utcToday();
   useEffect(() => {
     const { documentElement: root, body } = document;
@@ -97,7 +99,7 @@ export function Popover({ api, status, site }: { api: ApiClient; status: LocalSt
   };
   const fail = (action: () => Promise<unknown>) => () => { action().catch((value: unknown) => setError(errorText(value))); };
   return <PopoverPanel overview={overview} recent={recent} month={month} sessions={sessions} hours={hours} yesterday={yesterday} status={status} today={today} now={Date.now()} busy={busy} error={error} site={site}
-    milestone={stats && site ? <MilestoneBanner stats={stats} site={site} mac /> : null}
+    milestone={stats && site ? <MilestoneBanner stats={stats} site={site} mac store={seenStore} /> : null}
     onGear={fail(() => api.gearMenu())} onOpen={fail(() => api.openDashboard('/'))} onSessions={fail(() => api.openDashboard('/tokens'))}
     onRefresh={() => void act('refresh', async () => { await api.refresh(); setReloads((value) => value + 1); })}
     onPause={() => void act('pause', async () => { if (!overview) return; const { paused } = await api.setCollectionPaused(!overview.paused); setOverview({ ...overview, paused }); })} />;

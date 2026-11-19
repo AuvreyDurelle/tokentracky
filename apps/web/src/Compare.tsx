@@ -13,11 +13,16 @@ export function leadLine(a: { alias: string; tokens: number }, b: { alias: strin
   return behind.tokens ? `${ahead.alias} leads by ${formatExact(Math.round(((ahead.tokens - behind.tokens) / behind.tokens) * 100))}%` : `${ahead.alias} leads`;
 }
 
+/** The head-to-head's address in a window, tagged as a shared link: its preview and page show that window. */
+export function compareLink(a: string, b: string, period: Period, origin: string): string {
+  return `${origin}/vs/${a}/${b}?${new URLSearchParams({ ...(period === 'all' ? {} : { period }), ref: 'share' }).toString()}`;
+}
+
 /** X's post composer with the head-to-head's lead and its tagged link, whose preview shows the card. */
 export function compareShareUrl(a: ProfileStats, b: ProfileStats, period: Period, origin: string): string {
   const [left, right] = [{ alias: a.alias, tokens: a.periods[period].tokens }, { alias: b.alias, tokens: b.periods[period].tokens }];
   const text = `${a.alias} vs ${b.alias} on Tokentracky, ${WINDOWS[period]}: ${formatCompact(left.tokens)} to ${formatCompact(right.tokens)} tokens. ${leadLine(left, right)}.`;
-  return `https://x.com/intent/post?${new URLSearchParams({ text, url: `${origin}/vs/${a.alias}/${b.alias}?ref=share` }).toString()}`;
+  return `https://x.com/intent/post?${new URLSearchParams({ text, url: compareLink(a.alias, b.alias, period, origin) }).toString()}`;
 }
 
 const topTool = (stats: ProfileStats) => (Object.entries(stats.toolTokens ?? {}) as Array<[ToolId, number]>).sort((a, b) => b[1] - a[1])[0]?.[0];
@@ -35,11 +40,13 @@ export function ComparePage({ api, a, b, origin, onProfile }: { api: ApiClient; 
   if (error instanceof ApiError && error.status === 404) return <div className="page-stack"><Empty title="One of these builders isn’t on the leaderboard">They may have deleted their account, or a name is mistyped.</Empty></div>;
   if (error) return <div className="page-stack"><Notice tone="error">Could not load this comparison: {errorText(error)}</Notice></div>;
   if (!pair) return <Loading>Loading comparison…</Loading>;
-  return <CompareView a={pair[0]} b={pair[1]} origin={origin} onProfile={onProfile} />;
+  // A shared link opens on the window it was shared in.
+  const shared = new URLSearchParams(window.location.search).get('period');
+  return <CompareView a={pair[0]} b={pair[1]} origin={origin} onProfile={onProfile} initial={shared === 'week' || shared === 'month' ? shared : 'all'} />;
 }
 
-export function CompareView({ a, b, origin, onProfile }: { a: ProfileStats; b: ProfileStats; origin: string; onProfile: (alias: string) => void }) {
-  const [period, setPeriod] = useState<Period>('all');
+export function CompareView({ a, b, origin, onProfile, initial = 'all' }: { a: ProfileStats; b: ProfileStats; origin: string; onProfile: (alias: string) => void; initial?: Period }) {
+  const [period, setPeriod] = useState<Period>(initial);
   const [message, setMessage] = useState<string | null>(null);
   const earned = (stats: ProfileStats) => stats.badges.filter((badge) => badge.tier > 0).length;
   // Each row: its label, both values, the numbers that decide who is ahead (higher wins unless `lower`) and how to print them.
@@ -56,9 +63,8 @@ export function CompareView({ a, b, origin, onProfile }: { a: ProfileStats; b: P
     const [x, y] = lower ? values.map((value) => value > 0 ? value : Infinity) : values;
     return x === y ? -1 : (lower ? x! < y! : x! > y!) ? 0 : 1;
   };
-  const link = `${origin}/vs/${a.alias}/${b.alias}`;
   const copy = async () => {
-    try { await navigator.clipboard.writeText(`${link}?ref=share`); setMessage('Link copied.'); } catch (value) { setMessage(`Copying failed: ${errorText(value)}`); }
+    try { await navigator.clipboard.writeText(compareLink(a.alias, b.alias, period, origin)); setMessage('Link copied.'); } catch (value) { setMessage(`Copying failed: ${errorText(value)}`); }
   };
   const lead = leadLine({ alias: a.alias, tokens: a.periods[period].tokens }, { alias: b.alias, tokens: b.periods[period].tokens });
   return <div className="page-stack compare">
