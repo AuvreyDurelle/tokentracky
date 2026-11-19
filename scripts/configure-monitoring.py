@@ -63,9 +63,9 @@ def moderation_policy(channel=None):
     """Upload checks log structured lines with counts and reasons only, never an alias."""
     return {'displayName': 'Tokentracky moderation flags', 'enabled': True, 'combiner': 'OR',
             'notificationChannels': [channel] if channel else [],
-            'documentation': {'mimeType': 'text/markdown', 'content': 'An upload was flagged, or the moderation breaker turned hides into reviews (likely a parser release inflating many members). Run `npx tsx scripts/moderation.ts queue` and follow your private moderation runbook. Run `audit` against the configured review deadline. Never paste aliases into public channels.'},
-            'conditions': [{'displayName': 'Moderation flag or breaker logged', 'conditionMatchedLog': {
-                'filter': 'resource.type="cloud_run_revision" AND resource.labels.service_name="tokentracky-api" AND jsonPayload.event=("moderation_flag" OR "moderation_breaker")',
+            'documentation': {'mimeType': 'text/markdown', 'content': 'An upload was flagged for review. Run `npx tsx scripts/moderation.ts queue` and follow your private moderation runbook. Run `audit` against the configured review deadline. Never paste aliases into public channels.'},
+            'conditions': [{'displayName': 'Moderation flag logged', 'conditionMatchedLog': {
+                'filter': 'resource.type="cloud_run_revision" AND resource.labels.service_name="tokentracky-api" AND jsonPayload.event="moderation_flag"',
             }}],
             # Log-match conditions require a rate limit; a burst of flags notifies once per five minutes.
             'alertStrategy': {'notificationRateLimit': {'period': '300s'}, 'autoClose': '1800s'}}

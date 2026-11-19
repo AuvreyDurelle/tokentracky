@@ -59,11 +59,10 @@ The JSON must contain exactly the numeric fields in `ModerationPolicy` (`src/mod
 
 | Fields | Meaning |
 | --- | --- |
-| `hideFloor`, `hideRatio`, `hideCohort` | Day size, peer multiple and minimum peer cohort for hiding |
+| `hideFloor`, `hideRatio`, `hideCohort` | Day size, peer multiple and minimum peer cohort for a peers review (nothing is hidden automatically) |
 | `volumeFloor`, `jumpRatio`, `jumpFloor`, `baselineDays` | Large-day and recent-baseline review criteria |
 | `templateTokens`, `templateCount` | Minimum repeated bucket size and repetition count |
 | `leadRatio`, `leadFloor`, `leadStep` | All-time lead review and query increment |
-| `breakerHides`, `breakerWindowMs` | Recent automatic hides that suppress further hiding |
 | `reflagGrowth`, `reviewWithinMs` | Growth required after clearance and review deadline |
 
 Ratios must be finite and greater than one. Other fields must be positive safe integers; `baselineDays` is at most 366, and `leadStep` cannot exceed `leadFloor`. Millisecond durations use the server clock. Test policy values are deliberately synthetic and are not deployment recommendations.

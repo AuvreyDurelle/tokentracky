@@ -94,7 +94,7 @@ Tokentracky is **ad-hoc signed**: Apple has not notarized it yet, so macOS block
 - **A menu-bar app.** The icon opens a popover with today's tokens, your week, month and all-time totals, streak and recent sessions. The dashboard window has Leaderboard, Tokens (your private usage, models and insights), Achievements and Settings.
 - **Honest cost estimates.** A bundled [LiteLLM](https://github.com/BerriAI/litellm) price table (MIT) refreshes once a day from GitHub, and a short hand-maintained list, [`crates/pricing/data/curated-prices.json`](crates/pricing/data/curated-prices.json), prices models LiteLLM lacks, each with its source. A model without a known price shows cost as unknown, never $0. Local models (LM Studio and Unsloth Studio's local routes) and free tiers (model ids ending in `-free`) show $0.
 - **Every computer, one account.** Up to 10 active computers add to one account, and the same usage seen on two of them counts once.
-- **Fair play.** Uploads are checked against other members' totals as they arrive. A day far above everyone else's is hidden from public pages until a person reviews it; the member sees which days on their profile page. Only a person can ban an account.
+- **Fair play.** Uploads are checked against other members' totals as they arrive. A day far above everyone else's goes to a person for review, and only a person can hide it from public pages; the member sees which days on their profile page. Only a person can ban an account.
 - **Updates itself.** Release builds check for updates shortly after launch and every six hours. **Update now** downloads, verifies and installs; **Restart now** when ready; **Later** waits 24 hours for that version, across relaunches too. Development builds have updating disabled.
 
 ## Showcase
