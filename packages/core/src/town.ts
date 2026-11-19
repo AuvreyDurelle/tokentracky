@@ -82,9 +82,12 @@ export interface TownPublic {alias: string; level: number; plots: TownPlot[]; bu
   rarest: BuildingId | null; likes: number; streak: number}
 /** A town on the public map. A hidden member's land shows with no name. */
 export interface TownMapTown {alias: string | null; level: number; plots: number; wonder: boolean}
-/** `GET /api/town/map?x0&y0&x1&y1`: claimed plots in view, each as `[x, y, index into towns]`. */
+/**
+ * `GET /api/town/map?x0&y0&x1&y1`: claimed plots in view, each as `[x, y, index into towns]`. `edge` is the outermost
+ * claimed ring, `max(|x|, |y|)`; new and moving towns land just past it.
+ */
 export interface TownMapResponse {x0: number; y0: number; x1: number; y1: number; towns: TownMapTown[]; plots: Array<[number, number, number]>;
-  wonders: Array<[number, number]>; totals: {towns: number; plots: number}}
+  wonders: Array<[number, number]>; totals: {towns: number; plots: number}; edge: number}
 
 /** The widest map area one request may cover, in plots per side. */
 export const TOWN_MAP_SPAN = 160;
