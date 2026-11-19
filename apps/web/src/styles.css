@@ -798,6 +798,10 @@ span.profile-like { cursor: default; }
 .wrap-list { display: grid; gap: 8px; margin: 0; list-style: none; }
 .wrap-list li { display: flex; align-items: center; gap: 8px; color: var(--text-2); }
 .wrap-list b { margin-left: auto; color: var(--text); font-weight: 600; }
+.milestone { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 14px 16px; border-color: rgba(245, 200, 76, 0.35); background: rgba(245, 200, 76, 0.06); }
+.milestone b { flex: 1; font-weight: 600; }
+.milestone .milestone-mark { color: #f5c84c; }
+.milestone .milestone-actions { display: flex; gap: 8px; }
 .card-preview { display: block; width: min(100%, 600px); height: auto; }
 .copy-row { min-width: 0; display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 12px; border: 1px solid var(--border-2); border-radius: var(--radius-sm); background: var(--bg); }
 .copy-row code { flex: 1; overflow: hidden; color: var(--text-2); font-family: var(--mono); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }

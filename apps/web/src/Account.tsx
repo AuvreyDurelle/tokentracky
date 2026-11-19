@@ -7,6 +7,7 @@ import { errorText, formatCost, shortDay, timeAgo } from './format';
 import { AppleIcon, Avatar, Empty, Loading, Notice, Segmented, Spinner, Tokens } from './ui';
 import { PasswordResetRequest } from './PasswordRecovery';
 import { MAC_DOWNLOAD } from './download-config';
+import { MilestoneBanner } from './Milestone';
 
 /** Only the providers enabled in Supabase Auth are offered; email uses a password (sign in or create an account). `signUp` opens on Create account. */
 export function SignIn({ auth, signUp = false }: { auth: AuthAdapter; signUp?: boolean }) {
@@ -205,6 +206,7 @@ export function HostedAccount({ api, auth, authState, account, accountLoading, a
     <SectionNav named={Boolean(alias)} />
     <div className="page-stack">
       <Title>{signedInWith && <p>Signed in{alias ? ` as ${alias}` : ''} with {PROVIDERS[signedInWith.provider] ?? signedInWith.provider}</p>}</Title>
+      {stats && <MilestoneBanner stats={stats} site={window.location.origin} />}
       {error && <Notice tone="error">{error}</Notice>}
       {accountError && <Notice tone="error">Could not load your account: {accountError} <button type="button" className="btn sm" onClick={() => void refreshAccount().catch(() => {})}>Retry</button></Notice>}
       {account?.moderation && ready && <ModerationNotice moderation={account.moderation} />}

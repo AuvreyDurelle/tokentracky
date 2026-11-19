@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
-import { heatLevels, type HourBreakdownRow, type MenuOverview, type SessionSummary, type UsageSummary } from '@tokentracky/core';
+import { useEffect, useState, type ReactNode } from 'react';
+import { heatLevels, type HourBreakdownRow, type MenuOverview, type ProfileStats, type SessionSummary, type UsageSummary } from '@tokentracky/core';
 import type { ApiClient, LocalStatus } from '../api';
 import { errorText, formatCompact, formatCost, formatExact, formatShare, shortDay, timeAgo, toolLabel } from '../format';
 import { addDays, fillRange, hourList, utcToday } from '../ranges';
 import { usageRevision } from '../refresh';
 import { Avatar, ToolIcon } from '../ui';
 import { ShareMenu } from './ShareMenu';
+import { MilestoneBanner } from '../Milestone';
 import { ICONS } from './icons';
 import { changeVsPrevious } from './insights';
 import './personal.css';
@@ -59,6 +60,7 @@ export function Popover({ api, status, site }: { api: ApiClient; status: LocalSt
   const [busy, setBusy] = useState<'refresh' | 'pause' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reloads, setReloads] = useState(0);
+  const [stats, setStats] = useState<ProfileStats | null>(null);
   const today = utcToday();
   useEffect(() => {
     const { documentElement: root, body } = document;
@@ -81,21 +83,30 @@ export function Popover({ api, status, site }: { api: ApiClient; status: LocalSt
       .catch((value: unknown) => { if (live) setError(errorText(value)); });
     return () => { live = false; };
   }, [api, today, revision, reloads]);
+  // The published profile, through the app, for the milestone banner; it waits for the alias and is read once a cycle.
+  const alias = status?.alias ?? null;
+  useEffect(() => {
+    if (!alias || !site) { setStats(null); return; }
+    let live = true;
+    api.profileStats(alias).then((value) => { if (live) setStats(value); }, () => {});
+    return () => { live = false; };
+  }, [api, alias, site, revision]);
   const act = async (name: 'refresh' | 'pause', action: () => Promise<unknown>) => {
     setBusy(name); setError(null);
     try { await action(); } catch (value) { setError(errorText(value)); } finally { setBusy(null); }
   };
   const fail = (action: () => Promise<unknown>) => () => { action().catch((value: unknown) => setError(errorText(value))); };
   return <PopoverPanel overview={overview} recent={recent} month={month} sessions={sessions} hours={hours} yesterday={yesterday} status={status} today={today} now={Date.now()} busy={busy} error={error} site={site}
+    milestone={stats && site ? <MilestoneBanner stats={stats} site={site} mac /> : null}
     onGear={fail(() => api.gearMenu())} onOpen={fail(() => api.openDashboard('/'))} onSessions={fail(() => api.openDashboard('/tokens'))}
     onRefresh={() => void act('refresh', async () => { await api.refresh(); setReloads((value) => value + 1); })}
     onPause={() => void act('pause', async () => { if (!overview) return; const { paused } = await api.setCollectionPaused(!overview.paused); setOverview({ ...overview, paused }); })} />;
 }
 
-export function PopoverPanel({ overview, recent, month, sessions, hours, yesterday, status, today, now, busy, error, site = null, onGear, onOpen, onSessions, onRefresh, onPause }: {
+export function PopoverPanel({ overview, recent, month, sessions, hours, yesterday, status, today, now, busy, error, site = null, milestone = null, onGear, onOpen, onSessions, onRefresh, onPause }: {
   overview: MenuOverview | null; recent: UsageSummary | null; month: UsageSummary | null; sessions: SessionSummary[] | null;
   hours: HourBreakdownRow[] | null; yesterday: number | null; status: LocalStatus | null; today: string; now: number;
-  busy: 'refresh' | 'pause' | null; error: string | null; site?: string | null; onGear: () => void; onOpen: () => void; onSessions: () => void; onRefresh: () => void; onPause: () => void;
+  busy: 'refresh' | 'pause' | null; error: string | null; site?: string | null; milestone?: ReactNode; onGear: () => void; onOpen: () => void; onSessions: () => void; onRefresh: () => void; onPause: () => void;
 }) {
   const [sharing, setSharing] = useState(false);
   const alias = overview?.alias ?? status?.alias ?? null;
@@ -124,6 +135,7 @@ export function PopoverPanel({ overview, recent, month, sessions, hours, yesterd
       {sharing && alias && site && <ShareMenu site={site} alias={alias} today={today} />}
       <div className="po-body">
         {error && <p className="po-error" role="alert">{error}</p>}
+        {milestone}
         <div className="po-hero">
           <div className="po-hero-top">
             <span className="po-label">Today · {TODAY_LABEL.format(new Date(`${today}T00:00:00Z`))} · UTC</span>
