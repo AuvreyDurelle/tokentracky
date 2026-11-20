@@ -57,7 +57,8 @@ export function ProfileUsage({ alias, api, hours, start, now = new Date() }: { a
     // The span is fully described by its days.
   }, [api, alias, span?.from, span?.to]);
   const shown = usage && span && usage.from === span.from ? usage : null;
-  const costs = shown?.costMicrousd !== undefined;
+  // Cost is offered only when every day in the span has a price: an unknown price is not a zero one.
+  const costs = typeof shown?.costMicrousd === 'number';
   const useCost = metric === 'cost' && costs && period !== '24h';
   return <section className="pu" aria-label={`${alias}’s usage`}>
     <div className="pu-bar">
