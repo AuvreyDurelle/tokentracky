@@ -195,7 +195,7 @@
 .mac .m-pf .pf-legend em b { color: var(--text-2); font-weight: 500; }
 .mac .m-pf .pf-legend .pf-key { width: 8px; height: 8px; border-radius: 2px; }
 /* The website's usage chart (ProfileUsage), aligned with the sections around it. */
-.mac .m-pf .profile-usage { padding: 0; border-top: 0; }
+.mac .m-pf .pu { margin: 0; }
 
 .mac .m-pf .pf-models { overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-md); }
 .mac .m-pf .pf-model { display: grid; grid-template-columns: 22px 190px minmax(0, 1fr) 64px 76px; align-items: center; gap: 10px; height: 42px; padding: 0 14px; border-top: 1px solid var(--border); font-variant-numeric: tabular-nums; }

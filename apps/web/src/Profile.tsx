@@ -4,7 +4,7 @@ import { ApiError, type ApiClient } from './api';
 import { INSTALL_COMMAND, MAC_DOWNLOAD } from './download-config';
 import { KINDS, TOOLS, errorText, formatCompact, formatCost, formatCostCompact, formatExact, formatShare, shortDay, topPercent } from './format';
 import { Heatmap } from './Heatmap';
-import { ProfileUsage } from './ProfileUsage';
+import { ProfileUsage, type UsageApi } from './ProfileUsage';
 import { AppleIcon, Avatar, CopyCommand, Empty, Exact, Loading, Notice, Segmented, ToolIcon, Tokens } from './ui';
 import { ACHIEVEMENT_COPY, TIER_NAMES } from './mac/achievement-copy';
 import { nextRatio, tierProgress } from './mac/achievements';
@@ -59,7 +59,7 @@ export function ProfilePage({ api, alias, me, signedIn, origin, join, onLeaderbo
   if (error instanceof ApiError && error.status === 404) return <div className="page-stack"><Empty title={`${alias} isn’t on the leaderboard`} action={<button type="button" className="btn" onClick={onLeaderboard}>See the leaderboard</button>}>They may have deleted their account, or the name is mistyped.</Empty></div>;
   if (error) return <div className="page-stack"><Notice tone="error">Could not load this profile: {errorText(error)}</Notice></div>;
   if (!stats) return <Loading>Loading profile…</Loading>;
-  return <ProfileView stats={stats} me={me} origin={origin} join={join} onLeaderboard={onLeaderboard} likes={likes ?? stats.likes} like={liked === null ? null : { liked, pending }} onLike={toggle} />;
+  return <ProfileView stats={stats} me={me} origin={origin} join={join} onLeaderboard={onLeaderboard} likes={likes ?? stats.likes} like={liked === null ? null : { liked, pending }} onLike={toggle} api={api} />;
 }
 
 type JoinAction = { label: string; onClick: () => void };
@@ -71,9 +71,9 @@ const SHOWN_MODELS = 6;
 
 /** Identity with likes, stats, highlights and the usage chart; the year of activity, tool mix, top models and badges. The aside holds the join card (only for a viewer who can still join) and the share card.
  *  `like` is null where you can't like (signed out, or your own profile); the count still shows. */
-export function ProfileView({ stats, me, origin, join, onLeaderboard, likes = stats.likes, like = null, onLike = () => {} }: {
+export function ProfileView({ stats, me, origin, join, onLeaderboard, likes = stats.likes, like = null, onLike = () => {}, api }: {
   stats: ProfileStats; me: string | null; origin: string | null; join: JoinAction | null; onLeaderboard: () => void;
-  likes?: number; like?: { liked: boolean; pending: boolean } | null; onLike?: () => void;
+  likes?: number; like?: { liked: boolean; pending: boolean } | null; onLike?: () => void; api?: UsageApi;
 }) {
   const { all, week } = stats.periods;
   const { activity } = stats;
@@ -116,7 +116,7 @@ export function ProfileView({ stats, me, origin, join, onLeaderboard, likes = st
           <Highlight icon={ZAP} tone="zap" label="Best day">{activity.bestDay ? <>{formatCompact(activity.bestDay.tokens)}<small> · {shortDay(activity.bestDay.day)}</small></> : '—'}</Highlight>
           <Highlight icon={ICONS.star} tone="star" label={`Favourite${stats.models && stats.models.length > 1 ? ` · ${stats.models.length} models used` : ''}`}><span className="mono" title={favourite?.model}>{favourite?.model ?? '—'}</span></Highlight>
         </div>
-        <ProfileUsage daily={stats.daily} hours={stats.hours} />
+        {api && <ProfileUsage alias={stats.alias} api={api} hours={stats.hours} start={stats.memberSince} />}
       </section>
       <aside className="profile-aside">
         {join && <JoinCard alias={stats.alias} join={join} />}
