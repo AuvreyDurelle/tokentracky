@@ -290,6 +290,44 @@ topModel?: { model: string, tokens: number } }>;
   /** The span's five largest models, largest first, when the model mix is shared. They carry no cost. */
   models?: Array<{ model: string, tokens: number, costMicrousd?: number | null }>;
 };
+/** The community over one leaderboard window (`/api/community/stats?period=`), for the Community page: its totals and their change, how builders spread, the models in use, and series of days and weeks that do not depend on the window. */
+export type CommunityPeriod = {
+  period: LeaderboardPeriod;
+  /** The window's first instant; null for all time. */
+  windowStart: string | null;
+  updatedAt: string;
+  tokens: number;
+  /** Tokens in the same span of the window before: the same days of last week or month, or yesterday's UTC day for the last 24 hours (hours are kept for a day only); 0 for all time. */
+  previousTokens: number;
+  /** Builders with tokens in the window. */
+  builders: number;
+  /** Builders whose account was created in the window. */
+  newBuilders: number;
+  /** Sum of the known costs builders share in the window; null when none is known. */
+  costMicrousd: number | null;
+  /** Tokens by tool in the window, from builders who share their tool split. */
+  toolTotals: Partial<Record<ToolId, number>>;
+  /** Tokens by kind in the window, with reasoning, over the buckets that carry kinds; null when none do. */
+  breakdown: TokenCounts | null;
+  /** The window's ten largest models, largest first, with their tokens in the same span before and their cost. */
+  models: Array<{ model: string, tokens: number, previousTokens: number, costMicrousd: number | null }>;
+  /** Builders by their tokens in the window: each bucket runs from `min` up to the next one's. */
+  distribution: Array<{ min: number, builders: number, tokens: number }>;
+  /** The ten largest builders' tokens in the window. */
+  top10Tokens: number;
+  /** The middle builder's tokens in the window, the lower middle one for an even count; 0 without builders. */
+  medianTokens: number;
+  /** Community tokens per UTC day for the 365 days ending today, oldest first. */
+  daily: Array<{ day: string, tokens: number }>;
+  /** Builders with tokens on each UTC day, for the 84 days ending today, oldest first. */
+  dailyBuilders: Array<{ day: string, builders: number }>;
+  /** The 12 weeks ending this one, each from Monday, oldest first: tokens by tool and new builders. */
+  weeks: Array<{ 
+/**
+ * The week's Monday, a UTC day.
+ */
+week: string, toolTotals: Partial<Record<ToolId, number>>, newBuilders: number }>;
+};
 /** Landing-page totals across every published builder. */
 export type CommunityStats = {
   builders: number;

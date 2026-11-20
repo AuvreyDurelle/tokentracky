@@ -850,6 +850,92 @@ pub struct CommunityStats {
     #[ts(optional, inline)]
     pub hourly: Option<Vec<HourTokens>>,
 }
+/// The community over one leaderboard window (`/api/community/stats?period=`), for the Community page: its totals and
+/// their change, how builders spread, the models in use, and series of days and weeks that do not depend on the window.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+pub struct CommunityPeriod {
+    pub period: LeaderboardPeriod,
+    /// The window's first instant; null for all time.
+    pub window_start: Option<String>,
+    pub updated_at: String,
+    #[ts(type = "number")]
+    pub tokens: u64,
+    /// Tokens in the same span of the window before: the same days of last week or month, or yesterday's UTC day for
+    /// the last 24 hours (hours are kept for a day only); 0 for all time.
+    #[ts(type = "number")]
+    pub previous_tokens: u64,
+    /// Builders with tokens in the window.
+    pub builders: u32,
+    /// Builders whose account was created in the window.
+    pub new_builders: u32,
+    /// Sum of the known costs builders share in the window; null when none is known.
+    #[ts(type = "number | null")]
+    pub cost_microusd: Option<u64>,
+    /// Tokens by tool in the window, from builders who share their tool split.
+    #[ts(type = "Partial<Record<ToolId, number>>")]
+    pub tool_totals: BTreeMap<ToolId, u64>,
+    /// Tokens by kind in the window, with reasoning, over the buckets that carry kinds; null when none do.
+    pub breakdown: Option<TokenCounts>,
+    /// The window's ten largest models, largest first, with their tokens in the same span before and their cost.
+    #[ts(inline)]
+    pub models: Vec<CommunityModel>,
+    /// Builders by their tokens in the window: each bucket runs from `min` up to the next one's.
+    #[ts(inline)]
+    pub distribution: Vec<TokenBucket>,
+    /// The ten largest builders' tokens in the window.
+    #[ts(type = "number")]
+    pub top10_tokens: u64,
+    /// The middle builder's tokens in the window, the lower middle one for an even count; 0 without builders.
+    #[ts(type = "number")]
+    pub median_tokens: u64,
+    /// Community tokens per UTC day for the 365 days ending today, oldest first.
+    #[ts(inline)]
+    pub daily: Vec<DayTokens>,
+    /// Builders with tokens on each UTC day, for the 84 days ending today, oldest first.
+    #[ts(inline)]
+    pub daily_builders: Vec<DayBuilders>,
+    /// The 12 weeks ending this one, each from Monday, oldest first: tokens by tool and new builders.
+    #[ts(inline)]
+    pub weeks: Vec<CommunityWeek>,
+}
+/// A model's tokens in a window (`CommunityPeriod.models`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+pub struct CommunityModel {
+    pub model: String,
+    #[ts(type = "number")]
+    pub tokens: u64,
+    #[ts(type = "number")]
+    pub previous_tokens: u64,
+    #[ts(type = "number | null")]
+    pub cost_microusd: Option<u64>,
+}
+/// Builders whose tokens in a window are at least `min` and under the next bucket's (`CommunityPeriod.distribution`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+pub struct TokenBucket {
+    #[ts(type = "number")]
+    pub min: u64,
+    pub builders: u32,
+    #[ts(type = "number")]
+    pub tokens: u64,
+}
+/// Builders with tokens on one UTC day (`CommunityPeriod.daily_builders`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+pub struct DayBuilders {
+    pub day: String,
+    pub builders: u32,
+}
+/// One week from Monday (`CommunityPeriod.weeks`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+pub struct CommunityWeek {
+    /// The week's Monday, a UTC day.
+    pub week: String,
+    #[ts(type = "Partial<Record<ToolId, number>>")]
+    pub tool_totals: BTreeMap<ToolId, u64>,
+    pub new_builders: u32,
+}
 /// One UTC calendar month's tokens (`YYYY-MM`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct MonthTokens {
