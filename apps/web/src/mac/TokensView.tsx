@@ -147,13 +147,13 @@ export function TokensView({ api, status }: { api: ApiClient; status: LocalStatu
     return () => { live = false; };
   }, [api, revision]);
   if (drill) return <DayView api={api} day={drill} tool={tool} back={span?.title.split(' · ')[0] ?? 'Last 24 hours'} onBack={() => setDrill(null)} onStep={(days) => setDrill(addDays(drill, days))} />;
-  return <TokensPage data={data} year={year} status={status} range={range} period={period} span={span} metric={metric} tool={tool} grain={grain} error={error}
-    onMetric={setMetric} onPeriod={setPeriod} onStep={(delta) => setBack(Math.max(0, back + delta))} onCustom={(value) => { setCustom(value); if (value) setPeriodState('week'); }} onTool={setTool} onGrain={setGrain}
+  return <TokensPage data={data} year={year} status={status} range={range} period={period} span={span} metric={metric} tool={tool} grain={grain} custom={custom !== null} error={error}
+    onMetric={setMetric} onPeriod={setPeriod} onStep={(delta) => setBack(Math.max(0, back + delta))} onCustom={(value) => { setCustom(value); if (value) { setPeriodState('week'); setGrain('day'); } }} onTool={setTool} onGrain={setGrain}
     onDrill={setDrill} onExport={() => { downloadCsv(api, range, tool).catch((value: unknown) => setError(errorText(value))); }} />;
 }
 
-export function TokensPage({ data: loaded, year, status, range, period, span, metric, tool, grain, error, onMetric, onPeriod, onStep, onCustom, onTool, onGrain, onDrill, onExport }: {
-  data: TokensData | null; year: UsageSummary | null; status: LocalStatus | null; range: DayRange | HourWindow; period: Period; span: TokensSpan | null; metric: Metric; tool: 'all' | ToolId; grain: Grain; error: string | null;
+export function TokensPage({ data: loaded, year, status, range, period, span, metric, tool, grain, custom = false, error, onMetric, onPeriod, onStep, onCustom, onTool, onGrain, onDrill, onExport }: {
+  data: TokensData | null; year: UsageSummary | null; status: LocalStatus | null; range: DayRange | HourWindow; period: Period; span: TokensSpan | null; metric: Metric; tool: 'all' | ToolId; grain: Grain; custom?: boolean; error: string | null;
   onMetric: (metric: Metric) => void; onPeriod: (period: Period) => void; onStep: (delta: number) => void; onCustom: (range: { from: string; to: string } | null) => void; onTool: (tool: 'all' | ToolId) => void;
   onGrain: (grain: Grain) => void; onDrill: (day: string) => void; onExport: () => void;
 }) {
@@ -192,7 +192,7 @@ export function TokensPage({ data: loaded, year, status, range, period, span, me
         <span><b>{span ? span.title : 'Last 24 hours'}</b> · {'since' in range ? `${WEEKDAY_HOUR.format(range.since)} – ${WEEKDAY_HOUR.format(range.until)} · local time` : 'UTC days'}</span>
         <span className="tk-faint">Compared with {beforePhrase(range)}{status?.lastRefreshAt ? ` · updated ${timeAgo(status.lastRefreshAt)}` : ''}</span>
       </div>
-      <ChartCard data={data} year={year} yearDays={yearDays} range={range} points={points} metric={metric} grain={grain} period={period} phrase={phrase} onMetric={onMetric} onGrain={onGrain} onDrill={onDrill} />
+      <ChartCard data={data} year={year} yearDays={yearDays} range={range} points={points} metric={metric} grain={grain} custom={custom} period={period} phrase={phrase} onMetric={onMetric} onGrain={onGrain} onDrill={onDrill} />
       <SectionHead title="Breakdown" note="Where the tokens went · projects and sessions stay on this Mac" />
       <Breakdown data={data} range={range} onExport={onExport} />
       <SectionHead title="When you work" note="Your hours, your days, and how long your sessions run" />
@@ -226,8 +226,8 @@ function CustomRange({ span, onApply, onClear }: { span: TokensSpan | null; onAp
   </div>;
 }
 
-function ChartCard({ data, year, yearDays, range, points, metric, grain, period, phrase, onMetric, onGrain, onDrill }: {
-  data: TokensData; year: UsageSummary | null; yearDays: Array<{ day: string; tokens: number }> | null; range: DayRange | HourWindow; points: string[]; metric: Metric; grain: Grain; period: Period; phrase: string;
+function ChartCard({ data, year, yearDays, range, points, metric, grain, custom, period, phrase, onMetric, onGrain, onDrill }: {
+  data: TokensData; year: UsageSummary | null; yearDays: Array<{ day: string; tokens: number }> | null; range: DayRange | HourWindow; points: string[]; metric: Metric; grain: Grain; custom: boolean; period: Period; phrase: string;
   onMetric: (metric: Metric) => void; onGrain: (grain: Grain) => void; onDrill: (day: string) => void;
 }) {
   const [split, setSplit] = useState<Split>('tools');
@@ -256,7 +256,7 @@ function ChartCard({ data, year, yearDays, range, points, metric, grain, period,
   const title = `${metric === 'tokens' ? 'Tokens' : 'Est. cost'} per ${unit}`;
   const change = (now: number | null, then: number | null) => now === null || then === null || (!now && !then) ? undefined : changeVsPrevious(now, then);
   const activeDays = summary.daily.filter((day) => day.tokens > 0).length;
-  const grains: Array<{ value: Grain; label: string }> = [...(period === 'week' ? [{ value: 'hour' as const, label: 'Hour' }] : []), { value: 'day', label: 'Day' }, ...(period !== 'week' ? [{ value: 'week' as const, label: 'Week' }] : [])];
+  const grains: Array<{ value: Grain; label: string }> = [...(period === 'week' && !custom ? [{ value: 'hour' as const, label: 'Hour' }] : []), { value: 'day', label: 'Day' }, ...(period !== 'week' ? [{ value: 'week' as const, label: 'Week' }] : [])];
   return <section className="m-card tk-chart-card" aria-label="Usage over time">
     <div className="tk-tiles">
       <Tile label="Tokens" on={metric === 'tokens'} onClick={() => onMetric('tokens')} value={formatCompact(summary.tokens)} title={`${formatExact(summary.tokens)} tokens`} change={change(summary.tokens, before.tokens)} sub={`vs ${formatCompact(before.tokens)}`} />

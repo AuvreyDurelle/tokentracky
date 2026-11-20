@@ -16,6 +16,11 @@ const chartCard = (html: string) => /<section class="m-card tk-chart-card"[\s\S]
 const text = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
 
 describe('TokensPage', () => {
+  it('reads a week hour by hour, but a custom range only by day', () => {
+    const week = { period: 'week' as const, span: { from: f.range.from, to: f.range.to, title: 'This week', canBack: true, canForward: false } };
+    expect(chartCard(page(week))).toMatch(/>Hour</);
+    expect(chartCard(page({ ...week, custom: true }))).not.toMatch(/>Hour</);
+  });
   it('leads with the totals as tiles, each with its change, and the split by tool over the chart', () => {
     const html = text(page());
     expect(html).toMatch(/Tokens 6\.9B \+38% vs 5B/);
