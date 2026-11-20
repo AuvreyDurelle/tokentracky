@@ -1,31 +1,38 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "buildCommand": "npm run build --workspace=@tokentracky/web",
+  "buildCommand": "npm run build --workspace=@tokentracky/web && mv apps/web/dist/index.html apps/web/dist/hosted/app.html",
   "outputDirectory": "apps/web/dist",
-  "regions": ["lhr1"],
+  "regions": [
+    "lhr1"
+  ],
+  "functions": {"api/page.ts": {"includeFiles": "apps/web/dist/hosted/{app,index}.html"}},
+  "redirects": [
+    {"source": "/leaderboard", "destination": "/", "permanent": true},
+    {"source": "/index.html", "destination": "/", "permanent": true},
+    {"source": "/hosted", "destination": "/", "permanent": true},
+    {"source": "/hosted/app.html", "destination": "/you", "permanent": true},
+    {"source": "/hosted/index.html", "destination": "/", "permanent": true},
+    {"source": "/hosted/:page(privacy|terms|support|join|blog).html", "destination": "/:page", "permanent": true},
+    {"source": "/hosted/blog/:slug.html", "destination": "/blog/:slug", "permanent": true}
+  ],
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/gateway" },
-    { "source": "/badge/(.*)", "destination": "/api/gateway" },
-    { "source": "/card/(.*)", "destination": "/api/gateway" },
-    { "source": "/og/(.*)", "destination": "/api/gateway" },
-    { "source": "/u/([a-zA-Z0-9][a-zA-Z0-9_-]{2,29})", "has": [{ "type": "header", "key": "user-agent", "value": ".*(Twitterbot|facebookexternalhit|Facebot|LinkedInBot|Slackbot|Discordbot|TelegramBot|WhatsApp|redditbot|Mastodon|Bluesky|Cardyb|SkypeUriPreview|Embedly|Iframely|Pinterestbot|vkShare|Applebot).*" }], "destination": "/api/gateway" },
-    { "source": "/wrapped/([a-zA-Z0-9][a-zA-Z0-9_-]{2,29})/([0-9]{4}(?:-(?:0[1-9]|1[0-2]))?)", "has": [{ "type": "header", "key": "user-agent", "value": ".*(Twitterbot|facebookexternalhit|Facebot|LinkedInBot|Slackbot|Discordbot|TelegramBot|WhatsApp|redditbot|Mastodon|Bluesky|Cardyb|SkypeUriPreview|Embedly|Iframely|Pinterestbot|vkShare|Applebot).*" }], "destination": "/api/gateway" },
-    { "source": "/vs/([a-zA-Z0-9][a-zA-Z0-9_-]{2,29})/([a-zA-Z0-9][a-zA-Z0-9_-]{2,29})", "has": [{ "type": "header", "key": "user-agent", "value": ".*(Twitterbot|facebookexternalhit|Facebot|LinkedInBot|Slackbot|Discordbot|TelegramBot|WhatsApp|redditbot|Mastodon|Bluesky|Cardyb|SkypeUriPreview|Embedly|Iframely|Pinterestbot|vkShare|Applebot).*" }], "destination": "/api/gateway" },
-    { "source": "/(privacy|terms|support|leaderboard|you|join)", "destination": "/index.html" },
-    { "source": "/u/:alias([a-zA-Z0-9][a-zA-Z0-9_-]{2,29})", "destination": "/index.html" },
-    { "source": "/wrapped/([a-zA-Z0-9][a-zA-Z0-9_-]{2,29})/([0-9]{4}(?:-(?:0[1-9]|1[0-2]))?)", "destination": "/index.html" },
-    { "source": "/vs/([a-zA-Z0-9][a-zA-Z0-9_-]{2,29})/([a-zA-Z0-9][a-zA-Z0-9_-]{2,29})", "destination": "/index.html" }
+    {"source": "/", "destination": "/api/page?__page=/"},
+    {"source": "/u/:alias([a-zA-Z0-9][a-zA-Z0-9_-]{2,29})", "destination": "/api/page?__page=/u/:alias"},
+    {"source": "/wrapped/:alias([a-zA-Z0-9][a-zA-Z0-9_-]{2,29})/:period([0-9]{4}(?:-(?:0[1-9]|1[0-2]))?)", "destination": "/api/page?__page=/wrapped/:alias/:period"},
+    {"source": "/vs/:a([a-zA-Z0-9][a-zA-Z0-9_-]{2,29})/:b([a-zA-Z0-9][a-zA-Z0-9_-]{2,29})", "destination": "/api/page?__page=/vs/:a/:b"},
+    {"source": "/:page(privacy|terms|support|join|blog)", "destination": "/hosted/:page.html"},
+    {"source": "/blog/:slug([a-z0-9]+(?:-[a-z0-9]+)*)", "destination": "/hosted/blog/:slug.html"},
+    {"source": "/you", "destination": "/hosted/app.html"},
+    {"source": "/api/(.*)", "destination": "/api/gateway"},
+    {"source": "/badge/(.*)", "destination": "/api/gateway"},
+    {"source": "/card/(.*)", "destination": "/api/gateway"},
+    {"source": "/og/(.*)", "destination": "/api/gateway"}
   ],
   "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://kgchimxbzmuaezbvzmva.supabase.co; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'" },
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "Referrer-Policy", "value": "no-referrer" },
-        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" }
-      ]
-    }
+    {"source": "/(.*)", "headers": [{"key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://kgchimxbzmuaezbvzmva.supabase.co; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"}, {"key": "X-Content-Type-Options", "value": "nosniff"}, {"key": "Referrer-Policy", "value": "no-referrer"}, {"key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()"}]},
+    {"source": "/(api|badge|card|og)/(.*)", "headers": [{"key": "X-Robots-Tag", "value": "noindex"}]},
+    {"source": "/you", "headers": [{"key": "X-Robots-Tag", "value": "noindex"}, {"key": "Cache-Control", "value": "private, no-store"}]},
+    {"source": "/(.*)", "has": [{"type": "host", "value": ".*\\.vercel\\.app"}], "headers": [{"key": "X-Robots-Tag", "value": "noindex"}]}
   ]
 }

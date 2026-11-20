@@ -102,7 +102,7 @@ export async function registerCloudRoutes(app: FastifyInstance, options: CloudRo
       object(request.query, []);
       return rarity();
     });
-    cloud.get<{Params: {alias: string}}>('/api/profiles/:alias/stats', cached(60), async request => {
+    cloud.get<{Params: {alias: string}}>('/api/profiles/:alias/stats', async request => {
       object(request.query, []);
       if (!ALIAS_PATTERN.test(request.params.alias)) throw notFound();
       return repository.profileStats(request.params.alias);
@@ -128,7 +128,7 @@ export async function registerCloudRoutes(app: FastifyInstance, options: CloudRo
       return reply.code(204).send();
     });
     // README badges: a "private" placeholder (still an image, so embeds never break) unless the alias is published.
-    cloud.get<{Params: {file: string}}>('/badge/:file', cached(60), async (request, reply) => {
+    cloud.get<{Params: {file: string}}>('/badge/:file', async (request, reply) => {
       const q = object(request.query, ['metric', 'period', 'style', 'label', 'color']);
       const metric = q.metric ?? 'tokens';
       if (metric !== 'tokens' && metric !== 'cost' && metric !== 'rank' && metric !== 'streak') invalid('Invalid badge metric');
@@ -150,7 +150,7 @@ export async function registerCloudRoutes(app: FastifyInstance, options: CloudRo
       return reply.type('image/svg+xml; charset=utf-8').send(badgeSvg(value, options));
     });
     // README cards: the same placeholder rule as badges.
-    cloud.get<{Params: {file: string}}>('/card/:file', cached(60), async (request, reply) => {
+    cloud.get<{Params: {file: string}}>('/card/:file', async (request, reply) => {
       const q = object(request.query, ['theme', 'period']);
       const theme = q.theme ?? 'dark';
       if (theme !== 'dark' && theme !== 'light') invalid('Card theme must be dark or light');
@@ -162,7 +162,7 @@ export async function registerCloudRoutes(app: FastifyInstance, options: CloudRo
       return reply.type('image/svg+xml; charset=utf-8').send(cardSvg(data && {alias: data.alias, rank: data.rank, tokens: data.tokens, costMicrousd: data.costMicrousd, tools: data.toolTokens}, theme, window));
     });
     // README heatmaps: a year of daily tokens, with the same placeholder rule as badges.
-    cloud.get<{Params: {file: string}}>('/card/heatmap/:file', cached(60), async (request, reply) => {
+    cloud.get<{Params: {file: string}}>('/card/heatmap/:file', async (request, reply) => {
       const q = object(request.query, ['theme']);
       const theme = q.theme ?? 'dark';
       if (theme !== 'dark' && theme !== 'light') invalid('Heatmap theme must be dark or light');
@@ -176,7 +176,7 @@ export async function registerCloudRoutes(app: FastifyInstance, options: CloudRo
       return reply.type('image/svg+xml; charset=utf-8').send(heatmapSvg(data, theme));
     });
     // Link previews: the 1200×630 profile card as PNG, and the leaderboard card for a private or unknown name, as badges do.
-    cloud.get<{Params: {file: string}}>('/og/:file', cached(60), async (request, reply) => {
+    cloud.get<{Params: {file: string}}>('/og/:file', async (request, reply) => {
       const q = object(request.query, ['period']);
       const window = period(q.period ?? 'all');
       const alias = request.params.file.endsWith('.png') ? request.params.file.slice(0, -4) : '';
@@ -186,7 +186,7 @@ export async function registerCloudRoutes(app: FastifyInstance, options: CloudRo
       return reply.type('image/png').send(pngFromSvg(profileCardSvg(stats, window, publicSite(request.headers))));
     });
     // Head-to-head cards: two published profiles side by side, and the leaderboard card when either is not public.
-    cloud.get<{Params: {a: string; file: string}}>('/og/vs/:a/:file', cached(60), async (request, reply) => {
+    cloud.get<{Params: {a: string; file: string}}>('/og/vs/:a/:file', async (request, reply) => {
       const q = object(request.query, ['period']);
       const window = period(q.period ?? 'all');
       const b = request.params.file.endsWith('.png') ? request.params.file.slice(0, -4) : '';
@@ -196,12 +196,12 @@ export async function registerCloudRoutes(app: FastifyInstance, options: CloudRo
       return reply.type('image/png').send(pngFromSvg(compareCardSvg(left, right, window, publicSite(request.headers))));
     });
     // Wraps of a calendar month (`YYYY-MM`) or year (`YYYY`), and their preview cards.
-    cloud.get<{Params: {alias: string; period: string}}>('/api/wrapped/:alias/:period', cached(60), async request => {
+    cloud.get<{Params: {alias: string; period: string}}>('/api/wrapped/:alias/:period', async request => {
       object(request.query, []);
       if (!ALIAS_PATTERN.test(request.params.alias)) throw notFound();
       return repository.wrapped(request.params.alias, request.params.period);
     });
-    cloud.get<{Params: {alias: string; file: string}}>('/og/wrapped/:alias/:file', cached(60), async (request, reply) => {
+    cloud.get<{Params: {alias: string; file: string}}>('/og/wrapped/:alias/:file', async (request, reply) => {
       object(request.query, []);
       const period = request.params.file.endsWith('.png') ? request.params.file.slice(0, -4) : '';
       if (!ALIAS_PATTERN.test(request.params.alias) || !/^\d{4}(?:-\d{2})?$/.test(period)) throw notFound();

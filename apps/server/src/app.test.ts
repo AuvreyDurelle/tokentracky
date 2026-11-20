@@ -4,7 +4,7 @@ import {mkdtemp,mkdir,writeFile,rm} from 'node:fs/promises';
 import {resolve,join} from 'node:path';
 import {generateKeyPairSync,randomUUID,sign} from 'node:crypto';
 import {PostgresCloudRepository,registerCloudRoutes,CloudError} from '@tokentracky/cloud';
-import {createHostedApp,parseAuthProviders} from './app.ts';
+import {createHostedApp,parseAuthProviders,PUBLIC_PAGES} from './app.ts';
 
 const cleanup:Array<()=>Promise<unknown>>=[];
 afterEach(async()=>{for(const close of cleanup.splice(0).reverse()) await close();});
@@ -167,6 +167,12 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('hosted GitHub username wiring',
     await mkdir('.runtime',{recursive:true});const webRoot=await mkdtemp(resolve('.runtime/hosted-test-'));
     cleanup.push(()=>rm(webRoot,{recursive:true,force:true}));
     await writeFile(join(webRoot,'index.html'),'<html><head><title>Tokentracky</title><meta name="description" content="site" /></head><body>hosted</body></html>');
+    await mkdir(join(webRoot,'hosted/blog'),{recursive:true});
+    await writeFile(join(webRoot,'hosted/index.html'),'<h1>hosted board</h1><!--public-standings-->');
+    for (const page of PUBLIC_PAGES) await writeFile(join(webRoot,'hosted',page+'.html'),'<h1>hosted '+page+'</h1>');
+    await writeFile(join(webRoot,'hosted/blog/test-guide.html'),'<article>hosted test guide</article>');
+    await writeFile(join(webRoot,'sitemap.xml'),'<urlset/>');
+    await writeFile(join(webRoot,'robots.txt'),'User-agent: *');
     // createHostedApp migrates the default schema; each test erases the member it created.
     const app=await createHostedApp({databaseUrl:url.toString(),webRoot,moderationPolicy:TEST_MODERATION_POLICY,auth:{issuer,audience:'authenticated',jwksUrl},...settings});
     cleanup.push(()=>app.close());
@@ -191,19 +197,28 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('hosted GitHub username wiring',
   });
   it('serves hosted pages and security headers while local tracking routes are absent',async()=>{
     const {app}=await hosted({});
-    for(const page of ['/','/privacy','/terms','/support','/leaderboard','/you','/join','/u/Some-Builder']) {
+    for(const page of ['/','/privacy','/terms','/support','/blog','/blog/test-guide','/you','/join']) {
       const response=await app.inject(page);
       expect(response.statusCode,page).toBe(200);
       expect(response.body).toContain('hosted');
       expect(response.headers['cache-control']).toBe('no-store');
       expect(response.headers['content-security-policy']).toContain("frame-ancestors 'none'");
     }
-    for(const page of ['/privacy/extra','/u/x','/u/a/b','/api/local/status','/api/local/summary']) {
+    const redirect=await app.inject('/leaderboard?period=week&ref=share');
+    expect([redirect.statusCode,redirect.headers.location]).toEqual([308,'/?period=week&ref=share']);
+    for(const path of ['/?connect=synthetic','/?code=synthetic','/you']) {
+      const result=await app.inject(path);
+      expect(result.headers['x-robots-tag']).toBe('noindex');
+      expect(result.body).not.toContain('hosted board');
+    }
+    expect((await app.inject('/robots.txt')).headers['content-type']).toContain('text/plain');
+    expect((await app.inject('/sitemap.xml')).headers['content-type']).toContain('xml');
+    for(const page of ['/privacy/extra','/blog/missing','/blog/bad.slug','/u/x','/u/a/b','/api/local/status','/api/local/summary']) {
       expect((await app.inject(page)).statusCode,page).toBe(404);
     }
     expect((await app.inject('/api/health')).json()).toMatchObject({mode:'hosted',authConfigured:false});
   });
-  it('gives profile pages the published profile\'s preview tags, and the site\'s own for unknown names',async()=>{
+  it('serves published share metadata and returns 404 for unavailable pages',async()=>{
     const {app,alias,member,publish}=await hosted({});
     try {
       expect((await publish()).statusCode).toBe(200);
@@ -221,27 +236,49 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('hosted GitHub username wiring',
       expect(profileWeek).toMatch(/<meta name="description" content="#\d+ this week with 0 AI coding tokens\./);
       expect(profileWeek).toContain(`<meta property="og:image" content="https://tokentracky.com/og/${alias}.png?period=week" />`);
       expect(page.body).toContain('hosted');
-      const unknown=(await app.inject({url:'/u/nobody-at-all',headers:{'x-tokentracky-host':'evil.example/"><script>'}})).body;
-      expect(unknown).toContain('<title>Tokentracky — the token leaderboard</title>');
-      expect(unknown).toContain('<meta property="og:image" content="http://localhost:80/og/nobody-at-all.png" />');
+      expect(page.headers['x-robots-tag']).toBe('noindex');
+      const unknown=await app.inject('/u/nobody-at-all');
+      expect(unknown.statusCode).toBe(404);
+      expect(unknown.body).toContain('<title>Page unavailable</title>');
+      expect(unknown.body).not.toContain('og:image');
+      const meta=await app.inject({url:`/u/${alias}`,headers:{accept:'application/vnd.tokentracky.share+json','x-tokentracky-host':'tokentracky.com'}});
+      expect(meta.json()).toMatchObject({title:`${alias} on Tokentracky`,url:`https://tokentracky.com/u/${alias}`});
       const month=new Date().toISOString().slice(0,7);
       const wrap=(await app.inject({url:`/wrapped/${alias}/${month}`,headers:{'x-tokentracky-host':'tokentracky.com'}})).body;
       expect(wrap).toMatch(new RegExp(`<title>${alias}&#39;s \\w+ \\d{4} on Tokentracky</title>`));
       expect(wrap).toMatch(/<meta name="description" content="0 AI coding tokens in \w+ \d{4}\. See where you rank/);
       expect(wrap).toContain(`<meta property="og:image" content="https://tokentracky.com/og/wrapped/${alias}/${month}.png" />`);
-      expect((await app.inject(`/wrapped/${alias}/2999`)).body).toContain('<title>Tokentracky — the token leaderboard</title>');
+      expect((await app.inject(`/wrapped/${alias}/2999`)).statusCode).toBe(404);
       for (const path of [`/wrapped/${alias}/2026-13`,`/wrapped/${alias}`,'/wrapped/x/2026']) expect((await app.inject(path)).statusCode,path).toBe(404);
       const versus=(await app.inject({url:`/vs/${alias}/${alias}`,headers:{'x-tokentracky-host':'tokentracky.com'}})).body;
       expect(versus).toContain(`<title>${alias} vs ${alias} on Tokentracky</title>`);
       expect(versus).toMatch(/<meta name="description" content="[^"]+: 0 tokens \(#\d+\) · [^"]+: 0 tokens \(#\d+\), all time\. Dead even\." \/>/);
       expect(versus).toContain(`<meta property="og:image" content="https://tokentracky.com/og/vs/${alias}/${alias}.png" />`);
-      expect((await app.inject(`/vs/${alias}/nobody-at-all`)).body).toContain('<title>Tokentracky — the token leaderboard</title>');
+      expect((await app.inject(`/vs/${alias}/nobody-at-all`)).statusCode).toBe(404);
       const weekly=(await app.inject({url:`/vs/${alias}/${alias}?period=week&ref=share`,headers:{'x-tokentracky-host':'tokentracky.com'}})).body;
       expect(weekly).toContain(`<meta property="og:image" content="https://tokentracky.com/og/vs/${alias}/${alias}.png?period=week" />`);
       expect(weekly).toMatch(/0 tokens \(#\d+\), this week\. Dead even\./);
       expect((await app.inject(`/vs/${alias}/${alias}?period=year`)).body).toContain(`/og/vs/${alias}/${alias}.png" />`);
       expect((await app.inject(`/vs/${alias}/x`)).statusCode).toBe(404);
     } finally {expect((await member('DELETE','/api/account')).statusCode).toBe(204);}
+  });
+  it('renders weekly public data, drops withdrawn aliases, and tolerates a temporary read outage',async()=>{
+    const {app,alias,member,publish}=await hosted({});
+    try {
+      expect((await publish()).statusCode).toBe(200);
+      const profile=await app.inject(`/u/${alias}`);
+      expect(profile.statusCode).toBe(200);
+      expect(profile.headers['cache-control']).toBe('no-store');
+      expect((await app.inject('/')).body).toContain('This week’s leaders');
+      const offline=vi.spyOn(PostgresCloudRepository.prototype,'leaderboard').mockRejectedValueOnce(new Error('offline'));
+      try {expect((await app.inject('/')).body).toContain('weekly standings are temporarily unavailable');}
+      finally {offline.mockRestore();}
+      const failure=vi.spyOn(PostgresCloudRepository.prototype,'profile').mockRejectedValueOnce(new Error('offline'));
+      try {expect((await app.inject(`/u/${alias}`)).statusCode).toBe(503);}
+      finally {failure.mockRestore();}
+      expect((await member('DELETE','/api/account')).statusCode).toBe(204);
+      expect((await app.inject(`/u/${alias}`)).statusCode).toBe(404);
+    } finally {await member('DELETE','/api/account');}
   });
   it.each([
     ['without the service-role key',{supabaseUrl:supabase,supabaseAnonKey:anonKey}],

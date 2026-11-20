@@ -366,7 +366,7 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
     const badge = await request('GET', '/badge/bob.svg');
     expect(badge.statusCode).toBe(200);
     expect(badge.headers['content-type']).toBe('image/svg+xml; charset=utf-8');
-    expect(badge.headers['cache-control']).toBe('public, max-age=60');
+    expect(badge.headers['cache-control']).toBe('no-store');
     expect(badge.body).toContain('>300 tokens<');
     expect((await request('GET', '/badge/alice.svg?metric=cost')).body).toContain('>$0.01<');
     expect((await request('GET', '/badge/bob.svg?metric=rank&period=week')).body).toContain('>#1 this week<');
@@ -384,14 +384,14 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
     const card = await request('GET', '/card/bob.svg?theme=light&period=week');
     expect(card.statusCode).toBe(200);
     expect(card.headers['content-type']).toBe('image/svg+xml; charset=utf-8');
-    expect(card.headers['cache-control']).toBe('public, max-age=60');
+    expect(card.headers['cache-control']).toBe('no-store');
     expect(card.body).toContain('>bob<');
     expect(card.body).toContain('>This week<');
     expect((await request('GET', '/card/nobody.svg')).body).toContain('>private<');
     for (const query of ['theme=blue', 'period=year', 'size=2']) expect((await request('GET', `/card/bob.svg?${query}`)).statusCode).toBe(400);
     expect((await request('GET', '/card/bob.png')).statusCode).toBe(404);
     const heatmap = await request('GET', '/card/heatmap/bob.svg?theme=light');
-    expect([heatmap.statusCode, heatmap.headers['content-type'], heatmap.headers['cache-control']]).toEqual([200, 'image/svg+xml; charset=utf-8', 'public, max-age=60']);
+    expect([heatmap.statusCode, heatmap.headers['content-type'], heatmap.headers['cache-control']]).toEqual([200, 'image/svg+xml; charset=utf-8', 'no-store']);
     expect(heatmap.body).toContain('<title>2026-10-23: 300 tokens</title>');
     expect(heatmap.body).toContain('>1-day streak<');
     expect((await request('GET', '/card/heatmap/nobody.svg')).body).toContain('>private<');
@@ -399,7 +399,7 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
     const preview = await request('GET', '/og/bob.png?period=week');
     expect(preview.statusCode).toBe(200);
     expect(preview.headers['content-type']).toBe('image/png');
-    expect(preview.headers['cache-control']).toBe('public, max-age=60');
+    expect(preview.headers['cache-control']).toBe('no-store');
     expect([preview.rawPayload.subarray(1, 4).toString(), preview.rawPayload.readUInt32BE(16), preview.rawPayload.readUInt32BE(20)]).toEqual(['PNG', 1200, 630]);
     // A private or unknown name still gets an image, so a pasted link never shows a broken preview.
     expect((await request('GET', '/og/nobody.png')).headers['content-type']).toBe('image/png');
@@ -421,7 +421,7 @@ describe.skipIf(!databaseUrl)('actual PostgreSQL hosted routes', () => {
     await joined('carol');
     const month = await request('GET', '/api/wrapped/Alice/2026-10');
     expect(month.statusCode).toBe(200);
-    expect(month.headers['cache-control']).toBe('public, max-age=60');
+    expect(month.headers['cache-control']).toBe('no-store');
     const wrap = month.json();
     expect(wrap).toMatchObject({alias: 'alice', period: '2026-10', from: '2026-10-01', to: '2026-10-23', tokens: 150, rank: 2, builders: 2, previousTokens: 70,
       activeDays: 2, longestStreak: 1, bestDay: {day: '2026-10-23', tokens: 100}, costMicrousd: 6_000, toolTokens: {claude: 100, codex: 50},

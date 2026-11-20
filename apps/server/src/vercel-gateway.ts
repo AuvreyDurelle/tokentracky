@@ -25,7 +25,7 @@ export function parseGatewayOrigin(value: string | undefined): URL | null {
   } catch { return null; }
 }
 
-/** The API, badges, cards and preview images, and the pages people share, for link-preview crawlers (vercel.json sends only those). */
+/** The API, share projections, and generated badge, card and preview images. */
 const ROUTED = ['/api/', '/badge/', '/card/', '/og/', '/u/', '/wrapped/', '/vs/'];
 const routed = (path: string) => ROUTED.some(prefix => path.startsWith(prefix));
 

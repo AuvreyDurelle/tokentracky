@@ -1,5 +1,5 @@
 import {type FastifyInstance,type FastifyReply} from 'fastify';
-import {ALIAS_PATTERN,type Period} from '@tokentracky/core';
+import {ALIAS_PATTERN} from '@tokentracky/core';
 import {createHttpServer} from './http-server.ts';
 import staticFiles from '@fastify/static';
 import {Pool} from 'pg';
@@ -10,7 +10,8 @@ import type {GatewayAuthConfig} from './gateway-auth.ts';
 import {readFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {publicSite} from '@tokentracky/cloud';
-import {compareMeta, profileMeta, withShareMeta, wrappedMeta, type ShareMeta} from './share-page.ts';
+import {compareMeta, profileMeta, wrappedMeta} from './share-page.ts';
+import {accountCallback, BOARD_QUERY, SHARE_META_TYPE, shareDocument, unavailableShare, withStandings, type ShareMeta} from './public-html.ts';
 
 export interface HostedOptions {
   databaseUrl: string;
@@ -35,19 +36,13 @@ export function parseAuthProviders(value: string | undefined): AuthProvider[] {
   if (providers.some(provider => !AUTH_PROVIDERS.includes(provider as AuthProvider))) throw new Error('TOKENTRACKY_AUTH_PROVIDERS may contain email, github and google');
   return providers as AuthProvider[];
 }
-/** Pages the web app renders at their own addresses; static hosting (vercel.json) must rewrite the same set. */
-export const SPA_PAGES = ['/privacy','/terms','/support','/leaderboard','/you','/join'] as const;
-/** Preview tags for the pages people share; link previews read them (on Vercel, only their crawlers reach these routes). */
-interface SharePages {
-  profile(alias: string, period: Period, site: string): Promise<ShareMeta>;
-  wrapped(alias: string, period: string, site: string): Promise<ShareMeta>;
-  compare(a: string, b: string, period: Period, site: string): Promise<ShareMeta>;
-}
+export const PUBLIC_PAGES = ['privacy','terms','support','join','blog'] as const;
 export const contentSecurityPolicy = (authOrigin?: string) => `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'${authOrigin ? ' '+authOrigin : ''}; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'`;
-async function baseApp(webRoot: string, authOrigin: string | undefined, trustedProxies: string[] | undefined, rateLimitStore: FastifyRateLimitStoreCtor | undefined, gateway: GatewayAuthConfig | undefined, pages: SharePages): Promise<FastifyInstance> {
+async function baseApp(webRoot: string, authOrigin: string | undefined, trustedProxies: string[] | undefined, rateLimitStore: FastifyRateLimitStoreCtor | undefined, gateway: GatewayAuthConfig | undefined, repository: PostgresCloudRepository): Promise<FastifyInstance> {
   // No request logging: headers, query strings and local paths may contain secrets.
   const app = await createHttpServer({trustedProxies,store:rateLimitStore,gateway});
-  app.addHook('onRequest', async (_request,reply) => {
+  app.addHook('onRequest', async (request,reply) => {
+    if (/^\/(api|badge|card|og|you|u|vs|wrapped)(?:[/?]|$)/.test(request.url)) reply.header('X-Robots-Tag','noindex');
     reply.header('Content-Security-Policy',contentSecurityPolicy(authOrigin));
     reply.header('X-Content-Type-Options','nosniff');
     reply.header('Referrer-Policy','no-referrer');
@@ -62,24 +57,49 @@ async function baseApp(webRoot: string, authOrigin: string | undefined, trustedP
   await app.register(staticFiles,{root:webRoot,serve:false,cacheControl:false});
   // An explicit asset route avoids exposing filesystem paths or falling back APIs to HTML.
   app.get('/assets/*', (request,reply) => reply.sendFile('assets/'+(request.params as {'*':string})['*']));
-  app.get('/',(_request,reply)=>reply.sendFile('index.html'));
-  // Legal and support pages are rendered by the web app at their own addresses.
-  for (const page of SPA_PAGES) app.get(page,(_request,reply)=>reply.sendFile('index.html'));
-  // Public profiles, wraps and head-to-heads have shareable addresses; the web app shows its own not-found state for unknown names. Each
-  // page carries its preview tags.
-  let index: Promise<string> | undefined;
-  const shared = async (reply: FastifyReply, meta: () => Promise<ShareMeta>) => {
-    index ??= readFile(join(webRoot,'index.html'),'utf8');
-    return reply.type('text/html; charset=utf-8').send(withShareMeta(await index,await meta()));
+  app.get('/',async(request,reply)=>{
+    const url = new URL(request.url,'http://localhost');
+    if (accountCallback(url.searchParams)) return reply.header('X-Robots-Tag','noindex').sendFile('index.html');
+    const [template, board] = await Promise.all([
+      readFile(join(webRoot,'hosted/index.html'),'utf8'),
+      repository.leaderboard(BOARD_QUERY).catch(() => null),
+    ]);
+    return reply.type('text/html; charset=utf-8').send(withStandings(template,board));
+  });
+  app.get('/leaderboard',(request,reply)=>reply.redirect('/'+new URL(request.url,'http://localhost').search,308));
+  app.get('/you',(_request,reply)=>reply.sendFile('index.html'));
+  for (const page of PUBLIC_PAGES) app.get('/'+page,(_request,reply)=>reply.sendFile(`hosted/${page}.html`));
+  for (const file of ['robots.txt','sitemap.xml']) app.get('/'+file,(_request,reply)=>reply.sendFile(file));
+  app.get<{Params:{slug:string}}>('/blog/:slug',(request,reply)=>{
+    const {slug} = request.params;
+    return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) ? reply.sendFile(`hosted/blog/${slug}.html`) : reply.callNotFound();
+  });
+
+  const shared = async (reply: FastifyReply, read: () => Promise<ShareMeta>) => {
+    // Vercel asks for the same public projection, then renders its own deployment's JS and CSS.
+    const dataOnly = reply.request.headers.accept === SHARE_META_TYPE;
+    reply.header('Vary','Accept');
+    let meta: ShareMeta;
+    try {
+      meta = await read();
+    } catch (error) {
+      const status = error instanceof CloudError && (error.statusCode === 400 || error.statusCode === 404) ? 404 : 503;
+      reply.code(status);
+      if (dataOnly) return reply.send({error:'Page unavailable'});
+      return reply.type('text/html; charset=utf-8').send(unavailableShare(await readFile(join(webRoot,'index.html'),'utf8'),status));
+    }
+    if (dataOnly) return reply.send(meta);
+    const template = await readFile(join(webRoot,'index.html'),'utf8');
+    return reply.type('text/html; charset=utf-8').send(shareDocument(template,meta.title,meta.description,meta));
   };
   // A page shared in a window (`?period=week|month`) previews that window.
-  const window = (period: unknown): Period => period === 'week' || period === 'month' ? period : 'all';
+  const window = (period: unknown) => period === 'week' || period === 'month' ? period : 'all';
   app.get<{Params:{alias:string};Querystring:{period?:string}}>('/u/:alias',async(request,reply)=>ALIAS_PATTERN.test(request.params.alias)
-    ? shared(reply,()=>pages.profile(request.params.alias,window(request.query.period),publicSite(request.headers))) : reply.callNotFound());
+    ? shared(reply,()=>profileMeta(repository,request.params.alias,window(request.query.period),publicSite(request.headers))) : reply.callNotFound());
   app.get<{Params:{alias:string;period:string}}>('/wrapped/:alias/:period',async(request,reply)=>ALIAS_PATTERN.test(request.params.alias) && /^\d{4}(?:-(?:0[1-9]|1[0-2]))?$/.test(request.params.period)
-    ? shared(reply,()=>pages.wrapped(request.params.alias,request.params.period,publicSite(request.headers))) : reply.callNotFound());
+    ? shared(reply,()=>wrappedMeta(repository,request.params.alias,request.params.period,publicSite(request.headers))) : reply.callNotFound());
   app.get<{Params:{a:string;b:string};Querystring:{period?:string}}>('/vs/:a/:b',async(request,reply)=>ALIAS_PATTERN.test(request.params.a) && ALIAS_PATTERN.test(request.params.b)
-    ? shared(reply,()=>pages.compare(request.params.a,request.params.b,window(request.query.period),publicSite(request.headers))) : reply.callNotFound());
+    ? shared(reply,()=>compareMeta(repository,request.params.a,request.params.b,window(request.query.period),publicSite(request.headers))) : reply.callNotFound());
   app.setNotFoundHandler((_request,reply)=>reply.code(404).send({error:{code:'NOT_FOUND',message:'This endpoint does not exist.'}}));
   return app;
 }
@@ -104,7 +124,7 @@ export async function createHostedApp(options: HostedOptions): Promise<FastifyIn
   // Moderation events go to Cloud Logging as structured lines for the log-based alert; they carry no alias or account id.
   const logModeration = (event:object)=>{process.stdout.write(`${JSON.stringify({severity:'NOTICE',...event})}\n`);};
   const repository = new PostgresCloudRepository(pool,undefined,undefined,logModeration,moderationPolicy);
-  const app = await baseApp(options.webRoot,publicAuth,options.trustedProxies,postgresRateLimitStore(pool),options.gateway,{profile:(alias,period,site)=>profileMeta(repository,alias,period,site),wrapped:(alias,period,site)=>wrappedMeta(repository,alias,period,site),compare:(a,b,period,site)=>compareMeta(repository,a,b,period,site)}).catch(async error => {await pool.end();throw error;});
+  const app = await baseApp(options.webRoot,publicAuth,options.trustedProxies,postgresRateLimitStore(pool),options.gateway,repository).catch(async error => {await pool.end();throw error;});
   app.addHook('onClose',async()=>{await pool.end();});
   try {
     await migrateCloud(pool);
