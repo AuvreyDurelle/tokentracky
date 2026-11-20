@@ -6,7 +6,7 @@ import { CloseIcon, GlyphIcon, HeartIcon, HomeIcon, MinusIcon, MoveIcon, PlusIco
 import { count, daysToAfford, paceText } from './format.ts';
 import { plotKey } from './layout.ts';
 import { cellAt, clampCell, fetchArea, screenOf, visibleArea, within, zoomAt, type Area, type MapView } from './map-view.ts';
-import { townColour } from './Scene.tsx';
+import { townColour } from './pieces.ts';
 
 const hash = (c: number, q: number) => ((Math.imul(c, 73856093) ^ Math.imul(q, 19349663)) >>> 0);
 

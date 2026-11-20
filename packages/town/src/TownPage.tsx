@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { BUILDINGS, RESOURCE_IDS, type BuildingGroup, type BuildingId, type Resources, type TownBuilding, type TownJob, type TownMapResponse, type TownSelf } from '@tokentracky/core';
 import type { TownApi } from './api.ts';
-import { BUILDING_HEIGHT, isoProjection } from './art.ts';
+import { BUILDING_HEIGHT } from './art.ts';
 import { BuildingThumb, CostChips, Crest, RESOURCE_NAMES, ResourceBar, StreakClock, usePoint, useNow, useToast } from './Hud.tsx';
 import { ResourceIcon } from './icons.tsx';
 import { BuildIcon, ClockIcon, CloseIcon, FlagIcon, MapIcon, MoveIcon, SparkIcon } from './icons.tsx';
 import { compact, count, covered, daysToAfford, duration, paceText, shortfall, sinceText } from './format.ts';
 import { plotKey, plotKind, plotTile, sceneLayout } from './layout.ts';
 import { Sky, TownScene, type Selection } from './Scene.tsx';
+import { spunProjection } from './view.ts';
 
 type Tab = 'land' | 'harvest' | 'queue';
 const MAX_LEVEL = 15;
@@ -23,6 +24,7 @@ export function TownPage({api, onMap}: {api: TownApi; onMap: () => void}) {
   const [selected, setSelected] = useState<Selection | null>(null);
   const [tab, setTab] = useState<Tab | null>(() => typeof window !== 'undefined' && window.innerWidth >= 1100 ? 'land' : null);
   const [claiming, setClaiming] = useState(false);
+  const [angle, setAngle] = useState(0);
   // The build menu, for a plot, or with none free to browse what there is.
   const [menu, setMenu] = useState<{x: number; y: number} | 'browse' | null>(null);
   const [toast, say] = useToast();
@@ -77,7 +79,7 @@ export function TownPage({api, onMap}: {api: TownApi; onMap: () => void}) {
   const plot = selected?.type === 'plot' ? selected : null;
   const plotState = plot ? plotKind(plot.x, plot.y, own, others).kind : null;
   const anchorPlot = building ?? plot;
-  const P = isoProjection(layout.originX, layout.originY);
+  const P = spunProjection(layout, angle);
   const anchor = anchorPlot ? (() => { const [tx, ty] = plotTile(layout, anchorPlot.x, anchorPlot.y); return P(tx + 1, ty + 1, building ? BUILDING_HEIGHT[building.kind] * 0.6 : 10); })() : null;
 
   const select = (next: Selection | null) => {
@@ -103,7 +105,7 @@ export function TownPage({api, onMap}: {api: TownApi; onMap: () => void}) {
     <Sky />
     <TownScene svgRef={svg} layout={layout} plots={town.plots} buildings={town.buildings} jobs={town.jobs} map={map} selected={selected} claimMode={claiming}
       harvest={pending ? {resources: town.harvest.resources, spill} : null} now={now} onSelect={select} onCollect={() => void run(() => api.collect(), 'Harvest collected')}
-      label={`${town.alias}'s town`} />
+      label={`${town.alias}'s town`} angle={angle} onSpin={setAngle} />
     <div className="tt-top">
       <Crest alias={town.alias} level={town.level} plots={town.plots.length} />
       <ResourceBar wallet={town.wallet} caps={town.caps} />

@@ -29,6 +29,13 @@
 .tt-town { overflow: visible; }
 .tt-canvas { touch-action: none; cursor: grab; }
 .tt-canvas:active { cursor: grabbing; }
+/* The 3D town sits under the flat overlay, which takes the drags and clicks. */
+.tt-world { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.tt-town.tt-spins { touch-action: none; cursor: grab; }
+.tt-town.tt-spins:active { cursor: grabbing; }
+.tt-town.tt-spins:focus-visible { outline-offset: -4px; }
+.tt-reset { left: 14px; bottom: 14px; z-index: 2; border-radius: 12px; }
+.tt-reset button { padding: 8px 14px; font-weight: 700; }
 .tt-town text { font-family: inherit; font-weight: 700; }
 .tt-hit { cursor: pointer; outline: none; }
 .tt-hit:hover, .tt-hit:focus-visible { fill: rgba(255, 211, 107, 0.12); stroke: rgba(255, 211, 107, 0.7); stroke-width: 1.5; }
@@ -223,6 +230,7 @@
   .tt-pop { left: 8px !important; right: 8px; top: auto !important; bottom: 86px; width: auto; max-height: 60%; overflow-y: auto; }
   .tt-leader { display: none; }
   .tt-dock { gap: 6px; padding: 6px; bottom: 8px; }
+  .tt-reset { left: 8px; bottom: 86px; }
   .tt-db { width: 58px; height: 52px; }
   .tt-cta { height: 52px; padding-right: 14px !important; }
   .tt-cta b { font-size: 14px; }

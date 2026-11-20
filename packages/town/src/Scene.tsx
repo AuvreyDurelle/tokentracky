@@ -1,24 +1,18 @@
-import { useMemo, type KeyboardEvent, type Ref } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type Ref } from 'react';
 import { BUILDINGS, RESOURCE_IDS, terrainAt, type BuildingId, type ResourceId, type Resources, type TownJob, type TownMapResponse, type TownPlot } from '@tokentracky/core';
-import { BUILDING_HEIGHT, SCENE_DEFS, circle, createArt, hash, isoProjection, r, spark, type Pt } from './art.ts';
+import { BUILDING_HEIGHT, SCENE_DEFS, circle, createArt, isoProjection, r, spark } from './art.ts';
 import { compact, count, duration } from './format.ts';
 import { plotKey, plotKind, plotTile, plotsBackToFront, type PlotKind, type SceneLayout } from './layout.ts';
+import { townColour, townPieces } from './pieces.ts';
+import { atHome, useSpin } from './spin.ts';
+import { spunProjection } from './view.ts';
+import type { World3D } from './world3d.ts';
 
 export interface SceneBuilding {id?: string; kind: BuildingId; x: number; y: number; level: number}
 export type Selection = {type: 'building'; id: string} | {type: 'plot'; x: number; y: number};
 /** Uncollected harvest to float over the town, with what would spill. */
 export interface SceneHarvest {resources: Resources; spill: Resources}
 
-/** Colours for other towns, picked by name so a town has the same colour in the scene and on the map. */
-const PALETTE = ['#ffa25e', '#4fe0c4', '#ff7aa8', '#b69cff', '#6fb8ff', '#a8e06a', '#f08de0', '#ff9f7a', '#7ad7ff', '#ffd36b'];
-export function townColour(alias: string | null): string {
-  if (alias === null) return '#6c6890';
-  let h = 0;
-  for (const c of alias) h = Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0;
-  return PALETTE[h % PALETTE.length]!;
-}
-const GROUND: Record<PlotKind['kind'], [string, string]> = {own: ['#3b6b53', '#386650'], claimable: ['#283f41', '#263c3e'], free: ['#22383a', '#203538'],
-  forest: ['#1f3a33', '#1d362f'], other: ['#2a4442', '#284140'], water: ['#172856', '#1a2c5c']};
 /** Which building a resource's harvest bubble floats over. */
 const SOURCE: Record<ResourceId, BuildingId> = {power: 'power-plant', bricks: 'brickworks', water: 'reservoir', crystals: 'observatory'};
 const BUBBLE: Record<ResourceId, string> = {power: '#ffd23f', bricks: '#ff9a5c', water: '#6fd3ff', crystals: '#c4a4ff'};
@@ -63,11 +57,25 @@ interface Props {
   svgRef?: Ref<SVGSVGElement>;
   /** Someone else's town: no claim markers, since its free plots are not yours to claim. */
   visiting?: boolean;
+  /** How far the town is turned, in radians, and what turning it does. Without `onSpin` the town stays put. */
+  angle?: number;
+  onSpin?: (angle: number) => void;
 }
+/** One empty list, so a town without jobs isn't rebuilt on every render. */
+const NO_JOBS: readonly TownJob[] = [];
 
-/** A town at night in isometric view: its plots, the neighbourhood around it, and everything happening there. */
-export function TownScene({layout, plots, buildings, jobs = [], map, selected, claimMode = false, harvest, now, onSelect, onCollect, label, svgRef, visiting = false}: Props) {
-  const P = useMemo(() => isoProjection(layout.originX, layout.originY), [layout]);
+/**
+ * A town at night in isometric view: its plots, the neighbourhood around it, and everything happening there. The town
+ * itself is drawn in 3D where the browser has WebGL, so it can turn; labels, badges and click targets are a flat overlay
+ * that turns with it. Without WebGL the flat drawing stays, facing one way.
+ */
+export function TownScene({layout, plots, buildings, jobs = NO_JOBS, map, selected, claimMode = false, harvest, now, onSelect, onCollect, label, svgRef, visiting = false, angle = 0, onSpin}: Props) {
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const [world3d, setWorld3d] = useState<World3D | null>(null);
+  const spinnable = !!onSpin && !!world3d;
+  const turned = spinnable ? angle : 0;
+  const P = useMemo(() => spunProjection(layout, turned), [layout, turned]);
+  const spin = useSpin(turned, spinnable ? onSpin : undefined);
   const own = useMemo(() => new Set(plots.map(p => plotKey(p.x, p.y))), [plots]);
   const others = useMemo(() => {
     const out = new Map<string, number>();
@@ -80,10 +88,25 @@ export function TownScene({layout, plots, buildings, jobs = [], map, selected, c
   };
 
   // The world: ground, borders, neighbours' homes, trees and every building, back to front. Redrawn when the town changes.
+  const pieces = useMemo(() => townPieces({layout, kindAt, buildings, jobs, map}), [layout, buildings, jobs, own, others, map, visiting]);
+  useEffect(() => {
+    let live = true, made: World3D | null = null;
+    import('./world3d.ts').then(({createWorld3D}) => {
+      if (!live || !canvas.current) return;
+      try { made = createWorld3D(canvas.current); } catch { return; }
+      setWorld3d(made);
+    }, () => {});
+    return () => { live = false; made?.dispose(); };
+  }, []);
+  // Before paint, so the flat drawing and the 3D town never both show or both go missing.
+  useLayoutEffect(() => { world3d?.draw(pieces, layout); }, [world3d, pieces, layout]);
+  useLayoutEffect(() => { world3d?.turn(turned); }, [world3d, turned]);
+  // The flat drawing of the same pieces, until the 3D town is ready or where it can't be.
   const world = useMemo(() => {
+    if (world3d) return '';
+    const P = isoProjection(layout.originX, layout.originY);
     const art = createArt(P, 'tts');
     const nx = layout.cols * 2, ny = layout.rows * 2;
-    const order = plotsBackToFront(layout);
     let ground = '', edges = '', objects = '';
     const B0 = P(nx, ny)[1];
     const L = P(0, ny, -26), R = P(nx, 0, -26), F = P(nx, ny, -26);
@@ -92,45 +115,20 @@ export function TownScene({layout, plots, buildings, jobs = [], map, selected, c
     rock += [[-0.6, 50], [-0.25, 96], [0.15, 110], [0.5, 70]].map(([k, dy], i) => art.dot([F[0] + k! * (R[0] - L[0]) * 0.5, B0 + dy!], 2.2, i % 2 ? '#b18cff' : '#7fe3ff')).join('');
     const slab = art.poly([P(0, ny), P(nx, ny), P(nx, ny, -26), P(0, ny, -26)], '#2c2347') + art.poly([P(nx, 0), P(nx, ny), P(nx, ny, -26), P(nx, 0, -26)], '#201a39')
       + art.poly([P(0, ny), P(nx, ny), P(nx, ny, -6), P(0, ny, -6)], '#2e4c48') + art.poly([P(nx, 0), P(nx, ny), P(nx, ny, -6), P(nx, 0, -6)], '#243d3b');
-    const built = new Map(buildings.map(b => [plotKey(b.x, b.y), b]));
-    const working = new Map(jobs.filter(job => job.status === 'running').map(job => [plotKey(job.x, job.y), job]));
-    for (const [x, y] of order) {
-      const kind = kindAt(x, y);
-      const [tx, ty] = plotTile(layout, x, y);
-      const colours = GROUND[kind.kind];
-      for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) ground += art.poly(art.sq(tx + i, ty + j, 1, 1), colours[(tx + ty + i + j) % 2]!);
-      const h = hash(x, y);
-      if (kind.kind === 'water') {
-        const c = P(tx + 1, ty + 1);
-        if (h % 3 === 0) ground += `<path d="M${r(c[0] - 14)},${r(c[1])}h28" stroke="#9fb6f0" stroke-opacity=".3" stroke-width="1.5" stroke-linecap="round"/>`;
-        continue;
+    for (const piece of pieces) {
+      switch (piece.type) {
+        case 'tile': ground += art.poly(art.sq(piece.x, piece.y, 1, 1), piece.colour); break;
+        case 'ripple': { const c = P(piece.x, piece.y); ground += `<path d="M${r(c[0] - 14)},${r(c[1])}h28" stroke="#9fb6f0" stroke-opacity=".3" stroke-width="1.5" stroke-linecap="round"/>`; break; }
+        case 'border': edges += art.line(P(...piece.a), P(...piece.b), piece.colour, piece.own ? 2.6 : 1.6, piece.own ? '' : 'opacity=".6"'); break;
+        case 'building': objects += art.building(piece.kind, piece.x, piece.y, piece.level); break;
+        case 'scaffold': objects += art.scaffold(piece.x, piece.y); break;
+        case 'house': objects += art.house(piece.x, piece.y, piece.roof, piece.variant); break;
+        case 'tree': objects += art.tree(piece.x, piece.y, piece.size, piece.pine); break;
+        case 'lamp': objects += art.lamp(piece.x, piece.y); break;
       }
-      // Borders: yours glow gold, a neighbour's take their colour.
-      const owner = kind.kind === 'own' ? 'own' : kind.kind === 'other' ? `t${kind.town}` : null;
-      if (owner) {
-        const same = (ax: number, ay: number) => { const k = kindAt(ax, ay); return owner === 'own' ? k.kind === 'own' : k.kind === 'other' && `t${k.town}` === owner; };
-        const colour = owner === 'own' ? '#ffe08a' : townColour(kind.kind === 'other' ? map?.towns[kind.town]?.alias ?? null : null);
-        const d = owner === 'own' ? 0.06 : 0.1, x0 = tx, y0 = ty, x1 = tx + 2, y1 = ty + 2;
-        const sides: Array<[Pt, Pt]> = [];
-        if (!same(x, y - 1)) sides.push([P(x0 + d, y0 + d), P(x1 - d, y0 + d)]);
-        if (!same(x, y + 1)) sides.push([P(x0 + d, y1 - d), P(x1 - d, y1 - d)]);
-        if (!same(x - 1, y)) sides.push([P(x0 + d, y0 + d), P(x0 + d, y1 - d)]);
-        if (!same(x + 1, y)) sides.push([P(x1 - d, y0 + d), P(x1 - d, y1 - d)]);
-        for (const [a, b] of sides) edges += art.line(a, b, colour, owner === 'own' ? 2.6 : 1.6, owner === 'own' ? '' : 'opacity=".6"');
-      }
-      const job = working.get(plotKey(x, y));
-      const building = built.get(plotKey(x, y));
-      if (building) objects += art.building(building.kind, tx, ty, building.level);
-      if (job) objects += art.scaffold(tx, ty);
-      if (kind.kind === 'other') objects += art.house(tx, ty, townColour(map?.towns[kind.town]?.alias ?? null), h % 3);
-      if (kind.kind === 'forest' || (kind.kind === 'free' && h % 4 === 0)) {
-        objects += art.tree(tx + 0.2 + (h % 5) / 10, ty + 0.1, 0.85, h % 2 === 0) + art.tree(tx + 0.9, ty + 0.8 + (h % 3) / 10, 0.8, h % 3 === 0);
-        if (kind.kind === 'forest') objects += art.tree(tx + 0.2, ty + 1, 0.75, true);
-      }
-      if (kind.kind === 'own' && !building && !job && h % 2 === 0) objects += art.lamp(tx + 1.85, ty + 1.85);
     }
     return `${rock}${slab}${ground}<g filter="url(#tt-mg)">${edges}</g>${objects}<defs>${art.defs}</defs>`;
-  }, [P, layout, buildings, jobs, own, others, map, visiting]);
+  }, [layout, pieces, world3d]);
 
   const tile = (x: number, y: number) => plotTile(layout, x, y);
   const diamond = (x: number, y: number, inset = 0) => {
@@ -168,7 +166,10 @@ export function TownScene({layout, plots, buildings, jobs = [], map, selected, c
   const activate = (selection: Selection) => onSelect?.(selection);
   const keyed = (selection: Selection) => (event: KeyboardEvent) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); activate(selection); } };
 
-  return <svg ref={svgRef} className="tt-town" viewBox={`0 0 ${layout.width} ${layout.height}`} preserveAspectRatio="xMidYMid meet" role="group" aria-label={label}>
+  return <>
+  <canvas ref={canvas} className="tt-world" aria-hidden="true" />
+  <svg ref={svgRef} className={spinnable ? 'tt-town tt-spins' : 'tt-town'} viewBox={`0 0 ${layout.width} ${layout.height}`} preserveAspectRatio="xMidYMid meet" role="group"
+    aria-label={spinnable ? `${label}. Drag or use the arrow keys to turn it.` : label} tabIndex={spinnable ? 0 : undefined} {...spin.handlers}>
     <defs dangerouslySetInnerHTML={{__html: SCENE_DEFS}} />
     <g dangerouslySetInnerHTML={{__html: world}} />
     {/* Claimable plots: a dashed gold outline and a plus. */}
@@ -242,5 +243,7 @@ export function TownScene({layout, plots, buildings, jobs = [], map, selected, c
       {b.spill > 0 && <g><rect x={b.x - (compact(b.spill).length * 6.2 + 74) / 2} y={b.y - 52 - b.lift} width={compact(b.spill).length * 6.2 + 74} height={18} rx={9} fill="#ff5a4a" filter="url(#tt-gl)" />
         <text x={b.x} y={b.y - 39.5 - b.lift} textAnchor="middle" fill="#fff" fontSize={10.5} fontWeight={800}>{compact(b.spill)} will spill</text><title>{`${count(b.spill)} will spill: the store is full`}</title></g>}
     </g>)}
-  </svg>;
+  </svg>
+  {spinnable && !atHome(angle) && <div className="tt-glass tt-reset"><button type="button" onClick={spin.home}>Reset view</button></div>}
+  </>;
 }
