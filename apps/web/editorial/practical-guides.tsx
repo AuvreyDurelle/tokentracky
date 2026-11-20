@@ -10,7 +10,7 @@ export const practicalGuides = [
     description: 'Run tokentracky serve to open your private token dashboard. Check today’s count, the last scan, and whether your computer is linked to the leaderboard.',
     body: <React.Fragment>
       <h2>Open the local dashboard</h2>
-      <p>On a fresh installation, run <code>tokentracky serve</code> to see your AI coding token usage without creating an account. You need the <a href="/join">Tokentracky CLI</a> and a supported tool with recorded activity. Leave the computer unlinked to keep its usage on this device.</p>
+      <p>On a fresh installation, run <code>tokentracky serve</code> to see your AI coding token usage without creating an account. You need a supported tool with recorded activity and the CLI on your PATH. Choose the binary for your system from the <a href={release}>standalone CLI downloads</a>, or follow the <a href="/join">installation guide</a>. Leave the computer unlinked to keep its usage on this device.</p>
       <pre><code>tokentracky serve</code></pre>
       <p>Leave that terminal open. The command starts a server on this computer’s loopback address, scans the supported tools it finds, and opens a browser tab when run interactively. The printed launch link expires after five minutes and works once. Press Enter in the terminal for a fresh link, or use <code>tokentracky open</code> to reopen the running dashboard.</p>
       <h2>Read the same collection from a second terminal</h2>
@@ -84,6 +84,9 @@ export const practicalGuides = [
       <p>This read-only query looks up the sign-in entry for your Windows user. If present, the value shows the command Windows will launch. It can still exist when no process is currently running.</p>
       <pre><code>{'reg query HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run /v Tokentracky'}</code></pre>
       <p>If the background job could not start, login falls back to a foreground session. A custom <code>TOKENTRACKY_HOME</code> causes this on Windows because the sign-in entry cannot carry that setting. In that configuration, keep the original terminal open while you want collection to continue.</p>
+      <h2>Stop background tracking</h2>
+      <p>To stop this session, open Task Manager’s Details tab, check the command line for <code>tokentracky.exe serve --background</code>, and end that Tokentracky process. If you started it in the foreground, press Ctrl-C in its terminal instead.</p>
+      <p>To keep it from starting at the next sign-in, open Settings → Apps → Startup and turn off the Tokentracky entry. This controls the next launch. End the current session separately if you also want collection to stop now. Your local usage history stays on disk.</p>
     </>,
     sources: [
       {label: 'Windows background-job implementation', url: source + '/crates/cli/src/background.rs'},
