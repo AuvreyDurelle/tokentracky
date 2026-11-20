@@ -208,8 +208,9 @@ export function createArt(P: Project, prefix: string) {
       const lp = P(ox + 0.95, oy + 1.7, 20);
       s += halo(lp, 14);
       s += gableX(ox + 0.25, oy + 0.25, 1.5, 1.5, 24, 18, '#2d2550', '#6a5a8c') + box(ox + 0.5, oy + 0.45, 0.18, 0.18, 22, '#5a4a7a', 24);
+      // A crescent moon sign: the left half of a circle of radius 10, less a shallower arc of radius 12.5 back up its middle.
       const m = P(ox + 1.5, oy + 0.4, 66);
-      return s + `<path d="M${r(m[0])},${r(m[1] - 10)}a10,10 0 1,0 0,20a7.5,7.5 0 1,1 0,-20z" fill="#ffe9a8" ${GLOW}/>`;
+      return s + `<path d="M${r(m[0])},${r(m[1] - 10)}a10,10 0 1,0 0,20a12.5,12.5 0 0,1 0,-20z" fill="#ffe9a8" ${GLOW}/>`;
     },
     arena(ox, oy) {
       const b = P(ox + 1, oy + 1, 0), t = P(ox + 1, oy + 1, 22), rx = RX(0.85), ry = RY(0.85);

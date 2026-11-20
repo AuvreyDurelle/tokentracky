@@ -95,7 +95,7 @@ function triangles(points: Vector3[], n: Vector3, concave: boolean): number[][] 
 }
 
 /** Lights, halos and smoke: flat shapes that always face the viewer. */
-type Shape = 'glow' | 'disc' | 'spark' | 'star';
+type Shape = 'glow' | 'disc' | 'spark' | 'star' | 'moon';
 interface Glow {at: V; radius: number; shape: Shape; colour: string; opacity: number}
 const inPolygon = (poly: Array<[number, number]>) => (x: number, y: number) => {
   let inside = false;
@@ -115,6 +115,8 @@ const SHAPES: Record<Shape, (x: number, y: number) => number> = {
   disc: (x, y) => Math.hypot(x, y) <= 1 ? 1 : 0,
   spark: starShape(4, 0.31),
   star: starShape(5, 0.45),
+  // art.ts's crescent: a circle less one of 1.25 times its radius, centred three quarters of a radius to the right.
+  moon: (x, y) => Math.hypot(x, y) <= 1 && Math.hypot(x - 0.75, y) > 1.25 ? 1 : 0,
 };
 const textures = new Map<Shape, DataTexture>();
 /** A 64-pixel white shape, its edges smoothed by sampling each pixel 16 times. */
@@ -410,6 +412,9 @@ function createModels(solid: Batch, film: Batch, glows: Glow[]) {
       halo([ox + 0.95, oy + 1.7, 20], 14);
       gableX(ox + 0.25, oy + 0.25, 1.5, 1.5, 24, 18, '#2d2550', '#6a5a8c');
       box(ox + 0.5, oy + 0.45, 0.18, 0.18, 22, '#5a4a7a', 24);
+      const moon: V = [ox + 1.5, oy + 0.4, 66];
+      sparkle(moon, 22, '#ffe9a8', 0.3, 'glow');
+      sparkle(moon, 10, '#ffe9a8', 1, 'moon');
     },
     arena(ox, oy) {
       cyl(ox + 1, oy + 1, 0.85, 0, 22, '#7a73a6');
