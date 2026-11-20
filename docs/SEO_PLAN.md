@@ -52,7 +52,26 @@ Use the existing web build to publish version-controlled articles. The hub needs
 
 **Suggested opening for the first article.** “A forked Codex session can start with a copy of its parent's counters. Add up every counter you see and the same work appears twice. In Tokentracky's public test case, the correct total is 605 tokens. Here's how to follow those 550 input tokens and 55 output tokens from a synthetic session record to the final count.”
 
-Use the site footer as the sole navigation into the blog. The blog index links the four featured stories. The thirteen additional guides appear only under “Tokentracky guides” in the footer and stay out of the sitemap. Review articles when releases change a mechanic, supported platform, or publication rule. Use reader questions and Search Console queries to choose subsequent articles. Every article should contribute a worked example, original observation, or first-hand image. [Public test case and expected outputs](https://github.com/AuvreyDurelle/tokentracky/tree/96621c89/fixtures/codex/forked-rollout-copies) · [People-first content](https://developers.google.com/search/docs/fundamentals/creating-helpful-content) · [Article markup](https://developers.google.com/search/docs/appearance/structured-data/article) · [Spam policies](https://developers.google.com/search/docs/essentials/spam-policies)
+Use the site footer as the sole navigation into the blog. The blog index links the four featured stories. The additional guides appear only under “Tokentracky guides” in the footer and stay out of the sitemap. Review articles when releases change a mechanic, supported platform, or publication rule. Use reader questions and Search Console queries to choose subsequent articles. Every article should contribute a worked example, original observation, or first-hand image. [Public test case and expected outputs](https://github.com/AuvreyDurelle/tokentracky/tree/96621c89/fixtures/codex/forked-rollout-copies) · [People-first content](https://developers.google.com/search/docs/fundamentals/creating-helpful-content) · [Article markup](https://developers.google.com/search/docs/appearance/structured-data/article) · [Spam policies](https://developers.google.com/search/docs/essentials/spam-policies)
+
+### Search intent for the November footer expansion
+
+These twelve guides target English-language queries. On November 20, 2026, Google returned no usable organic results over HTTP. Exa supplied pages for comparison. For example, searches for an AI coding year in review initially returned industry retrospectives. Adding “my” and “wrapped” surfaced personal recap tools and narrowed the guide to sharing a builder’s own usage. Search volume and current Google positions were unavailable.
+
+| Primary query | Related terms | Question answered by the guide |
+| --- | --- | --- |
+| GitHub Copilot Chat token usage | VS Code OpenTelemetry export, Copilot CLI session store | Which records count when Chat and the CLI both appear in a trace? |
+| LM Studio token usage | Local server logs, cached tokens | How can I reconcile two response formats and spot a prediction logged twice? |
+| Cline token usage after checkpoint restore | Deleted requests, task history | What survives a restore if the collector saw the completed request first? |
+| OpenCode compaction token usage | Session database, summary model | Which rows explain an extra 1,750 tokens attributed to an unknown model? |
+| Export AI coding token usage to CSV | Usage spreadsheet, token breakdown | How can I reproduce the dashboard total in a spreadsheet? |
+| Track AI coding token usage by project | Per-project token breakdown, local sessions | Which project used the most tokens, and what happens when a tool omits the folder? |
+| AI coding activity heatmap | Daily token volume, UTC activity calendar | What does a square measure, and why can its value differ from the 24-hour chart? |
+| Personal AI coding year in review | AI coding wrapped, monthly usage recap | How do I share my usage and distinguish a partial year from a completed period? |
+| Build an open-source AI token tracker from source | Rust CLI build, embedded dashboard | How can I test the binary I built without touching my tracking history? |
+| Test AI token counting with fixtures | Synthetic logs, accounting regression test | Can a collector keep old usage through a torn write, then count the completed record once? |
+| Disconnect a Tokentracky device | Unlink a computer, stop future uploads | What stays on disk and on the public profile after each action? |
+| Offline AI token cost estimates | Cached model rates, pricing version | Which rates does the collector use offline, and how can I identify the table? |
 
 ### Editing future articles
 

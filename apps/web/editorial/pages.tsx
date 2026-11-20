@@ -6,6 +6,9 @@ import { PublicNavigation, SiteFooter } from '../src/Site';
 import { launchArticles } from './launch';
 import { practicalGuides } from './practical-guides';
 import { toolGuides } from './tool-guides';
+import { sessionGuides } from './session-guides';
+import { reportGuides } from './report-guides';
+import { contributorGuides } from './contributor-guides';
 
 const origin = 'https://tokentracky.com';
 const published = '2026-11-20';
@@ -67,7 +70,7 @@ function pages(): Page[] {
     path: '/' + id, title: DOCS[id].title, description: DOCS[id].lede,
     content: <LegalPage page={id} footer={<SiteFooter />} />,
   }));
-  const articles = [...launchArticles, ...practicalGuides, ...toolGuides].map(article => ({
+  const articles = [...launchArticles, ...practicalGuides, ...toolGuides, ...sessionGuides, ...reportGuides, ...contributorGuides].map(article => ({
     path: '/blog/' + article.slug, title: article.title, description: article.description, content: <Story article={article} />, article,
   }));
   return [home, join, ...legal, { path: '/blog', title: 'Tokentracky blog', description: 'Read the engineering behind the open-source token collector, a guide to the rankings, and development notes from Token Town.', content: <Blog /> }, ...articles];

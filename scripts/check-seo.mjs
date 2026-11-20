@@ -17,7 +17,7 @@ const featured = [
 const articles = readdirSync(join(dist, 'hosted/blog')).filter(file => file.endsWith('.html'))
   .map(file => '/blog/' + file.slice(0, -5));
 const guides = articles.filter(path => !featured.includes(path));
-assert.ok(guides.length >= 13, 'Expected at least thirteen footer guide files');
+assert.ok(guides.length >= 25, 'Expected at least 25 footer guide files');
 for (const path of featured) assert.ok(articles.includes(path), 'Missing article ' + path);
 const pages = new Set([...routes, ...articles]);
 const titles = new Set();
