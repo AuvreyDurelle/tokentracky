@@ -36,18 +36,12 @@ export const BUILDINGS: Record<BuildingId, {name: string; rarity: Rarity; group:
 
 /** One line of what an upgrade changes, such as Power from output +60% → +70%. */
 export interface TownEffect {label: string; from: number; to: number; unit: 'percent' | 'count'}
-/** The next level of a building: its price, how long it takes and what it changes. `blocked` says why it can't start yet. */
-export interface TownUpgrade {cost: Cost; seconds: number; effects: TownEffect[]; blocked: string | null}
+/** The next level of a building: its price and what it changes. Paying raises it at once; `blocked` says why it can't be raised yet. */
+export interface TownUpgrade {cost: Cost; effects: TownEffect[]; blocked: string | null}
 /** A finished building on a plot. `next` is null at the top level. */
 export interface TownBuilding {id: string; kind: BuildingId; x: number; y: number; level: number; next: TownUpgrade | null}
-/**
- * Work in the build queue. A waiting job starts by itself once stores plus uncollected harvest cover its price and a
- * builder is free; `cost` is what it was charged when running, and today's price while it waits.
- */
-export interface TownJob {id: string; action: 'build' | 'upgrade'; kind: BuildingId; buildingId: string | null; x: number; y: number;
-  targetLevel: number; status: 'waiting' | 'running'; cost: Cost; queuedAt: string; startedAt: string | null; readyAt: string | null}
-/** One card in the build menu: today's price for another copy, and why it is locked or full. */
-export interface TownCatalogueEntry {kind: BuildingId; description: string; cost: Cost; seconds: number; owned: number; limit: number | null; locked: string | null}
+/** One card in the build menu: today's price for another copy, which stands as soon as it is paid, and why it is locked or full. */
+export interface TownCatalogueEntry {kind: BuildingId; description: string; cost: Cost; owned: number; limit: number | null; locked: string | null}
 /** Uncollected harvest: tokens uploaded since the last collect, converted at today's bonuses. */
 export interface TownHarvest {resources: Resources; tokens: number; since: string | null; streak: number; multiplier: number}
 
@@ -63,12 +57,12 @@ export interface TownSelf {
   bonuses: Resources;
   plots: TownPlot[];
   buildings: TownBuilding[];
-  jobs: TownJob[];
-  builders: number;
   nextPlot: {number: number; cost: Cost};
   move: {cost: Cost};
   /** Bricks a day at the last 14 days' pace, for "about 6 days of coding". */
   bricksPerDay: number;
+  /** Tokens behind one unit of each resource, for "1 Brick per 430K tokens". */
+  rates: Resources;
   /** Bricks per Water at the Market, when the town has one. */
   trade: {rate: number} | null;
   catalogue: TownCatalogueEntry[];
@@ -84,10 +78,11 @@ export interface TownPublic {alias: string; level: number; plots: TownPlot[]; bu
 export interface TownMapTown {alias: string | null; level: number; plots: number; wonder: boolean}
 /**
  * `GET /api/town/map?x0&y0&x1&y1`: claimed plots in view, each as `[x, y, index into towns]`. `edge` is the outermost
- * claimed ring, `max(|x|, |y|)`; new and moving towns land just past it.
+ * claimed ring, `max(|x|, |y|)`; new and moving towns land just past it. `featured` is the biggest named town anywhere
+ * on the map, wherever the area is: most plots, then the higher Town Hall, then the older town, at its Town Hall.
  */
 export interface TownMapResponse {x0: number; y0: number; x1: number; y1: number; towns: TownMapTown[]; plots: Array<[number, number, number]>;
-  wonders: Array<[number, number]>; totals: {towns: number; plots: number}; edge: number}
+  wonders: Array<[number, number]>; totals: {towns: number; plots: number}; edge: number; featured: {alias: string; x: number; y: number} | null}
 
 /** The widest map area one request may cover, in plots per side. */
 export const TOWN_MAP_SPAN = 160;

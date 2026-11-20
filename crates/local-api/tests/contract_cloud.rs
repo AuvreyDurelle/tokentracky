@@ -690,7 +690,6 @@ async fn town_through_the_device_token() {
     stub.answer("GET /api/town/me", Answer::json(town.clone()));
     stub.answer("POST /api/town/plots", Answer::json(town.clone()));
     stub.answer("POST /api/town/collect", Answer::json(town.clone()));
-    stub.answer("DELETE /api/town/jobs/12", Answer::json(town.clone()));
     let reply = server.request("/api/local/town/me", Init::method("GET")).await;
     assert_eq!((reply.status, reply.json()), (200, town.clone()));
     replies.push(reply);
@@ -709,13 +708,6 @@ async fn town_through_the_device_token() {
             .status,
         200
     );
-    assert_eq!(
-        server
-            .request("/api/local/town/jobs/12", Init::method("DELETE"))
-            .await
-            .status,
-        200
-    );
     let claim = &stub.to("POST /api/town/plots")[0];
     assert_eq!(claim.header("authorization"), Some(bearer(TOKEN).as_str()));
     assert!(claim.header("content-type").unwrap().starts_with("application/json"));
@@ -724,14 +716,7 @@ async fn town_through_the_device_token() {
     assert_eq!(me.header("authorization"), Some(bearer(TOKEN).as_str()));
     assert!(me.body.is_none());
 
-    // A job id that is not a number never leaves; hosted refusals keep their status and body.
-    let calls = stub.calls().len();
-    expect_error(
-        &server.request("/api/local/town/jobs/12a", Init::method("DELETE")).await,
-        404,
-        "NOT_FOUND",
-    );
-    assert_eq!(stub.calls().len(), calls);
+    // Hosted refusals keep their status and body.
     let paused = json!({"error": {"code": "TOWN_PAUSED", "message": "Paused."}});
     stub.answer("POST /api/town/move", Answer::json(paused.clone()).with_status(403));
     let reply = server.request("/api/local/town/move", Init::method("POST")).await;

@@ -11,7 +11,6 @@ export interface TownApi {
   claim(x: number, y: number): Promise<TownSelf>;
   build(kind: BuildingId, x: number, y: number): Promise<TownSelf>;
   upgrade(buildingId: string): Promise<TownSelf>;
-  cancel(jobId: string): Promise<TownSelf>;
   move(): Promise<TownSelf>;
   trade(bricks: number): Promise<TownSelf>;
   map(area: Area): Promise<TownMapResponse>;

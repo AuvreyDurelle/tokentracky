@@ -37,7 +37,7 @@ const ROUTES: [(&str, &str); 19] = [
     ("HEAD", "/assets/contract.js"),
 ];
 /// Routes only the Rust server has, for the Mac app's pages (the TypeScript server is frozen).
-const RUST_ROUTES: [(&str, &str); 17] = [
+const RUST_ROUTES: [(&str, &str); 16] = [
     ("GET", "/api/community"),
     ("GET", "/api/leaderboard/around/someone"),
     ("GET", "/api/achievements/rarity"),
@@ -50,7 +50,6 @@ const RUST_ROUTES: [(&str, &str); 17] = [
     ("POST", "/api/local/town/collect"),
     ("POST", "/api/local/town/plots"),
     ("POST", "/api/local/town/jobs"),
-    ("DELETE", "/api/local/town/jobs/12"),
     ("POST", "/api/local/town/move"),
     ("POST", "/api/local/town/trade"),
     ("GET", "/town"),

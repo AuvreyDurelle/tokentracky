@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type Ref } from 'react';
-import { BUILDINGS, RESOURCE_IDS, terrainAt, type BuildingId, type ResourceId, type Resources, type TownJob, type TownMapResponse, type TownPlot } from '@tokentracky/core';
+import { BUILDINGS, RESOURCE_IDS, terrainAt, type BuildingId, type ResourceId, type Resources, type TownMapResponse, type TownPlot } from '@tokentracky/core';
 import { BUILDING_HEIGHT, SCENE_DEFS, circle, createArt, isoProjection, r, spark } from './art.ts';
-import { compact, count, duration } from './format.ts';
+import { compact, count } from './format.ts';
 import { plotKey, plotKind, plotTile, plotsBackToFront, type PlotKind, type SceneLayout } from './layout.ts';
 import { townColour, townPieces } from './pieces.ts';
 import { atHome, useSpin } from './spin.ts';
@@ -44,12 +44,10 @@ interface Props {
   layout: SceneLayout;
   plots: readonly TownPlot[];
   buildings: readonly SceneBuilding[];
-  jobs?: readonly TownJob[];
   map: TownMapResponse | null;
   selected: Selection | null;
   claimMode?: boolean;
   harvest?: SceneHarvest | null;
-  now: number;
   /** What happens on a plot. Without it the scene can only be looked at. */
   onSelect?: (selection: Selection | null) => void;
   onCollect?: () => void;
@@ -61,15 +59,13 @@ interface Props {
   angle?: number;
   onSpin?: (angle: number) => void;
 }
-/** One empty list, so a town without jobs isn't rebuilt on every render. */
-const NO_JOBS: readonly TownJob[] = [];
 
 /**
  * A town at night in isometric view: its plots, the neighbourhood around it, and everything happening there. The town
  * itself is drawn in 3D where the browser has WebGL, so it can turn; labels, badges and click targets are a flat overlay
  * that turns with it. Without WebGL the flat drawing stays, facing one way.
  */
-export function TownScene({layout, plots, buildings, jobs = NO_JOBS, map, selected, claimMode = false, harvest, now, onSelect, onCollect, label, svgRef, visiting = false, angle = 0, onSpin}: Props) {
+export function TownScene({layout, plots, buildings, map, selected, claimMode = false, harvest, onSelect, onCollect, label, svgRef, visiting = false, angle = 0, onSpin}: Props) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const [world3d, setWorld3d] = useState<World3D | null>(null);
   const spinnable = !!onSpin && !!world3d;
@@ -88,7 +84,7 @@ export function TownScene({layout, plots, buildings, jobs = NO_JOBS, map, select
   };
 
   // The world: ground, borders, neighbours' homes, trees and every building, back to front. Redrawn when the town changes.
-  const pieces = useMemo(() => townPieces({layout, kindAt, buildings, jobs, map}), [layout, buildings, jobs, own, others, map, visiting]);
+  const pieces = useMemo(() => townPieces({layout, kindAt, buildings, map}), [layout, buildings, own, others, map, visiting]);
   useEffect(() => {
     let live = true, made: World3D | null = null;
     import('./world3d.ts').then(({createWorld3D}) => {
@@ -121,7 +117,6 @@ export function TownScene({layout, plots, buildings, jobs = NO_JOBS, map, select
         case 'ripple': { const c = P(piece.x, piece.y); ground += `<path d="M${r(c[0] - 14)},${r(c[1])}h28" stroke="#9fb6f0" stroke-opacity=".3" stroke-width="1.5" stroke-linecap="round"/>`; break; }
         case 'border': edges += art.line(P(...piece.a), P(...piece.b), piece.colour, piece.own ? 2.6 : 1.6, piece.own ? '' : 'opacity=".6"'); break;
         case 'building': objects += art.building(piece.kind, piece.x, piece.y, piece.level); break;
-        case 'scaffold': objects += art.scaffold(piece.x, piece.y); break;
         case 'house': objects += art.house(piece.x, piece.y, piece.roof, piece.variant); break;
         case 'tree': objects += art.tree(piece.x, piece.y, piece.size, piece.pine); break;
         case 'lamp': objects += art.lamp(piece.x, piece.y); break;
@@ -137,7 +132,6 @@ export function TownScene({layout, plots, buildings, jobs = NO_JOBS, map, select
   };
   const order = plotsBackToFront(layout);
   const byPlot = new Map(buildings.map(b => [plotKey(b.x, b.y), b]));
-  const jobAt = new Map(jobs.map(job => [plotKey(job.x, job.y), job]));
   const selectedPlot = selected?.type === 'plot' ? selected : selected ? buildings.find(b => b.id === selected.id) : undefined;
 
   // Labels for neighbouring towns, at the middle of their visible land.
@@ -183,7 +177,7 @@ export function TownScene({layout, plots, buildings, jobs = NO_JOBS, map, select
       </g>;
     })}
     {selectedPlot && <polygon points={diamond(selectedPlot.x, selectedPlot.y, 0.05)} fill="rgba(255,211,107,.18)" stroke="#ffd36b" strokeWidth={3} strokeLinejoin="round" filter="url(#tt-gl)" pointerEvents="none" />}
-    {/* Level badges, queued and running work. */}
+    {/* Level badges. */}
     {buildings.map(b => {
       const [tx, ty] = tile(b.x, b.y);
       const p = P(tx + 1.7, ty + 1.7, 30);
@@ -191,23 +185,6 @@ export function TownScene({layout, plots, buildings, jobs = NO_JOBS, map, select
       return <g key={`l${b.x},${b.y}`} pointerEvents="none">
         <circle cx={p[0]} cy={p[1]} r={10.5} fill={gold ? '#ffd36b' : '#211e4c'} stroke={gold ? '#fff3c4' : '#bdb8ff'} strokeWidth={1.6} />
         <text x={p[0]} y={p[1] + 4} textAnchor="middle" fill={gold ? '#2a1d00' : '#fff'} fontSize={11} fontWeight={800}>{b.level}</text>
-      </g>;
-    })}
-    {jobs.map(job => {
-      const [tx, ty] = tile(job.x, job.y);
-      const p = P(tx + 0.3, ty + 1.9, 0);
-      const x = p[0] - 30, y = p[1] + 14;
-      if (job.status === 'waiting') return <g key={`j${job.id}`} pointerEvents="none"><rect x={x - 14} y={y - 12} width={74} height={24} rx={12} fill="rgba(14,12,40,.88)" stroke="#9a92ff" strokeOpacity={0.7} />
-        <text x={x + 23} y={y + 4} textAnchor="middle" fill="#cfcaff" fontSize={11} fontWeight={700}>Queued</text></g>;
-      const total = Date.parse(job.readyAt!) - Date.parse(job.startedAt!);
-      const done = total > 0 ? Math.min(1, (now - Date.parse(job.startedAt!)) / total) : 1;
-      const c = 2 * Math.PI * 8;
-      return <g key={`j${job.id}`} pointerEvents="none">
-        <rect x={x - 14} y={y - 12} width={104} height={24} rx={12} fill="rgba(14,12,40,.88)" stroke="#ffc23d" strokeOpacity={0.7} />
-        <circle cx={x} cy={y} r={8} fill="none" stroke="rgba(255,255,255,.18)" strokeWidth={3} />
-        <circle cx={x} cy={y} r={8} fill="none" stroke="#ffc23d" strokeWidth={3} strokeDasharray={`${r(c * done)} ${r(c)}`} transform={`rotate(-90 ${x} ${y})`} />
-        <text x={x + 14} y={y + 4} fill="#fff" fontSize={11.5}>{duration((Date.parse(job.readyAt!) - now) / 1000)}</text>
-        <text x={x + 82} y={y + 4} textAnchor="end" fill="#ffc23d" fontSize={11} fontWeight={800}>→{job.targetLevel}</text>
       </g>;
     })}
     {labels.map(({town, at}) => {
@@ -227,8 +204,7 @@ export function TownScene({layout, plots, buildings, jobs = NO_JOBS, map, select
       const building = byPlot.get(plotKey(x, y));
       if (kind.kind !== 'own' && kind.kind !== 'claimable') return null;
       const selection: Selection = building?.id ? {type: 'building', id: building.id} : {type: 'plot', x, y};
-      const job = jobAt.get(plotKey(x, y));
-      const name = building ? `${BUILDINGS[building.kind].name}, level ${building.level}` : job ? `${BUILDINGS[job.kind].name}, being built` : kind.kind === 'own' ? 'Empty plot' : 'Plot you can claim';
+      const name = building ? `${BUILDINGS[building.kind].name}, level ${building.level}` : kind.kind === 'own' ? 'Empty plot' : 'Plot you can claim';
       return <polygon key={`h${x},${y}`} className="tt-hit" points={diamond(x, y)} fill="transparent" role="button" tabIndex={0} aria-label={name}
         aria-pressed={selectedPlot?.x === x && selectedPlot?.y === y} onClick={() => activate(selection)} onKeyDown={keyed(selection)} />;
     })}

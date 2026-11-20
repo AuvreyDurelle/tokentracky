@@ -14,7 +14,7 @@ use axum::extract::{ConnectInfo, DefaultBodyLimit, Path, Request, State};
 use axum::http::{HeaderMap, HeaderName, HeaderValue, Method, StatusCode, Uri, header};
 use axum::middleware::{self, Next};
 use axum::response::{IntoResponse, Response};
-use axum::routing::{delete, get, post, put};
+use axum::routing::{get, post, put};
 use serde::Serialize;
 use serde_json::json;
 use std::collections::HashMap;
@@ -183,7 +183,6 @@ pub fn base_router(
         .route("/api/local/town/collect", post(town_member))
         .route("/api/local/town/plots", post(town_member))
         .route("/api/local/town/jobs", post(town_member))
-        .route("/api/local/town/jobs/{id}", delete(town_member))
         .route("/api/local/town/move", post(town_member))
         .route("/api/local/town/trade", post(town_member))
         .route(
@@ -381,12 +380,6 @@ async fn town_member(
         .path()
         .strip_prefix("/api/local")
         .ok_or_else(LocalError::not_found)?;
-    // Job ids are database identities: digits only, so nothing else reaches the hosted path.
-    if let Some(id) = path.strip_prefix("/town/jobs/")
-        && (id.is_empty() || id.len() > 18 || !id.bytes().all(|byte| byte.is_ascii_digit()))
-    {
-        return Err(LocalError::not_found());
-    }
     let link = state.sync.secrets().get().await.ok().flatten().ok_or(TOWN_NOT_LINKED)?;
     let mut request = HttpRequest::new(method, format!("{}/api{path}", link.url), PROXY_TIMEOUT)
         .header(header::ACCEPT, "application/json")

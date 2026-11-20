@@ -95,7 +95,7 @@ function triangles(points: Vector3[], n: Vector3, concave: boolean): number[][] 
 }
 
 /** Lights, halos and smoke: flat shapes that always face the viewer. */
-type Shape = 'glow' | 'disc' | 'spark' | 'star';
+type Shape = 'glow' | 'disc' | 'spark' | 'star' | 'moon';
 interface Glow {at: V; radius: number; shape: Shape; colour: string; opacity: number}
 const inPolygon = (poly: Array<[number, number]>) => (x: number, y: number) => {
   let inside = false;
@@ -115,6 +115,8 @@ const SHAPES: Record<Shape, (x: number, y: number) => number> = {
   disc: (x, y) => Math.hypot(x, y) <= 1 ? 1 : 0,
   spark: starShape(4, 0.31),
   star: starShape(5, 0.45),
+  // art.ts's crescent: a circle less one of 1.25 times its radius, centred three quarters of a radius to the right.
+  moon: (x, y) => Math.hypot(x, y) <= 1 && Math.hypot(x - 0.75, y) > 1.25 ? 1 : 0,
 };
 const textures = new Map<Shape, DataTexture>();
 /** A 64-pixel white shape, its edges smoothed by sampling each pixel 16 times. */
@@ -231,7 +233,7 @@ function createModels(solid: Batch, film: Batch, glows: Glow[]) {
     for (let i = 0; i < p.count; i += 3) solid.polygon([0, 1, 2].map(k => new Vector3().fromBufferAttribute(p, i + k).add(o)), c, 1);
     g.dispose();
   }
-  /** A square bar `px` pixels thick from `a` to `b`: poles, rods, scaffolding. */
+  /** A square bar `px` pixels thick from `a` to `b`: poles and rods. */
   function rod(a: V, b: V, px: number, c: string, glow = false) {
     const A = at(a), B = at(b), d = B.clone().sub(A).normalize(), half = px / UNIT / 2;
     const u = new Vector3().crossVectors(d, Math.abs(d.y) > 0.9 ? new Vector3(1, 0, 0) : new Vector3(0, 1, 0)).normalize().multiplyScalar(half);
@@ -410,6 +412,9 @@ function createModels(solid: Batch, film: Batch, glows: Glow[]) {
       halo([ox + 0.95, oy + 1.7, 20], 14);
       gableX(ox + 0.25, oy + 0.25, 1.5, 1.5, 24, 18, '#2d2550', '#6a5a8c');
       box(ox + 0.5, oy + 0.45, 0.18, 0.18, 22, '#5a4a7a', 24);
+      const moon: V = [ox + 1.5, oy + 0.4, 66];
+      sparkle(moon, 22, '#ffe9a8', 0.3, 'glow');
+      sparkle(moon, 10, '#ffe9a8', 1, 'moon');
     },
     arena(ox, oy) {
       cyl(ox + 1, oy + 1, 0.85, 0, 22, '#7a73a6');
@@ -497,21 +502,6 @@ function createModels(solid: Batch, film: Batch, glows: Glow[]) {
       }
       if (level >= 10) { sparkle(across(top, 10, 12), 7, '#fff3c4'); sparkle(across(top, -14, -4), 4, '#fff3c4', 0.7); }
     },
-    /** Building work: wooden scaffolding round the plot. */
-    scaffold(ox: number, oy: number) {
-      const C = '#c79a58';
-      filmOf(sq(ox + 0.25, oy + 0.25, 1.5, 1.5, 0.4), C, 0.18);
-      for (const y of [oy + 1.75, oy + 0.25]) {
-        for (let x = 0.3; x <= 1.71; x += 0.47) rod([ox + x, y, 0], [ox + x, y, 44], 1.6, C);
-        for (const z of [14, 29, 44]) rod([ox + 0.3, y, z], [ox + 1.7, y, z], 1.6, C);
-      }
-      for (const x of [ox + 1.75, ox + 0.25]) {
-        for (let y = 0.3; y <= 1.71; y += 0.47) rod([x, oy + y, 0], [x, oy + y, 44], 1.6, C);
-        for (const z of [14, 29, 44]) rod([x, oy + 0.3, z], [x, oy + 1.7, z], 1.6, C);
-      }
-      halo([ox + 0.3, oy + 1.75, 46], 14);
-      dot([ox + 0.3, oy + 1.75, 46], 2.4, '#ffb02e');
-    },
     /** A small home on someone else's land. The roof takes their colour. */
     house(ox: number, oy: number, roof: string, variant: number) {
       const W = '#5a5679';
@@ -542,7 +532,6 @@ export function buildTown(pieces: readonly Piece[], layout: SceneLayout): Group 
         art.ribbon(piece.a, piece.b, 0.5, piece.own ? 2.6 : 1.6, piece.colour, piece.own ? 1 : 0.6);
         break;
       case 'building': art.building(piece.kind, piece.x, piece.y, piece.level); break;
-      case 'scaffold': art.scaffold(piece.x, piece.y); break;
       case 'house': art.house(piece.x, piece.y, piece.roof, piece.variant); break;
       case 'tree': art.tree(piece.x, piece.y, piece.size, piece.pine); break;
       case 'lamp': art.lamp(piece.x, piece.y); break;

@@ -208,8 +208,9 @@ export function createArt(P: Project, prefix: string) {
       const lp = P(ox + 0.95, oy + 1.7, 20);
       s += halo(lp, 14);
       s += gableX(ox + 0.25, oy + 0.25, 1.5, 1.5, 24, 18, '#2d2550', '#6a5a8c') + box(ox + 0.5, oy + 0.45, 0.18, 0.18, 22, '#5a4a7a', 24);
+      // A crescent moon sign: the left half of a circle of radius 10, less a shallower arc of radius 12.5 back up its middle.
       const m = P(ox + 1.5, oy + 0.4, 66);
-      return s + `<path d="M${r(m[0])},${r(m[1] - 10)}a10,10 0 1,0 0,20a7.5,7.5 0 1,1 0,-20z" fill="#ffe9a8" ${GLOW}/>`;
+      return s + `<path d="M${r(m[0])},${r(m[1] - 10)}a10,10 0 1,0 0,20a12.5,12.5 0 0,1 0,-20z" fill="#ffe9a8" ${GLOW}/>`;
     },
     arena(ox, oy) {
       const b = P(ox + 1, oy + 1, 0), t = P(ox + 1, oy + 1, 22), rx = RX(0.85), ry = RY(0.85);
@@ -256,23 +257,12 @@ export function createArt(P: Project, prefix: string) {
     if (level >= 10) s += spark(top[0] + 10, top[1] - 12, 7, '#fff3c4') + spark(top[0] - 14, top[1] + 4, 4, '#fff3c4', 0.7);
     return s;
   }
-  /** Building work: wooden scaffolding over the plot. */
-  function scaffold(ox: number, oy: number): string {
-    const C = '#c79a58';
-    let s = poly(sq(ox + 0.25, oy + 0.25, 1.5, 1.5), 'rgba(199,154,88,.18)');
-    for (let x = 0.3; x <= 1.71; x += 0.47) s += line(P(ox + x, oy + 1.75, 0), P(ox + x, oy + 1.75, 44), C, 1.6);
-    for (const z of [14, 29, 44]) s += line(P(ox + 0.3, oy + 1.75, z), P(ox + 1.7, oy + 1.75, z), C, 1.6);
-    for (let y = 0.3; y <= 1.71; y += 0.47) s += line(P(ox + 1.75, oy + y, 0), P(ox + 1.75, oy + y, 44), shade(C, -0.2), 1.6);
-    for (const z of [14, 29, 44]) s += line(P(ox + 1.75, oy + 0.3, z), P(ox + 1.75, oy + 1.7, z), shade(C, -0.2), 1.6);
-    const a = P(ox + 0.3, oy + 1.75, 46);
-    return s + halo(a, 14) + dot(a, 2.4, '#ffb02e');
-  }
   /** A small home on someone else's land. The roof takes their colour. */
   function house(ox: number, oy: number, roof: string, variant: number): string {
     const W = '#5a5679';
     return box(ox + 0.35, oy + 0.35, 1.3, 1.3, 20, W) + winL(ox + 0.55, oy + 1.65, 7, 0.22, 7) + winL(ox + 1.15, oy + 1.65, 7, 0.22, 7)
       + (variant ? gableY(ox + 0.3, oy + 0.3, 1.4, 1.4, 20, 16, roof, W) : gableX(ox + 0.3, oy + 0.3, 1.4, 1.4, 20, 16, roof, W));
   }
-  return {poly, line, sq, dot, halo, tree, lamp, building, scaffold, house, pts, get defs() { return defs; }};
+  return {poly, line, sq, dot, halo, tree, lamp, building, house, pts, get defs() { return defs; }};
 }
 export type Art = ReturnType<typeof createArt>;
