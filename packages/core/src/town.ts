@@ -3,7 +3,7 @@
  * and grow a town live with the hosted API; this file holds only names, shapes and the map's fixed terrain.
  */
 
-/** Power from output tokens, Bricks from input and cache writes, Water from cache reads, Crystals from reasoning. */
+/** Bricks from every token, Power from output tokens, Water from input and cache writes, Crystals from reasoning. */
 export const RESOURCE_IDS = ['power', 'bricks', 'water', 'crystals'] as const;
 export type ResourceId = (typeof RESOURCE_IDS)[number];
 export type Resources = Record<ResourceId, number>;

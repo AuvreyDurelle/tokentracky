@@ -199,7 +199,7 @@ function HarvestPane({town, spill, busy, now, onCollect, onTrade}: {town: TownSe
     <div className="tt-mu tt-note">{compact(town.harvest.tokens)} new tokens · {town.harvest.streak}-day streak ×{town.harvest.multiplier.toFixed(2)}</div>
     <button type="button" className="tt-btn go" disabled={!pending || busy || !!town.paused} onClick={onCollect}>Collect harvest</button>
     <div className="tt-sep" />
-    <div className="tt-mu tt-note">1 Power per 10K output tokens. 1 Brick per 100K input and cache-write tokens, 1 Water per 100K cache reads, 1 Crystal per 100K reasoning tokens.</div>
+    <div className="tt-mu tt-note">1 Brick per 1M tokens of any kind. 1 Power per 10K output tokens, 1 Water per 50K input and cache-write tokens, 1 Crystal per 100K reasoning tokens.</div>
     {town.trade && <>
       <div className="tt-sep" />
       <div className="tt-kv"><span>Market</span><span className="tt-mu">{town.trade.rate} Water per Brick</span></div>
