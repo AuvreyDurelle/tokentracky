@@ -7,6 +7,8 @@ describe('usage spans', () => {
     expect(historyStart({ daily, memberSince: '2026-11-19' })).toBe('2026-10-23');
     expect(historyStart({ daily: [{ day: '2026-11-20', tokens: 5 }], memberSince: '2026-11-19' })).toBe('2026-11-19');
     expect(historyStart({ daily: [], memberSince: '2026-11-19' })).toBe('2026-11-19');
+    // The server's earliest published day reaches past the year the daily totals cover.
+    expect(historyStart({ daily, memberSince: '2026-11-19', firstDay: '2025-03-02' })).toBe('2025-03-02');
   });
   // Thursday 19 November 2026.
   const today = '2026-11-19';

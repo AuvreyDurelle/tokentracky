@@ -27,11 +27,12 @@ export function usageSpan(period: Exclude<UsagePeriod, '24h'>, back: number, tod
 }
 
 /**
- * Where a profile's history starts: its first day with tokens, which comes before the account when joining brought
- * earlier usage, or the day the account was made.
+ * Where a profile's history starts: its earliest published day (`firstDay`, from the server, or else the first day
+ * with tokens in its year of daily totals), which comes before the account when joining brought earlier usage, or the
+ * day the account was made.
  */
-export function historyStart({ daily, memberSince }: { daily: ReadonlyArray<{ day: string; tokens: number }>; memberSince: string }): string {
-  const first = daily.find(({ tokens }) => tokens > 0)?.day;
+export function historyStart({ daily, memberSince, firstDay }: { daily: ReadonlyArray<{ day: string; tokens: number }>; memberSince: string; firstDay?: string }): string {
+  const first = firstDay ?? daily.find(({ tokens }) => tokens > 0)?.day;
   return first && first < memberSince ? first : memberSince;
 }
 

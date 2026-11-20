@@ -652,6 +652,11 @@ pub struct ProfileStats {
     pub likes: u32,
     /// The UTC day (`YYYY-MM-DD`) the member's account was created.
     pub member_since: String,
+    /// The member's earliest published UTC day with tokens, which can come before the account when joining brought
+    /// earlier history. Absent with nothing published, and from servers that predate it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub first_day: Option<String>,
     /// Present when the member signed in with GitHub; read from GitHub's identity, never typed by the member.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
