@@ -411,6 +411,11 @@ pub struct ProjectSummary {
     #[ts(type = "number | null")]
     pub cost_microusd: Option<u64>,
     pub sessions: u32,
+    /// The project's tokens on each day of the query that has any (UTC days, or local in the query's zone), oldest
+    /// first, for its trend; absent from apps that predate it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional, inline)]
+    pub daily: Option<Vec<DayTokens>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]

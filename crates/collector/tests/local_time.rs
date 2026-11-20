@@ -288,3 +288,29 @@ fn a_session_starts_at_the_quarter_hour_of_its_first_event_in_the_query() {
         (Some("2026-10-20T09:00:00.000Z"), Some("2026-10-20T15:49:00.000Z"))
     );
 }
+
+#[test]
+fn a_project_reads_its_tokens_by_day_in_utc_or_the_zone() {
+    // Every event is in the fixture's one project: Tuesday 22:10 UTC, then Wednesday 23:50, 22:59 and 06:00 UTC; in
+    // Kathmandu (+05:45) the first is on Wednesday and the second and third on Thursday.
+    let store = store(&[
+        event("late", "2026-10-20T22:10:00.000Z", 1),
+        event("later", "2026-10-21T23:50:00.000Z", 10),
+        event("late-again", "2026-10-21T22:59:59.999Z", 100),
+        event("morning", "2026-10-21T06:00:00.000Z", 1000),
+    ]);
+    let daily = |tz| {
+        let projects = store.projects(&days("2026-10-19", "2026-10-23", tz)).unwrap();
+        assert_eq!(projects.len(), 1);
+        let days = projects[0].daily.clone().unwrap();
+        days.into_iter().map(|day| (day.day, day.tokens)).collect::<Vec<_>>()
+    };
+    assert_eq!(
+        daily(None),
+        [("2026-10-20".to_owned(), 1), ("2026-10-21".to_owned(), 1110)]
+    );
+    assert_eq!(
+        daily(Some("Asia/Kathmandu")),
+        [("2026-10-21".to_owned(), 1001), ("2026-10-22".to_owned(), 110)]
+    );
+}

@@ -1571,8 +1571,10 @@ async fn reports_exact_totals_and_costs_from_synthetic_claude_code_and_codex_log
     assert_eq!(
         get_json(&server, &day("projects")).await,
         json!({"items": [
-            {"name": "/synthetic/private-project", "tokens": 302, "breakdown": kinds["claude"], "costMicrousd": 814, "sessions": 1, "repository": null},
-            {"name": "/synthetic/codex-project", "tokens": 230, "breakdown": kinds["codex"], "costMicrousd": 966, "sessions": 1, "repository": null},
+            {"name": "/synthetic/private-project", "tokens": 302, "breakdown": kinds["claude"], "costMicrousd": 814, "sessions": 1, "repository": null,
+                "daily": [{"day": FIXTURE_DAY, "tokens": 302}]},
+            {"name": "/synthetic/codex-project", "tokens": 230, "breakdown": kinds["codex"], "costMicrousd": 966, "sessions": 1, "repository": null,
+                "daily": [{"day": FIXTURE_DAY, "tokens": 230}]},
         ]})
     );
 
@@ -1662,7 +1664,8 @@ async fn reports_exact_totals_and_costs_from_synthetic_claude_code_and_codex_log
         named,
         &json!({"name": text(&checkout), "tokens": 135,
             "breakdown": {"input": 2, "output": 3, "cacheRead": 100, "cacheWrite": 30, "reasoning": 3, "cacheWrite1h": 20},
-            "costMicrousd": named["costMicrousd"], "sessions": 1, "repository": "synthetic-owner/synthetic-repo"})
+            "costMicrousd": named["costMicrousd"], "sessions": 1, "repository": "synthetic-owner/synthetic-repo",
+            "daily": [{"day": FIXTURE_DAY, "tokens": 135}]})
     );
     assert_eq!(items.iter().filter(|item| item["repository"].is_null()).count(), 2);
     // The newest session comes first.

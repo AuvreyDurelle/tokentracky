@@ -116,6 +116,8 @@ export type ProjectSummary = {
   breakdown: TokenCounts;
   costMicrousd: number | null;
   sessions: number;
+  /** The project's tokens on each day of the query that has any (UTC days, or local in the query's zone), oldest first, for its trend; absent from apps that predate it. */
+  daily?: Array<{ day: string, tokens: number }>;
 };
 export type PublicProfile = {
   alias: string;

@@ -82,6 +82,16 @@
           "reasoning": 14
         },
         "costMicrousd": 322,
+        "daily": [
+          {
+            "day": "2026-10-22",
+            "tokens": 161
+          },
+          {
+            "day": "2026-10-23",
+            "tokens": 161
+          }
+        ],
         "name": "/synthetic/private-project",
         "sessions": 1,
         "tokens": 322
@@ -578,6 +588,20 @@
           "reasoning": 21
         },
         "costMicrousd": 483,
+        "daily": [
+          {
+            "day": "2026-10-21",
+            "tokens": 161
+          },
+          {
+            "day": "2026-10-22",
+            "tokens": 161
+          },
+          {
+            "day": "2026-10-23",
+            "tokens": 161
+          }
+        ],
         "name": "/synthetic/private-project",
         "sessions": 1,
         "tokens": 483
@@ -1130,6 +1154,24 @@
           "reasoning": 28
         },
         "costMicrousd": 644,
+        "daily": [
+          {
+            "day": "2026-09-01",
+            "tokens": 161
+          },
+          {
+            "day": "2026-10-21",
+            "tokens": 161
+          },
+          {
+            "day": "2026-10-22",
+            "tokens": 161
+          },
+          {
+            "day": "2026-10-23",
+            "tokens": 161
+          }
+        ],
         "name": "/synthetic/private-project",
         "sessions": 2,
         "tokens": 644
@@ -1648,6 +1690,12 @@
           "reasoning": 7
         },
         "costMicrousd": 161,
+        "daily": [
+          {
+            "day": "2026-10-23",
+            "tokens": 161
+          }
+        ],
         "name": "/synthetic/private-project",
         "sessions": 1,
         "tokens": 161
@@ -2069,6 +2117,16 @@
           "reasoning": 14
         },
         "costMicrousd": 322,
+        "daily": [
+          {
+            "day": "2026-10-21",
+            "tokens": 161
+          },
+          {
+            "day": "2026-10-22",
+            "tokens": 161
+          }
+        ],
         "name": "/synthetic/private-project",
         "sessions": 1,
         "tokens": 322

@@ -70,6 +70,12 @@
           "reasoning": 14
         },
         "costMicrousd": null,
+        "daily": [
+          {
+            "day": "2026-10-20",
+            "tokens": 322
+          }
+        ],
         "name": "/synthetic/private-project",
         "sessions": 1,
         "tokens": 322
@@ -452,6 +458,12 @@
           "reasoning": 14
         },
         "costMicrousd": null,
+        "daily": [
+          {
+            "day": "2026-10-20",
+            "tokens": 322
+          }
+        ],
         "name": "/synthetic/private-project",
         "sessions": 1,
         "tokens": 322

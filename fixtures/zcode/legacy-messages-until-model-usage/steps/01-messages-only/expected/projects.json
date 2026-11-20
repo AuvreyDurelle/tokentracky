@@ -8,6 +8,12 @@
       "reasoning": 100
     },
     "costMicrousd": null,
+    "daily": [
+      {
+        "day": "2026-08-03",
+        "tokens": 2800
+      }
+    ],
     "name": "/synthetic/zcode-legacy",
     "sessions": 1,
     "tokens": 2800

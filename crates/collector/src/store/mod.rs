@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::borrow::Cow;
 use std::cell::RefCell;
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::hash::Hash;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
@@ -1540,10 +1540,26 @@ impl UsageStore {
     pub fn projects(&self, options: &QueryOptions) -> Result<Vec<ProjectSummary>> {
         let rows = self.slots(options, true)?;
         let named = || rows.iter().filter(|row| row.slot.key.project.is_some());
+        // Each project's tokens by day, for its trend.
+        let mut by_day: BTreeMap<(&Option<String>, &str), u64> = BTreeMap::new();
+        for row in named() {
+            let Some(day) = row.day.as_deref() else { continue };
+            let total = by_day.entry((&row.slot.key.project, day)).or_default();
+            *total = sum([*total, sum(row.slot.tokens[..4].iter().copied())?])?;
+        }
         let mut projects = slots::totals_by(named(), |row| row.slot.key.project.clone())?
             .into_iter()
             .map(|(name, totals)| {
+                let daily = by_day
+                    .iter()
+                    .filter(|((project, _), tokens)| **project == name && **tokens > 0)
+                    .map(|((_, day), tokens)| DayTokens {
+                        day: (*day).to_owned(),
+                        tokens: *tokens,
+                    })
+                    .collect();
                 Ok(ProjectSummary {
+                    daily: Some(daily),
                     sessions: sessions_of(named().filter(|row| row.slot.key.project == name)),
                     name: name.unwrap_or_default(),
                     repository: None,
