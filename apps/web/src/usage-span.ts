@@ -26,6 +26,15 @@ export function usageSpan(period: Exclude<UsagePeriod, '24h'>, back: number, tod
   return { from, to: end > today ? today : end, title: back === 0 ? (period === 'week' ? 'This week' : 'This month') : '', canBack: !start || from > start, canForward: back > 0 };
 }
 
+/**
+ * Where a profile's history starts: its first day with tokens, which comes before the account when joining brought
+ * earlier usage, or the day the account was made.
+ */
+export function historyStart({ daily, memberSince }: { daily: ReadonlyArray<{ day: string; tokens: number }>; memberSince: string }): string {
+  const first = daily.find(({ tokens }) => tokens > 0)?.day;
+  return first && first < memberSince ? first : memberSince;
+}
+
 /** What a span's total is compared with: the same number of days just before it, as the server counts them. */
 export function comparedWith(from: string, to: string): string {
   const days = dayCount(from, to);

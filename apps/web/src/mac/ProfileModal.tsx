@@ -3,6 +3,7 @@ import { totalTokens, type BadgeProgress, type ProfileStats, type TokenCounts } 
 import { ApiError, type ApiClient } from '../api';
 import { KINDS, TOOLS, errorText, formatCompact, formatCost, formatCostCompact, formatExact, formatShare, shortDay } from '../format';
 import { ProfileUsage, type UsageApi } from '../ProfileUsage';
+import { historyStart } from '../usage-span';
 import { Avatar, Empty, Loading, Notice, ToolIcon } from '../ui';
 import { ActivityGrid } from './ActivityGrid';
 import { ACHIEVEMENT_COPY, TIER_NAMES } from './achievement-copy';
@@ -133,7 +134,7 @@ export function ProfileCard({ stats, likes, like, onLike, onClose, headingId, ap
         {favourite ? <span className="fav-model">{favourite.model}</span> : <small>{stats.models ? 'None yet' : 'Not shared'}</small>}</Highlight>
     </div>
 
-    {api && <div className="pf-sec"><ProfileUsage alias={stats.alias} api={api} hours={stats.hours} start={stats.memberSince} /></div>}
+    {api && <div className="pf-sec"><ProfileUsage alias={stats.alias} api={api} hours={stats.hours} start={historyStart(stats)} /></div>}
 
     {stats.breakdown && <TokenTypes breakdown={stats.breakdown} />}
 

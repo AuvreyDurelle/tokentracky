@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { byWeek, comparedWith, daySummary, usageSpan } from './usage-span';
+import { byWeek, comparedWith, daySummary, usageSpan, historyStart } from './usage-span';
 
 describe('usage spans', () => {
+  it('starts a profile’s history at its first day with tokens, even before the account was made', () => {
+    const daily = [{ day: '2026-10-21', tokens: 0 }, { day: '2026-10-22', tokens: 0 }, { day: '2026-10-23', tokens: 58 }, { day: '2026-11-19', tokens: 9 }];
+    expect(historyStart({ daily, memberSince: '2026-11-19' })).toBe('2026-10-23');
+    expect(historyStart({ daily: [{ day: '2026-11-20', tokens: 5 }], memberSince: '2026-11-19' })).toBe('2026-11-19');
+    expect(historyStart({ daily: [], memberSince: '2026-11-19' })).toBe('2026-11-19');
+  });
   // Thursday 19 November 2026.
   const today = '2026-11-19';
   it('shows the calendar week from Monday, stepping back a week at a time', () => {
