@@ -3,7 +3,7 @@ import { BUILDINGS, terrainAt, type TownMapResponse, type TownPublic, type TownS
 import type { TownApi } from './api.ts';
 import { CostChips, Crest, useToast } from './Hud.tsx';
 import { CloseIcon, GlyphIcon, HeartIcon, HomeIcon, MinusIcon, MoveIcon, PlusIcon } from './icons.tsx';
-import { count, daysToAfford, paceText } from './format.ts';
+import { count, daysToAfford, paceText, tooBig } from './format.ts';
 import { plotKey } from './layout.ts';
 import { cellAt, clampCell, fetchArea, screenOf, visibleArea, within, zoomAt, type Area, type MapView } from './map-view.ts';
 import { townColour } from './pieces.ts';
@@ -248,7 +248,7 @@ export function MapPage({api, signedIn, feature = false, aside, onHome, onVisit}
       {onHome && <button type="button" className="tt-db" onClick={onHome}><HomeIcon />Your town</button>}
       {me && <div className="tt-cl"><div className="tt-kv"><span>Next plot #{me.nextPlot.number}</span><b><CostChips cost={me.nextPlot.cost} /></b></div>
         <div className="tt-pb"><i style={{width: `${Math.min(100, price ? me.wallet.bricks / price * 100 : 100)}%`}} /></div>
-        <div className="tt-kv tt-mu"><span>{count(me.wallet.bricks)} of {count(price)}</span>{short > 0 ? <span className="tt-sh">{paceText(daysToAfford(short, me.bricksPerDay)) ?? `${count(short)} short`}</span> : <span className="tt-ok">Ready</span>}</div></div>}
+        <div className="tt-kv tt-mu"><span>{count(me.wallet.bricks)} of {count(price)}</span>{short > 0 ? <span className="tt-sh">{tooBig(me.nextPlot.cost, me.caps) ? 'Needs a bigger store' : paceText(daysToAfford(short, me.bricksPerDay)) ?? `${count(short)} short`}</span> : <span className="tt-ok">Ready</span>}</div></div>}
       {me && <div className="tt-cl"><div className="tt-kv"><span className="tt-with"><MoveIcon size={18} />Move town</span><b><CostChips cost={me.move.cost} /></b></div>
         <div className="tt-mu">Moves in your town</div></div>}
     </div>}
