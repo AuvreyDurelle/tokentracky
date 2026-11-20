@@ -3,6 +3,18 @@ import { TOWN_MAP_SPAN, terrainAt } from '@tokentracky/core';
 import { afterCollect, compact, daysToAfford, duration, paceText, shortfall, tooBig } from './format.ts';
 import { cellAt, clampCell, fetchArea, fitView, screenOf, visibleArea, within, zoomAt } from './map-view.ts';
 import { plotKey, plotKind, plotsBackToFront, plotTile, sceneLayout } from './layout.ts';
+import { buildingOutline, hull, spunProjection } from './view.ts';
+import type { Pt } from './art.ts';
+
+/** True when `p` lies inside the polygon. */
+const inside = (poly: Pt[], [x, y]: Pt) => {
+  let hit = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, yi] = poly[i]!, [xj, yj] = poly[j]!;
+    if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) hit = !hit;
+  }
+  return hit;
+};
 
 describe('town numbers', () => {
   it('writes token counts and waits the way the screens show them', () => {
@@ -66,6 +78,26 @@ describe('the town scene', () => {
     let water: [number, number] | null = null;
     for (let x = 5; x < 60 && !water; x++) if (terrainAt(x, 5) === 'water') water = [x, 5];
     expect(plotKind(water![0], water![1], new Set([plotKey(water![0] - 1, 5)]), others)).toEqual({kind: 'water'});
+  });
+});
+
+describe('picking in the town', () => {
+  it('wraps points in their convex hull', () => {
+    expect(hull([[0, 0], [4, 0], [2, 1], [4, 4], [0, 4], [2, 2]])).toHaveLength(4);
+  });
+  it('lets a tall building take clicks over the ground of the plot it hides, and over its whole height at any angle', () => {
+    const layout = sceneLayout([{x: 0, y: 0}, {x: 1, y: 1}]);
+    for (const angle of [0, 0.4, -0.4]) {
+      const P = spunProjection(layout, angle);
+      const [fx, fy] = plotTile(layout, 1, 1), [bx, by] = plotTile(layout, 0, 0);
+      const hall = buildingOutline(P, fx, fy, 96);
+      // Facing the way it first appears, the middle of the back plot's ground sits right behind the Town Hall in front of it.
+      if (angle === 0) expect(inside(hall, P(bx + 1, by + 1))).toBe(true);
+      // Its own ground and its roof are both in the outline; the sky well above is not.
+      expect(inside(hall, P(fx + 1, fy + 1))).toBe(true);
+      expect(inside(hall, P(fx + 1, fy + 1, 90))).toBe(true);
+      expect(inside(hall, P(fx + 1, fy + 1, 160))).toBe(false);
+    }
   });
 });
 

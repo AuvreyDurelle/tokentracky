@@ -38,7 +38,6 @@
 .tt-reset button { padding: 8px 14px; font-weight: 700; }
 .tt-town text { font-family: inherit; font-weight: 700; }
 .tt-hit { cursor: pointer; outline: none; }
-.tt-hit:hover, .tt-hit:focus-visible { fill: rgba(255, 211, 107, 0.12); stroke: rgba(255, 211, 107, 0.7); stroke-width: 1.5; }
 .tt-bubble { cursor: pointer; animation: tt-bob 3.2s ease-in-out infinite; transform-box: fill-box; }
 .tt-bubble:nth-of-type(2n) { animation-delay: -1.4s; }
 .tt-claim.on { animation: tt-pulse 1.4s ease-in-out infinite; }

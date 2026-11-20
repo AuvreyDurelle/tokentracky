@@ -5,7 +5,7 @@ import { compact, count } from './format.ts';
 import { plotKey, plotKind, plotTile, plotsBackToFront, type PlotKind, type SceneLayout } from './layout.ts';
 import { townColour, townPieces } from './pieces.ts';
 import { atHome, useSpin } from './spin.ts';
-import { spunProjection } from './view.ts';
+import { buildingOutline, spunProjection } from './view.ts';
 import type { World3D } from './world3d.ts';
 
 export interface SceneBuilding {id?: string; kind: BuildingId; x: number; y: number; level: number}
@@ -68,6 +68,8 @@ interface Props {
 export function TownScene({layout, plots, buildings, map, selected, claimMode = false, harvest, onSelect, onCollect, label, svgRef, visiting = false, angle = 0, onSpin}: Props) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const [world3d, setWorld3d] = useState<World3D | null>(null);
+  // The plot under the pointer or keyboard focus, as its key.
+  const [hover, setHover] = useState<string | null>(null);
   const spinnable = !!onSpin && !!world3d;
   const turned = spinnable ? angle : 0;
   const P = useMemo(() => spunProjection(layout, turned), [layout, turned]);
@@ -157,6 +159,16 @@ export function TownScene({layout, plots, buildings, map, selected, claimMode = 
     return {id, x: top[0] + shift, y: top[1], value: harvest!.resources[id], spill: harvest!.spill[id], lift: sharing.findIndex(other => other.id === id) % 2 * 20};
   });
 
+  // The hovered plot's highlight, with a building's name over its roof.
+  const hovered = (() => {
+    if (!hover || !onSelect) return null;
+    const [x, y] = hover.split(',').map(Number) as [number, number];
+    const kind = kindAt(x, y).kind;
+    if (kind !== 'own' && kind !== 'claimable') return null;
+    const building = byPlot.get(hover);
+    const [tx, ty] = tile(x, y);
+    return {x, y, name: building ? `${BUILDINGS[building.kind].name} · Lv ${building.level}` : null, at: P(tx + 1, ty + 1, (building ? BUILDING_HEIGHT[building.kind] : 0) + 22)};
+  })();
   const activate = (selection: Selection) => onSelect?.(selection);
   const keyed = (selection: Selection) => (event: KeyboardEvent) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); activate(selection); } };
 
@@ -198,15 +210,28 @@ export function TownScene({layout, plots, buildings, map, selected, claimMode = 
         <text x={at[0] + 7} y={at[1] + 4} textAnchor="middle" fill="#f2f1ff" fontSize={11.5} fontWeight={700}>{text}</text>
       </g>;
     })}
-    {/* Plots you can act on take clicks and keys. */}
+    {hovered && <g pointerEvents="none">
+      <polygon points={diamond(hovered.x, hovered.y, 0.05)} fill="rgba(255,211,107,.1)" stroke="rgba(255,211,107,.7)" strokeWidth={1.5} strokeLinejoin="round" />
+      {hovered.name && <g className="tt-tip">
+        <rect x={hovered.at[0] - hovered.name.length * 3.6 - 12} y={hovered.at[1] - 12} width={hovered.name.length * 7.2 + 24} height={24} rx={12} fill="rgba(14,12,40,.9)" stroke="rgba(255,211,107,.5)" />
+        <text x={hovered.at[0]} y={hovered.at[1] + 4.5} textAnchor="middle" fill="#fff3c4" fontSize={12.5} fontWeight={700}>{hovered.name}</text>
+      </g>}
+    </g>}
+    {/* Plots you can act on take clicks and keys, back to front so a building in front takes the clicks over what it hides.
+        A building takes them over its whole height, not just its ground. */}
     {onSelect && order.map(([x, y]) => {
       const kind = kindAt(x, y);
       const building = byPlot.get(plotKey(x, y));
       if (kind.kind !== 'own' && kind.kind !== 'claimable') return null;
       const selection: Selection = building?.id ? {type: 'building', id: building.id} : {type: 'plot', x, y};
       const name = building ? `${BUILDINGS[building.kind].name}, level ${building.level}` : kind.kind === 'own' ? 'Empty plot' : 'Plot you can claim';
-      return <polygon key={`h${x},${y}`} className="tt-hit" points={diamond(x, y)} fill="transparent" role="button" tabIndex={0} aria-label={name}
-        aria-pressed={selectedPlot?.x === x && selectedPlot?.y === y} onClick={() => activate(selection)} onKeyDown={keyed(selection)} />;
+      const [tx, ty] = tile(x, y);
+      const points = building ? buildingOutline(P, tx, ty, BUILDING_HEIGHT[building.kind]).map(p => `${r(p[0])},${r(p[1])}`).join(' ') : diamond(x, y);
+      const key = plotKey(x, y);
+      const enter = () => setHover(key), leave = () => setHover(h => h === key ? null : h);
+      return <polygon key={`h${x},${y}`} className="tt-hit" points={points} fill="transparent" role="button" tabIndex={0} aria-label={name}
+        aria-pressed={selectedPlot?.x === x && selectedPlot?.y === y} onClick={() => activate(selection)} onKeyDown={keyed(selection)}
+        onPointerEnter={enter} onPointerLeave={leave} onFocus={enter} onBlur={leave} />;
     })}
     {bubbles.map(b => <g key={b.id} className="tt-bubble" role={onCollect ? 'button' : undefined} tabIndex={onCollect ? 0 : undefined}
       aria-label={onCollect ? `Collect ${count(b.value)} ${b.id}` : undefined} onClick={onCollect} onKeyDown={event => { if (onCollect && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); onCollect(); } }}>

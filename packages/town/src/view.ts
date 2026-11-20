@@ -1,4 +1,4 @@
-import { TILE_W, isoProjection, type Project } from './art.ts';
+import { TILE_W, isoProjection, type Project, type Pt } from './art.ts';
 import type { SceneLayout } from './layout.ts';
 
 /**
@@ -30,4 +30,28 @@ export function cameraWindow(layout: SceneLayout, width: number, height: number)
   // The canvas's top-left corner, in drawing pixels.
   const x0 = (layout.width - width / k) / 2, y0 = (layout.height - height / k) / 2;
   return {left: (x0 - cx) / UNIT, right: (x0 + width / k - cx) / UNIT, top: (cy - y0) / UNIT, bottom: (cy - y0 - height / k) / UNIT};
+}
+
+/** The convex hull of some points, anticlockwise on screen. */
+export function hull(points: readonly Pt[]): Pt[] {
+  const sorted = [...points].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const cross = (o: Pt, a: Pt, b: Pt) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const half = (list: Pt[]) => {
+    const out: Pt[] = [];
+    for (const p of list) {
+      while (out.length >= 2 && cross(out[out.length - 2]!, out[out.length - 1]!, p) <= 0) out.pop();
+      out.push(p);
+    }
+    out.pop();
+    return out;
+  };
+  return [...half(sorted), ...half([...sorted].reverse())];
+}
+/**
+ * What a building on the plot whose back tile is (tx, ty) covers on screen: its 2×2 footprint and, `height` pixels up,
+ * the middle of the plot, since roofs and towers taper. A building in front takes clicks over the ground behind it.
+ */
+export function buildingOutline(P: Project, tx: number, ty: number, height: number): Pt[] {
+  const square = (inset: number, z: number) => [P(tx + inset, ty + inset, z), P(tx + 2 - inset, ty + inset, z), P(tx + 2 - inset, ty + 2 - inset, z), P(tx + inset, ty + 2 - inset, z)];
+  return hull([...square(0, 0), ...square(0.45, height)]);
 }
