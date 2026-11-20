@@ -272,6 +272,8 @@ jobs:
             -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -qm "tokentracky ${version}"
           # Audit and install from the local commit before anyone can see it.
           brew tap auvreydurelle/tokentracky "$tap"
+          # Homebrew loads a non-official tap only once trusted; installing by full name trusts that item alone, audit does not.
+          brew trust auvreydurelle/tokentracky
           brew audit --cask auvreydurelle/tokentracky/tokentracky
           brew audit --formula auvreydurelle/tokentracky/tokentracky-cli
           brew install --cask auvreydurelle/tokentracky/tokentracky
