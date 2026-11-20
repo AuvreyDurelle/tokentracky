@@ -46,7 +46,9 @@ export function UsageChart({ points, label, value, tick, axis, tip, average, bes
   };
   // A touch ends by leaving, so its reading stays until another tap or blur; a mouse or pen clears it on the way out.
   const leave = (event: PointerEvent<HTMLDivElement>) => { if (event.pointerType !== 'touch') setActive(null); };
-  const ax = active === null ? 0 : x(active);
+  // A touch reading outlives a switch to fewer points (daily to weekly); past the end it shows nothing.
+  const at = active !== null && active <= last ? active : null;
+  const ax = at === null ? 0 : x(at);
   return <figure className="uc" aria-label={label}>
     <div className="uc-plot" ref={box} tabIndex={0} aria-label={`${label}. Use arrow keys to read each point.`}
       onPointerDown={pick} onPointerMove={pick} onPointerLeave={leave} onKeyDown={key} onFocus={() => setActive((current) => current ?? last)} onBlur={() => setActive(null)}>
@@ -64,13 +66,13 @@ export function UsageChart({ points, label, value, tick, axis, tip, average, bes
         {partial && <circle cx={xy[last]![0]} cy={xy[last]![1]} r="3" className="uc-now" />}
         {best && points[best.index] && <Best x={x(best.index)} y={y(points[best.index]!.value)} text={best.text} min={LEFT} max={RIGHT} />}
         {points.map((_, index) => { const text = axis(index); return text && <text key={index} x={x(index)} y={H - 10} textAnchor={index === 0 ? 'start' : index === last ? 'end' : 'middle'} className={`uc-ax${index === active ? ' on' : ''}`}>{text}</text>; })}
-        {active !== null && <>
+        {at !== null && <>
           <line x1={ax} x2={ax} y1={TOP} y2={BASE} className="uc-cross" />
-          <circle cx={ax} cy={y(points[active]!.value)} r="9" className="uc-halo" />
-          <circle cx={ax} cy={y(points[active]!.value)} r="3.5" className="uc-dot" />
+          <circle cx={ax} cy={y(points[at]!.value)} r="9" className="uc-halo" />
+          <circle cx={ax} cy={y(points[at]!.value)} r="3.5" className="uc-dot" />
         </>}
       </svg>
-      {active !== null && <div className={`uc-tip${ax > width * 0.62 ? ' end' : ''}`} style={{ left: ax }} role="status">{tip(active)}</div>}
+      {at !== null && <div className={`uc-tip${ax > width * 0.62 ? ' end' : ''}`} style={{ left: ax }} role="status">{tip(at)}</div>}
     </div>
     <table className="sr-only"><caption>{label}</caption><tbody>{points.map((point) => <tr key={point.at}><th scope="row">{point.at}</th><td>{value(point.value)}</td></tr>)}</tbody></table>
   </figure>;
