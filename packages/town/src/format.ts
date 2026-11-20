@@ -27,7 +27,12 @@ export function shortfall(wallet: Resources, cost: Cost): Cost {
   }
   return out;
 }
-export const covered = (wallet: Resources, cost: Cost) => Object.keys(shortfall(wallet, cost)).length === 0;
+/** What the stores hold once the harvest is collected: each fills up to its room and the rest spills. Paying collects first, so this is what can be spent. */
+export function afterCollect(wallet: Resources, harvest: Resources, room: Resources): Resources {
+  const out = {...wallet};
+  for (const id of RESOURCE_IDS) out[id] = Math.max(wallet[id], Math.min(room[id], wallet[id] + harvest[id]));
+  return out;
+}
 /** Whole days of coding at `perDay` to make up `missing`, or null with no pace yet. */
 export function daysToAfford(missing: number, perDay: number): number | null {
   if (missing <= 0) return 0;

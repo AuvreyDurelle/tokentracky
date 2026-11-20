@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { TOWN_MAP_SPAN, terrainAt } from '@tokentracky/core';
-import { compact, daysToAfford, duration, paceText, shortfall } from './format.ts';
+import { afterCollect, compact, daysToAfford, duration, paceText, shortfall } from './format.ts';
 import { cellAt, clampCell, fetchArea, screenOf, visibleArea, zoomAt } from './map-view.ts';
 import { plotKey, plotKind, plotsBackToFront, plotTile, sceneLayout } from './layout.ts';
 
@@ -21,6 +21,11 @@ describe('town numbers', () => {
     expect(daysToAfford(10, 0)).toBeNull();
     expect(paceText(6)).toBe('About 6 days of coding');
     expect(paceText(0)).toBe('Ready now');
+  });
+  it('counts only the harvest the stores have room for, as collecting does', () => {
+    // 1,500 Bricks stored and 800 to collect with room for 2,000: 300 spill, so 2,000 is all there is to spend.
+    expect(afterCollect({power: 10, bricks: 1500, water: 0, crystals: 0}, {power: 5, bricks: 800, water: 0, crystals: 0}, {power: 1000, bricks: 2000, water: 1000, crystals: 100}))
+      .toEqual({power: 15, bricks: 2000, water: 0, crystals: 0});
   });
 });
 
