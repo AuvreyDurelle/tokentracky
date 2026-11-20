@@ -445,6 +445,11 @@ pub struct PublicProfile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub top_badges: Option<Vec<BadgeId>>,
+    /// Consecutive UTC days with tokens across every tool, ending today or yesterday, as on the profile; absent from
+    /// servers that predate it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub streak: Option<u32>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -754,6 +759,20 @@ pub struct CommunityStats {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional, type = "number")]
     pub median_tokens: Option<u64>,
+    /// Community tokens in the last 24 whole UTC hours, from builders with a computer that sends hours; absent from
+    /// servers that predate it, or beyond the safe integer range.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional, type = "number")]
+    pub last24h_tokens: Option<u64>,
+    /// The same builders' tokens on yesterday's UTC day, to compare the last 24 hours with (hours are kept for a day
+    /// only, so the 24 hours before are not known); absent likewise.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional, type = "number")]
+    pub yesterday_tokens: Option<u64>,
+    /// Community tokens per UTC hour over those last 24 hours, oldest first; absent likewise.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional, inline)]
+    pub hourly: Option<Vec<HourTokens>>,
 }
 /// One UTC calendar month's tokens (`YYYY-MM`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]

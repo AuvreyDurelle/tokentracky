@@ -134,6 +134,8 @@ export type PublicProfile = {
   hourly?: Array<number>;
   /** The member's three highest-tier badges, ties in display order; absent without any. */
   topBadges?: Array<BadgeId>;
+  /** Consecutive UTC days with tokens across every tool, ending today or yesterday, as on the profile; absent from servers that predate it. */
+  streak?: number;
 };
 export type LeaderboardResponse = {
   items: Array<PublicProfile>;
@@ -260,6 +262,12 @@ export type CommunityStats = {
   monthly?: Array<{ month: string, tokens: number }>;
   /** The middle builder's all-time tokens, the lower middle one for an even count; absent likewise. */
   medianTokens?: number;
+  /** Community tokens in the last 24 whole UTC hours, from builders with a computer that sends hours; absent from servers that predate it, or beyond the safe integer range. */
+  last24hTokens?: number;
+  /** The same builders' tokens on yesterday's UTC day, to compare the last 24 hours with (hours are kept for a day only, so the 24 hours before are not known); absent likewise. */
+  yesterdayTokens?: number;
+  /** Community tokens per UTC hour over those last 24 hours, oldest first; absent likewise. */
+  hourly?: Array<{ hour: string, tokens: number }>;
 };
 /** Decimal integer companions for shared aggregates. Maps and series are complete when present; null costs stay unknown. */
 export type ExactAggregates = {
