@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
-import { BUILDINGS, RESOURCE_IDS, type BuildingGroup, type BuildingId, type Resources, type TownBuilding, type TownMapResponse, type TownSelf } from '@tokentracky/core';
+import { BUILDINGS, RESOURCE_IDS, type BuildingGroup, type BuildingId, type Cost, type Resources, type TownBuilding, type TownMapResponse, type TownSelf } from '@tokentracky/core';
 import type { TownApi } from './api.ts';
 import { BUILDING_HEIGHT } from './art.ts';
 import { BuildingThumb, CostChips, Crest, RESOURCE_NAMES, ResourceBar, StreakClock, usePoint, useNow, useToast } from './Hud.tsx';
 import { ResourceIcon } from './icons.tsx';
 import { BuildIcon, CloseIcon, FlagIcon, MapIcon, MoveIcon, SparkIcon } from './icons.tsx';
-import { compact, count, covered, daysToAfford, paceText, shortfall, sinceText } from './format.ts';
+import { compact, count, daysToAfford, paceText, shortfall, sinceText } from './format.ts';
 import { plotKey, plotKind, plotTile, sceneLayout } from './layout.ts';
 import { Sky, TownScene, type Selection } from './Scene.tsx';
 import { spunProjection } from './view.ts';
@@ -13,6 +13,11 @@ import { spunProjection } from './view.ts';
 type Tab = 'land' | 'harvest';
 const MAX_LEVEL = 15;
 const HALL_TEXT = "The heart of your town. No building can rise above the Town Hall's level, and each level adds room to every store.";
+/** What is still missing to pay `cost`, as "120 Water · 40 Power", or '' once it is covered. */
+const shortText = (reach: Resources, cost: Cost) => {
+  const missing = shortfall(reach, cost);
+  return RESOURCE_IDS.filter(id => missing[id]).map(id => `${count(missing[id]!)} ${RESOURCE_NAMES[id]}`).join(' · ');
+};
 const add = (a: Resources, b: Resources): Resources => ({power: a.power + b.power, bricks: a.bricks + b.bricks, water: a.water + b.water, crystals: a.crystals + b.crystals});
 
 /** The signed-in member's own town: the scene, the stores, the drawer, the dock and everything you can do there. */
@@ -237,8 +242,7 @@ function BuildingPanel({town, building, reach, busy, onUpgrade}: {town: TownSelf
   const info = BUILDINGS[building.kind];
   const next = building.next;
   const description = building.kind === 'town-hall' ? HALL_TEXT : town.catalogue.find(c => c.kind === building.kind)?.description;
-  const missing = next ? shortfall(reach, next.cost) : {};
-  const short = RESOURCE_IDS.filter(id => missing[id]).map(id => `${count(missing[id]!)} ${RESOURCE_NAMES[id]}`).join(' · ');
+  const short = next ? shortText(reach, next.cost) : '';
   return <>
     <div className="tt-p-h"><BuildingThumb kind={building.kind} level={building.level} size={46} /><div><b>{info.name}</b><span className="tt-mu">Lv {building.level} · <span className={`tt-rar ${info.rarity}`}>{info.rarity}</span></span></div></div>
     <Pips level={building.level} />
@@ -291,13 +295,13 @@ function BuildMenu({town, reach, busy, full, onClose, onBuild}: {town: TownSelf;
     <div className="tt-cards">
       {entries.map(entry => {
         const info = BUILDINGS[entry.kind];
-        const ready = covered(reach, entry.cost);
-        return <button key={entry.kind} type="button" className={`tt-card ${info.rarity}`} disabled={busy || full || !ready || !!entry.locked || !!town.paused} onClick={() => onBuild(entry.kind)}>
+        const short = shortText(reach, entry.cost);
+        return <button key={entry.kind} type="button" className={`tt-card ${info.rarity}`} disabled={busy || full || !!short || !!entry.locked || !!town.paused} onClick={() => onBuild(entry.kind)}>
           <BuildingThumb kind={entry.kind} size={72} />
           <span className="tt-card-b"><b>{info.name}</b><span className={`tt-rar ${info.rarity}`}>{info.rarity}</span>
             <span className="tt-desc">{entry.description}</span>
             {entry.locked ? <span className="tt-lock">{entry.locked}</span> : <><CostChips cost={entry.cost} have={reach} />
-              <span className="tt-mu">{entry.limit !== null ? `${entry.owned} of ${entry.limit}` : entry.owned ? `You have ${entry.owned}` : 'New'}{ready ? '' : ' · not enough yet'}</span></>}
+              <span className="tt-mu">{entry.limit !== null ? `${entry.owned} of ${entry.limit}` : entry.owned ? `You have ${entry.owned}` : 'New'}{short ? ` · ${short} short` : ''}</span></>}
           </span>
         </button>;
       })}
