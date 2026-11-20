@@ -69,7 +69,7 @@ export interface TownSelf {
   move: {cost: Cost};
   /** Bricks a day at the last 14 days' pace, for "about 6 days of coding". */
   bricksPerDay: number;
-  /** Water per Brick at the Market, when the town has one. */
+  /** Bricks per Water at the Market, when the town has one. */
   trade: {rate: number} | null;
   catalogue: TownCatalogueEntry[];
   /** Why the town can't collect, claim or build right now (a profile under review), or null. */

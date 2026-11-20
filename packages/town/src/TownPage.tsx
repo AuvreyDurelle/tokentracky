@@ -116,7 +116,7 @@ export function TownPage({api, onMap}: {api: TownApi; onMap: () => void}) {
       {tab === 'land' && <LandPane town={town} reach={reach} claimable={claimable} busy={busy} onClaim={() => { setSelected(null); setClaiming(true); }}
         onMove={() => void run(() => api.move(), 'Your town moved to the frontier', true)} />}
       {tab === 'harvest' && <HarvestPane town={town} spill={spill} busy={busy} now={now} onCollect={() => void run(() => api.collect(), 'Harvest collected')}
-        onTrade={water => void run(() => api.trade(water), 'Traded')} />}
+        onTrade={bricks => void run(() => api.trade(bricks), 'Traded')} />}
       {tab === 'queue' && <QueuePane town={town} now={now} busy={busy} onCancel={id => void run(() => api.cancel(id), 'Removed from the queue')}
         onShow={job => { setSelected(job.buildingId ? {type: 'building', id: job.buildingId} : {type: 'plot', x: job.x, y: job.y}); }} />}
     </Drawer>
@@ -189,8 +189,8 @@ function LandPane({town, reach, claimable, busy, onClaim, onMove}: {town: TownSe
   </>;
 }
 
-function HarvestPane({town, spill, busy, now, onCollect, onTrade}: {town: TownSelf; spill: Resources; busy: boolean; now: number; onCollect: () => void; onTrade: (water: number) => void}) {
-  const [water, setWater] = useState('');
+function HarvestPane({town, spill, busy, now, onCollect, onTrade}: {town: TownSelf; spill: Resources; busy: boolean; now: number; onCollect: () => void; onTrade: (bricks: number) => void}) {
+  const [bricks, setBricks] = useState('');
   const pending = RESOURCE_IDS.some(id => town.harvest.resources[id] > 0);
   return <>
     <div className="tt-ph"><b>Harvest</b><span className="tt-mu">{pending ? sinceText(town.harvest.since, now) : 'Collected'}</span></div>
@@ -202,10 +202,10 @@ function HarvestPane({town, spill, busy, now, onCollect, onTrade}: {town: TownSe
     <div className="tt-mu tt-note">1 Brick per 1M tokens of any kind. 1 Power per 10K output tokens, 1 Water per 50K input and cache-write tokens, 1 Crystal per 100K reasoning tokens.</div>
     {town.trade && <>
       <div className="tt-sep" />
-      <div className="tt-kv"><span>Market</span><span className="tt-mu">{town.trade.rate} Water per Brick</span></div>
-      <form className="tt-two" onSubmit={event => { event.preventDefault(); const n = Number(water); if (Number.isInteger(n) && n > 0) { onTrade(n); setWater(''); } }}>
-        <input className="tt-input" inputMode="numeric" aria-label="Water to trade" placeholder={`Water, up to ${count(town.wallet.water)}`} value={water} onChange={event => setWater(event.target.value.replace(/\D/g, ''))} />
-        <button type="submit" className="tt-btn" disabled={busy || !water}>Trade</button>
+      <div className="tt-kv"><span>Market</span><span className="tt-mu">{town.trade.rate} Bricks per Water</span></div>
+      <form className="tt-two" onSubmit={event => { event.preventDefault(); const n = Number(bricks); if (Number.isInteger(n) && n > 0) { onTrade(n); setBricks(''); } }}>
+        <input className="tt-input" inputMode="numeric" aria-label="Bricks to trade" placeholder={`Bricks, up to ${count(town.wallet.bricks)}`} value={bricks} onChange={event => setBricks(event.target.value.replace(/\D/g, ''))} />
+        <button type="submit" className="tt-btn" disabled={busy || !bricks}>Trade</button>
       </form>
     </>}
   </>;

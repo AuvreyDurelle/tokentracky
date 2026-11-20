@@ -13,7 +13,7 @@ export interface TownApi {
   upgrade(buildingId: string): Promise<TownSelf>;
   cancel(jobId: string): Promise<TownSelf>;
   move(): Promise<TownSelf>;
-  trade(water: number): Promise<TownSelf>;
+  trade(bricks: number): Promise<TownSelf>;
   map(area: Area): Promise<TownMapResponse>;
   town(alias: string): Promise<TownPublic>;
   /** Likes, when the host can like profiles. */

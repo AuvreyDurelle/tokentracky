@@ -13,7 +13,7 @@ export function townApi(api: ApiClient): TownApi {
     upgrade: (buildingId) => api.townAct('jobs', { action: 'upgrade', buildingId }),
     cancel: (jobId) => api.townCancel(jobId),
     move: () => api.townAct('move'),
-    trade: (water) => api.townAct('trade', { water }),
+    trade: (bricks) => api.townAct('trade', { bricks }),
     map: (area) => api.townMap(area),
     town: (alias) => api.townOf(alias),
     liked: async (alias) => (await api.likeStatus(alias)).liked,

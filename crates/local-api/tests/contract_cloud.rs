@@ -720,7 +720,7 @@ async fn town_through_the_device_token() {
     replies.push(reply);
     stub.answer("POST /api/town/trade", Answer::text("<html>not json</html>"));
     let reply = server
-        .request("/api/local/town/trade", Init::method("POST").json(json!({"water": 8})))
+        .request("/api/local/town/trade", Init::method("POST").json(json!({"bricks": 8})))
         .await;
     expect_error(&reply, 502, "CLOUD_UNAVAILABLE");
     replies.push(reply);
