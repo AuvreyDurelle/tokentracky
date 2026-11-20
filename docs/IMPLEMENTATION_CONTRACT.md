@@ -30,6 +30,7 @@ Privacy refinement: when tool breakdown is off, the collector aggregates across 
    breakdown?: {input, output, cacheRead, cacheWrite, reasoning: number},  // all time; present only when every published bucket carries types; input + output + cacheRead + cacheWrite equals periods.all.tokens
    likes: number,                                   // likes from members who are not hidden or banned
    memberSince: 'YYYY-MM-DD',                       // UTC day the account was created
+   firstDay?: 'YYYY-MM-DD',                         // earliest published UTC day with tokens; absent with none
    githubLogin?: string,                            // present when the member signed in with GitHub (verified, see below)
    badges: Array<BadgeProgress>}                    // all 11, in BADGE_IDS order
   ```
