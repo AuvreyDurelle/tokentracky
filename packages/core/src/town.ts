@@ -61,6 +61,8 @@ export interface TownSelf {
   move: {cost: Cost};
   /** Bricks a day at the last 14 days' pace, for "about 6 days of coding". */
   bricksPerDay: number;
+  /** Tokens behind one unit of each resource, for "1 Brick per 430K tokens". */
+  rates: Resources;
   /** Bricks per Water at the Market, when the town has one. */
   trade: {rate: number} | null;
   catalogue: TownCatalogueEntry[];
