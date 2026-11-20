@@ -76,10 +76,11 @@ export interface TownPublic {alias: string; level: number; plots: TownPlot[]; bu
 export interface TownMapTown {alias: string | null; level: number; plots: number; wonder: boolean}
 /**
  * `GET /api/town/map?x0&y0&x1&y1`: claimed plots in view, each as `[x, y, index into towns]`. `edge` is the outermost
- * claimed ring, `max(|x|, |y|)`; new and moving towns land just past it.
+ * claimed ring, `max(|x|, |y|)`; new and moving towns land just past it. `featured` is the biggest named town anywhere
+ * on the map, wherever the area is: most plots, then the higher Town Hall, then the older town, at its Town Hall.
  */
 export interface TownMapResponse {x0: number; y0: number; x1: number; y1: number; towns: TownMapTown[]; plots: Array<[number, number, number]>;
-  wonders: Array<[number, number]>; totals: {towns: number; plots: number}; edge: number}
+  wonders: Array<[number, number]>; totals: {towns: number; plots: number}; edge: number; featured: {alias: string; x: number; y: number} | null}
 
 /** The widest map area one request may cover, in plots per side. */
 export const TOWN_MAP_SPAN = 160;

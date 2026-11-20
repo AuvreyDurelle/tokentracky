@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { BUILDINGS, terrainAt, type TownMapResponse, type TownPublic, type TownSelf } from '@tokentracky/core';
 import type { TownApi } from './api.ts';
 import { CostChips, Crest, useToast } from './Hud.tsx';
@@ -133,8 +133,12 @@ function draw(canvas: HTMLCanvasElement, view: MapView, data: TownMapResponse | 
   }
 }
 
-/** The public map of every town, with your own town's dock when you have one. */
-export function MapPage({api, signedIn, onHome, onVisit}: {api: TownApi; signedIn: boolean; onHome?: () => void; onVisit: (alias: string) => void}) {
+/**
+ * The public map of every town, with your own town's dock when you have one. With `feature`, it opens on the biggest
+ * town with its card showing instead of on yours; `aside` is a panel the host puts on the map.
+ */
+export function MapPage({api, signedIn, feature = false, aside, onHome, onVisit}: {api: TownApi; signedIn: boolean; feature?: boolean; aside?: ReactNode;
+  onHome?: () => void; onVisit: (alias: string) => void}) {
   const stage = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const [me, setMe] = useState<TownSelf | null>(null);
@@ -146,6 +150,8 @@ export function MapPage({api, signedIn, onHome, onVisit}: {api: TownApi; signedI
   const [toast, say] = useToast();
   const [size, setSize] = useState({width: 0, height: 0});
   const drag = useRef<{x: number; y: number; view: MapView; moved: boolean} | null>(null);
+  // Until the first map arrives: the featured town to open, if wanted.
+  const featuring = useRef(feature);
 
   useLayoutEffect(() => {
     const el = stage.current;
@@ -158,8 +164,8 @@ export function MapPage({api, signedIn, onHome, onVisit}: {api: TownApi; signedI
   }, []);
   useEffect(() => {
     if (!signedIn) return;
-    void api.me().then(town => { setMe(town); const [first] = town.plots; if (first) setView(v => ({...v, cx: first.x + 0.5, cy: first.y + 0.5})); }).catch(() => {});
-  }, [api, signedIn]);
+    void api.me().then(town => { setMe(town); const [first] = town.plots; if (first && !feature) setView(v => ({...v, cx: first.x + 0.5, cy: first.y + 0.5})); }).catch(() => {});
+  }, [api, signedIn, feature]);
   // Fetch the plots around the view whenever it leaves what was fetched.
   useEffect(() => {
     if (!size.width) return;
@@ -185,6 +191,14 @@ export function MapPage({api, signedIn, onHome, onVisit}: {api: TownApi; signedI
     const alias = hit ? data!.towns[hit[2]]?.alias : null;
     if (alias) open(alias, [x + 0.5, y + 0.5]); else setSelected(null);
   };
+  useEffect(() => {
+    if (!featuring.current || !data) return;
+    featuring.current = false;
+    if (!data.featured) return;
+    const {alias, x, y} = data.featured;
+    setView(v => ({...v, cx: x + 0.5, cy: y + 0.5}));
+    open(alias, [x + 0.5, y + 0.5]);
+  }, [data, open]);
   const zoom = (factor: number) => setView(v => zoomAt(v, factor, size.width, size.height, size.width / 2, size.height / 2));
   const like = async () => {
     if (!selected?.town || !api.like || selected.liked === null) return;
@@ -238,6 +252,7 @@ export function MapPage({api, signedIn, onHome, onVisit}: {api: TownApi; signedI
       {me && <div className="tt-cl"><div className="tt-kv"><span className="tt-with"><MoveIcon size={18} />Move town</span><b><CostChips cost={me.move.cost} /></b></div>
         <div className="tt-mu">Moves in your town</div></div>}
     </div>}
+    {aside && <div className="tt-aside">{aside}</div>}
     {toast}
   </div>;
 }

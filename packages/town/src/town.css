@@ -198,6 +198,8 @@
 .tt-key span { display: flex; align-items: center; gap: 6px; }
 .tt-key i { width: 13px; height: 13px; border-radius: 3px; font-style: normal; display: inline-block; }
 .tt-key i.star { color: #fff; text-shadow: 0 0 6px #fff; font-size: 13px; line-height: 13px; text-align: center; }
+/* A panel the host puts on the map: under the key, or along the bottom on phones. */
+.tt-aside { position: absolute; left: 12px; top: 106px; width: 300px; z-index: 2; }
 .tt-zoom { right: 12px; top: 72px; display: flex; flex-direction: column; gap: 4px; padding: 6px; z-index: 2; }
 .tt-zoom button { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: rgba(255, 255, 255, 0.06) !important; }
 .tt-zoom button:hover { background: rgba(255, 255, 255, 0.14) !important; }
@@ -233,6 +235,9 @@
   .tt-cta small { display: none; }
   .tt-cl { display: none; }
   .tt-key { display: none; }
+  .tt-aside { left: 8px; right: 8px; top: auto; bottom: 8px; width: auto; }
+  .tt-dock ~ .tt-aside { bottom: 70px; }
+  .tt-map:has(> .tt-dock ~ .tt-aside) .tt-pop { bottom: 120px; }
   .tt-menu { bottom: 74px; max-height: calc(100% - 130px); }
   .tt-cards { grid-template-columns: 1fr; }
   .tt-chips { margin-left: 0; }
