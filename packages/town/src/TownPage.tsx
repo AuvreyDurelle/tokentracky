@@ -54,12 +54,13 @@ export function TownPage({api, onMap}: {api: TownApi; onMap: () => void}) {
     } catch (failure) { setError(failure instanceof Error ? failure.message : String(failure)); return null; }
   }, [api]);
   useEffect(() => { void load().then(next => { if (next) void loadMap(next); }); }, [load, loadMap]);
-  // Refresh every minute for new uploads.
+  // Refresh every minute for new uploads, counting attempts so a failed one schedules the next too.
+  const [refreshes, setRefreshes] = useState(0);
   useEffect(() => {
     if (!town) return;
-    const timer = window.setTimeout(() => void load(), 60_000);
+    const timer = window.setTimeout(() => void load().finally(() => setRefreshes(n => n + 1)), 60_000);
     return () => window.clearTimeout(timer);
-  }, [town, load]);
+  }, [town, load, refreshes]);
 
   const run = async (action: () => Promise<TownSelf>, done?: string, landChanged = false) => {
     if (busy) return;
