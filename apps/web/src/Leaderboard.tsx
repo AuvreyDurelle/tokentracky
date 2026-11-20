@@ -220,7 +220,7 @@ export function Leaderboard({ api, me, join, onProfile }: { api: ApiClient; me: 
     <header className="board-head">
       <div>
         <h1>AI coding token leaderboard</h1>
-        <p>Community-reported usage across AI coding tools. <a href="/blog/how-to-read-the-token-leaderboard">How the rankings work</a></p>
+        <p>Community-reported usage across AI coding tools.</p>
       </div>
       <Segmented label="Period" value={period} options={PERIODS} onChange={setPeriod} />
     </header>

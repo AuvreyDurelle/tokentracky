@@ -64,6 +64,8 @@ for (const path of pages) {
     .filter(link => link.origin === origin).map(link => link.pathname);
   const otherPaths = locations(html.replace(footerPattern, ''), url)
     .filter(link => link.origin === origin).map(link => link.pathname);
+  assert.ok(footerPaths.includes('/blog') && !otherPaths.includes('/blog'), path + ' must link to the blog index only in the footer');
+  if (!path.startsWith('/blog')) assert.ok(!otherPaths.some(link => link.startsWith('/blog/')), path + ' links into the blog outside the footer');
   for (const guide of guides) {
     assert.ok(footerPaths.includes(guide), path + ' footer is missing ' + guide);
     assert.ok(!otherPaths.includes(guide), path + ' links outside the footer to ' + guide);

@@ -33,11 +33,10 @@ export function ConnectNav({ onHome, onBack }: { onHome: () => void; onBack: () 
   </div></header>;
 }
 
-export function PublicNavigation({ page }: { page: Page | 'blog' }) {
+export function PublicNavigation({ page }: { page: Page }) {
   return <nav className="site-links" aria-label="Primary">
     <a href="/" aria-current={page === 'leaderboard' ? 'page' : undefined}>Leaderboard</a>
     <a href="/join" aria-current={page === 'join' ? 'page' : undefined}>How it works</a>
-    <a href="/blog" aria-current={page === 'blog' ? 'page' : undefined}>Blog</a>
   </nav>;
 }
 

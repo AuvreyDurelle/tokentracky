@@ -1099,7 +1099,6 @@ span.profile-like { cursor: default; }
 .journal-stories h2 a { color: var(--text); text-decoration: none; }
 .journal-stories h2 a:hover { text-decoration: underline; }
 .journal-stories p { max-width: 68ch; font-size: 16px; }
-.back-link { display: inline-block; margin-bottom: 24px; }
 .story header { padding-bottom: 28px; border-bottom: 1px solid var(--border-2); }
 .story-body, .board-intro { font-size: 17px; line-height: 1.75; }
 .story-body h2, .story-sources h2 { margin: 1.65em 0 .4em; font-size: clamp(22px, 3vw, 29px); letter-spacing: -.022em; line-height: 1.25; }

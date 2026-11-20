@@ -20,7 +20,7 @@ const SAMPLE_TOOLS = [{ id: 'claude', tokens: '880K', share: 62 }, { id: 'codex'
 const SAMPLE_BOARD = [{ rank: 40, alias: 'nightowl', tokens: '1.61M' }, { rank: 41, alias: 'kai-builds', tokens: '1.55M' }, { rank: 42, alias: 'you', tokens: '1.42M' }, { rank: 43, alias: 'deploy-dan', tokens: '1.38M' }, { rank: 44, alias: 'quill', tokens: '1.21M' }];
 
 /** How it works: install, a demo of the app with sample numbers, what is shared, which tools, and questions. */
-export function Join({ hosted = false }: { hosted?: boolean }) {
+export function Join() {
   const more = TOOLS.length - FIRST_TOOLS;
   return <div className="page-stack join">
     <section className="join-hero">
@@ -47,7 +47,6 @@ export function Join({ hosted = false }: { hosted?: boolean }) {
     </section>
 
     <Demo />
-    {hosted && <p><a href="/blog/how-tokentracky-counts-tokens">Follow a token count through the open-source collector</a></p>}
 
     <section aria-labelledby="join-shared">
       <header className="join-sec"><h2 id="join-shared">What leaves your computer</h2><small>Daily breakdowns and recent hourly totals</small></header>
@@ -56,7 +55,6 @@ export function Join({ hosted = false }: { hosted?: boolean }) {
         <div className="never"><h3>Never leaves your computer</h3><ul>{PRIVATE.map((item) => <li key={item}>{item}</li>)}</ul></div>
       </div>
       <p className="join-notice">{CONNECT_NOTICE}</p>
-      {hosted && <p><a href="/blog/what-joining-the-leaderboard-shares">See an example of the data you share</a></p>}
     </section>
 
     <section aria-labelledby="join-tools">

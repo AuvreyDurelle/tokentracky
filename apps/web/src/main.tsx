@@ -174,7 +174,7 @@ function App() {
       {deletionNotice && <Notice tone="success">{deletionNotice}</Notice>}
       {authState === 'recovery' && <PasswordRecovery auth={auth} onComplete={async () => { await refreshAuth(); if (!connectCode) navigate({ page: 'you' }); }} />}
       {authState !== 'recovery' && <>
-      {page === 'join' && <Join hosted={!local} />}
+      {page === 'join' && <Join />}
       {local && (page === 'leaderboard' || page === 'profile') && <LeaderboardView api={api} me={me} canJoin={canJoin} syncedAt={localStatus?.lastSyncAt ?? null} onProfile={(alias) => navigate({ page: 'profile', alias })} onJoin={() => navigate({ page: 'settings' })} />}
       {local && route.page === 'profile' && <ProfileModal key={route.alias} api={api} alias={route.alias} me={me} onClose={() => navigate({ page: 'leaderboard' })} />}
       {local && page === 'achievements' && <AchievementsView api={api} me={me} revision={`${usageRevision(localStatus)}|${localStatus?.lastSyncAt ?? ''}`} />}

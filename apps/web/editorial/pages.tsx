@@ -19,7 +19,7 @@ const images: Record<string, string> = {
   'how-to-read-the-token-leaderboard': '/assets/editorial/leaderboard.webp',
 };
 
-function Header({ page }: { page: 'leaderboard' | 'join' | 'blog' }) {
+function Header({ page }: { page: 'leaderboard' | 'join' | 'other' }) {
   return <header className="site-nav"><div className="site-nav-inner site-nav-main">
     <div className="site-left"><a className="brand" href="/"><span className="brand-mark" aria-hidden="true" />Tokentracky</a></div>
     <PublicNavigation page={page} />
@@ -43,7 +43,6 @@ function Blog() {
 
 function Story({ article }: { article: Article }) {
   return <article className="journal story">
-    <a href="/blog" className="back-link">← Tokentracky blog</a>
     <header><h1>{article.title}</h1><p className="journal-intro">{article.description}</p><Byline /></header>
     <div className="story-body">{article.body}</div>
     <section className="story-sources"><h2>Sources</h2><ul>{article.sources.map(source =>
@@ -57,12 +56,12 @@ function pages(): Page[] {
     content: <section className="journal board-intro"><h1>AI coding token leaderboard</h1>
       <p>Compare the tokens builders report from their AI coding tools. The weekly board starts on Monday at 00:00 UTC. Costs are estimates based on model pricing.</p>
       <div dangerouslySetInnerHTML={{ __html: '<!--public-standings-->' }} />
-      <p><a href="/join">Track your usage and join the board</a> · <a href="/blog/how-to-read-the-token-leaderboard">How to read the rankings</a></p>
+      <p><a href="/join">Track your usage and join the board</a></p>
     </section>,
   };
   const join = {
     path: '/join', title: 'Install Tokentracky and join the AI token leaderboard', description: 'Set up the Mac menu-bar app or terminal tracker, inspect your token counts privately, and choose what happens when you connect a computer.',
-    content: <Join hosted />,
+    content: <Join />,
   };
   const legal = (Object.keys(DOCS) as LegalPageId[]).map(id => ({
     path: '/' + id, title: DOCS[id].title, description: DOCS[id].lede,
@@ -95,7 +94,7 @@ export function renderHostedFiles(template: string, preview: boolean) {
       {schema && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replaceAll('<', '\\u003c') }} />}
     </>);
     const isInteractive = page.path === '/' || page.path === '/join';
-    const section = page.path === '/' ? 'leaderboard' : page.path === '/join' ? 'join' : 'blog';
+    const section = page.path === '/' ? 'leaderboard' : page.path === '/join' ? 'join' : 'other';
     const content = renderToStaticMarkup(page.path.slice(1) in DOCS ? page.content : <div className="app">
       <Header page={section} /><main className="page">{page.content}</main><SiteFooter />
     </div>);
