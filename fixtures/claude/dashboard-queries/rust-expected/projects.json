@@ -1,0 +1,34 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 500,
+      "cacheWrite": 150,
+      "cacheWrite1h": 100,
+      "input": 55,
+      "output": 100,
+      "reasoning": 35
+    },
+    "costMicrousd": 805,
+    "daily": [
+      {
+        "day": "2026-09-01",
+        "tokens": 161
+      },
+      {
+        "day": "2026-10-21",
+        "tokens": 161
+      },
+      {
+        "day": "2026-10-22",
+        "tokens": 161
+      },
+      {
+        "day": "2026-10-23",
+        "tokens": 161
+      }
+    ],
+    "name": "/synthetic/private-project",
+    "sessions": 2,
+    "tokens": 805
+  }
+]

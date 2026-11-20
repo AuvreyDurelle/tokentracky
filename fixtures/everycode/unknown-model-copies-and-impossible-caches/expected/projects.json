@@ -8,6 +8,12 @@
       "reasoning": 0
     },
     "costMicrousd": null,
+    "daily": [
+      {
+        "day": "2026-10-21",
+        "tokens": 550
+      }
+    ],
     "name": "/synthetic/every-code",
     "sessions": 1,
     "tokens": 550

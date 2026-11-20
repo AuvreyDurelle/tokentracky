@@ -8,6 +8,12 @@
       "reasoning": 0
     },
     "costMicrousd": null,
+    "daily": [
+      {
+        "day": "2026-10-20",
+        "tokens": 2100
+      }
+    ],
     "name": "/synthetic/command-code",
     "sessions": 2,
     "tokens": 2100

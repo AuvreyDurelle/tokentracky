@@ -35,6 +35,16 @@
 .mac .nav-item[aria-current="page"] { background: var(--active); color: var(--text); }
 .mac .sidebar-spacer { flex: 1; }
 
+/* This week's rank and the gap to your rival, above Today. */
+.mac .week-card { margin: 0 0 8px; padding: 12px; border: 1px solid rgba(123, 127, 246, 0.28); border-radius: var(--radius-md); background: linear-gradient(180deg, rgba(123, 127, 246, 0.08), transparent 85%), var(--surface); }
+.mac .week-card .row { display: flex; align-items: baseline; justify-content: space-between; }
+.mac .week-main { display: flex; align-items: baseline; gap: 6px; margin-top: 4px; }
+.mac .week-rank { font-size: 20px; font-weight: 650; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.mac .week-mv { font-size: 10.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.mac .week-mv.rise { color: var(--green); }
+.mac .week-mv.fall { color: var(--red); }
+.mac .week-tokens { margin-left: auto; color: var(--text-2); font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.mac .week-chase { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); color: var(--text-3); font-size: 11.5px; }
 .mac .today-card { margin: 0 0 8px; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); }
 .mac .today-card .row { display: flex; align-items: baseline; justify-content: space-between; }
 .mac .sidebar .faint { color: var(--text-4); }
@@ -168,3 +178,9 @@
 .mac .m-bar { display: flex; gap: 2px; height: 6px; overflow: hidden; border-radius: 3px; background: var(--surface-3); }
 .mac .m-bar > span { display: block; height: 100%; background: var(--c, var(--text-3)); }
 .mac .m-tip { padding: 10px 12px; border-radius: var(--radius-md); background: rgba(24, 25, 27, 0.96); box-shadow: var(--shadow-pop); font-size: 12px; backdrop-filter: blur(12px); }
+/* Token Town fills the content pane; its own stylesheet draws the rest. */
+.mac .m-town { height: calc(100vh - 47px); }
+.mac .m-town-join { height: 100%; display: grid; place-content: center; justify-items: center; gap: 12px; padding: 32px; text-align: center; background: radial-gradient(ellipse at 50% 120%, #6a3e78, #17184a 55%, #070823); color: #eef0ff; }
+.mac .m-town-join strong { font-size: 20px; }
+.mac .m-town-join p { max-width: 420px; margin: 0; color: #c9c6ee; }
+.mac .m-town-actions { display: flex; gap: 8px; }

@@ -2,7 +2,8 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import type { ApiClient } from '../api';
 import { JUMP_KEYS } from '../ui';
-import { MacShell, Sidebar, ToolbarActions, todayOf } from './Shell';
+import type { PublicProfile } from '@tokentracky/core';
+import { MacShell, Sidebar, ToolbarActions, WeekCard, todayOf } from './Shell';
 
 // The current-page button is Tokens itself: one icon, then the label.
 const NONE = { breakdown: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, costParts: null };
@@ -66,5 +67,21 @@ describe('todayOf', () => {
 describe('ToolbarActions', () => {
   it("keeps a page's controls at its top when there is no window toolbar to hold them", () => {
     expect(renderToStaticMarkup(<ToolbarActions><button type="button">7d</button></ToolbarActions>)).toBe('<div class="m-page-actions"><button type="button">7d</button></div>');
+  });
+});
+
+describe('WeekCard', () => {
+  const row = (alias: string, rank: number, tokens: number, perDay: number, previousRank: number | null = null): PublicProfile =>
+    ({ alias, rank, tokens, previousRank, daily: [...Array(7).fill(0), ...Array(7).fill(perDay)] });
+  // Thursday 19 November 2026, 14:35 UTC: the week of the 16th resets on Monday the 23rd.
+  const now = Date.parse('2026-11-19T14:35:00Z');
+  const text = (html: string) => html.replaceAll('<!-- -->', '');
+  it('shows your week’s rank, its move, your tokens, when the week resets and the gap to your rival', () => {
+    const html = text(renderToStaticMarkup(<WeekCard me="orbitfox" now={now} rows={[row('pallas', 37, 3.224e9, 100e6), row('orbitfox', 38, 3.06e9, 190e6, 41), row('brightwire', 39, 2.98e9, 0)]} />));
+    for (const part of ['resets in 3d 9h', '#38', '▲3', '3.1B', '164M to pass pallas · ~2d']) expect(html).toContain(part);
+  });
+  it('says when you lead, and shows nothing when you are not on the board', () => {
+    expect(text(renderToStaticMarkup(<WeekCard me="kestrel" now={now} rows={[row('kestrel', 1, 21.6e9, 1e9), row('sunforge', 2, 17.9e9, 1e9)]} />))).toContain('You lead this week');
+    expect(renderToStaticMarkup(<WeekCard me="orbitfox" now={now} rows={[row('kestrel', 1, 21.6e9, 1e9)]} />)).toBe('');
   });
 });

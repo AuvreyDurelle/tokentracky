@@ -89,6 +89,8 @@ sessions: number }>;
   daily: Array<{ day: string, tokens: number, breakdown: TokenCounts, costMicrousd: number | null, costParts: CostParts | null }>;
   /** Tokens by hour of day, 0 to 23, in the query's zone (UTC without one). */
   byHour: Array<number>;
+  /** Tokens by weekday and hour of day: seven rows from Monday, each of 24 hours, in the same zone. Absent from apps that predate it. */
+  byWeekdayHour?: Array<Array<number>>;
 };
 export type SessionSummary = {
   id: string;
@@ -114,6 +116,8 @@ export type ProjectSummary = {
   breakdown: TokenCounts;
   costMicrousd: number | null;
   sessions: number;
+  /** The project's tokens on each day of the query that has any (UTC days, or local in the query's zone), oldest first, for its trend; absent from apps that predate it. */
+  daily?: Array<{ day: string, tokens: number }>;
 };
 export type PublicProfile = {
   alias: string;
@@ -134,6 +138,8 @@ export type PublicProfile = {
   hourly?: Array<number>;
   /** The member's three highest-tier badges, ties in display order; absent without any. */
   topBadges?: Array<BadgeId>;
+  /** Consecutive UTC days with tokens across every tool, ending today or yesterday, as on the profile; absent from servers that predate it. */
+  streak?: number;
 };
 export type LeaderboardResponse = {
   items: Array<PublicProfile>;
@@ -193,8 +199,20 @@ export type ProfileStats = {
   alias: string;
   /** Rank and tokens in each leaderboard window. */
   periods: { week: { rank: number, tokens: number, builders: number }, month: { rank: number, tokens: number, builders: number }, all: { rank: number, tokens: number, builders: number } };
-  /** Tokens per UTC day for the 365 days ending today, oldest first. */
-  daily: Array<{ day: string, tokens: number }>;
+  /** Tokens per UTC day for the 365 days ending today, oldest first, each with its estimated cost when shared (absent from servers that predate it). */
+  daily: Array<{ day: string, tokens: number, 
+/**
+ * The day's estimated cost, when shared; null when it lacks a price.
+ */
+costMicrousd?: number | null, 
+/**
+ * The day's largest tool and its tokens, when the tool split is shared and the day has tokens.
+ */
+topTool?: { tool: ToolId, tokens: number }, 
+/**
+ * The day's largest model and its tokens, when the model mix is shared and the day has tokens.
+ */
+topModel?: { model: string, tokens: number } }>;
   /** Tokens per UTC hour across every tool for the 24 whole hours before the hour under way, oldest first: the leaderboard's `last24h_tokens` hour by hour, and absent likewise. */
   hours?: Array<{ hour: string, tokens: number }>;
   activity: ActivityStats;
@@ -241,6 +259,75 @@ export type Wrapped = {
   /** The period's five largest models, largest first, when the model mix is shared. They carry no cost. */
   models?: Array<{ model: string, tokens: number, costMicrousd?: number | null }>;
 };
+/** A builder's usage over any span of UTC days (`/api/profiles/:alias/usage?from=&to=`), limited to what they share: the profile's usage chart reads a week, a month or all time from it, and steps back through earlier ones. */
+export type UsageWindow = {
+  alias: string;
+  /** The first UTC day asked for. */
+  from: string;
+  /** The last UTC day counted: the one asked for, or today for a span that runs past it. */
+  to: string;
+  tokens: number;
+  /** Tokens over the same number of days just before `from`. */
+  previousTokens: number;
+  /** Estimated cost over the span, when shared; null when any of its days lacks a price. */
+  costMicrousd?: number | null;
+  /** Each UTC day from `from` to `to`, oldest first. */
+  daily: Array<{ day: string, tokens: number, 
+/**
+ * The day's estimated cost, when shared; null when it lacks a price.
+ */
+costMicrousd?: number | null, 
+/**
+ * The day's largest tool and its tokens, when the tool split is shared and the day has tokens.
+ */
+topTool?: { tool: ToolId, tokens: number }, 
+/**
+ * The day's largest model and its tokens, when the model mix is shared and the day has tokens.
+ */
+topModel?: { model: string, tokens: number } }>;
+  /** Tokens per tool over the span, when the tool split is shared. */
+  toolTokens?: Partial<Record<ToolId, number>>;
+  /** The span's five largest models, largest first, when the model mix is shared. They carry no cost. */
+  models?: Array<{ model: string, tokens: number, costMicrousd?: number | null }>;
+};
+/** The community over one leaderboard window (`/api/community/stats?period=`), for the Community page: its totals and their change, how builders spread, the models in use, and series of days and weeks that do not depend on the window. */
+export type CommunityPeriod = {
+  period: LeaderboardPeriod;
+  /** The window's first instant; null for all time. */
+  windowStart: string | null;
+  updatedAt: string;
+  tokens: number;
+  /** Tokens in the same span of the window before: the same days of last week or month, or yesterday's UTC day for the last 24 hours (hours are kept for a day only); 0 for all time. */
+  previousTokens: number;
+  /** Builders with tokens in the window. */
+  builders: number;
+  /** Builders whose account was created in the window. */
+  newBuilders: number;
+  /** Sum of the known costs builders share in the window; null when none is known. */
+  costMicrousd: number | null;
+  /** Tokens by tool in the window, from builders who share their tool split. */
+  toolTotals: Partial<Record<ToolId, number>>;
+  /** Tokens by kind in the window, with reasoning, over the buckets that carry kinds; null when none do. */
+  breakdown: TokenCounts | null;
+  /** The window's ten largest models, largest first, with their tokens in the same span before and their cost. */
+  models: Array<{ model: string, tokens: number, previousTokens: number, costMicrousd: number | null }>;
+  /** Builders by their tokens in the window: each bucket runs from `min` up to the next one's. */
+  distribution: Array<{ min: number, builders: number, tokens: number }>;
+  /** The ten largest builders' tokens in the window. */
+  top10Tokens: number;
+  /** The middle builder's tokens in the window, the lower middle one for an even count; 0 without builders. */
+  medianTokens: number;
+  /** Community tokens per UTC day for the 365 days ending today, oldest first. */
+  daily: Array<{ day: string, tokens: number }>;
+  /** Builders with tokens on each UTC day, for the 84 days ending today, oldest first. */
+  dailyBuilders: Array<{ day: string, builders: number }>;
+  /** The 12 weeks ending this one, each from Monday, oldest first: tokens by tool and new builders. */
+  weeks: Array<{ 
+/**
+ * The week's Monday, a UTC day.
+ */
+week: string, toolTotals: Partial<Record<ToolId, number>>, newBuilders: number }>;
+};
 /** Landing-page totals across every published builder. */
 export type CommunityStats = {
   builders: number;
@@ -260,6 +347,12 @@ export type CommunityStats = {
   monthly?: Array<{ month: string, tokens: number }>;
   /** The middle builder's all-time tokens, the lower middle one for an even count; absent likewise. */
   medianTokens?: number;
+  /** Community tokens in the last 24 whole UTC hours, from builders with a computer that sends hours; absent from servers that predate it, or beyond the safe integer range. */
+  last24hTokens?: number;
+  /** The same builders' tokens on yesterday's UTC day, to compare the last 24 hours with (hours are kept for a day only, so the 24 hours before are not known); absent likewise. */
+  yesterdayTokens?: number;
+  /** Community tokens per UTC hour over those last 24 hours, oldest first; absent likewise. */
+  hourly?: Array<{ hour: string, tokens: number }>;
 };
 /** Decimal integer companions for shared aggregates. Maps and series are complete when present; null costs stay unknown. */
 export type ExactAggregates = {

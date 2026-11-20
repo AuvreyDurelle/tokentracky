@@ -3,6 +3,8 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { BADGE_IDS, badgeProgress, type ProfileStats } from '@tokentracky/core';
 import { ProfileCard, ProfileDialog, modelBars, toggleLike } from './ProfileModal';
+import { ProfileUsage } from '../ProfileUsage';
+import { UsageChart } from '../UsageChart';
 
 const markup = (element: ReactElement) => renderToStaticMarkup(element).replaceAll('<!-- -->', '');
 const VALUES: Record<string, number> = { 'token-titan': 1.1e12, 'big-day': 30.1e9, marathoner: 294, streak: 210, 'weekend-warrior': 81, momentum: 340, veteran: 357, podium: 1, multitool: 5, polyglot: 31, trendsetter: 0 };
@@ -50,10 +52,27 @@ describe('ProfileCard', () => {
     expect(fixed).not.toMatch(/<button[^>]*class="pf-like/);
     expect(fixed).toContain('>14<');
   });
-  it('charts the usage like the website, as daily, cumulative or calendar over 30 days, 90 days or 12 months, or the last 24 hours', () => {
-    const html = card();
-    for (const label of ['Daily', 'Cumulative', 'Calendar', '24h', '30d', '90d', '12m']) expect(html).toMatch(new RegExp(`<button[^>]*>${label}</button>`));
-    expect(html).toContain('aria-label="Tokens per UTC day, last 90 days"');
+  it('charts the usage in pink over 24 hours, a week, a month or all time, stepping back from this month', () => {
+    const api = { profileUsage: () => new Promise<never>(() => {}) };
+    const html = markup(<ProfileUsage alias="marenh" api={api} hours={undefined} start="2026-01-03" now={new Date('2026-11-19T14:00:00Z')} />);
+    for (const label of ['24h', 'Week', 'Month', 'All time', 'Daily', 'Running total']) expect(html).toMatch(new RegExp(`<button[^>]*>${label}</button>`));
+    expect(html).toMatch(/<button type="button" class="on" aria-pressed="true">Month<\/button>/);
+    expect(html).toContain('November 2026<small>1–19</small>');
+    expect(html).toContain('aria-label="Later" disabled=""');
+    expect(html).toContain('Loading usage…');
+    // Only shown when the card has a way to load spans.
+    expect(card()).not.toContain('class="pu"');
+  });
+  it('draws the usage chart with the best day, the day under way, the average and weekends', () => {
+    const points = [3, 9, 4, 6].map((value, index) => ({ at: `2026-11-1${6 + index}`, value: value * 1e9 }));
+    const html = markup(<UsageChart points={points} label="Tokens per UTC day" value={String} tick={(n) => `${n / 1e9}B`} axis={(index) => index === 3 ? 'Today' : String(16 + index)} tip={() => null}
+      average={5.5e9} best={{ index: 1, text: 'Best day · 9B' }} partial shade={(index) => index === 0} />);
+    expect(html).toContain('aria-label="Tokens per UTC day"');
+    expect(html).toContain('>Best day · 9B<');
+    expect(html).toContain('class="uc-partial"');
+    expect(html).toContain('class="uc-avg"');
+    expect(html.match(/class="uc-band"/g)).toHaveLength(1);
+    expect(html).toContain('>Today<');
   });
   it('splits all-time tokens by type with shares, reasoning inside output, only when every day carries types', () => {
     const html = card({ stats: { ...stats, breakdown: { input: 100, output: 50, cacheRead: 800, cacheWrite: 50, reasoning: 30 } } });

@@ -1,19 +1,21 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import type { UsageSummary } from '@tokentracky/core';
+import type { PublicProfile, UsageSummary } from '@tokentracky/core';
 import type { ApiClient, LocalStatus } from '../api';
 import { formatCompact, formatCost, formatExact, timeAgo } from '../format';
 import { addDays, fillRange, utcToday } from '../ranges';
 import { usageRevision } from '../refresh';
 import type { Route } from '../route';
 import { Avatar, JUMP_KEYS, SearchIcon, useRank } from '../ui';
+import { daysToPass, gapToNext, rankMove, resetText, windowStartOf } from './leaderboard';
 
 type Page = Route['page'] | 'connect';
 export type Tracking = 'collecting' | 'paused' | 'off';
 export interface Today { tokens: number; costMicrousd: number | null; spark: number[] }
 
 // A profile opens as a dialog over the leaderboard, so the frame still shows the leaderboard.
-const TITLES: Partial<Record<Page, string>> = { leaderboard: 'Leaderboard', tokens: 'Tokens', you: 'Tokens', achievements: 'Achievements', settings: 'Settings', profile: 'Leaderboard', join: 'How it works', missing: 'Page not found' };
+const TITLES: Partial<Record<Page, string>> = { leaderboard: 'Leaderboard', tokens: 'Tokens', you: 'Tokens', achievements: 'Achievements', settings: 'Settings', profile: 'Leaderboard', join: 'How it works', missing: 'Page not found',
+  town: 'Town', 'town-map': 'Town map', 'town-visit': 'Town' };
 
 /** Where a page's controls go: the window toolbar, before the jump button. */
 const ToolbarSlot = createContext<HTMLElement | null>(null);
@@ -35,6 +37,7 @@ export function todayOf(daily: UsageSummary['daily'], now = new Date()): Today {
 export function MacShell({ api, status, me, page, path, go, onPalette, children }: { api: ApiClient; status: LocalStatus | null; me: string | null; page: Page; path: string; go: (route: Route) => void; onPalette: () => void; children: ReactNode }) {
   const [today, setToday] = useState<Today | null>(null);
   const rank = useRank(api, me);
+  const week = useWeek(api, me, status?.lastSyncAt ?? null);
   const content = useRef<HTMLDivElement>(null);
   // Set as the toolbar mounts, before the first paint, so a page's controls never show at its top first.
   const [slot, setSlot] = useState<HTMLElement | null>(null);
@@ -52,7 +55,7 @@ export function MacShell({ api, status, me, page, path, go, onPalette, children 
   useEffect(() => { content.current?.scrollTo(0, 0); }, [pane]);
   const tracking: Tracking = status?.collecting ? 'collecting' : status?.sources.some((source) => source.state === 'paused') ? 'paused' : 'off';
   return <div className="mac app">
-    <Sidebar page={page} go={go} today={today} tracking={tracking} syncedAt={status?.lastSyncAt ?? null} me={me} rank={rank} />
+    <Sidebar page={page} go={go} today={today} week={week} tracking={tracking} syncedAt={status?.lastSyncAt ?? null} me={me} rank={rank} />
     <div className="main">
       <header className="toolbar">
         <span className="toolbar-title">{TITLES[page]}</span>
@@ -71,18 +74,21 @@ const NAV = [
   { page: 'leaderboard', label: 'Leaderboard', icon: icon(<><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" /><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" /><path d="M4 22h16" /><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" /><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" /><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" /></>) },
   { page: 'tokens', label: 'Tokens', icon: icon(<><path d="M3 3v16a2 2 0 0 0 2 2h16" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></>) },
   { page: 'achievements', label: 'Achievements', icon: icon(<><circle cx="12" cy="8" r="6" /><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11" /></>) },
+  { page: 'town', label: 'Town', icon: icon(<><path d="M3 21h18" /><path d="M5 21V11l4-3 4 3v10" /><path d="M13 21v-6h6v6" /><path d="M16 15v-3" /><path d="M9 21v-4" /><path d="M9 8V4l3 1.5L9 7" /></>) },
 ] as const;
 const SETTINGS_ICON = icon(<><path d="M20 7h-9" /><path d="M14 17H5" /><circle cx="17" cy="17" r="3" /><circle cx="7" cy="7" r="3" /></>);
 
-export function Sidebar({ page, go, today, tracking, syncedAt, me, rank }: { page: Page; go: (route: Route) => void; today: Today | null; tracking: Tracking; syncedAt: string | null; me: string | null; rank: number | null }) {
+export function Sidebar({ page, go, today, week = null, tracking, syncedAt, me, rank }: { page: Page; go: (route: Route) => void; today: Today | null; week?: PublicProfile[] | null; tracking: Tracking; syncedAt: string | null; me: string | null; rank: number | null }) {
   // `/you` is the Tokens page under its older address; a profile sits over the leaderboard.
-  const current = (target: Page) => page === target || (target === 'tokens' && page === 'you') || (target === 'leaderboard' && page === 'profile') ? 'page' : undefined;
+  const current = (target: Page) => page === target || (target === 'tokens' && page === 'you') || (target === 'leaderboard' && page === 'profile')
+    || (target === 'town' && (page === 'town-map' || page === 'town-visit')) ? 'page' : undefined;
   return <aside className="sidebar">
     <div className="brand"><span className="brand-mark" aria-hidden="true" />Tokentracky</div>
     <nav className="nav" aria-label="Primary">
       {NAV.map((item) => <button key={item.page} type="button" className="nav-item" aria-current={current(item.page)} onClick={() => go({ page: item.page })}>{item.icon}{item.label}</button>)}
     </nav>
     <div className="sidebar-spacer" />
+    {me && week && <WeekCard rows={week} me={me} />}
     {today && <TodayCard today={today} />}
     <div className="sync"><span className={`dot${tracking === 'collecting' ? ' dot-live' : ''}`} />{tracking === 'collecting' ? `Collecting${syncedAt ? ` · synced ${timeAgo(syncedAt)}` : ''}` : tracking === 'paused' ? 'Paused' : 'Not tracking'}</div>
     <nav className="nav" aria-label="Preferences"><button type="button" className="nav-item" aria-current={current('settings')} onClick={() => go({ page: 'settings' })}>{SETTINGS_ICON}Settings</button></nav>
@@ -91,6 +97,35 @@ export function Sidebar({ page, go, today, tracking, syncedAt, me, rank }: { pag
       <span className="who"><b>{me ?? 'You'}</b>{me ? rank !== null && <span>#{rank} all time</span> : <span>Not on the leaderboard</span>}</span>
     </button>
   </aside>;
+}
+
+/** You and the builders either side of you on this week's board, reloaded after each sync; null until loaded or off the board. */
+function useWeek(api: ApiClient, me: string | null, syncedAt: string | null): PublicProfile[] | null {
+  const [rows, setRows] = useState<PublicProfile[] | null>(null);
+  useEffect(() => {
+    if (!me) { setRows(null); return; }
+    let live = true;
+    api.leaderboardAround(me, 'week').then((value) => { if (live) setRows(value.items); }).catch(() => {});
+    return () => { live = false; };
+  }, [api, me, syncedAt]);
+  return rows;
+}
+
+/** Your week on every page: rank and its move, tokens, when the week resets and the gap to your rival, the builder directly above you. */
+export function WeekCard({ rows, me, now = Date.now() }: { rows: readonly PublicProfile[]; me: string; now?: number }) {
+  const mine = rows.find((row) => row.alias === me);
+  if (!mine) return null;
+  const ahead = gapToNext(rows, me);
+  const days = ahead && daysToPass(ahead.tokens, mine.daily, ahead.ahead.daily);
+  const reset = resetText('week', windowStartOf('week', now), now);
+  const move = rankMove(mine);
+  return <div className="week-card">
+    <div className="row"><span className="label">This week</span>{reset && <span className="faint">resets in {reset.left}</span>}</div>
+    <div className="week-main"><span className="week-rank">#{formatExact(mine.rank)}</span>
+      {move.kind === 'up' || move.kind === 'down' ? <span className={`week-mv ${move.kind === 'up' ? 'rise' : 'fall'}`}>{move.kind === 'up' ? '▲' : '▼'}{move.by}</span> : null}
+      <span className="week-tokens" title={`${formatExact(mine.tokens)} tokens`}>{formatCompact(mine.tokens)}</span></div>
+    <div className="week-chase">{ahead ? <>{formatCompact(ahead.tokens)} to pass {ahead.ahead.alias}{days ? ` · ~${formatExact(days)}d` : ''}</> : 'You lead this week'}</div>
+  </div>;
 }
 
 export function TodayCard({ today }: { today: Today }) {

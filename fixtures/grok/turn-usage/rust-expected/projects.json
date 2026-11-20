@@ -8,6 +8,12 @@
       "reasoning": 60
     },
     "costMicrousd": 4956,
+    "daily": [
+      {
+        "day": "2026-10-22",
+        "tokens": 4035
+      }
+    ],
     "name": "/synthetic/grok-project",
     "sessions": 1,
     "tokens": 4035
