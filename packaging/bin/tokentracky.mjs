@@ -155,11 +155,14 @@ export async function installVerifiedBinary({ manifest, version = VERSION, platf
 /** Where the Mac app is looked for and put: the system's Applications folder, then the user's own. */
 export const APP_FOLDERS = ['/Applications', join(homedir(), 'Applications')];
 const APP = 'Tokentracky.app';
+/** The launcher's own flag: yes to the app in advance, for `login` run without a terminal (by an AI agent, say). The
+ * CLI never sees it. */
+const INSTALL_APP = '--install-app';
 
-/** `login` from a Mac terminal, where the launcher offers the app before the CLI starts. Not with `TOKENTRACKY_HOME`:
- * the app opens with the system's environment, so the CLI does not hand that credential to it. */
+/** `login` from a Mac terminal, or with `--install-app`, where the launcher offers the app before the CLI starts. Not
+ * with `TOKENTRACKY_HOME`: the app opens with the system's environment, so the CLI does not hand that credential to it. */
 export function offersApp(args, { platform = process.platform, interactive = Boolean(process.stdin.isTTY && process.stdout.isTTY), env = process.env } = {}) {
-  return platform === 'darwin' && interactive && !env.TOKENTRACKY_HOME && args.includes('login') && !args.some((arg) => ['-h', '--help', '-v', '--version'].includes(arg));
+  return platform === 'darwin' && (interactive || args.includes(INSTALL_APP)) && !env.TOKENTRACKY_HOME && args.includes('login') && !args.some((arg) => ['-h', '--help', '-v', '--version'].includes(arg));
 }
 
 /** The installed Mac app, or null. */
@@ -208,13 +211,15 @@ export async function installMacApp({ manifest, version = VERSION, folders = APP
  * menu bar. Without it the CLI keeps uploading itself while its terminal stays open. */
 async function offerMacApp(args) {
   if (!offersApp(args) || (await installedApp())) return;
-  const { createInterface } = await import('node:readline/promises');
-  const terminal = createInterface({ input: process.stdin, output: process.stdout });
-  // Ctrl-C stops here, as it stops the CLI; Ctrl-D answers no.
-  terminal.once('SIGINT', () => { terminal.close(); process.stdout.write('\n'); process.exit(130); });
-  const answer = await terminal.question('Tokentracky for Mac keeps uploading from the menu bar after you close this terminal. Install it in Applications? [y/N] ').catch(() => '');
-  terminal.close();
-  if (!/^y(es)?$/i.test(answer.trim())) return;
+  if (!args.includes(INSTALL_APP)) {
+    const { createInterface } = await import('node:readline/promises');
+    const terminal = createInterface({ input: process.stdin, output: process.stdout });
+    // Ctrl-C stops here, as it stops the CLI; Ctrl-D answers no.
+    terminal.once('SIGINT', () => { terminal.close(); process.stdout.write('\n'); process.exit(130); });
+    const answer = await terminal.question('Tokentracky for Mac keeps uploading from the menu bar after you close this terminal. Install it in Applications? [y/N] ').catch(() => '');
+    terminal.close();
+    if (!/^y(es)?$/i.test(answer.trim())) return;
+  }
   try {
     process.stdout.write('Downloading Tokentracky for Mac…\n');
     const app = await installMacApp({ manifest: JSON.parse(await readFile(MANIFEST_PATH, 'utf8')) });
@@ -233,7 +238,7 @@ export async function main(args = process.argv.slice(2)) {
   try {
     const binary = await getBinary();
     await offerMacApp(args);
-    const child = spawn(binary, args, { stdio: 'inherit' });
+    const child = spawn(binary, args.filter((arg) => arg !== INSTALL_APP), { stdio: 'inherit' });
     // Windows has no signals to pass on: the console sends Ctrl+C and Ctrl+Break to the CLI itself, and Node could
     // only end it outright. The launcher waits for it to stop.
     const windows = process.platform === 'win32';

@@ -152,6 +152,16 @@ test('offers the Mac app to login on a Mac terminal only', () => {
   assert.equal(offersApp(['login'], { platform: 'darwin', interactive: true, env: { TOKENTRACKY_HOME: '' } }), true);
 });
 
+test('--install-app installs the Mac app for login without a terminal', () => {
+  assert.equal(offersApp(['login', '--install-app'], { platform: 'darwin', interactive: false }), true);
+  assert.equal(offersApp(['--install-app', 'login'], { platform: 'darwin', interactive: false }), true);
+  for (const [args, platform, env] of [[['login', '--install-app'], 'linux', {}], [['login', '--install-app'], 'win32', {}],
+    [['serve', '--install-app'], 'darwin', {}], [['login', '--install-app', '--help'], 'darwin', {}],
+    [['login', '--install-app'], 'darwin', { TOKENTRACKY_HOME: '/custom' }]]) {
+    assert.equal(offersApp(args, { platform, interactive: false, env }), false, `${args} ${platform} ${JSON.stringify(env)}`);
+  }
+});
+
 test('finds the Mac app in either Applications folder', async () => {
   const root = await mkdtemp(join(tmpdir(), 'tokentracky-mac-app-test-'));
   try {

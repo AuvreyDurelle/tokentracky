@@ -63,9 +63,11 @@ globalThis.fetch = async () => new Response(Buffer.from(${JSON.stringify(Buffer.
 `);
   };
   const env = { ...process.env, TOKENTRACKY_CACHE_DIR: resolve(temp, 'cache'), NODE_OPTIONS: `--import=${pathToFileURL(preload).href}` };
-  const payload = '#!/bin/sh\nprintf "synthetic cli: %s\\n" "$1"\nexit 23\n';
+  const payload = '#!/bin/sh\nprintf "synthetic cli: %s\\n" "$*"\nexit 23\n';
   const invocations = [
     [bins[0], ['local']],
+    // The launcher's own flag never reaches the CLI.
+    [bins[0], ['--install-app', 'local']],
     ['npx', ['--no-install', '--prefix', prefix, 'tokentracky', 'npx']],
     [bins[1], ['global']],
   ];
