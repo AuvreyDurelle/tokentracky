@@ -143,6 +143,10 @@ describe('OverviewStrip', () => {
     expect(html).toMatch(/(Oct 5|5 Oct) to (Oct 11|11 Oct) highlighted/);
     // One day still shows; a range before the strip lights nothing.
     expect(renderToStaticMarkup(<OverviewStrip days={days} from="2026-10-05" to="2026-10-05" />)).not.toMatch(/clipPath[^>]*><rect[^>]*width="0"/);
+    // The last day alone still shows, inside the strip.
+    const [, x, width] = /clipPath[^>]*><rect x="([\d.]+)" y="0" width="([\d.]+)"/.exec(renderToStaticMarkup(<OverviewStrip days={days} from="2026-11-09" to="2026-11-09" />)) ?? [];
+    expect(Number(width)).toBeGreaterThan(0);
+    expect(Number(x) + Number(width)).toBeLessThanOrEqual(1078);
     const before = renderToStaticMarkup(<OverviewStrip days={days} from="2026-08-01" to="2026-08-07" />);
     expect(before).toContain('aria-label="Last 12 months"');
     expect(before).not.toContain('tk-strip-win');

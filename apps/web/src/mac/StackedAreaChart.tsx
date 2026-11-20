@@ -205,7 +205,7 @@ export function OverviewStrip({ days, from, to }: { days: Array<{ day: string; t
   const outside = to < days[0]!.day || from > days.at(-1)!.day;
   const start = Math.max(0, days.findIndex((day) => day.day >= from));
   const end = Math.max(start, days.findLastIndex((day) => day.day <= to));
-  const left = x(start), width = outside ? 0 : Math.max(FRAME.width / (days.length - 1), x(end) - left);
+  const width = outside ? 0 : Math.max(FRAME.width / (days.length - 1), x(end) - x(start)), left = Math.min(x(start), FRAME.width - width);
   const months = days.flatMap((day, index) => day.day.endsWith('-01') ? [{ index, name: new Intl.DateTimeFormat(undefined, { month: 'short', timeZone: 'UTC' }).format(new Date(`${day.day}T00:00:00Z`)) }] : []);
   return <svg className="tk-strip" viewBox={`0 0 ${FRAME.width} 46`} role="img" aria-label={outside ? 'Last 12 months' : `Last 12 months, with ${shortDay(days[start]!.day)} to ${shortDay(days[end]!.day)} highlighted`}>
     <defs><clipPath id={`${id}-win`}><rect x={left} y="0" width={width} height="32" /></clipPath></defs>
