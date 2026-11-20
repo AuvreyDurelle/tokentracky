@@ -195,16 +195,17 @@ function Pill({ x, y, text, frame: FRAME }: { x: number; y: number; text: string
 }
 
 /** A year of daily totals as a quiet area, with the chart's window lit and framed, and month initials below. */
-export function OverviewStrip({ days, from }: { days: Array<{ day: string; tokens: number }>; from: string }) {
+export function OverviewStrip({ days, from, to }: { days: Array<{ day: string; tokens: number }>; from: string; to: string }) {
   const id = useId().replace(/[^\w-]/g, '');
   if (days.length < 2) return null;
   const max = Math.max(1, ...days.map((day) => day.tokens));
   const x = (index: number) => round((index / (days.length - 1)) * FRAME.width);
   const area = `M0,32${days.map((day, index) => `L${x(index)},${round(32 - (day.tokens / max) * 26)}`).join('')}L${FRAME.width},32Z`;
   const start = Math.max(0, days.findIndex((day) => day.day >= from));
-  const left = x(start), width = FRAME.width - left;
+  const end = Math.max(start, days.findLastIndex((day) => day.day <= to));
+  const left = x(start), width = x(end) - left;
   const months = days.flatMap((day, index) => day.day.endsWith('-01') ? [{ index, name: new Intl.DateTimeFormat(undefined, { month: 'short', timeZone: 'UTC' }).format(new Date(`${day.day}T00:00:00Z`)) }] : []);
-  return <svg className="tk-strip" viewBox={`0 0 ${FRAME.width} 46`} role="img" aria-label={`Last 12 months, with ${shortDay(days[start]!.day)} to ${shortDay(days.at(-1)!.day)} highlighted`}>
+  return <svg className="tk-strip" viewBox={`0 0 ${FRAME.width} 46`} role="img" aria-label={`Last 12 months, with ${shortDay(days[start]!.day)} to ${shortDay(days[end]!.day)} highlighted`}>
     <defs><clipPath id={`${id}-win`}><rect x={left} y="0" width={width} height="32" /></clipPath></defs>
     <path className="tk-strip-base" d={area} />
     <path className="tk-strip-sel" d={area} clipPath={`url(#${id}-win)`} />

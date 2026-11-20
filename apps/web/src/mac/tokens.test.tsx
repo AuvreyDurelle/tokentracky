@@ -4,6 +4,7 @@ import type { LocalStatus } from '../api';
 import { addDays, hourList, last24Hours } from '../ranges';
 import { personalFixtures } from './personal-fixtures';
 import { TokensPage, chartSeries, modelColors } from './TokensView';
+import { OverviewStrip } from './StackedAreaChart';
 
 const f = personalFixtures();
 const noop = () => {};
@@ -132,5 +133,13 @@ describe('modelColors', () => {
     expect(colors.get('sol')).toBe('var(--tool-codex)');
     expect(colors.get('sonnet')).toMatch(/^color-mix\(in oklab, var\(--tool-claude\) \d+%, var\(--bg\)\)$/);
     expect(colors.get('other')).toBe('var(--heat-2)');
+  });
+});
+
+describe('OverviewStrip', () => {
+  it('lights only the chart’s own days, not everything since they began', () => {
+    const days = Array.from({ length: 40 }, (_, at) => ({ day: addDays('2026-10-01', at), tokens: at }));
+    const html = renderToStaticMarkup(<OverviewStrip days={days} from="2026-10-05" to="2026-10-11" />);
+    expect(html).toMatch(/(Oct 5|5 Oct) to (Oct 11|11 Oct) highlighted/);
   });
 });

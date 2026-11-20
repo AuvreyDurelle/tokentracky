@@ -285,7 +285,7 @@ function ChartCard({ data, year, yearDays, range, points, metric, grain, custom,
           previous={previous} shade={!hours && !byWeek && days.length <= 62 ? days.map(weekend) : undefined} pace={pace} onPick={!hours && !byWeek ? (index) => onDrill(days[index]!) : undefined} />
         : <p className="tk-empty">No usage in this range yet.</p>}
     </div>
-    {yearDays && !hours && <div className="tk-strip-box"><OverviewStrip days={yearDays} from={range.from} /></div>}
+    {yearDays && !hours && <div className="tk-strip-box"><OverviewStrip days={yearDays} from={range.from} to={range.to} /></div>}
     {year && yearDays && <Bests year={year} yearDays={yearDays} />}
   </section>;
 }
