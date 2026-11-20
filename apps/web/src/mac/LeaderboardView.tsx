@@ -29,11 +29,12 @@ export function LeaderboardView({ api, me, canJoin, syncedAt, site, onProfile, o
   const list = useLoad(() => api.leaderboard(period, 'all', query, page, PAGE_SIZE), [api, period, query, page, syncedAt], query ? 250 : 0);
   // You and the builders either side of you in the shown window: your rival is the one above. Below the first page,
   // they follow a gap row.
-  const around = useLoad(me ? () => api.leaderboardAround(me, period) : null, [api, me, period, syncedAt]);
+  const around = useLoad(me ? () => api.leaderboardAround(me, period).then((value) => ({ period, items: value.items })) : null, [api, me, period, syncedAt]);
   // Your rank in the other windows: the profile's week, month and all time, and the last 24 hours on their own.
   const periods = useLoad(me ? () => api.profileStats(me).then((stats) => stats.periods) : null, [api, me, syncedAt]);
   const lastDay = useLoad(me && period !== '24h' ? () => api.leaderboardAround(me, '24h') : null, [api, me, period, syncedAt]);
-  const neighbours = around.value?.items ?? [];
+  // Like the rankings, the builders around you show only under the period they were loaded for.
+  const neighbours = around.value?.period === period ? around.value.items : [];
 
   const unavailable = !list.value && list.error instanceof ApiError && list.error.code === 'CLOUD_UNAVAILABLE';
   // Rankings from the period being loaded are never shown under the new period's name.

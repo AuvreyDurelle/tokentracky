@@ -201,16 +201,20 @@ export function OverviewStrip({ days, from, to }: { days: Array<{ day: string; t
   const max = Math.max(1, ...days.map((day) => day.tokens));
   const x = (index: number) => round((index / (days.length - 1)) * FRAME.width);
   const area = `M0,32${days.map((day, index) => `L${x(index)},${round(32 - (day.tokens / max) * 26)}`).join('')}L${FRAME.width},32Z`;
+  // The chart's days where they meet the strip, each at least a day's width; none when the range is outside it.
+  const outside = to < days[0]!.day || from > days.at(-1)!.day;
   const start = Math.max(0, days.findIndex((day) => day.day >= from));
   const end = Math.max(start, days.findLastIndex((day) => day.day <= to));
-  const left = x(start), width = x(end) - left;
+  const left = x(start), width = outside ? 0 : Math.max(FRAME.width / (days.length - 1), x(end) - left);
   const months = days.flatMap((day, index) => day.day.endsWith('-01') ? [{ index, name: new Intl.DateTimeFormat(undefined, { month: 'short', timeZone: 'UTC' }).format(new Date(`${day.day}T00:00:00Z`)) }] : []);
-  return <svg className="tk-strip" viewBox={`0 0 ${FRAME.width} 46`} role="img" aria-label={`Last 12 months, with ${shortDay(days[start]!.day)} to ${shortDay(days[end]!.day)} highlighted`}>
+  return <svg className="tk-strip" viewBox={`0 0 ${FRAME.width} 46`} role="img" aria-label={outside ? 'Last 12 months' : `Last 12 months, with ${shortDay(days[start]!.day)} to ${shortDay(days[end]!.day)} highlighted`}>
     <defs><clipPath id={`${id}-win`}><rect x={left} y="0" width={width} height="32" /></clipPath></defs>
     <path className="tk-strip-base" d={area} />
-    <path className="tk-strip-sel" d={area} clipPath={`url(#${id}-win)`} />
-    <rect className="tk-strip-win" x={left} y="1" width={Math.max(4, width - 1)} height="31" rx="4" />
-    <rect className="tk-strip-handle" x={left - 2} y="9" width="4" height="14" rx="2" />
+    {!outside && <>
+      <path className="tk-strip-sel" d={area} clipPath={`url(#${id}-win)`} />
+      <rect className="tk-strip-win" x={left} y="1" width={Math.max(4, width - 1)} height="31" rx="4" />
+      <rect className="tk-strip-handle" x={left - 2} y="9" width="4" height="14" rx="2" />
+    </>}
     {months.map((month) => <text key={month.index} x={x(month.index)} y="44">{month.name}</text>)}
   </svg>;
 }

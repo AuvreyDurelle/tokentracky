@@ -141,5 +141,10 @@ describe('OverviewStrip', () => {
     const days = Array.from({ length: 40 }, (_, at) => ({ day: addDays('2026-10-01', at), tokens: at }));
     const html = renderToStaticMarkup(<OverviewStrip days={days} from="2026-10-05" to="2026-10-11" />);
     expect(html).toMatch(/(Oct 5|5 Oct) to (Oct 11|11 Oct) highlighted/);
+    // One day still shows; a range before the strip lights nothing.
+    expect(renderToStaticMarkup(<OverviewStrip days={days} from="2026-10-05" to="2026-10-05" />)).not.toMatch(/clipPath[^>]*><rect[^>]*width="0"/);
+    const before = renderToStaticMarkup(<OverviewStrip days={days} from="2026-08-01" to="2026-08-07" />);
+    expect(before).toContain('aria-label="Last 12 months"');
+    expect(before).not.toContain('tk-strip-win');
   });
 });
