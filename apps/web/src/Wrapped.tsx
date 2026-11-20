@@ -1,3 +1,4 @@
+import { usePublicPageReady } from './public-page';
 import { useEffect, useState } from 'react';
 import { adjacentWrap, TOOL_NAMES, wrapLabel, wrapRange, type ToolId, type Wrapped } from '@tokentracky/core';
 import { ApiError, type ApiClient } from './api';
@@ -30,6 +31,7 @@ export function WrappedPage({ api, alias, period, origin, onProfile, onPeriod }:
     api.wrapped(alias, period).then((value) => { if (live) setWrap(value); }).catch((value: unknown) => { if (live) setError(value); });
     return () => { live = false; };
   }, [api, alias, period]);
+  usePublicPageReady(wrap !== null || error !== null);
   if (error instanceof ApiError && error.status === 404) return <div className="page-stack"><Empty title={`${alias} isn’t on the leaderboard`}>They may have deleted their account, or the name is mistyped.</Empty></div>;
   if (error instanceof ApiError && error.status === 400) return <div className="page-stack"><Empty title={`${wrapLabel(period)} hasn’t started yet`} action={<button type="button" className="btn" onClick={onProfile}>See {alias}’s profile</button>} /></div>;
   if (error) return <div className="page-stack"><Notice tone="error">Could not load this wrap: {errorText(error)}</Notice></div>;

@@ -11,7 +11,7 @@ import {readFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {publicSite} from '@tokentracky/cloud';
 import {compareMeta, profileMeta, wrappedMeta} from './share-page.ts';
-import {accountCallback, BOARD_QUERY, SHARE_META_TYPE, shareDocument, unavailableShare, withStandings, type ShareMeta} from './public-html.ts';
+import {accountCallback, standingsQuery, SHARE_META_TYPE, shareDocument, unavailableShare, withStandings, type ShareMeta} from './public-html.ts';
 
 export interface HostedOptions {
   databaseUrl: string;
@@ -60,11 +60,12 @@ async function baseApp(webRoot: string, authOrigin: string | undefined, trustedP
   app.get('/',async(request,reply)=>{
     const url = new URL(request.url,'http://localhost');
     if (accountCallback(url.searchParams)) return reply.header('X-Robots-Tag','noindex').sendFile('index.html');
+    const query = standingsQuery(url.searchParams);
     const [template, board] = await Promise.all([
       readFile(join(webRoot,'hosted/index.html'),'utf8'),
-      repository.leaderboard(BOARD_QUERY).catch(() => null),
+      repository.leaderboard(query).catch(() => null),
     ]);
-    return reply.type('text/html; charset=utf-8').send(withStandings(template,board));
+    return reply.type('text/html; charset=utf-8').send(withStandings(template,query.period,board));
   });
   app.get('/leaderboard',(request,reply)=>reply.redirect('/'+new URL(request.url,'http://localhost').search,308));
   app.get('/you',(_request,reply)=>reply.sendFile('index.html'));

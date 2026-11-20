@@ -208,7 +208,10 @@ function App() {
   // Locally the pages sit in the Mac app's frame instead of the site's header and footer; the popover has neither.
   if (local) return <Suspense fallback={<main className="startup">Loading dashboard…</main>}>{page === 'popover' ? body : <MacShell api={api} status={localStatus} me={me} page={page} path={routePath(route)} go={navigate} onPalette={() => setPalette(true)}>{body}
     {joinPrompt && <JoinPrompt api={api} refresh={async () => { await refreshLocal(); setJoinPrompt(false); }} onClose={() => setJoinPrompt(false)} />}</MacShell>}{commands}</Suspense>;
-  return <div className="app" ref={node => { if (node) initialPublicPage?.remove(); }}>
+  const waitsForData = page === 'leaderboard' || page === 'profile' || page === 'wrapped' || page === 'vs';
+  return <div className="app" ref={node => {
+    if (node && (!waitsForData || authState === 'recovery')) initialPublicPage?.remove();
+  }}>
     {page === 'connect' ? <ConnectNav onHome={home} onBack={finishConnect} />
       : <SiteNav api={api} page={page === 'leaderboard' || page === 'join' || page === 'you' ? page : 'other'} me={me} signedIn={authState === 'signed_in'} canJoin={canJoin}
         onPalette={() => setPalette(true)} />}

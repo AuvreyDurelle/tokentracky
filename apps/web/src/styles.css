@@ -1077,6 +1077,9 @@ span.profile-like { cursor: default; }
   *, *::before, *::after { transition: none !important; animation: none !important; }
 }
 
+/* Mount the interactive tree in the background until its first data or error is ready. */
+#public-page + #root { display: none; }
+
 /* Public articles and their persistent navigation. */
 .site-links a, .who a, .me-chip, .brand, .podium-main { text-decoration: none; }
 .footer-guides { flex-basis: 100%; border-top: 1px solid var(--border); padding-top: 12px; }

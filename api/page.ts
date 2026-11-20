@@ -2,7 +2,7 @@ import type {IncomingMessage, ServerResponse} from 'node:http';
 import {readFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {proxyVercelGateway} from '../apps/server/src/vercel-gateway.js';
-import {accountCallback, BOARD_QUERY, SHARE_META_TYPE, shareDocument, unavailableShare, withStandings, type ShareMeta} from '../apps/server/src/public-html.js';
+import {accountCallback, standingsQuery, SHARE_META_TYPE, shareDocument, unavailableShare, withStandings, type ShareMeta} from '../apps/server/src/public-html.js';
 
 type ReadPublic = (path: string, accept: string) => Promise<Response>;
 
@@ -12,12 +12,13 @@ export async function renderPage(url: URL, readPublic: ReadPublic, template: (fi
   const headers = {'content-type':'text/html; charset=utf-8','cache-control':'private, no-store','x-robots-tag':'noindex'};
   if (path === '/') {
     if (accountCallback(url.searchParams)) return new Response(await template('hosted/app.html'),{headers});
-    const query = new URLSearchParams(Object.entries(BOARD_QUERY).map(([key,value])=>[key,String(value)]));
+    const boardQuery = standingsQuery(url.searchParams);
+    const query = new URLSearchParams(Object.entries(boardQuery).map(([key,value])=>[key,String(value)]));
     const [home, board] = await Promise.all([
       template('hosted/index.html'),
       readPublic('/api/leaderboard?'+query,'application/json').then(reply => reply.ok ? reply.json() : null).catch(() => null),
     ]);
-    return new Response(withStandings(home,board),{headers:{'content-type':headers['content-type'],'cache-control':'no-store'}});
+    return new Response(withStandings(home,boardQuery.period,board),{headers:{'content-type':headers['content-type'],'cache-control':'no-store'}});
   }
   if (!path || !/^\/(?:u\/[a-zA-Z0-9_-]+|wrapped\/[a-zA-Z0-9_-]+\/\d{4}(?:-\d{2})?|vs\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+)$/.test(path)) return new Response(null,{status:404,headers});
   const period = url.searchParams.get('period');

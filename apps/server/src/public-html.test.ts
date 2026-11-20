@@ -16,6 +16,12 @@ it('renders weekly standings or an explicit unavailable message and preserves pr
   expect(await callback.text()).toContain('/assets/current-build.js');
   expect(read).toHaveBeenCalledTimes(2);
 });
+it.each([['all','All-time leaders'],['month','This month’s leaders'],['24h','Leaders in the last 24 hours']])('renders the requested %s standings on Vercel',async (period,heading) => {
+  const read=vi.fn().mockResolvedValue(Response.json({items:[],updatedAt:'2026-11-20T12:45:00.000Z'}));
+  const response=await render('/api/page?__page=/&period='+period,read);
+  expect(await response.text()).toContain(heading);
+  expect(new URL(read.mock.calls[0][0],'https://tokentracky.com').searchParams.get('period')).toBe(period);
+});
 it('uses the public projection with the deployed shell and preserves withdrawal and upstream errors',async () => {
   const read=vi.fn().mockResolvedValueOnce(Response.json({title:'alice on Tokentracky',description:'Weekly total',url:'https://tokentracky.com/u/alice',image:'https://tokentracky.com/og/alice.png'}))
     .mockResolvedValueOnce(new Response(null,{status:404})).mockRejectedValueOnce(new Error('offline'));

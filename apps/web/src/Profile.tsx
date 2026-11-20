@@ -1,3 +1,4 @@
+import { usePublicPageReady } from './public-page';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { adjacentWrap, fitFacts, rankingWindow, totalTokens, windowActivity, wrapLabel, type BadgeProgress, type Period, type ProfileStats, type TokenCounts } from '@tokentracky/core';
 import { ApiError, type ApiClient } from './api';
@@ -47,6 +48,7 @@ export function ProfilePage({ api, alias, me, signedIn, origin, join, onLeaderbo
     api.profileLikeStatus(alias).then((status) => { if (live) setLiked(status.liked); }, () => {});
     return () => { live = false; };
   }, [api, alias, me, signedIn]);
+  usePublicPageReady(stats !== null || error !== null);
   const toggle = () => {
     if (liked === null || !stats || pending) return;
     const before = { liked, likes: likes ?? stats.likes };

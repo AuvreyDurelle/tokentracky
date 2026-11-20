@@ -166,7 +166,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('hosted GitHub username wiring',
     cleanup.push(async()=>{vi.unstubAllGlobals();});
     await mkdir('.runtime',{recursive:true});const webRoot=await mkdtemp(resolve('.runtime/hosted-test-'));
     cleanup.push(()=>rm(webRoot,{recursive:true,force:true}));
-    await writeFile(join(webRoot,'index.html'),'<html><head><title>Tokentracky</title><meta name="description" content="site" /></head><body>hosted</body></html>');
+    await writeFile(join(webRoot,'index.html'),'<html><head><title>Tokentracky</title><meta name="description" content="site" /></head><body>hosted<div id="root"></div></body></html>');
     await mkdir(join(webRoot,'hosted/blog'),{recursive:true});
     await writeFile(join(webRoot,'hosted/index.html'),'<h1>hosted board</h1><!--public-standings-->');
     for (const page of PUBLIC_PAGES) await writeFile(join(webRoot,'hosted',page+'.html'),'<h1>hosted '+page+'</h1>');
@@ -235,12 +235,14 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('hosted GitHub username wiring',
       const profileWeek=(await app.inject({url:`/u/${alias}?period=week&ref=share`,headers:{'x-tokentracky-host':'tokentracky.com'}})).body;
       expect(profileWeek).toMatch(/<meta name="description" content="#\d+ this week with 0 AI coding tokens\./);
       expect(profileWeek).toContain(`<meta property="og:image" content="https://tokentracky.com/og/${alias}.png?period=week" />`);
-      expect(page.body).toContain('hosted');
+      expect(page.body).toContain('<div id="public-page"><main');
+      expect(page.body).toContain('</main></div><div id="root"></div>');
       expect(page.headers['x-robots-tag']).toBe('noindex');
       const unknown=await app.inject('/u/nobody-at-all');
       expect(unknown.statusCode).toBe(404);
       expect(unknown.body).toContain('<title>Page unavailable</title>');
       expect(unknown.body).not.toContain('og:image');
+      expect(unknown.body).toContain('<div id="public-page"><main');
       const meta=await app.inject({url:`/u/${alias}`,headers:{accept:'application/vnd.tokentracky.share+json','x-tokentracky-host':'tokentracky.com'}});
       expect(meta.json()).toMatchObject({title:`${alias} on Tokentracky`,url:`https://tokentracky.com/u/${alias}`});
       const month=new Date().toISOString().slice(0,7);
@@ -269,9 +271,15 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('hosted GitHub username wiring',
       const profile=await app.inject(`/u/${alias}`);
       expect(profile.statusCode).toBe(200);
       expect(profile.headers['cache-control']).toBe('no-store');
-      expect((await app.inject('/')).body).toContain('This week’s leaders');
+      const reads=vi.spyOn(PostgresCloudRepository.prototype,'leaderboard');
+      try {
+        for (const [period,heading] of [['week','This week’s leaders'],['month','This month’s leaders'],['all','All-time leaders'],['24h','Leaders in the last 24 hours']]) {
+          expect((await app.inject('/?period='+period)).body).toContain(heading);
+          expect(reads).toHaveBeenLastCalledWith(expect.objectContaining({period}));
+        }
+      } finally {reads.mockRestore();}
       const offline=vi.spyOn(PostgresCloudRepository.prototype,'leaderboard').mockRejectedValueOnce(new Error('offline'));
-      try {expect((await app.inject('/')).body).toContain('weekly standings are temporarily unavailable');}
+      try {expect((await app.inject('/')).body).toContain('standings are temporarily unavailable');}
       finally {offline.mockRestore();}
       const failure=vi.spyOn(PostgresCloudRepository.prototype,'profile').mockRejectedValueOnce(new Error('offline'));
       try {expect((await app.inject(`/u/${alias}`)).statusCode).toBe(503);}

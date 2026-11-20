@@ -1,3 +1,4 @@
+import { usePublicPageReady } from './public-page';
 import { useEffect, useState } from 'react';
 import { TOOL_NAMES, type Period, type ProfileStats, type ToolId } from '@tokentracky/core';
 import { ApiError, type ApiClient } from './api';
@@ -37,6 +38,7 @@ export function ComparePage({ api, a, b, origin, onProfile }: { api: ApiClient; 
     Promise.all([api.profileStats(a), api.profileStats(b)]).then((value) => { if (live) setPair(value); }).catch((value: unknown) => { if (live) setError(value); });
     return () => { live = false; };
   }, [api, a, b]);
+  usePublicPageReady(pair !== null || error !== null);
   if (error instanceof ApiError && error.status === 404) return <div className="page-stack"><Empty title="One of these builders isn’t on the leaderboard">They may have deleted their account, or a name is mistyped.</Empty></div>;
   if (error) return <div className="page-stack"><Notice tone="error">Could not load this comparison: {errorText(error)}</Notice></div>;
   if (!pair) return <Loading>Loading comparison…</Loading>;

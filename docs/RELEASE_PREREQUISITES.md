@@ -30,6 +30,21 @@ Repository checks establish code behavior on synthetic inputs. They do not estab
 - Confirm aggregate-only logs, monitoring, moderation queue/audit ownership, backup/restore drills, retention and incident/rollback procedures in private operations records. `npx tsx scripts/moderation.ts counter-audit` provides count-only integrity diagnostics.
 - Treat client-reported usage as unverified. Moderation and deduplication do not prove real spending, independent requests, or one person per account. This accepted architectural limit remains after the security fixes.
 
+### Rolling out the public pages
+
+Deploy Fastify first. The Vercel page function asks Fastify for share metadata using the `application/vnd.tokentracky.share+json` Accept header. The previous API returns an HTML document for that request. Existing site clients continue to use ordinary HTML with the upgraded API.
+
+Before promoting the Vercel rewrites, run this read-only check through the gateway connected to the candidate API. Set `seo_gateway_base` to the gateway origin plus `/api/gateway` and `seo_alias` to a currently published test alias. For a local Fastify instance, the base is its loopback origin.
+
+```sh
+curl --fail --silent --show-error \
+  -H 'Accept: application/vnd.tokentracky.share+json' \
+  "${seo_gateway_base}/u/${seo_alias}?period=week" | \
+  jq -e --arg alias "$seo_alias" '(.title == ($alias + " on Tokentracky")) and (.url | endswith("/u/" + $alias + "?period=week")) and (.image | endswith(".png?period=week")) and (.description | length > 0)'
+```
+
+A passing probe prints `true`. A missing test alias should return 404 with the same Accept header. After that check, verify the Vercel preview returns the corresponding HTML title and card before promoting it. To roll back the API, restore the previous Vercel frontend first.
+
 ## Publication
 
 Generate versioned native artifacts, checksums, release notes and dependency/provenance records from the same verified commit. The npm launcher requires an already-public verified native manifest; Homebrew uses the same immutable artifact bytes. Verify that all announced installation links work before announcing availability. This checklist does not authorize deployment, package publication or a repository visibility change.

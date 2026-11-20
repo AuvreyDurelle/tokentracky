@@ -1,5 +1,6 @@
+import { usePublicPageReady } from './public-page';
 import { useEffect, useRef, useState } from 'react';
-import { type LeaderboardPeriod, type LeaderboardResponse, type PublicProfile, type ToolId } from '@tokentracky/core';
+import { boardPeriod, type LeaderboardPeriod, type LeaderboardResponse, type PublicProfile, type ToolId } from '@tokentracky/core';
 import { ApiError, type ApiClient } from './api';
 import { TOOLS, errorText, formatCompact, formatCost, formatExact, formatShare, shortDay, toolLabel, topPercent } from './format';
 import { toolColumns } from './columns';
@@ -36,8 +37,7 @@ const usedTools = (item: PublicProfile) => TOOLS.filter((tool) => (item.toolToke
 
 /** The period is part of the address, so a shared link opens the same board. Week is the default and stays out of the URL. */
 function periodFromUrl(): LeaderboardPeriod {
-  const value = new URLSearchParams(window.location.search ?? '').get('period');
-  return value === '24h' || value === 'month' || value === 'all' ? value : 'week';
+  return boardPeriod(new URLSearchParams(window.location.search).get('period'));
 }
 function periodToUrl(period: LeaderboardPeriod) {
   const url = new URL(window.location.href);
@@ -160,6 +160,7 @@ export function Leaderboard({ api, me, join, onProfile }: { api: ApiClient; me: 
     observer.observe(node);
     return () => observer.disconnect();
   }, [shown, extra.length, hasMore, loading, loadingMore, failed]);
+  usePublicPageReady(overview !== null || error !== null);
   const unavailable = error instanceof ApiError && error.code === 'CLOUD_UNAVAILABLE';
   // Your all-tools standing, pinned above the list when you are not already on this page.
   const pinned = standing && !custom && !rows.some((item) => item.alias === me) ? standing.mine : null;
