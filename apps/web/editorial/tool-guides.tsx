@@ -7,94 +7,106 @@ const file = 'https://github.com/AuvreyDurelle/tokentracky/blob/96621c89bf8b1d5a
 export const toolGuides = [
   {
     ...guide('claude-code-cache-read-write-tokens'),
-    description: 'Reconcile a 161-token Claude Code request with separate cache reads, five-minute and one-hour cache writes, and reasoning tokens.',
+    description: 'Add ordinary input, cache reads, cache writes, and output to recover a Claude Code request total. A 161-token example shows which fields overlap.',
     body: <>
-      <p>A Claude Code usage record in our synthetic test has just 11 ordinary input tokens, yet the request totals 161. Most of the input came from a cache. To reproduce the total, separate the counters that add tokens from the counters that describe tokens already counted.</p>
-      <h2>Reconstruct the input</h2>
-      <p>The record reports 11 ordinary input tokens and 100 cache-read tokens. It has no top-level cache-creation total. Instead, the creation details contain 10 tokens written with a five-minute lifetime and 20 written with a one-hour lifetime. Together those writes add 30. The input side of the request is therefore 11 + 100 + 30, or 141 tokens.</p>
-      <table><caption>Reading the remaining fields in the synthetic request</caption><thead><tr><th scope="col">Field</th><th scope="col">Count</th><th scope="col">How to use it</th></tr></thead><tbody>
-        <tr><th scope="row">Output</th><td>20</td><td>Add to the 141 input-side tokens.</td></tr>
-        <tr><th scope="row">Reasoning</th><td>7</td><td>Describes seven of the 20 output tokens.</td></tr>
-        <tr><th scope="row">One-hour writes</th><td>20</td><td>Describes twenty of the 30 cache-write tokens.</td></tr>
+      <h2>Which Claude Code counters go into the total?</h2>
+      <p>Add ordinary input, cache reads, cache writes, and output once each. In Tokentracky’s synthetic Claude Code request, those four numbers are 11 + 100 + 30 + 20 = <strong>161 tokens</strong>. The reasoning count is part of output. The one-hour writes are part of cache writes.</p>
+      <table><caption>How to read the request’s usage fields</caption><thead><tr><th scope="col">Usage field</th><th scope="col">Tokens</th><th scope="col">Contribution</th></tr></thead><tbody>
+        <tr><th scope="row">Ordinary input</th><td>11</td><td>New input outside the cache.</td></tr>
+        <tr><th scope="row">Cache reads</th><td>100</td><td>Input retrieved from the cache.</td></tr>
+        <tr><th scope="row">Cache writes</th><td>30</td><td>10 written for five minutes and 20 for one hour.</td></tr>
+        <tr><th scope="row">Output</th><td>20</td><td>Includes the seven reasoning tokens.</td></tr>
       </tbody></table>
-      <p>The final count is 141 + 20 = 161. Adding the two descriptive fields again would inflate it to 188. Keeping those fields still matters. The one-hour figure tells the pricing calculation how many writes had that lifetime. The reasoning figure tells the person reading the report something about the output.</p>
-      <h2>Reconcile a local total</h2>
-      <p>Start with ordinary input, output, cache reads, and cache writes from the same request. Add them once. Then check the one-hour and reasoning figures against their respective parent categories. To follow the exact example without opening personal transcripts, compare the fixture’s one-line session with the Rust summary. The summary keeps the breakdown even though this particular test has no cost estimate.</p>
+      <h2>Where to find the cache-write total</h2>
+      <p>Start with <code>cache_creation_input_tokens</code> in the assistant message’s usage record. If that field is absent, as it is in this example, look under <code>cache_creation</code> and add the five-minute and one-hour counts. When the total is present, the one-hour field tells you how many writes qualify for that pricing tier.</p>
+      <p>To check your arithmetic, sum the three input categories first. Here they give 141, and the 20 output tokens bring the request to 161. A total of 188 means you have added the 20 one-hour writes and seven reasoning tokens twice. You can verify the token count even when the summary shows an unknown cost.</p>
+      <p>The <a href="/blog/how-tokentracky-counts-tokens">open-source token counting walkthrough</a> follows the next question a report raises, which is how to count usage that appears in more than one session.</p>
     </>,
     sources: [
-      { label: 'Raw Claude Code fixture', url: file + 'claude/cache-creation-subcategories/root/session.jsonl' },
-      { label: 'Expected Rust accounting summary', url: file + 'claude/cache-creation-subcategories/rust-expected/summary.json' },
+      { label: 'Inspect the raw Claude Code usage record', url: file + 'claude/cache-creation-subcategories/root/session.jsonl' },
+      { label: 'Compare the expected total and cache breakdown', url: file + 'claude/cache-creation-subcategories/rust-expected/summary.json' },
     ],
   },
   {
     ...guide('gemini-cli-tool-use-tokens'),
-    description: 'Read two Gemini CLI messages and reproduce the collector’s 565-token total, including cached input and tokens used in a tool prompt.',
+    description: 'Gemini CLI includes cached tokens in input and reports tool-prompt tokens separately. Follow three messages from raw counters to a 565-token session.',
     body: <>
-      <p>Suppose you are adding a Gemini CLI session by hand. One message says it used 500 input tokens, 20 output tokens, 100 cached tokens, and 30 tool tokens. Adding those four numbers gives 650. The collector records 550 for that message. The difference is the 100 tokens the input field already includes.</p>
-      <h2>Separate the cached part, then add the tool prompt</h2>
-      <p>The synthetic message contains 500 input tokens including 100 cached. That leaves 400 ordinary input tokens. Gemini’s 30 tool-use prompt tokens belong on the input side as well, bringing the ordinary input figure to 430. The final accounting for this message is 430 ordinary input + 100 cache reads + 20 output = 550.</p>
-      <p>The test deliberately gives this message a reported <code>total</code> of 999,999. Reading that field as an extra charge, or trusting it over the component counts here, would swamp the entire session. You can see the outlier directly in the raw JSONL file.</p>
-      <h2>Check the neighboring messages</h2>
-      <p>The next message uses 10 input and five output tokens. Its cached and thought counters are null, so those optional quantities contribute zero. A third message has zero usage. The session ends at 565 tokens. Its aggregate shows 440 ordinary input, 100 cache reads, and 25 output. Those three figures sum back to 565.</p>
-      <p>When investigating a discrepancy, compare one message at a time before adding the whole file. Check whether the tool wrote its cache count inside the input figure and whether it supplied a separate tool-prompt count. Counter names that look familiar across tools can describe different parts of a request.</p>
+      <h2>How do tool-use tokens change a Gemini CLI total?</h2>
+      <p>Tokentracky adds Gemini CLI’s <code>tool</code> count to input and separates cache reads already included in <code>input</code>. For the first message in the synthetic session, 500 input + 30 tool-prompt + 20 output gives <strong>550 tokens</strong>. Its 100 cached tokens explain how some of the input was supplied. Adding them again would give 650.</p>
+      <h2>Reconcile the three messages</h2>
+      <table><caption>Token counts from the Gemini CLI test session</caption><thead><tr><th scope="col">Message</th><th scope="col">Collector breakdown</th><th scope="col">Total</th></tr></thead><tbody>
+        <tr><th scope="row">First</th><td>430 ordinary input, 100 cache reads, 20 output</td><td>550</td></tr>
+        <tr><th scope="row">Second</th><td>10 ordinary input, 5 output</td><td>15</td></tr>
+        <tr><th scope="row">Third</th><td>Zero reported usage</td><td>0</td></tr>
+      </tbody></table>
+      <p>For the first message, subtracting the 100 cached tokens from 500 leaves 400. Adding the tool-prompt tokens gives the 430 ordinary input tokens in the breakdown. On the second message the optional cached and thought counters are null and contribute zero. Across the session, 440 ordinary input + 100 cache reads + 25 output = 565.</p>
+      <h2>What to check when the reported total differs</h2>
+      <p>Open the raw JSONL and compare the counters for the same message ID. In message <code>a</code>, the fixture deliberately sets <code>total</code> to 999,999. Tokentracky calculates usage from the components, so that field contributes nothing extra. Only after each message balances should you compare your sum with the session summary.</p>
+      <p>If several sessions contain copies of the same activity, see <a href="/blog/how-tokentracky-counts-tokens">how the collector reconciles a forked session</a> for a worked Codex example.</p>
     </>,
     sources: [
-      { label: 'Gemini CLI fixture and raw messages', url: fixtures + 'gemini/tool-use-and-optional-counters' },
-      { label: 'Expected Gemini Rust summary', url: file + 'gemini/tool-use-and-optional-counters/rust-expected/summary.json' },
+      { label: 'Inspect the three Gemini CLI messages', url: file + 'gemini/tool-use-and-optional-counters/root/project-slug/chats/session-2026-10-23T09-00-abcd1234.jsonl' },
+      { label: 'Compare the expected 565-token session summary', url: file + 'gemini/tool-use-and-optional-counters/rust-expected/summary.json' },
     ],
   },
   {
     ...guide('goose-session-totals-and-usage-ledger'),
-    description: 'Trace a Goose database through two scans and see why a 13,200-token carried-forward row adds only 2,200 new tokens.',
+    description: 'A Goose usage ledger can carry forward tokens already observed in a session. Reconcile two scans and see why a 13,200-token row adds only 2,200.',
     body: <>
-      <p>A Goose database can tell the same story in two places. An older session may have an accumulated token total. Later, its usage ledger can acquire a row that carries earlier usage forward. Counting every newly discovered row in full would make old work appear again on the day the ledger changed.</p>
-      <h2>The first scan</h2>
-      <p>In the synthetic database, one session has accumulated 11,000 tokens and has no ledger rows. Another has two valid ledger entries worth 5,400 and 2,100 tokens. A third ledger entry claims 175 total for 100 input and 50 output. Its component counts do not support the claimed total, so the reader skips it. Together the valid records account for 18,500 tokens.</p>
-      <h2>The second scan</h2>
-      <p>The older session now has a carried-forward ledger row for 13,200 tokens. The collector already recorded 11,000 from that session. The carried-forward row therefore contributes 2,200 newly observed tokens. A separate, fresh ledger row contributes another 3,300. The session reaches 16,500, and the total across the database grows from 18,500 to 24,000.</p>
-      <p>Adding both new rows to the old database total would produce 35,000. The difference between 35,000 and the expected 24,000 is exactly the old session’s 11,000. This is a useful way to recognize a carry-forward error in a report.</p>
-      <h2>Inspect the transition</h2>
-      <p>The public example includes two short SQL files. In the first, follow the session with the 11,000-token accumulated total. In the second, find its <code>carried_forward</code> entry and the distinct row for fresh use. You can trace the entire adjustment from token and session fields without reading conversation text.</p>
+      <h2>How much does a carried-forward Goose ledger row add?</h2>
+      <p>Subtract the usage already counted for that Goose session. In the synthetic database, the collector first reads 11,000 tokens from a session’s running total. When Goose later writes a <code>carried_forward</code> ledger entry for 13,200, only <strong>2,200 tokens</strong> are new.</p>
+      <h2>Use the first scan as your starting point</h2>
+      <p>The older session, <code>20261020_3</code>, has no ledger rows at first. Its 11,000 tokens come from the accumulated session counters. A different session already has a ledger. Two of its rows contribute 5,400 and 2,100 tokens. A third claims 175 for 100 input and 50 output, so the collector skips the inconsistent row. The total across sessions is 11,000 + 5,400 + 2,100 = 18,500.</p>
+      <h2>Match the second scan by session and row type</h2>
+      <ol>
+        <li>Find the older session’s 13,200-token ledger entry. Its <code>cost_source</code> is <code>carried_forward</code>. Subtract the previously observed 11,000 to get the 2,200-token increase.</li>
+        <li>Find the separate 3,300-token request for the same session. Count it in full. That session now accounts for 11,000 + 2,200 + 3,300 = 16,500 tokens.</li>
+        <li>Add both increases to the first database total. The result is <strong>24,000</strong>. If your result is 35,000, the exact 11,000-token difference points back to the opening session balance.</li>
+      </ol>
+      <p>The SQL files below contain both scans. Follow the session ID and the numeric fields to check the transition. The <a href="/blog/what-joining-the-leaderboard-shares">publication guide</a> explains how the local session detail becomes an aggregate when a computer joins the board.</p>
     </>,
     sources: [
-      { label: 'First synthetic Goose database', url: file + 'goose/ledger-and-session-totals/steps/01-first-scan/root/sessions.db.sql' },
-      { label: 'Ledger additions on the second scan', url: file + 'goose/ledger-and-session-totals/steps/02-ledger-takes-over/root/sessions.db.sql' },
-      { label: 'Expected total after reconciliation', url: file + 'goose/ledger-and-session-totals/steps/02-ledger-takes-over/step.json' },
+      { label: 'Read both SQL snapshots and their expected totals', url: fixtures + 'goose/ledger-and-session-totals/steps' },
+      { label: 'Inspect the carried-forward row and the fresh request', url: file + 'goose/ledger-and-session-totals/steps/02-ledger-takes-over/root/sessions.db.sql' },
     ],
   },
   {
     ...guide('grok-build-token-cost-receipts'),
-    description: 'Follow a completed Grok Build turn from xAI’s cost ticks into microdollars, then inspect what changes when usage is marked incomplete.',
+    description: 'Convert Grok Build’s costUsdTicks to dollars, identify incomplete usage, and follow a two-model turn through Tokentracky’s cost accounting.',
     body: <>
-      <p>Grok Build writes a cost alongside a completed turn. That gives the collector more information than token counts and a public price table alone. Our synthetic session contains both a complete usage record and an incomplete one. They take different paths to the cost column.</p>
-      <h2>A completed turn with a reported cost</h2>
-      <p>One turn records 1,000 input and 50 output tokens. Of the input, 600 were cache reads. Of the output, 20 were reasoning tokens. Splitting those fields leaves 400 ordinary input, 600 cache reads, and 50 output, for 1,050 tokens.</p>
-      <p>The same turn records 12,345,678 in <code>costUsdTicks</code>. Each tick is one ten-billionth of a US dollar. That gives $0.0012345678, which the collector rounds to 1,235 microdollars. Another turn in the fixture names two models. Their individual usages and reported costs let the reader assign each part to the right model without adding the combined turn total again.</p>
-      <h2>A turn marked incomplete</h2>
-      <p>A later turn has 300 input tokens, including 100 cache reads, and 10 output tokens. The update sets <code>usageIsIncomplete</code>. The test supplies synthetic prices of two microdollars per ordinary input token, one per cache-read token, and six per output token. The resulting estimate is 200 × 2 + 100 × 1 + 10 × 6 = 560 microdollars. These are fixture rates, unsuitable for predicting a real Grok bill.</p>
-      <p>The session also contains a cancelled turn with no recorded usage. It contributes zero observed tokens. For a discrepancy in your own report, look for a completed turn with a usage block and check whether it is marked incomplete. A message or cancellation by itself cannot supply a token count.</p>
+      <h2>When does Tokentracky use Grok Build’s reported cost?</h2>
+      <p>For a completed Grok Build turn with complete usage and a positive reported cost, Tokentracky converts <code>costUsdTicks</code> to microdollars. One tick is $0.0000000001. In the synthetic session, 12,345,678 ticks means $0.0012345678, which rounds to <strong>1,235 microdollars</strong>.</p>
+      <h2>Match the reported amount to the model that used it</h2>
+      <p>Open the <code>turn_completed</code> record in <code>updates.jsonl</code>. The example above has 1,000 input tokens including 600 cache reads, plus 50 output tokens including 20 reasoning tokens. Its total is 400 ordinary input + 600 cache reads + 50 output = 1,050 tokens.</p>
+      <p>When <code>modelUsage</code> lists several models, read each model’s entry once. The next turn in the fixture assigns 2,100 tokens and 3,000 microdollars to one model, and 530 tokens and 160 microdollars to the other. Those entries already account for the combined turn total. A cancelled turn with no usage block contributes zero observed tokens.</p>
+      <h2>Price a turn with incomplete usage</h2>
+      <p>Check for <code>usageIsIncomplete</code> or <code>costIsPartial</code>. Either flag means the collector falls back to model pricing when available. The fixture’s incomplete turn includes a 999-tick amount. It has 300 input tokens, including 100 cache reads, and ten output tokens.</p>
+      <p>Using the test’s synthetic rates of two microdollars per ordinary input token, one per cache-read token, and six per output token gives 200 × 2 + 100 × 1 + 10 × 6 = <strong>560 microdollars</strong>. Use this arithmetic to check how the estimate was derived. For what dollar figures mean on a public profile, see <a href="/blog/how-to-read-the-token-leaderboard">how to read the leaderboard</a>.</p>
     </>,
     sources: [
-      { label: 'Grok Build test session and synthetic prices', url: fixtures + 'grok/turn-usage' },
-      { label: 'Expected per-model tokens and costs', url: file + 'grok/turn-usage/rust-expected/events.json' },
+      { label: 'Inspect the Grok Build updates and synthetic price table', url: fixtures + 'grok/turn-usage' },
+      { label: 'Match the computed costs to the per-model events', url: file + 'grok/turn-usage/rust-expected/events.json' },
     ],
   },
   {
     ...guide('zed-thread-usage-after-model-switch'),
-    description: 'Follow one edited Zed thread across three scans. Its original usage stays with the first model and only the newly observed growth changes the totals.',
+    description: 'See how Tokentracky attributes new Zed thread tokens after a model switch and what happens when a later scan finds a lower counter or a deleted thread.',
     body: <>
-      <p>Imagine returning to a Zed thread the next morning and choosing another model. The stored thread now names the new model and has a larger running token count. Assigning the entire thread to its current model would rewrite yesterday’s model chart every time you switched.</p>
-      <h2>Read the change between scans</h2>
-      <p>Our synthetic database starts at 6,127 tokens across several threads. Of those, one thread accounts for 6,000 under <code>claude-sonnet-4-6</code>. On the next scan, that thread has changed model and its counters have grown. The new work consists of 300 ordinary input, 2,000 cache reads, and 150 output, or 2,450 tokens.</p>
-      <p>The collector gives those 2,450 to the thread’s current model, <code>gpt-5.6-terra</code>, at the update time of the thread. Yesterday’s 6,000 stay with Claude. The other threads still account for 127, bringing the database total to 8,577. This accounting relies on the earlier observation. A cumulative figure by itself cannot reconstruct every model switch or request time between scans.</p>
-      <h2>Deleting a thread after it was observed</h2>
-      <p>In the third scan the fixture replaces a thread with a lower counter and deletes another. The expected total stays at 8,577. Removing a conversation from Zed does not subtract usage the collector previously observed. The same principle lets the local daily breakdown survive changes to the list of visible threads.</p>
-      <p>To check this behavior, open the three expected summaries in order. Compare the model entries as well as the overall total. An unchanged grand total could otherwise hide an error that silently moved yesterday’s tokens from one model to another.</p>
+      <h2>Which model gets the new tokens in a Zed thread?</h2>
+      <p>Tokentracky assigns growth since the last scan to the model recorded at the thread’s update. Tokens already observed stay with their original model and day. In the synthetic Zed example, a thread’s first 6,000 tokens stay with Claude and its next <strong>2,450 tokens</strong> go to the newly selected model.</p>
+      <h2>Follow the same thread across three scans</h2>
+      <table><caption>Usage across the synthetic Zed database</caption><thead><tr><th scope="col">Scan</th><th scope="col">What the collector observes</th><th scope="col">Database total</th></tr></thead><tbody>
+        <tr><th scope="row">First</th><td>6,000 tokens for <code>claude-sonnet-4-6</code> in this thread. Other threads account for 127.</td><td>6,127</td></tr>
+        <tr><th scope="row">Second</th><td>The thread now names <code>gpt-5.6-terra</code>. Growth is 300 ordinary input + 2,000 cache reads + 150 output.</td><td>8,577</td></tr>
+        <tr><th scope="row">Third</th><td>A replacement thread has lower counters and another thread has been deleted. Both contribute zero additional tokens.</td><td>8,577</td></tr>
+      </tbody></table>
+      <h2>What two observations can tell you about a model switch</h2>
+      <p>The expected daily breakdown keeps 6,127 on October 22 and assigns the 2,450-token increase to October 23, the date of the thread update. A cumulative counter records the total at a point in time. If several model switches happen between scans, the final value alone cannot tell you which model handled each request or when it ran.</p>
+      <p>When checking a report, compare the per-model and per-day entries as well as the grand total. Moving all 8,450 tokens in the growing thread to its new model would leave the overall sum looking correct and erase the earlier Claude usage. Deleting a thread from Zed also leaves previously observed usage in the local history. Public data removal is a separate operation described in <a href="/blog/what-joining-the-leaderboard-shares">what joining the leaderboard shares</a>.</p>
     </>,
     sources: [
-      { label: 'Zed fixture and three scan states', url: fixtures + 'zed/thread-totals-grow' },
-      { label: 'Model breakdown after the thread grows', url: file + 'zed/thread-totals-grow/steps/02-thread-grows/expected/summary.json' },
-      { label: 'Model breakdown after replacement and deletion', url: file + 'zed/thread-totals-grow/steps/03-thread-replaced-and-deleted/expected/summary.json' },
+      { label: 'Compare the three Zed scan states and expected summaries', url: fixtures + 'zed/thread-totals-grow/steps' },
+      { label: 'Inspect the model and day breakdown after the switch', url: file + 'zed/thread-totals-grow/steps/02-thread-grows/expected/summary.json' },
     ],
   },
 ];
