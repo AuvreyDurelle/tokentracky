@@ -34,6 +34,14 @@ The public leaderboard for AI coding tokens. A native macOS menu-bar app and a R
 
 The Mac app runs on Apple Silicon Macs with macOS 13 or later. The CLI also runs on Linux (x64 and arm64) and Windows (x64).
 
+**Ask your AI.** Tell a coding agent that can run commands on your computer, such as Claude Code, Codex or Cursor:
+
+```text
+install tokentracky from tokentracky.com
+```
+
+It picks the install that suits your computer. You approve the sign-in in your browser.
+
 **The Mac app.** [Download `Tokentracky.dmg`](https://github.com/AuvreyDurelle/tokentracky/releases/latest/download/Tokentracky.dmg) and drag Tokentracky to Applications, or use Homebrew:
 
 ```sh
