@@ -187,7 +187,7 @@ function LandPane({town, reach, claimable, busy, onClaim, onMove}: {town: TownSe
     <div className="tt-fr"><i aria-hidden="true">+</i><span>{claimable ? `${claimable} free ${claimable === 1 ? 'plot touches' : 'plots touch'} your land` : 'No free plots touch your land. Move to the frontier.'}</span></div>
     <div className="tt-sep" />
     <div className="tt-kv"><span>Boxed in? Move town</span><b><CostChips cost={town.move.cost} /></b></div>
-    <div className="tt-mu tt-note">Half what your land cost. Every building comes with you to the frontier.</div>
+    <div className="tt-mu tt-note">Half what your land cost, and never more than a full Bricks store. Every building comes with you to the frontier.</div>
     {confirm
       ? <div className="tt-two"><button type="button" className="tt-btn go" disabled={busy || reach.bricks < move} onClick={() => { setConfirm(false); onMove(); }}>Move for {count(move)} Bricks</button>
         <button type="button" className="tt-btn" onClick={() => setConfirm(false)}>Keep</button></div>
