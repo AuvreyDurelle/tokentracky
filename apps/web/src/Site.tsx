@@ -1,5 +1,5 @@
 import type { ApiClient } from './api';
-import { footerTitles } from './footer-guides';
+import { footerGuideGroups } from './footer-guides';
 import { LegalLinks } from './Legal';
 import { Avatar, JUMP_KEYS, SearchIcon, useRank } from './ui';
 
@@ -46,8 +46,12 @@ export function SiteFooter({ version }: { version?: string }) {
     <div className="site-foot-links"><a href="/join">Download</a><a href="/blog">Blog</a><LegalLinks /></div>
     {version && <span>v{version}</span>}
     <details className="footer-guides"><summary>Tokentracky guides</summary>
-      <nav aria-label="Tokentracky guides">{Object.entries(footerTitles).map(([slug, title]) =>
-        <a key={slug} href={`/blog/${slug}`}>{title}</a>)}</nav>
+      <nav aria-label="Tokentracky guides">{Object.entries(footerGuideGroups).map(([topic, titles]) =>
+        <section key={topic}>
+          <h2>{topic}</h2>
+          <ul>{Object.entries(titles).map(([slug, title]) =>
+            <li key={slug}><a href={`/blog/${slug}`}>{title}</a></li>)}</ul>
+        </section>)}</nav>
     </details>
   </div></footer>;
 }

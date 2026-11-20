@@ -73,6 +73,8 @@ These twelve guides target English-language queries. On November 20, 2026, Googl
 | Disconnect a Tokentracky device | Unlink a computer, stop future uploads | What stays on disk and on the public profile after each action? |
 | Offline AI token cost estimates | Cached model rates, pricing version | Which rates does the collector use offline, and how can I identify the table? |
 
+The next 36 guides cover spend planning, context management, caching, model and output choices, agents, and measuring savings. Their primary queries and related terms are recorded in the [token spend keyword map](TOKEN_SPEND_GUIDES.md).
+
 ### Editing future articles
 
 Use the article-writing sections of `vx-seo/SEO_optimise_Workflow.md` in the sibling repository. Start with the reader’s question and answer it in the opening paragraph. For a counting question, trace one input through the arithmetic. For a setup question, give the first command or action and show how to recognize success. Keep accurate examples, useful links, figures, and stable URLs when revising.

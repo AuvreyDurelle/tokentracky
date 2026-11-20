@@ -17,7 +17,7 @@ const featured = [
 const articles = readdirSync(join(dist, 'hosted/blog')).filter(file => file.endsWith('.html'))
   .map(file => '/blog/' + file.slice(0, -5));
 const guides = articles.filter(path => !featured.includes(path));
-assert.ok(guides.length >= 25, 'Expected at least 25 footer guide files');
+assert.ok(guides.length >= 61, 'Expected at least 61 footer guide files');
 for (const path of featured) assert.ok(articles.includes(path), 'Missing article ' + path);
 const pages = new Set([...routes, ...articles]);
 const titles = new Set();
@@ -94,6 +94,9 @@ for (const path of pages) {
     assert.ok(post?.headline && post.author && post.datePublished && Number.isFinite(Date.parse(post.datePublished)), path + ' has incomplete BlogPosting data');
     assert.ok(main.includes('<article'), path + ' needs a visible article');
     assert.match(main, /<div class="story-body">\s*<h2>/, path + ' should open with a descriptive section heading');
+    const body = main.split('<div class="story-body">')[1].split('<section class="story-sources">')[0];
+    assert.ok(locations(body, url).some(link => link.origin === origin && link.pathname !== path),
+      path + ' needs a relevant link to Tokentracky in the article itself');
     assert.ok(locations(main, url).filter(link => link.origin !== origin).length <= 3, path + ' exceeds the three external article links');
     for (const table of main.matchAll(/<table\b[^>]*>([\s\S]*?)<\/table>/gi)) {
       const columns = tags(table[1], 'th').filter(tag => tag.scope === 'col');
