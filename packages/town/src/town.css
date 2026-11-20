@@ -236,8 +236,8 @@
   .tt-cl { display: none; }
   .tt-key { display: none; }
   .tt-aside { left: 8px; right: 8px; top: auto; bottom: 8px; width: auto; }
-  .tt-dock ~ .tt-aside { bottom: 70px; }
-  .tt-map:has(> .tt-dock ~ .tt-aside) .tt-pop { bottom: 120px; }
+  .tt-dock ~ .tt-aside { bottom: 80px; }
+  .tt-map:has(> .tt-dock ~ .tt-aside) .tt-pop { bottom: 126px; }
   .tt-menu { bottom: 74px; max-height: calc(100% - 130px); }
   .tt-cards { grid-template-columns: 1fr; }
   .tt-chips { margin-left: 0; }
