@@ -41,8 +41,11 @@ export function weekly(days: string[], values: number[]): { days: string[]; valu
 }
 
 const PROJECT_COLORS = ['var(--pink-2)', 'var(--tool-gemini)', 'var(--tool-opencode)', 'var(--tool-cline)', 'var(--gold)'];
-/** Series by project from each project's days: the five largest, then the rest together. */
-export function projectSeries(projects: ReadonlyArray<Pick<ProjectSummary, 'name' | 'tokens' | 'daily'>>, days: string[]): ChartSeries[] {
+/**
+ * Series by project from each project's days: the five largest, then the rest together, then usage with no project,
+ * which is each day's total in `rows` beyond what the projects account for.
+ */
+export function projectSeries(projects: ReadonlyArray<Pick<ProjectSummary, 'name' | 'tokens' | 'daily'>>, days: string[], rows: readonly UsageBreakdownRow[] = []): ChartSeries[] {
   const index = new Map(days.map((day, at) => [day, at]));
   const values = (project: Pick<ProjectSummary, 'daily'>) => {
     const out = days.map(() => 0);
@@ -53,6 +56,10 @@ export function projectSeries(projects: ReadonlyArray<Pick<ProjectSummary, 'name
   const series: ChartSeries[] = sorted.slice(0, 5).map((project, at) => ({ key: project.name, label: projectName(project.name), color: PROJECT_COLORS[at]!, values: values(project) }));
   const rest = sorted.slice(5);
   if (rest.length) series.push({ key: 'other', label: 'Other', color: 'var(--heat-2)', values: days.map((_, at) => rest.reduce((sum, project) => sum + values(project)[at]!, 0)) });
+  const none = days.map(() => 0);
+  for (const row of rows) { const at = index.get(row.day); if (at !== undefined) none[at] += row.tokens; }
+  for (const item of series) item.values.forEach((tokens, at) => { none[at] -= tokens; });
+  if (none.some((tokens) => tokens > 0)) series.push({ key: 'none', label: 'No project', color: 'var(--heat-1)', values: none.map((tokens) => Math.max(0, tokens)) });
   return series;
 }
 export const projectName = (path: string | null) => path?.split(/[\\/]/).filter(Boolean).at(-1) ?? 'No project';

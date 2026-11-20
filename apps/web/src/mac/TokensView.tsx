@@ -236,7 +236,7 @@ function ChartCard({ data, year, yearDays, range, points, metric, grain, period,
   const hours = 'since' in range;
   // Projects and token types split days; a split the span can't take falls back to tools.
   const shown: Split = hours && split === 'projects' ? 'tools' : metric === 'cost' && (split === 'projects' || split === 'kinds') ? 'tools' : split;
-  const daily = useMemo(() => shown === 'projects' ? projectSeries(data.projects, points) : shown === 'kinds' ? kindSeries(data.breakdown, points) : chartSeries(data.breakdown, points, shown, metric), [data, points, shown, metric]);
+  const daily = useMemo(() => shown === 'projects' ? projectSeries(data.projects, points, data.breakdown) : shown === 'kinds' ? kindSeries(data.breakdown, points) : chartSeries(data.breakdown, points, shown, metric), [data, points, shown, metric]);
   const byWeek = !hours && grain === 'week';
   const series = byWeek ? daily.map((item) => ({ ...item, values: weekly(points, item.values).values, costs: item.costs && weekly(points, item.costs).values })) : daily;
   const days = byWeek ? weekly(points, points.map(() => 0)).days : points;

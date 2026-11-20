@@ -34,6 +34,11 @@ describe('the chart’s series', () => {
     expect(series[0]!.values).toEqual([0, 60, 0]);
     expect(series.at(-1)!.values).toEqual([0, 10, 0]);
   });
+  it('puts usage without a project in its own series, from each day’s total', () => {
+    const series = projectSeries([{ name: 'a', tokens: 30, daily: [{ day: '2026-11-02', tokens: 30 }] }], days, [row('2026-11-01', 'm', 20, kinds(20, 0, 0, 0)), row('2026-11-02', 'm', 50, kinds(50, 0, 0, 0))]);
+    expect(series.map((item) => [item.label, item.values])).toEqual([['a', [0, 30, 0]], ['No project', [20, 20, 0]]]);
+    expect(projectSeries([], days, [])).toEqual([]);
+  });
   it('splits by token type from each day’s rows', () => {
     const series = kindSeries([row('2026-11-01', 'm', 10, kinds(1, 2, 3, 4)), row('2026-11-01', 'n', 10, kinds(1, 2, 3, 4)), row('2026-11-03', 'm', 5, kinds(5, 0, 0, 0))], days);
     expect(series.map((item) => [item.label, item.values])).toEqual([['Input', [2, 0, 5]], ['Output', [4, 0, 0]], ['Cache read', [6, 0, 0]], ['Cache write', [8, 0, 0]]]);
