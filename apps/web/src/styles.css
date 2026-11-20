@@ -1092,7 +1092,6 @@ span.profile-like { cursor: default; }
 .journal-intro { font-size: clamp(17px, 2.4vw, 22px); line-height: 1.55; max-width: 62ch; }
 .journal a { text-underline-offset: .18em; }
 .article-byline { color: var(--text-3); font-size: 13px; }
-.article-byline a { color: inherit; }
 .journal-stories { margin-top: 40px; }
 .journal-stories article { border-top: 1px solid var(--border-2); padding: 26px 0; }
 .journal-stories h2 { margin: 0; font-size: clamp(22px, 3vw, 30px); line-height: 1.2; letter-spacing: -.025em; }

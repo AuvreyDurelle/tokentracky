@@ -28,7 +28,7 @@ function Header({ page }: { page: 'leaderboard' | 'join' | 'other' }) {
 }
 
 function Byline() {
-  return <span className="article-byline"><a href={authorUrl}>{byline}</a> · <time dateTime={published}>November 20, 2026</time></span>;
+  return <span className="article-byline">{byline} · <time dateTime={published}>November 20, 2026</time></span>;
 }
 
 function Blog() {

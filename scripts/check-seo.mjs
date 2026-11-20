@@ -93,6 +93,12 @@ for (const path of pages) {
     const post = json.find(item => item['@type'] === 'BlogPosting');
     assert.ok(post?.headline && post.author && post.datePublished && Number.isFinite(Date.parse(post.datePublished)), path + ' has incomplete BlogPosting data');
     assert.ok(main.includes('<article'), path + ' needs a visible article');
+    assert.match(main, /<div class="story-body">\s*<h2>/, path + ' should open with a descriptive section heading');
+    assert.ok(locations(main, url).filter(link => link.origin !== origin).length <= 3, path + ' exceeds the three external article links');
+    for (const table of main.matchAll(/<table\b[^>]*>([\s\S]*?)<\/table>/gi)) {
+      const columns = tags(table[1], 'th').filter(tag => tag.scope === 'col');
+      assert.ok(columns.length >= 2 && columns.length <= 3, path + ' table needs two or three labeled columns');
+    }
   }
 }
 
