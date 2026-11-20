@@ -1,4 +1,5 @@
 import type { ApiClient } from './api';
+import { footerTitles } from './footer-guides';
 import { LegalLinks } from './Legal';
 import { Avatar, JUMP_KEYS, SearchIcon, useRank } from './ui';
 
@@ -7,22 +8,19 @@ type Page = 'leaderboard' | 'join' | 'you' | 'connect' | 'other';
 const REPO_URL = 'https://github.com/AuvreyDurelle/tokentracky';
 
 /** Hosted header. Signed out: Sign in and Join. Joined: your name and all-time rank. Signed in without a name: Finish joining. */
-export function SiteNav({ api, page, me, signedIn, canJoin, onHome, onLeaderboard, onJoin, onYou, onSignUp, onPalette }: { api: ApiClient; page: Page; me: string | null; signedIn: boolean; canJoin: boolean; onHome: () => void; onLeaderboard: () => void; onJoin: () => void; onYou: () => void; onSignUp: () => void; onPalette: () => void }) {
+export function SiteNav({ api, page, me, signedIn, canJoin, onPalette }: { api: ApiClient; page: Page; me: string | null; signedIn: boolean; canJoin: boolean; onPalette: () => void }) {
   const rank = useRank(api, me);
   return <header className="site-nav"><div className="site-nav-inner site-nav-main">
     <div className="site-left">
-      <Brand onClick={onHome} />
+      <a className="brand" href="/"><span className="brand-mark" aria-hidden="true" />Tokentracky</a>
       <a className="pill github" href={REPO_URL} target="_blank" rel="noopener noreferrer" aria-label="Star Tokentracky on GitHub"><GitHubIcon /><span>Star</span></a>
     </div>
-    <nav className="site-links" aria-label="Primary">
-      <button type="button" aria-current={page === 'leaderboard' ? 'page' : undefined} onClick={onLeaderboard}>Leaderboard</button>
-      <button type="button" aria-current={page === 'join' ? 'page' : undefined} onClick={onJoin}>How it works</button>
-    </nav>
+    <PublicNavigation page={page} />
     <div className="site-right">
       <button type="button" className="pill jump" aria-label="Jump to a page" aria-keyshortcuts="Meta+K Control+K" onClick={onPalette}><SearchIcon /><kbd>{JUMP_KEYS}</kbd></button>
-      {me ? <button type="button" className="me-chip" aria-label={rank ? `${me}, rank ${rank} all time` : me} aria-current={page === 'you' ? 'page' : undefined} onClick={onYou}><Avatar alias={me} /><span>{me}</span>{rank !== null && <strong className="num">#{rank}</strong>}</button>
-        : signedIn ? canJoin && <button type="button" className="btn primary sm" onClick={onYou}>Finish joining</button>
-        : <><button type="button" className="btn ghost sm" onClick={onYou}>Sign in</button>{canJoin && <button type="button" className="btn primary sm" onClick={onSignUp}>Join the board</button>}</>}
+      {me ? <a href="/you" className="me-chip" aria-label={rank ? `${me}, rank ${rank} all time` : me} aria-current={page === 'you' ? 'page' : undefined}><Avatar alias={me} /><span>{me}</span>{rank !== null && <strong className="num">#{rank}</strong>}</a>
+        : signedIn ? canJoin && <a className="btn primary sm" href="/you">Finish joining</a>
+        : <><a className="btn ghost sm" href="/you">Sign in</a>{canJoin && <a className="btn primary sm" href="/you?signup=1">Join the board</a>}</>}
     </div>
   </div></header>;
 }
@@ -35,11 +33,23 @@ export function ConnectNav({ onHome, onBack }: { onHome: () => void; onBack: () 
   </div></header>;
 }
 
-export function SiteFooter({ version, onJoin }: { version: string; onJoin: () => void }) {
+export function PublicNavigation({ page }: { page: Page | 'blog' }) {
+  return <nav className="site-links" aria-label="Primary">
+    <a href="/" aria-current={page === 'leaderboard' ? 'page' : undefined}>Leaderboard</a>
+    <a href="/join" aria-current={page === 'join' ? 'page' : undefined}>How it works</a>
+    <a href="/blog" aria-current={page === 'blog' ? 'page' : undefined}>Blog</a>
+  </nav>;
+}
+
+export function SiteFooter({ version }: { version?: string }) {
   return <footer className="footer"><div className="footer-inner">
-    <span className="footer-note">Rankings are client-reported usage, not verified spending or productivity.</span>
-    <span className="site-foot-links"><button type="button" className="link-quiet" onClick={onJoin}>Download</button><LegalLinks /></span>
-    <span>v{version}</span>
+    <span className="footer-note">Rankings reflect client-reported AI coding token usage.</span>
+    <div className="site-foot-links"><a href="/join">Download</a><a href="/blog">Blog</a><LegalLinks /></div>
+    {version && <span>v{version}</span>}
+    <details className="footer-guides"><summary>Tokentracky guides</summary>
+      <nav aria-label="Tokentracky guides">{Object.entries(footerTitles).map(([slug, title]) =>
+        <a key={slug} href={`/blog/${slug}`}>{title}</a>)}</nav>
+    </details>
   </div></footer>;
 }
 

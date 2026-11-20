@@ -97,12 +97,11 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 async function setup() {
+  window.location.pathname = '/you';
   const app = mount(appElement);
   app.render(); await settle();
   app.render(); await settle();
-  let tree = app.render();
-  (component(tree, 'SiteNav').props.onYou as () => void)();
-  tree = app.render();
+  const tree = app.render();
   const props = privacy(tree).props;
   const view = mount(privacy(tree));
   view.render();

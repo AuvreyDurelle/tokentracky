@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ApiClient, ApiError, type Account, type Health, type LocalStatus } from './api';
 import { AuthAdapter, type AuthState } from './auth';
@@ -14,23 +14,22 @@ import { usageRevision, useRefreshReload } from './refresh';
 import { isMacPage, routePath, takeLinkTag, useRoute, type Route } from './route';
 import { Join } from './Join';
 import { ConnectNav, SiteFooter, SiteNav } from './Site';
-import { MacShell } from './mac/Shell';
-import { LeaderboardView } from './mac/LeaderboardView';
-import { ProfileModal } from './mac/ProfileModal';
-import { AchievementsView } from './mac/AchievementsView';
-import { TokensView } from './mac/TokensView';
-import { SettingsView } from './mac/SettingsView';
-import { Popover } from './mac/Popover';
-import { TownView } from './mac/TownView';
 import { JoinPrompt, askToJoin } from './mac/JoinPrompt';
+import { ProfileModal } from './mac/ProfileModal';
 import { ProfilePage } from './Profile';
 import { WrappedPage } from './Wrapped';
 import { ComparePage } from './Compare';
 import { PasswordRecovery } from './PasswordRecovery';
 import '@fontsource-variable/inter/opsz.css';
 import './styles.css';
-import './mac/mac.css';
-import './mac/community.css';
+
+const MacShell = lazy(() => import('./mac/Shell').then(module => ({ default: module.MacShell })));
+const LeaderboardView = lazy(() => import('./mac/LeaderboardView').then(module => ({ default: module.LeaderboardView })));
+const AchievementsView = lazy(() => import('./mac/AchievementsView').then(module => ({ default: module.AchievementsView })));
+const TokensView = lazy(() => import('./mac/TokensView').then(module => ({ default: module.TokensView })));
+const SettingsView = lazy(() => import('./mac/SettingsView').then(module => ({ default: module.SettingsView })));
+const Popover = lazy(() => import('./mac/Popover').then(module => ({ default: module.Popover })));
+const TownView = lazy(() => import('./mac/TownView').then(module => ({ default: module.TownView })));
 
 const storage = () => { try { return window.localStorage ?? null; } catch { return null; } };
 
@@ -47,11 +46,16 @@ function App() {
   const [accountDeleted, setAccountDeleted] = useState(false);
   const [deletionNotice, setDeletionNotice] = useState<string | null>(null);
   const [localStatus, setLocalStatus] = useState<LocalStatus | null>(null);
-  const [route, navigate] = useRoute();
+  const [route, navigateLocal] = useRoute();
+  // Hosted destinations have their own status, canonical and cache policy. Fetch the new document.
+  const navigate = (next: Route) => {
+    if (health?.mode === 'hosted') window.location.assign(next.page === 'leaderboard' ? '/' : routePath(next));
+    else navigateLocal(next);
+  };
   const [connectCode, setConnectCode] = useState<string | null>(null);
   const [palette, setPalette] = useState(false);
   const [joinPrompt, setJoinPrompt] = useState<boolean | null>(null);
-  const [signUp, setSignUp] = useState(false);
+  const signUp = new URLSearchParams(window.location.search).get('signup') === '1';
   const accountRequest = useRef(0);
   const api = useMemo(() => new ApiClient(async () => {
     try { return await auth.accessToken(); }
@@ -142,6 +146,7 @@ function App() {
   // Each time the dashboard opens, a Mac that isn't linked is asked to join; Not now, or joining, closes it for this window.
   useEffect(() => { if (health?.mode === 'local') setJoinPrompt((asked) => askToJoin(asked, health, localStatus)); }, [health, localStatus]);
 
+  if (!health && initialPublicPage) return null;
   if (healthError && !health) return <main className="startup"><span className="brand-mark" /><h1>Tokentracky is unavailable</h1><Notice tone="error">Could not reach the server: {healthError}</Notice><p>Start the app or server, then reload this page.</p></main>;
   if (!health) return <main className="startup"><span className="brand-mark" /><p>Connecting…</p></main>;
 
@@ -152,12 +157,15 @@ function App() {
   const finishConnect = () => { forgetConnectCode(storage()); setConnectCode(null); navigate({ page: 'leaderboard' }); };
   const connectedProfile = (alias: string) => { forgetConnectCode(storage()); setConnectCode(null); navigate({ page: 'profile', alias }); };
   // Joining opens /you on Create account; every other way there opens on Sign in.
-  const go = (page: 'leaderboard' | 'join' | 'you', joining = false) => () => { if (connectCode) setConnectCode(null); setSignUp(joining); navigate({ page }); };
+  const go = (page: 'leaderboard' | 'join' | 'you', joining = false) => () => {
+    if (joining && !local) window.location.assign('/you?signup=1');
+    else navigate({ page });
+  };
   // `/` is the leaderboard everywhere; the Mac app's pages exist only locally.
   const page: Route['page'] | 'connect' = connectCode ? 'connect' : route.page === 'home' ? 'leaderboard' : (!local && isMacPage(route.page)) || (local && (route.page === 'wrapped' || route.page === 'vs')) ? 'missing' : route.page;
   // On the website, joining starts with signing in; the app joins from its Settings page.
   const join = canJoin ? { label: 'Join the board', onClick: go('you', true) } : null;
-  const home = () => { setConnectCode(null); navigate({ page: 'home' }); };
+  const home = () => { forgetConnectCode(storage()); setConnectCode(null); navigate({ page: 'home' }); };
   // The Mac app's own pages bring their layout (.m-page); the website's keep the site's column.
   const ported = local && (['leaderboard', 'profile', 'achievements', 'tokens', 'you', 'settings', 'popover', 'town', 'town-map', 'town-visit'] as const).some((mac) => mac === page);
   const body = <main className={ported ? undefined : 'page'}>
@@ -166,11 +174,11 @@ function App() {
       {deletionNotice && <Notice tone="success">{deletionNotice}</Notice>}
       {authState === 'recovery' && <PasswordRecovery auth={auth} onComplete={async () => { await refreshAuth(); if (!connectCode) navigate({ page: 'you' }); }} />}
       {authState !== 'recovery' && <>
-      {page === 'join' && <Join onLeaderboard={go('leaderboard')} />}
+      {page === 'join' && <Join hosted={!local} />}
       {local && (page === 'leaderboard' || page === 'profile') && <LeaderboardView api={api} me={me} canJoin={canJoin} syncedAt={localStatus?.lastSyncAt ?? null} onProfile={(alias) => navigate({ page: 'profile', alias })} onJoin={() => navigate({ page: 'settings' })} />}
       {local && route.page === 'profile' && <ProfileModal key={route.alias} api={api} alias={route.alias} me={me} onClose={() => navigate({ page: 'leaderboard' })} />}
       {local && page === 'achievements' && <AchievementsView api={api} me={me} revision={`${usageRevision(localStatus)}|${localStatus?.lastSyncAt ?? ''}`} />}
-      {!local && page === 'leaderboard' && <Leaderboard api={api} me={me} join={join} onProfile={(alias) => navigate({ page: 'profile', alias })} onGuide={go('join')} />}
+      {!local && page === 'leaderboard' && <Leaderboard api={api} me={me} join={join} onProfile={(alias) => navigate({ page: 'profile', alias })} />}
       {!local && page === 'profile' && route.page === 'profile' && <ProfilePage key={route.alias} api={api} alias={route.alias} me={me} signedIn={authState === 'signed_in'} origin={window.location.origin} join={join} onLeaderboard={go('leaderboard')} />}
       {page === 'wrapped' && route.page === 'wrapped' && <WrappedPage key={route.alias} api={api} alias={route.alias} period={route.period} origin={window.location.origin} onProfile={() => navigate({ page: 'profile', alias: route.alias })} onPeriod={(period) => navigate({ page: 'wrapped', alias: route.alias, period })} />}
       {page === 'vs' && route.page === 'vs' && <ComparePage key={`${route.a}/${route.b}`} api={api} a={route.a} b={route.b} origin={window.location.origin} onProfile={(alias) => navigate({ page: 'profile', alias })} />}
@@ -198,15 +206,16 @@ function App() {
         { id: 'support', label: 'Support', hint: 'Page', run: () => { window.location.href = '/support'; } },
       ]} />;
   // Locally the pages sit in the Mac app's frame instead of the site's header and footer; the popover has neither.
-  if (local) return <>{page === 'popover' ? body : <MacShell api={api} status={localStatus} me={me} page={page} path={routePath(route)} go={navigate} onPalette={() => setPalette(true)}>{body}
-    {joinPrompt && <JoinPrompt api={api} refresh={async () => { await refreshLocal(); setJoinPrompt(false); }} onClose={() => setJoinPrompt(false)} />}</MacShell>}{commands}</>;
-  return <div className="app">
+  if (local) return <Suspense fallback={<main className="startup">Loading dashboard…</main>}>{page === 'popover' ? body : <MacShell api={api} status={localStatus} me={me} page={page} path={routePath(route)} go={navigate} onPalette={() => setPalette(true)}>{body}
+    {joinPrompt && <JoinPrompt api={api} refresh={async () => { await refreshLocal(); setJoinPrompt(false); }} onClose={() => setJoinPrompt(false)} />}</MacShell>}{commands}</Suspense>;
+  return <div className="app" ref={node => { if (node) initialPublicPage?.remove(); }}>
     {page === 'connect' ? <ConnectNav onHome={home} onBack={finishConnect} />
       : <SiteNav api={api} page={page === 'leaderboard' || page === 'join' || page === 'you' ? page : 'other'} me={me} signedIn={authState === 'signed_in'} canJoin={canJoin}
-        onHome={home} onLeaderboard={go('leaderboard')} onJoin={go('join')} onYou={go('you')} onSignUp={go('you', true)} onPalette={() => setPalette(true)} />}
-    {body}{commands}<SiteFooter version={health.version} onJoin={go('join')} />
+        onPalette={() => setPalette(true)} />}
+    {body}{commands}<SiteFooter version={health.version} />
   </div>;
 }
 
+const initialPublicPage = document.getElementById('public-page');
 const legalPage = legalPageAt(window.location.pathname);
 createRoot(document.getElementById('root')!).render(legalPage ? <LegalPage page={legalPage} /> : <App />);

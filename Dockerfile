@@ -1,11 +1,13 @@
 FROM node:22-bookworm-slim AS build
 WORKDIR /app
 COPY package.json package-lock.json .npmrc ./
+COPY packages/town/package.json ./packages/town/package.json
 COPY packages/core/package.json ./packages/core/package.json
 COPY packages/cloud/package.json ./packages/cloud/package.json
 COPY apps/server/package.json ./apps/server/package.json
 COPY apps/web/package.json ./apps/web/package.json
 RUN npm ci
+COPY packages/town ./packages/town
 COPY packages/core ./packages/core
 COPY packages/cloud ./packages/cloud
 COPY apps/server ./apps/server

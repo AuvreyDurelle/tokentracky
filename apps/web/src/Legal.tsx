@@ -203,13 +203,13 @@ const support: Doc = {
   ],
 };
 
-const DOCS: Record<LegalPageId, Doc> = { privacy, terms, support };
+export const DOCS: Record<LegalPageId, Doc> = { privacy, terms, support };
 
 export function LegalLinks() {
   return <nav className="footer-links" aria-label="Legal and support">{IDS.map((id) => <a key={id} href={PAGES[id].path}>{PAGES[id].label}</a>)}</nav>;
 }
 
-export function LegalPage({ page }: { page: LegalPageId }) {
+export function LegalPage({ page, footer }: { page: LegalPageId; footer?: ReactNode }) {
   const doc = DOCS[page];
   useEffect(() => { document.title = `${doc.title} — Tokentracky`; }, [doc]);
   return <div className="app">
@@ -244,6 +244,6 @@ export function LegalPage({ page }: { page: LegalPageId }) {
         </article>
       </div>
     </main>
-    <footer className="footer"><div className="footer-inner"><span>Tokentracky · Waste tokens, not time.</span><LegalLinks /><span>Operated by {OPERATOR}</span></div></footer>
+    {footer ?? <footer className="footer"><div className="footer-inner"><span>Tokentracky · Waste tokens, not time.</span><LegalLinks /><span>Operated by {OPERATOR}</span></div></footer>}
   </div>;
 }

@@ -1,3 +1,5 @@
+import './mac.css';
+import './community.css';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { heatLevels, type HourBreakdownRow, type MenuOverview, type ProfileStats, type SessionSummary, type UsageSummary } from '@tokentracky/core';
 import type { ApiClient, LocalStatus } from '../api';

@@ -83,7 +83,7 @@ export function resetText(period: LeaderboardPeriod, windowStart: string | null,
   return { window: `${period === 'week' ? 'Week' : 'Month'} of ${shortDay(windowStart.slice(0, 10))}`, verb: 'resets', left };
 }
 
-export function Leaderboard({ api, me, join, onProfile, onGuide }: { api: ApiClient; me: string | null; join: Join | null; onProfile: (alias: string) => void; onGuide: () => void }) {
+export function Leaderboard({ api, me, join, onProfile }: { api: ApiClient; me: string | null; join: Join | null; onProfile: (alias: string) => void }) {
   const [period, setPeriodState] = useState<LeaderboardPeriod>(periodFromUrl);
   const [rankBy, setRankBy] = useState<RankBy>('all');
   // The last 24 hours have no cost to order by.
@@ -203,7 +203,7 @@ export function Leaderboard({ api, me, join, onProfile, onGuide }: { api: ApiCli
     return <tr key={`${extra ?? ''}${item.alias}`} className={[mine ? 'mine' : '', extra ?? ''].join(' ').trim() || undefined} onClick={() => onProfile(item.alias)}>
       <td className="c-rank num"><span className="rk">{item.rank <= 3 ? <span className={`medal g${item.rank}`}>{item.rank}</span> : item.rank}{period !== '24h' && <Move item={item} />}</span></td>
       <td className="c-who"><div className="who"><Avatar alias={item.alias} />
-        <div className="who-text"><span className="who-line"><button type="button" onClick={(event) => { event.stopPropagation(); onProfile(item.alias); }}>{item.alias}</button>{mine && <span className="badge">You</span>}
+        <div className="who-text"><span className="who-line"><a href={`/u/${item.alias}`} onClick={event => event.stopPropagation()}>{item.alias}</a>{mine && <span className="badge">You</span>}
             {used.length > 0 && <span className="tstack" title={used.map((tool) => tool.label).join(', ')}>{used.slice(0, 5).map((tool) => <ToolIcon key={tool.id} id={tool.id} />)}</span>}</span>
           {mine && (gap || top) && <small>{[gap, top].filter(Boolean).join(' · ')}</small>}</div></div></td>
       {columns.map((id) => cell(item, id))}
@@ -218,8 +218,8 @@ export function Leaderboard({ api, me, join, onProfile, onGuide }: { api: ApiCli
   return <div className="page-stack">
     <header className="board-head">
       <div>
-        <p className="eyebrow">The token leaderboard for AI coding</p>
-        <h1>Waste tokens, not time.</h1>
+        <h1>AI coding token leaderboard</h1>
+        <p>Community-reported usage across AI coding tools. <a href="/blog/how-to-read-the-token-leaderboard">How the rankings work</a></p>
       </div>
       <Segmented label="Period" value={period} options={PERIODS} onChange={setPeriod} />
     </header>
@@ -235,7 +235,7 @@ export function Leaderboard({ api, me, join, onProfile, onGuide }: { api: ApiCli
     </div>
 
     {podium.length > 0 && <ol className="podium" aria-label={`Top ${podium.length}`}>
-      {podium.map((item, index) => <PodiumCard key={item.alias} item={item} above={index ? podium[index - 1]! : null} next={podium[1] ?? null} period={period} rankBy={rankBy} mine={item.alias === me} end={shown?.updatedAt ?? new Date().toISOString()} onProfile={onProfile} />)}
+      {podium.map((item, index) => <PodiumCard key={item.alias} item={item} above={index ? podium[index - 1]! : null} next={podium[1] ?? null} period={period} rankBy={rankBy} mine={item.alias === me} end={shown?.updatedAt ?? new Date().toISOString()} />)}
     </ol>}
 
     <section className="panel board" aria-busy={loading}>
@@ -272,7 +272,7 @@ export function Leaderboard({ api, me, join, onProfile, onGuide }: { api: ApiCli
     </section>
 
     {join && <section className="how" aria-labelledby="how-title">
-      <header className="how-head"><h2 id="how-title">How joining works</h2><button type="button" className="link-quiet" onClick={onGuide}>Full guide →</button></header>
+      <header className="how-head"><h2 id="how-title">How joining works</h2><a className="link-quiet" href="/join">Full guide →</a></header>
       <ol className="how-steps">{STEPS.map((step, index) => <li key={step.title}><span className="step-num">{index + 1}</span><div><strong>{step.title}</strong><p>{step.text}</p></div></li>)}</ol>
     </section>}
   </div>;
@@ -297,14 +297,14 @@ function JoinStrip({ join }: { join: Join }) {
 
 /** One of the top three. The gap is to the builder above; first place shows its lead. Week-over-week appears only for the week, where 14 days cover both.
  * The last 24 hours show hour by hour, ending with the last whole hour before `end`, and the lifetime in place of a cost. */
-export function PodiumCard({ item, above, next, period, rankBy, mine, end, onProfile, now = new Date() }: { item: PublicProfile; above: PublicProfile | null; next: PublicProfile | null; period: LeaderboardPeriod; rankBy: RankBy; mine: boolean; end: string; onProfile: (alias: string) => void; now?: Date }) {
+export function PodiumCard({ item, above, next, period, rankBy, mine, end, now = new Date() }: { item: PublicProfile; above: PublicProfile | null; next: PublicProfile | null; period: LeaderboardPeriod; rankBy: RankBy; mine: boolean; end: string; now?: Date }) {
   const change = period === 'week' ? weekOverWeek(item.daily, now) : null;
   const hourly = period === '24h' ? item.hourly ?? null : null;
   const lastHour = new Date(Math.floor(Date.parse(end) / HOUR_MS) * HOUR_MS - HOUR_MS).toISOString();
   const used = usedTools(item);
   const gap = above ? `${formatCompact(above.tokens - item.tokens)} behind #${above.rank}` : next ? `Leads by ${formatCompact(item.tokens - next.tokens)}` : 'Leading';
   return <li className={`podium-card p${item.rank}${mine ? ' mine' : ''}`}>
-    <button type="button" className="podium-main" onClick={() => onProfile(item.alias)} aria-label={`${item.alias}, rank ${item.rank}, ${formatExact(item.tokens)} tokens`}>
+    <a href={`/u/${item.alias}`} className="podium-main" aria-label={`${item.alias}, rank ${item.rank}, ${formatExact(item.tokens)} tokens`}>
       <span className="podium-who"><span className={`medal g${item.rank}`}>{item.rank}</span><Avatar alias={item.alias} size="lg" /><span className="podium-name"><strong>{item.alias}</strong>{mine && <span className="badge">You</span>}</span>
         {used.length > 0 && <span className="tstack" aria-hidden="true">{used.slice(0, 5).map((tool) => <ToolIcon key={tool.id} id={tool.id} />)}</span>}</span>
       <span className="podium-figures">
@@ -312,7 +312,7 @@ export function PodiumCard({ item, above, next, period, rankBy, mine, end, onPro
           <small>{rankBy !== 'all' && rankBy !== 'cost' ? `${toolLabel(rankBy)} tokens` : change === null ? `tokens ${PHRASE[period]}` : <span className={change >= 0 ? 'up' : 'down'}>{change >= 0 ? '↑' : '↓'} {formatShare(Math.abs(change), 1)} <span className="faint">vs same days last week</span></span>}</small></span>
         {hourly ? <Sparkline values={hourly} end={lastHour} size="lg" mine={mine} hours /> : <Sparkline values={item.daily} end={end} size="lg" mine={mine} />}
       </span>
-    </button>
+    </a>
     <footer><span className="num">{gap}</span>{item.costMicrousd != null && <span className="num">{formatCost(item.costMicrousd)} est.</span>}
       {period === '24h' && item.lifetimeTokens !== undefined && <span className="num" title={`${formatExact(item.lifetimeTokens)} tokens all time`}>{formatCompact(item.lifetimeTokens)} lifetime</span>}</footer>
   </li>;

@@ -1,12 +1,12 @@
 import React from 'react';
+import { guide } from '../src/footer-guides';
 
 const fixtures = 'https://github.com/AuvreyDurelle/tokentracky/tree/96621c89bf8b1d5a666c654fb945ee6ab1e01450/fixtures/';
 const file = 'https://github.com/AuvreyDurelle/tokentracky/blob/96621c89bf8b1d5a666c654fb945ee6ab1e01450/fixtures/';
 
 export const toolGuides = [
   {
-    slug: 'claude-code-cache-read-write-tokens',
-    title: 'How to read Claude Code’s cache tokens',
+    ...guide('claude-code-cache-read-write-tokens'),
     description: 'Reconcile a 161-token Claude Code request with separate cache reads, five-minute and one-hour cache writes, and reasoning tokens.',
     body: <>
       <p>A Claude Code usage record in our synthetic test has just 11 ordinary input tokens, yet the request totals 161. Most of the input came from a cache. To reproduce the total, separate the counters that add tokens from the counters that describe tokens already counted.</p>
@@ -27,8 +27,7 @@ export const toolGuides = [
     ],
   },
   {
-    slug: 'gemini-cli-tool-use-tokens',
-    title: 'Where Gemini CLI’s tool-use tokens go',
+    ...guide('gemini-cli-tool-use-tokens'),
     description: 'Read two Gemini CLI messages and reproduce the collector’s 565-token total, including cached input and tokens used in a tool prompt.',
     body: <>
       <p>Suppose you are adding a Gemini CLI session by hand. One message says it used 500 input tokens, 20 output tokens, 100 cached tokens, and 30 tool tokens. Adding those four numbers gives 650. The collector records 550 for that message. The difference is the 100 tokens the input field already includes.</p>
@@ -45,8 +44,7 @@ export const toolGuides = [
     ],
   },
   {
-    slug: 'goose-session-totals-and-usage-ledger',
-    title: 'When a Goose session moves into the usage ledger',
+    ...guide('goose-session-totals-and-usage-ledger'),
     description: 'Trace a Goose database through two scans and see why a 13,200-token carried-forward row adds only 2,200 new tokens.',
     body: <>
       <p>A Goose database can tell the same story in two places. An older session may have an accumulated token total. Later, its usage ledger can acquire a row that carries earlier usage forward. Counting every newly discovered row in full would make old work appear again on the day the ledger changed.</p>
@@ -65,8 +63,7 @@ export const toolGuides = [
     ],
   },
   {
-    slug: 'grok-build-token-cost-receipts',
-    title: 'Where a Grok Build cost figure comes from',
+    ...guide('grok-build-token-cost-receipts'),
     description: 'Follow a completed Grok Build turn from xAI’s cost ticks into microdollars, then inspect what changes when usage is marked incomplete.',
     body: <>
       <p>Grok Build writes a cost alongside a completed turn. That gives the collector more information than token counts and a public price table alone. Our synthetic session contains both a complete usage record and an incomplete one. They take different paths to the cost column.</p>
@@ -83,8 +80,7 @@ export const toolGuides = [
     ],
   },
   {
-    slug: 'zed-thread-usage-after-model-switch',
-    title: 'What happens to a Zed thread’s tokens when you switch models?',
+    ...guide('zed-thread-usage-after-model-switch'),
     description: 'Follow one edited Zed thread across three scans. Its original usage stays with the first model and only the newly observed growth changes the totals.',
     body: <>
       <p>Imagine returning to a Zed thread the next morning and choosing another model. The stored thread now names the new model and has a larger running token count. Assigning the entire thread to its current model would rewrite yesterday’s model chart every time you switched.</p>

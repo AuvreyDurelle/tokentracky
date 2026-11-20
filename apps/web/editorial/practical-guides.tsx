@@ -1,12 +1,12 @@
 import React from 'react';
+import { guide } from '../src/footer-guides';
 
 const source = 'https://github.com/AuvreyDurelle/tokentracky/blob/3fcbe4c6fdfd16cf9fecee88041d97df56fd74a3';
 const release = 'https://github.com/AuvreyDurelle/tokentracky/releases/tag/v0.2.1';
 
 export const practicalGuides = [
   {
-    slug: 'private-token-dashboard',
-    title: 'Read your first token report without joining the leaderboard',
+    ...guide('private-token-dashboard'),
     description: 'Open the dashboard on your own computer, read a usage report from the terminal, and find out where today’s total comes from.',
     body: <React.Fragment>
       <p>If you want to know how many tokens you used today, you can answer that question before you choose a public name. On a fresh installation, Tokentracky can collect and display usage entirely on your computer. You need the CLI and a supported coding tool with some recorded activity.</p>
@@ -24,8 +24,7 @@ export const practicalGuides = [
     ],
   },
   {
-    slug: 'install-tokentracky-linux',
-    title: 'Install the Tokentracky CLI on Linux without Node',
+    ...guide('install-tokentracky-linux'),
     description: 'Choose the right Linux binary, verify its checksum, and check whether collection is running after you close the terminal.',
     body: <>
       <p>The Linux release includes the tracker and its web dashboard in one executable. The two downloads have different processor targets. Run <code>uname -m</code> on the machine where you intend to collect usage. An Intel or AMD machine usually reports <code>x86_64</code>. A 64-bit Arm machine usually reports <code>aarch64</code>.</p>
@@ -43,8 +42,7 @@ export const practicalGuides = [
     ],
   },
   {
-    slug: 'first-launch-on-macos',
-    title: 'Open Tokentracky for the first time on an Apple Silicon Mac',
+    ...guide('first-launch-on-macos'),
     description: 'Check Mac compatibility, install the menu-bar app, and recognize the first-launch prompt documented for the v0.2.1 release.',
     body: <>
       <p>Open About This Mac from the Apple menu and check the chip and macOS version. The v0.2.1 Mac app supports Apple Silicon and macOS 13 or later. If you want the small token counter in the menu bar, download <code>Tokentracky.dmg</code> from the project’s release page. A file with a name ending in <code>macos-arm64</code> and no <code>.dmg</code> extension is the terminal executable.</p>
@@ -60,8 +58,7 @@ export const practicalGuides = [
     ],
   },
   {
-    slug: 'windows-background-tracking',
-    title: 'Where Tokentracky runs after you close PowerShell',
+    ...guide('windows-background-tracking'),
     description: 'Follow the Windows CLI from device approval to its next sign-in and check the running collector without launching another one.',
     body: <>
       <p>On Windows x64, the CLI can keep collecting with no terminal window open. After you run <code>tokentracky login</code> and approve the computer, it copies the executable into your user profile and starts that copy as a background process. A sign-in entry named <code>Tokentracky</code> starts it again the next time you sign into Windows.</p>
@@ -79,8 +76,7 @@ export const practicalGuides = [
     ],
   },
   {
-    slug: 'combine-usage-from-two-computers',
-    title: 'Combine two computers on one leaderboard profile',
+    ...guide('combine-usage-from-two-computers'),
     description: 'Link a second computer, understand which daily totals combine, and know what happens to published history when you retire a device.',
     body: <>
       <p>A laptop and a workstation can publish under one leaderboard name. Start the connection on the second computer, sign into the same Tokentracky account, and match the short code and computer name on the approval screen. Each computer gets its own credential. Connecting publishes its eligible history, including activity from before the connection.</p>
@@ -96,8 +92,7 @@ export const practicalGuides = [
     ],
   },
   {
-    slug: 'understand-estimated-token-cost',
-    title: 'What the estimated cost next to your token count means',
+    ...guide('understand-estimated-token-cost'),
     description: 'Work through a token pricing example and learn why a local model, an unknown price, and a subscription payment produce different figures.',
     body: <>
       <p>Two requests can use the same number of tokens and carry different estimates. The pricing engine looks up the model and prices uncached input, output, cache reads, and cache writes separately. Reasoning tokens already included in output do not incur a second output charge.</p>
@@ -114,8 +109,7 @@ export const practicalGuides = [
     ],
   },
   {
-    slug: 'add-token-badge-to-github-readme',
-    title: 'Put a Tokentracky badge in your GitHub README',
+    ...guide('add-token-badge-to-github-readme'),
     description: 'Create a clickable badge that shows your weekly rank, then check the image and its profile destination independently.',
     body: <>
       <p>A README badge has two addresses. One fetches the small image with the current statistic. The other opens your profile when someone clicks it. Start on your published Tokentracky profile and copy its badge Markdown to get both addresses with your own alias.</p>
@@ -131,8 +125,7 @@ export const practicalGuides = [
     ],
   },
   {
-    slug: 'diagnose-missing-token-usage',
-    title: 'Find out why a coding session is missing from your token count',
+    ...guide('diagnose-missing-token-usage'),
     description: 'Use the CLI to distinguish a missing source folder, a disabled collector, a stale scan, and a difference between local and public totals.',
     body: <>
       <p>A blank count can mean the tool has no readable usage records, collection is turned off, or you are looking at a different day. Start on the computer where you used the tool. A local status report lets you narrow the problem before changing any settings.</p>

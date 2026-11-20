@@ -19,7 +19,7 @@ describe('week over week', () => {
   });
   it('appears on the podium only for the week', () => {
     const item = builder(1, [0, 0, 0, 0, 10, 10, 20, 0, 0, 0, 0, 15, 15, 30]);
-    const card = (period: 'week' | 'month' | 'all') => renderToStaticMarkup(<PodiumCard item={item} above={null} next={builder(2)} period={period} rankBy="all" mine={false} end="2026-10-21T12:00:00Z" onProfile={() => {}} now={wednesday} />);
+    const card = (period: 'week' | 'month' | 'all') => renderToStaticMarkup(<PodiumCard item={item} above={null} next={builder(2)} period={period} rankBy="all" mine={false} end="2026-10-21T12:00:00Z" now={wednesday} />);
     expect(card('week')).toContain('vs same days last week');
     expect(card('month')).not.toContain('last week');
     expect(card('all')).not.toContain('last week');
@@ -34,7 +34,7 @@ describe('the last 24 hours', () => {
   });
   it('shows the podium hour by hour, with the lifetime in place of a cost', () => {
     const item = { ...builder(1), previousRank: null, costMicrousd: null, lifetimeTokens: 14_800_000_000, hourly: [5, ...Array<number>(22).fill(0), 9] };
-    const card = renderToStaticMarkup(<PodiumCard item={item} above={null} next={builder(2)} period="24h" rankBy="all" mine={false} end="2026-10-23T12:28:00Z" onProfile={() => {}} />);
+    const card = renderToStaticMarkup(<PodiumCard item={item} above={null} next={builder(2)} period="24h" rankBy="all" mine={false} end="2026-10-23T12:28:00Z" />);
     expect(card).toContain('tokens in the last 24 hours');
     expect(card).toContain('14.8B lifetime');
     expect(card).toContain('Last 24 hours: 14 tokens over 2 active hours');

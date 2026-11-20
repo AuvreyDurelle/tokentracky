@@ -207,7 +207,7 @@ describe('public profile', () => {
 
 describe('join page', () => {
   it('lists every tool the collector reads, marks Cursor as not yet, and says what becomes public', () => {
-    const html = renderToStaticMarkup(<Join onLeaderboard={() => {}} />);
+    const html = renderToStaticMarkup(<Join />);
     for (const tool of TOOLS) expect(html).toContain(tool.label);
     expect(html).toMatch(/Cursor <span class="badge plain">Not yet<\/span>/);
     expect(html).toContain('Public once you connect');
@@ -215,13 +215,13 @@ describe('join page', () => {
   });
 
   it('carries the plain notice of what connecting publishes, with nothing to tick', () => {
-    const html = renderToStaticMarkup(<Join onLeaderboard={() => {}} />);
+    const html = renderToStaticMarkup(<Join />);
     expect(html).toContain('Connecting puts your daily token totals, tool split, model mix and estimated cost on the public leaderboard. Delete your account to remove them.');
     expect(html).not.toMatch(/type="checkbox"|role="switch"/);
   });
 
   it('counts the tools and says the Mac app is coming soon while there is no download or npm launcher', () => {
-    const html = renderToStaticMarkup(<Join onLeaderboard={() => {}} />);
+    const html = renderToStaticMarkup(<Join />);
     expect(html).not.toContain('npx tokentracky login');
     expect(html).toContain(`Works with ${TOOLS.length} AI coding tools`);
     // Without a download there is no button and no first-launch note.
@@ -235,7 +235,7 @@ describe('join page', () => {
     vi.doMock('./download-config', async (original) => ({ ...await original<typeof import('./download-config')>(), MAC_DOWNLOAD: 'https://example.test/Tokentracky.dmg' }));
     try {
       const { Join: WithDownload } = await import('./Join');
-      const html = renderToStaticMarkup(<WithDownload onLeaderboard={() => {}} />);
+      const html = renderToStaticMarkup(<WithDownload />);
       expect(html).toContain('href="https://example.test/Tokentracky.dmg"');
       expect(html).toMatch(/Download for Mac<\/a>.*<small class="first-launch">.*Privacy &amp; Security.*Open Anyway/);
       expect(html).not.toContain('Mac app coming soon');
@@ -253,7 +253,7 @@ describe('join page', () => {
     vi.doMock('./download-config', async (original) => ({ ...await original<typeof import('./download-config')>(), MAC_DOWNLOAD: 'https://example.test/Tokentracky.dmg', INSTALL_COMMAND: 'npx tokentracky login' }));
     try {
       const { Join: WithBoth } = await import('./Join');
-      const html = renderToStaticMarkup(<WithBoth onLeaderboard={() => {}} />);
+      const html = renderToStaticMarkup(<WithBoth />);
       expect(html).toMatch(/Download for Mac<\/a>.*or install in one command.*npx tokentracky login.*<small class="first-launch">/);
     } finally {
       vi.doUnmock('./download-config');
