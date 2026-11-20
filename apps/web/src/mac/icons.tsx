@@ -26,6 +26,7 @@ export const ICONS = {
   download: icon(<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m7 10 5 5 5-5" /><path d="M12 15V3" /></>),
   external: icon(<><path d="M15 3h6v6" /><path d="M10 14 21 3" /><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></>),
   chevronDown: icon(<path d="m6 9 6 6 6-6" />, 2),
+  chevronLeft: icon(<path d="m15 18-6-6 6-6" />, 2),
   chevronRight: icon(<path d="m9 18 6-6-6-6" />, 2),
   arrowUp: icon(<><path d="m5 12 7-7 7 7" /><path d="M12 19V5" /></>, 2.4),
   arrowDown: icon(<><path d="M12 5v14" /><path d="m19 12-7 7-7-7" /></>, 2.4),
