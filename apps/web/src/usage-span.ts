@@ -9,10 +9,14 @@ const dayCount = (from: string, to: string) => Math.round((Date.parse(`${to}T00:
 /**
  * The UTC days a profile's usage chart shows for a period, `back` steps before the current one: the calendar week from
  * Monday or the calendar month, up to `today`, or everything since `start` (the profile's year when unknown) for all
- * time. Stepping stops at the builder's first week or month, and at today.
+ * time, back at most the 3,660 days the server sends at once. Stepping stops at the builder's first week or month, and
+ * at today.
  */
 export function usageSpan(period: Exclude<UsagePeriod, '24h'>, back: number, today: string, start: string | null): UsageSpan {
-  if (period === 'all') return { from: start ?? addDays(today, -364), to: today, title: 'All time', canBack: false, canForward: false };
+  if (period === 'all') {
+    const from = start ?? addDays(today, -364), earliest = addDays(today, -3659);
+    return { from: from < earliest ? earliest : from, to: today, title: 'All time', canBack: false, canForward: false };
+  }
   let from: string, end: string;
   if (period === 'week') {
     const monday = addDays(today, -((new Date(`${today}T00:00:00Z`).getUTCDay() + 6) % 7));

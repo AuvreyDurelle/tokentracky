@@ -29,6 +29,8 @@ describe('usage spans', () => {
     expect(usageSpan('all', 0, today, '2026-01-03')).toMatchObject({ from: '2026-01-03', to: '2026-11-19', title: 'All time', canBack: false, canForward: false });
     // Without a start, the profile's year.
     expect(usageSpan('all', 0, today, null)).toMatchObject({ from: '2025-11-20', to: '2026-11-19' });
+    // No further back than the 3,660 days the server sends in one request.
+    expect(usageSpan('all', 0, today, '2016-01-01')).toMatchObject({ from: '2016-11-12', to: '2026-11-19' });
   });
   it('names what a span is compared with: the same number of days just before', () => {
     expect(comparedWith('2026-11-09', '2026-11-15')).toBe('the week before');
