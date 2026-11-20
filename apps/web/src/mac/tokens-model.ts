@@ -55,7 +55,11 @@ export function projectSeries(projects: ReadonlyArray<Pick<ProjectSummary, 'name
   const sorted = [...projects].sort((a, b) => b.tokens - a.tokens);
   const series: ChartSeries[] = sorted.slice(0, 5).map((project, at) => ({ key: project.name, label: projectName(project.name), color: PROJECT_COLORS[at]!, values: values(project) }));
   const rest = sorted.slice(5);
-  if (rest.length) series.push({ key: 'other', label: 'Other', color: 'var(--heat-2)', values: days.map((_, at) => rest.reduce((sum, project) => sum + values(project)[at]!, 0)) });
+  if (rest.length) {
+    const other = days.map(() => 0);
+    for (const project of rest) values(project).forEach((tokens, at) => { other[at] += tokens; });
+    series.push({ key: 'other', label: 'Other', color: 'var(--heat-2)', values: other });
+  }
   const none = days.map(() => 0);
   for (const row of rows) { const at = index.get(row.day); if (at !== undefined) none[at] += row.tokens; }
   for (const item of series) item.values.forEach((tokens, at) => { none[at] -= tokens; });
