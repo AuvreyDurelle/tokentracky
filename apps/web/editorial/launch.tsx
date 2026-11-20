@@ -47,7 +47,8 @@ export const launchArticles = [
       </tbody></table>
       <p>Connected computers also send recent hourly totals by tool. The last-24-hours chart can therefore reveal which hours you were active. If you use GitHub sign-in, your verified GitHub login may appear alongside your leaderboard alias.</p>
       <h2>Why your local export can show more tokens</h2>
-      <p>Some Kilo databases save forked messages under new IDs and leave no durable link to their parent. Two equal counters could be independent requests or copies of one request. Tokentracky recognizes the Kilo v1 database by its <code>message(id, session_id, time_created, data)</code> table. All usage derived from that database stays local, even when the table is empty or the same database also contains v2 records. The difference can persist after a successful sync.</p>
+      <p>Some Kilo databases save forked messages under new IDs and leave no durable link to their parent. Two equal counters could be independent requests or copies of one request. Tokentracky recognizes the Kilo v1 database by its <code>message(id, session_id, time_created, data)</code> table. New uploads exclude every event from that database, even when the v1 table is empty or the same database also contains v2 records. Your local export keeps those events.</p>
+      <p>If an older collector already uploaded affected history, the old totals can still appear on your profile. Save your hosted privacy review to clear the account’s previously published totals, then reconnect this device before syncing. Each connected computer needs to upload its own eligible history again.</p>
       <h2>What to check before approving a device</h2>
       <p>Read the device name, match the short code on your computer with the one on the approval page, and check the alias you intend to publish under. Approval shares eligible history with its tool, model, and cost breakdown together. To keep usage private, continue using the local dashboard without approving a device.</p>
       <p>If you later delete your Tokentracky account, the service removes the public profile and totals. Your local history remains, and other people may still have copies they saved. The <a href="/join">connection guide</a> walks through joining, and the <a href="/privacy">privacy policy</a> covers device data, deletion, and retention.</p>
@@ -65,7 +66,7 @@ export const launchArticles = [
     body: <>
       <h2>What is Token Town?</h2>
       <p>Token Town is a city-building game in development that turns eligible usage from your Tokentracky leaderboard account into resources. You collect a harvest, use your stores to build or upgrade, and claim neighboring land. Two players can publish the same number of AI coding tokens and come away with different supplies because the game also looks at how those tokens were used.</p>
-      <h2>What does a million-token day yield?</h2>
+      <h2>How the same token total can yield different resources</h2>
       <p>In the November 20, 2026 development build, total tokens feed Bricks, output feeds Power, input and cache writes feed Water, and reasoning feeds Crystals. One session can supply several resources. Buildings and bonuses affect the harvest you see in town.</p>
       <p>For an illustrative calculation, suppose a million tokens yield one Brick, 10,000 output tokens yield one Power, and 50,000 input tokens yield one Water. With those example rates, 800,000 input and 200,000 output yield one Brick, 20 Power, and 16 Water. Swap the two counts and you get one Brick, 80 Power, and four Water. Both examples have zero reasoning tokens and yield no Crystals. The players tie on token volume, yet their harvests favor different buildings.</p>
       <h2>When to collect and where to build</h2>

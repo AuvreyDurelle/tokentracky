@@ -73,19 +73,19 @@ export const practicalGuides = [
   },
   {
     ...guide('windows-background-tracking'),
-    description: 'On Windows x64, tokentracky login can install a sign-in job. Use PowerShell to check the running collector and whether it will start at your next sign-in.',
+    description: 'On Windows x64, tokentracky login can install a sign-in job. Check the running collector in PowerShell and control its next sign-in launch in Startup settings.',
     body: <>
       <h2>Find the background collector</h2>
-      <p>On Windows x64, a successful <code>tokentracky login</code> can keep collecting after you close PowerShell. Once you <a href="/blog/what-joining-the-leaderboard-shares">approve this computer</a>, the CLI starts a copy of itself from <code>{'%LOCALAPPDATA%\\tokentracky\\bin'}</code>. A sign-in entry named <code>Tokentracky</code> starts that copy again when you next sign into Windows.</p>
+      <p>On Windows x64, a successful <code>tokentracky login</code> can keep collecting after you close PowerShell. Once you <a href="/blog/what-joining-the-leaderboard-shares">approve this computer</a>, the CLI starts a copy of itself from <code>{'%LOCALAPPDATA%\\tokentracky\\bin'}</code>. A sign-in entry named <code>Tokentracky</code> launches that copy at sign-in while the entry is enabled.</p>
       <h2>Check whether it is running now</h2>
       <pre><code>{'tokentracky status --json\ntokentracky open'}</code></pre>
       <p>Run these commands in a new PowerShell window. In the JSON report, <code>running: true</code> means a collector owns the data folder. <code>lastRefreshAt</code> dates its last scan and <code>leaderboard.linked</code> shows the device link. The second command opens the running dashboard. One collector can write to the folder at a time.</p>
       <h2>Check what will happen at the next sign-in</h2>
-      <p>This read-only query looks up the sign-in entry for your Windows user. If present, the value shows the command Windows will launch. It can still exist when no process is currently running.</p>
+      <p>This read-only query looks up the sign-in entry for your Windows user. If present, the value shows the registered command. Open Settings → Apps → Startup to see whether the Tokentracky entry is enabled. Use <code>tokentracky status --json</code> to see whether the collector is running now.</p>
       <pre><code>{'reg query HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run /v Tokentracky'}</code></pre>
       <p>If the background job could not start, login falls back to a foreground session. A custom <code>TOKENTRACKY_HOME</code> causes this on Windows because the sign-in entry cannot carry that setting. In that configuration, keep the original terminal open while you want collection to continue.</p>
       <h2>Stop background tracking</h2>
-      <p>To stop this session, open Task Manager’s Details tab, check the command line for <code>tokentracky.exe serve --background</code>, and end that Tokentracky process. If you started it in the foreground, press Ctrl-C in its terminal instead.</p>
+      <p>To stop this session, open Task Manager’s Details tab. If the Command line column is hidden, right-click a column header, choose Select columns, and enable Command line. Find the <code>tokentracky.exe</code> in the copied installation folder shown above, confirm its arguments include <code>serve --background</code>, and end that process. If you started it in the foreground, press Ctrl-C in its terminal instead.</p>
       <p>To keep it from starting at the next sign-in, open Settings → Apps → Startup and turn off the Tokentracky entry. This controls the next launch. End the current session separately if you also want collection to stop now. Your local usage history stays on disk.</p>
     </>,
     sources: [
