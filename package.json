@@ -17,6 +17,7 @@
     "build": "npm run build --workspace=@tokentracky/web && npm run build --workspace=@tokentracky/server",
     "typecheck": "tsc --noEmit",
     "test": "cargo build -p tokentracky-local-api --bin contract-server && vitest run",
+    "test:seo": "node scripts/check-seo.mjs",
     "lint": "eslint .",
     "dev": "cargo run -p tokentracky-cli -- serve",
     "dev:web": "npm run dev --workspace=@tokentracky/web",
