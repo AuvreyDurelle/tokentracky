@@ -37,13 +37,23 @@ const ROUTES: [(&str, &str); 19] = [
     ("HEAD", "/assets/contract.js"),
 ];
 /// Routes only the Rust server has, for the Mac app's pages (the TypeScript server is frozen).
-const RUST_ROUTES: [(&str, &str); 6] = [
+const RUST_ROUTES: [(&str, &str); 16] = [
     ("GET", "/api/community"),
     ("GET", "/api/leaderboard/around/someone"),
     ("GET", "/api/achievements/rarity"),
     ("GET", "/api/local/likes/someone"),
     ("PUT", "/api/local/likes/someone"),
     ("DELETE", "/api/local/likes/someone"),
+    ("GET", "/api/town/map"),
+    ("GET", "/api/town/u/someone"),
+    ("GET", "/api/local/town/me"),
+    ("POST", "/api/local/town/collect"),
+    ("POST", "/api/local/town/plots"),
+    ("POST", "/api/local/town/jobs"),
+    ("POST", "/api/local/town/move"),
+    ("POST", "/api/local/town/trade"),
+    ("GET", "/town"),
+    ("GET", "/u/Some-Builder/town"),
 ];
 
 fn sample(method: &'static str, path: &str) -> Init {
@@ -211,7 +221,10 @@ async fn serves_the_web_build_without_listing_or_escaping_it() {
         "/achievements",
         "/settings",
         "/popover",
+        "/town",
+        "/town/map",
         "/u/Some-Builder",
+        "/u/Some-Builder/town",
         "/?view=today",
     ] {
         let reply = server.get(page).await;

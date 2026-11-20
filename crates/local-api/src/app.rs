@@ -48,9 +48,15 @@ const LIKES_NOT_LINKED: LocalError = LocalError::new(
     "Link a publishing device before liking profiles.",
 );
 const LIKES_UNAVAILABLE: LocalError = LocalError::new(502, "CLOUD_UNAVAILABLE", "Hosted likes are unavailable.");
+const TOWN_NOT_LINKED: LocalError = LocalError::new(
+    409,
+    "CLOUD_NOT_LINKED",
+    "Join the leaderboard from Settings to start your town.",
+);
+const TOWN_UNAVAILABLE: LocalError = LocalError::new(502, "CLOUD_UNAVAILABLE", "Token Town could not be reached.");
 /// Pages the web app renders at their own addresses (`SPA_PAGES`; the website's `vercel.json`, in tokentracky-web,
-/// rewrites the first six). The last four are the Mac app's local-only pages and are not in that file.
-const SPA_PAGES: [&str; 10] = [
+/// rewrites the first six). The last six are the Mac app's local-only pages and are not in that file.
+const SPA_PAGES: [&str; 12] = [
     "/privacy",
     "/terms",
     "/support",
@@ -61,6 +67,8 @@ const SPA_PAGES: [&str; 10] = [
     "/achievements",
     "/settings",
     "/popover",
+    "/town",
+    "/town/map",
 ];
 
 /// Everything the routes share. Cheap to clone.
@@ -162,11 +170,21 @@ pub fn base_router(
         .route("/api/leaderboard", get(leaderboard))
         .route("/api/profiles/{alias}", get(profile))
         .route("/api/profiles/{alias}/stats", get(profile_stats))
+        .route("/api/profiles/{alias}/usage", get(profile_usage))
         // For the Mac app's pages.
         .route("/api/community", get(community))
         .route("/api/leaderboard/around/{alias}", get(neighbours))
         .route("/api/achievements/rarity", get(rarity))
         .route("/api/local/likes/{alias}", get(like).put(like).delete(like))
+        // Token Town: the map and visited towns are public pages; a member's own town goes as this device.
+        .route("/api/town/map", get(town_map))
+        .route("/api/town/u/{alias}", get(town_of))
+        .route("/api/local/town/me", get(town_member))
+        .route("/api/local/town/collect", post(town_member))
+        .route("/api/local/town/plots", post(town_member))
+        .route("/api/local/town/jobs", post(town_member))
+        .route("/api/local/town/move", post(town_member))
+        .route("/api/local/town/trade", post(town_member))
         .route(
             "/api/local/cloud",
             put(link).layer(DefaultBodyLimit::max(4096)).delete(unlink),
@@ -176,6 +194,10 @@ pub fn base_router(
         .merge(pages)
         // Public profiles have shareable addresses; the web app shows its own not-found state for unknown names.
         .route("/u/{alias}", {
+            let root = root.clone();
+            get(move |Path(alias): Path<String>, request: Request| public_profile(root.clone(), alias, request))
+        })
+        .route("/u/{alias}/town", {
             let root = root.clone();
             get(move |Path(alias): Path<String>, request: Request| public_profile(root.clone(), alias, request))
         })
@@ -264,6 +286,15 @@ async fn profile_stats(
     profile_page(&state, &alias, "/stats", uri.query()).await
 }
 
+/// A profile's usage over a span of days, for its usage chart.
+async fn profile_usage(
+    State(state): State<LocalState>,
+    Path(alias): Path<String>,
+    uri: Uri,
+) -> Result<Response, LocalError> {
+    profile_page(&state, &alias, "/usage", uri.query()).await
+}
+
 /// Relays `/api/profiles/:alias` followed by `page`.
 async fn profile_page(
     state: &LocalState,
@@ -322,6 +353,43 @@ async fn like(
     }
     if response.status.is_redirection() || serde_json::from_slice::<serde::de::IgnoredAny>(&response.body).is_err() {
         return Err(LIKES_UNAVAILABLE);
+    }
+    let mut reply = (response.status, [(header::CONTENT_TYPE, JSON)], response.body).into_response();
+    reply.extensions_mut().insert(Relayed);
+    Ok(reply)
+}
+
+async fn town_map(State(state): State<LocalState>, uri: Uri) -> Result<Response, LocalError> {
+    proxy(&state, "/api/town/map", uri.query()).await
+}
+
+async fn town_of(State(state): State<LocalState>, Path(alias): Path<String>, uri: Uri) -> Result<Response, LocalError> {
+    proxy(&state, &format!("/api/town/u/{}", alias_segment(&alias)?), uri.query()).await
+}
+
+/// The member's own town on the linked service, as this device: `/api/local/town/…` goes to `/api/town/…` with the
+/// device token and the request's JSON body, and the answer comes back as it is. As with likes, the token goes only
+/// to the service that issued it and never into an answer.
+async fn town_member(
+    State(state): State<LocalState>,
+    method: Method,
+    uri: Uri,
+    JsonBody(body): JsonBody,
+) -> Result<Response, LocalError> {
+    let path = uri
+        .path()
+        .strip_prefix("/api/local")
+        .ok_or_else(LocalError::not_found)?;
+    let link = state.sync.secrets().get().await.ok().flatten().ok_or(TOWN_NOT_LINKED)?;
+    let mut request = HttpRequest::new(method, format!("{}/api{path}", link.url), PROXY_TIMEOUT)
+        .header(header::ACCEPT, "application/json")
+        .header(header::AUTHORIZATION, bearer(&link.device_token));
+    if let Some(body) = body {
+        request = request.header(header::CONTENT_TYPE, JSON).json(body.to_string());
+    }
+    let response = state.client.send(request).await.map_err(|_| TOWN_UNAVAILABLE)?;
+    if response.status.is_redirection() || serde_json::from_slice::<serde::de::IgnoredAny>(&response.body).is_err() {
+        return Err(TOWN_UNAVAILABLE);
     }
     let mut reply = (response.status, [(header::CONTENT_TYPE, JSON)], response.body).into_response();
     reply.extensions_mut().insert(Relayed);

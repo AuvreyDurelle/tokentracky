@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { activityStats } from '@tokentracky/core';
 import { addDays } from '../ranges';
-import { ActivityGrid, nextDay } from './ActivityGrid';
+import { ActivityGrid, dayReadout, nextDay } from './ActivityGrid';
 
 // A year ending on Sunday 2026-10-25, quiet every third day; the last day is the busiest.
 const days = Array.from({ length: 365 }, (_, index) => ({ day: addDays('2025-10-26', index), tokens: index % 3 ? (index + 1) * 1_000_000 : 0 }));
@@ -46,5 +46,13 @@ describe('nextDay', () => {
     expect([nextDay(100, 'Home', 364), nextDay(100, 'End', 364)]).toEqual([0, 364]);
     expect(nextDay(null, 'ArrowUp', 364)).toBe(363);
     for (const key of ['Enter', 'a', 'Tab', 'constructor']) expect(nextDay(100, key, 364)).toBeNull();
+  });
+});
+
+describe('dayReadout', () => {
+  it('reads a day’s tokens, its cost when shared, and the date', () => {
+    expect(dayReadout({ day: '2026-11-17', tokens: 6.1e9, costMicrousd: 2_770e6 })).toMatch(/^6\.1B tokens · \$2,770(\.00)? · .*17.*2026$/);
+    expect(dayReadout({ day: '2026-11-17', tokens: 6.1e9 })).toMatch(/^6\.1B tokens · [^$]*2026$/);
+    expect(dayReadout({ day: '2026-11-18', tokens: 0, costMicrousd: 0 })).toMatch(/^No usage · /);
   });
 });

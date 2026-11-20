@@ -23,6 +23,8 @@
     "apps/web/**/*.ts",
     "apps/web/**/*.tsx",
     "packages/core/**/*.ts",
+    "packages/town/**/*.ts",
+    "packages/town/**/*.tsx",
     "vitest.config.ts"
   ],
   "exclude": [

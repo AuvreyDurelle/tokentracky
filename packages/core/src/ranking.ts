@@ -1,4 +1,9 @@
-import type { Period } from './index.ts';
+import type { LeaderboardPeriod, Period } from './index.ts';
+
+/** The leaderboard's URL defaults to the current week. */
+export function boardPeriod(value: string | null): LeaderboardPeriod {
+  return value === '24h' || value === 'month' || value === 'all' ? value : 'week';
+}
 
 export function rankingWindow(period: Period, now = new Date()): string | null {
   if (period === 'all') return null;

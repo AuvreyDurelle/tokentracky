@@ -1,6 +1,6 @@
 import { useMemo, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { heatLevels, type ActivityStats } from '@tokentracky/core';
-import { formatCompact, formatExact, shortDay } from '../format';
+import { formatCompact, formatCost, formatExact, shortDay } from '../format';
 
 // The mockup's geometry: 15px cells on a 19px pitch, after the weekday labels and below the month labels.
 const CELL = 15, PITCH = 19, LEFT = 34, TOP = 22;
@@ -21,8 +21,13 @@ export function nextDay(from: number | null, key: string, last: number): number 
   return Math.max(0, Math.min(last, MOVES[key]!(from ?? last, last)));
 }
 
+/** What a day reads on hover: its tokens, its estimated cost when shared, and the date. */
+export function dayReadout(day: { day: string; tokens: number; costMicrousd?: number | null }): string {
+  return [day.tokens ? `${formatCompact(day.tokens)} tokens` : 'No usage', ...(day.tokens && day.costMicrousd != null ? [formatCost(day.costMicrousd)] : []), LONG_DAY.format(utc(day.day))].join(' · ');
+}
+
 /** A year of daily tokens in Monday-first UTC week columns, with its streaks. Hover, focus and arrow keys read each day; a hidden table carries every value. */
-export function ActivityGrid({ days, stats, label }: { days: Array<{ day: string; tokens: number }>; stats: ActivityStats; label: string }) {
+export function ActivityGrid({ days, stats, label }: { days: Array<{ day: string; tokens: number; costMicrousd?: number | null }>; stats: ActivityStats; label: string }) {
   const [active, setActive] = useState<number | null>(null);
   const lead = days.length ? (utc(days[0]!.day).getUTCDay() + 6) % 7 : 0;
   // A year of cells, redrawn when the data changes rather than for every day the pointer crosses.
@@ -47,7 +52,7 @@ export function ActivityGrid({ days, stats, label }: { days: Array<{ day: string
   const point = active === null || active > last ? null : { ...days[active]!, ...place(lead, active) };
   // The tip sits beside the day, on whichever side has room.
   const flip = point !== null && point.column < weeks / 2;
-  const readout = point && <><b>{point.tokens ? `${formatCompact(point.tokens)} tokens` : 'No usage'}</b> · {LONG_DAY.format(utc(point.day))}</>;
+  const readout = point && dayReadout(point);
   const activeDays = days.filter((day) => day.tokens > 0);
   return <section className="card activity">
     <div className="card-head"><span className="card-title">{label}</span><span className="right">UTC</span></div>

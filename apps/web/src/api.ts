@@ -13,8 +13,12 @@ import type {
   SessionSummary,
   SourceStatus,
   ToolId,
+  TownMapResponse,
+  TownPublic,
+  TownSelf,
   UsageBreakdownRow,
   UsageSummary,
+  UsageWindow,
 } from '@tokentracky/core';
 
 export interface Health {
@@ -108,6 +112,8 @@ export class ApiClient {
   }
   profile(alias: string, period: LeaderboardPeriod) { return this.request<PublicProfile>(`/api/profiles/${encodeURIComponent(alias)}?${query({ period })}`); }
   profileStats(alias: string) { return this.request<ProfileStats>(`/api/profiles/${encodeURIComponent(alias)}/stats`); }
+  /** A profile's usage over a span of UTC days, for its usage chart. */
+  profileUsage(alias: string, from: string, to: string) { return this.request<UsageWindow>(`/api/profiles/${encodeURIComponent(alias)}/usage?${query({ from, to })}`); }
   community() { return this.request<CommunityStats>('/api/community'); }
   leaderboardAround(alias: string, period: LeaderboardPeriod) { return this.request<LeaderboardNeighbours>(`/api/leaderboard/around/${encodeURIComponent(alias)}?${query({ period })}`); }
   achievementRarity() { return this.request<AchievementRarity>('/api/achievements/rarity'); }
@@ -138,6 +144,11 @@ export class ApiClient {
   likeStatus(alias: string) { return this.request<{ liked: boolean }>(`/api/local/likes/${encodeURIComponent(alias)}`); }
   like(alias: string) { return this.request<void>(`/api/local/likes/${encodeURIComponent(alias)}`, { method: 'PUT' }); }
   unlike(alias: string) { return this.request<void>(`/api/local/likes/${encodeURIComponent(alias)}`, { method: 'DELETE' }); }
+  /** Token Town: the map and visited towns through the hosted proxies; your own town through the linked device's credential. */
+  townMap(area: { x0: number; y0: number; x1: number; y1: number }) { return this.request<TownMapResponse>(`/api/town/map?${query(area)}`); }
+  townOf(alias: string) { return this.request<TownPublic>(`/api/town/u/${encodeURIComponent(alias)}`); }
+  townMe() { return this.request<TownSelf>('/api/local/town/me'); }
+  townAct(path: 'collect' | 'plots' | 'jobs' | 'move' | 'trade', body: object = {}) { return this.request<TownSelf>(`/api/local/town/${path}`, { method: 'POST', body: JSON.stringify(body) }); }
   async exportCsv(range: UsageRange, tool: 'all' | ToolId = 'all'): Promise<Blob> {
     const response = await fetch(`/api/local/export?${query({ ...range, tool })}`, { credentials: 'include' });
     if (!response.ok) throw await readError(response);

@@ -4,46 +4,61 @@ import type { LocalStatus } from '../api';
 import { addDays, hourList, last24Hours } from '../ranges';
 import { personalFixtures } from './personal-fixtures';
 import { TokensPage, chartSeries, modelColors } from './TokensView';
+import { OverviewStrip } from './StackedAreaChart';
 
 const f = personalFixtures();
 const noop = () => {};
 const page = (overrides: Partial<Parameters<typeof TokensPage>[0]> = {}) => renderToStaticMarkup(<TokensPage
   data={{ range: f.range, tool: 'all', summary: f.summary, before: f.before, breakdown: f.breakdown, projects: f.projects, sessions: f.sessions, hours: f.summary.byHour }} year={f.year} status={f.status}
-  range={f.range} days={30} metric="tokens" tool="all" error={null} onMetric={noop} onDays={noop} onTool={noop} onExport={noop} {...overrides} />);
+  range={f.range} period="month" span={{ from: f.range.from, to: f.range.to, title: 'Last 30 days', canBack: true, canForward: false }} grain="day" metric="tokens" tool="all" error={null}
+  onMetric={noop} onPeriod={noop} onStep={noop} onCustom={noop} onTool={noop} onGrain={noop} onDrill={noop} onExport={noop} {...overrides} />);
+/** The usage chart's card, the first on the page. */
+const chartCard = (html: string) => /<section class="m-card tk-chart-card"[\s\S]*?<\/section>/.exec(html)?.[0] ?? '';
 const text = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
 
 describe('TokensPage', () => {
-  it('leads with the period total, its change, cost and sessions, beside the split by tool', () => {
+  it('reads a week hour by hour, but a custom range only by day', () => {
+    const week = { period: 'week' as const, span: { from: f.range.from, to: f.range.to, title: 'This week', canBack: true, canForward: false } };
+    expect(chartCard(page(week))).toMatch(/>Hour</);
+    expect(chartCard(page({ ...week, custom: true }))).not.toMatch(/>Hour</);
+  });
+  it('leads with the totals as tiles, each with its change, and the split by tool over the chart', () => {
     const html = text(page());
-    expect(html).toContain('Total tokens · last 30 days');
-    expect(html).toMatch(/6\.9B 38%/);
-    expect(html).toContain('$2,394 est. cost · 1,284 sessions · 5B previous 30 days');
-    for (const tool of ['Claude Code 412 sessions 4.6B 67%', 'Codex 731 sessions 1.8B 26%', 'Gemini CLI 74 sessions 248.4M 3.6%']) expect(html).toContain(tool);
+    expect(html).toMatch(/Tokens 6\.9B \+38% vs 5B/);
+    expect(html).toContain('Est. cost $2,394');
+    expect(html).toContain('Sessions 1,284');
+    for (const tool of ['Claude Code 4.6B · 67%', 'Codex 1.8B · 26%', 'Gemini CLI 248.4M · 3.6%']) expect(html).toContain(tool);
+    expect(page()).toMatch(/<button type="button" class="tk-tile on" aria-pressed="true">/);
   });
   it("waits for the chosen period's totals instead of showing the last period's under its labels", () => {
     const week = { from: addDays(f.range.to, -6), to: f.range.to };
-    for (const html of [text(page({ days: 7, range: week })), text(page({ tool: 'codex' }))]) {
+    for (const html of [text(page({ range: week })), text(page({ tool: 'codex' }))]) {
       expect(html).toContain('Loading your usage');
       expect(html).not.toContain('6.9B');
     }
   });
-  it('offers the ranges the local API serves, with the chosen one pressed', () => {
-    const html = page({ days: 90 });
-    expect(html).toMatch(/<button type="button" class="on" aria-pressed="true">90d<\/button>/);
-    for (const label of ['24h', '7d', '30d', '12m', 'Export CSV']) expect(html).toContain(label);
-  });
-  it('charts the days by tool, with every value in a hidden table', () => {
+  it('offers the four periods, stepping back through them, and a custom range', () => {
     const html = page();
-    expect(html).toContain('<caption>Daily tokens by tool, last 30 days</caption>');
-    expect(html.match(/class="tk-area"/g)).toHaveLength(5);
+    expect(html).toMatch(/<button type="button" class="on" aria-pressed="true">Month<\/button>/);
+    for (const label of ['24h', 'Week', 'All time', 'Custom range', 'Export CSV', 'aria-label="Earlier"']) expect(html).toContain(label);
+    expect(html).toContain('aria-label="Later" disabled=""');
   });
-  it('reads today, 7 and 30 days with their cost and change from the year, and the cache rate from the period', () => {
-    const html = text(page());
-    for (const kpi of ['Today 186.4M', '7 days', '30 days 6.9B', 'Avg / active day 87.2M', 'Cache hit rate 97.1%']) expect(html).toContain(kpi);
-    expect(html).toMatch(/Today 186\.4M \$[\d.,]+ · so far · UTC/);
-    expect(html).toMatch(/30 days 6\.9B \$[\d,]+ · [+−±][\d.]+%/);
+  it('charts the days by tool with weekends shaded and every value in a hidden table, and opens a day on click', () => {
+    const card = chartCard(page());
+    expect(card).toMatch(/<caption>Tokens per day by tool, [^<]+<\/caption>/);
+    expect(card.match(/class="tk-area"/g)).toHaveLength(5);
+    expect(card).toContain('class="tk-band"');
+    expect(card).toContain('class="tk-pickable"');
+    for (const control of ['Split by', 'Token type', 'Project', 'Granularity', 'Compare']) expect(card).toContain(control);
+  });
+  it('reads the cache rate from the period, and today, this week and the streak against your records', () => {
+    const html = text(chartCard(page()));
     // Cache reads (90%) of all input (cache reads, plain input and cache writes: 97%).
     expect(html).toContain('Cache hit rate 97.1% 6.2B of 6.7B input');
+    expect(html).toContain('Avg / active day');
+    expect(html).toContain('Personal best watch');
+    expect(html).toMatch(/Today 186\.4M/);
+    expect(html).toMatch(/Streak \d+ days? best 58/);
   });
   it('totals the period by kind, cached and uncached input apart, and splits the cost by kind', () => {
     const counts = { input: 100, output: 50, cacheRead: 800, cacheWrite: 50, reasoning: 30 };
@@ -82,11 +97,11 @@ describe('TokensPage', () => {
     const window = last24Hours();
     // Breakdown rows by hour: each row's day is its hour's first instant.
     const hours = hourList(window).map((day, index) => ({ ...f.breakdown[0]!, day, tokens: (index + 1) * 1e6 }));
-    const html = page({ days: '24h', range: window, data: { range: window, tool: 'all', summary: f.summary, before: f.before, breakdown: hours, projects: f.projects, sessions: f.sessions, hours: f.summary.byHour } });
+    const html = page({ period: '24h', span: null, range: window, data: { range: window, tool: 'all', summary: f.summary, before: f.before, breakdown: hours, projects: f.projects, sessions: f.sessions, hours: f.summary.byHour } });
     expect(html).toMatch(/<button type="button" class="on" aria-pressed="true">24h<\/button>/);
-    expect(text(html)).toContain('Total tokens · last 24 hours');
-    expect(text(html)).toContain('previous 24 hours');
-    expect(html).toContain('<caption>Hourly tokens by tool, last 24 hours</caption>');
+    expect(text(html)).toContain('Last 24 hours');
+    expect(text(html)).toContain('Compared with the 24 hours before');
+    expect(html).toContain('<caption>Tokens per hour by tool, the last 24 hours</caption>');
     expect(html.match(/class="tk-hour"/g)).toHaveLength(24);
     for (const gone of ['Most expensive day', 'Daily avg', '>Day</button>', 'Chart style']) expect(html).not.toContain(gone);
     expect(text(page())).toContain('Most expensive day');
@@ -118,5 +133,22 @@ describe('modelColors', () => {
     expect(colors.get('sol')).toBe('var(--tool-codex)');
     expect(colors.get('sonnet')).toMatch(/^color-mix\(in oklab, var\(--tool-claude\) \d+%, var\(--bg\)\)$/);
     expect(colors.get('other')).toBe('var(--heat-2)');
+  });
+});
+
+describe('OverviewStrip', () => {
+  it('lights only the chart’s own days, not everything since they began', () => {
+    const days = Array.from({ length: 40 }, (_, at) => ({ day: addDays('2026-10-01', at), tokens: at }));
+    const html = renderToStaticMarkup(<OverviewStrip days={days} from="2026-10-05" to="2026-10-11" />);
+    expect(html).toMatch(/(Oct 5|5 Oct) to (Oct 11|11 Oct) highlighted/);
+    // One day still shows; a range before the strip lights nothing.
+    expect(renderToStaticMarkup(<OverviewStrip days={days} from="2026-10-05" to="2026-10-05" />)).not.toMatch(/clipPath[^>]*><rect[^>]*width="0"/);
+    // The last day alone still shows, inside the strip.
+    const [, x, width] = /clipPath[^>]*><rect x="([\d.]+)" y="0" width="([\d.]+)"/.exec(renderToStaticMarkup(<OverviewStrip days={days} from="2026-11-09" to="2026-11-09" />)) ?? [];
+    expect(Number(width)).toBeGreaterThan(0);
+    expect(Number(x) + Number(width)).toBeLessThanOrEqual(1078);
+    const before = renderToStaticMarkup(<OverviewStrip days={days} from="2026-08-01" to="2026-08-07" />);
+    expect(before).toContain('aria-label="Last 12 months"');
+    expect(before).not.toContain('tk-strip-win');
   });
 });

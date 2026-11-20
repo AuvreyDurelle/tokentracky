@@ -327,6 +327,25 @@ async fn leaderboard_profile_and_profile_stats_proxies() {
     stub.answer("GET /api/profiles/x%20y/stats", Answer::json(stats.clone()));
     assert_eq!(server.get("/api/profiles/x%20y/stats").await.json(), stats);
 
+    // Relays a profile's usage over a span of days with its query, for the usage chart.
+    let usage = json!({"alias": "builder_1", "from": "2026-11-01", "to": "2026-11-19", "tokens": 99, "previousTokens": 80, "daily": []});
+    stub.answer("GET /api/profiles/builder_1/usage", Answer::json(usage.clone()));
+    assert_eq!(
+        server
+            .get("/api/profiles/builder_1/usage?from=2026-11-01&to=2026-11-30")
+            .await
+            .json(),
+        usage
+    );
+    let query = &stub.to("GET /api/profiles/builder_1/usage")[0].query;
+    assert_eq!(
+        (
+            query.get("from").map(String::as_str),
+            query.get("to").map(String::as_str)
+        ),
+        (Some("2026-11-01"), Some("2026-11-30"))
+    );
+
     // 404 CLOUD_UNAVAILABLE when the hosted service has no such page.
     stub.answer("GET /api/profiles/nobody", Answer::text(NOT_FOUND).with_status(404));
     expect_error(&server.get("/api/profiles/nobody").await, 404, "CLOUD_UNAVAILABLE");
@@ -630,6 +649,95 @@ async fn likes_through_the_device_token() {
     // The token is never echoed.
     assert!(replies.iter().all(|reply| !reply.text.contains(TOKEN)));
     assert!(configured.calls().is_empty());
+}
+
+/// Rust only, for the app's town pages: the member's own town goes to the linked service with the device token and
+/// the request's JSON body, and the answer comes back as it is; the map and visited towns are public pages.
+#[tokio::test]
+async fn town_through_the_device_token() {
+    let stub = Stub::start().await;
+    let server = Server::start(Some(&stub.url), true).await;
+    let mut replies = Vec::new();
+
+    // Nothing linked: 409 CLOUD_NOT_LINKED, without asking the hosted service.
+    let reply = server.request("/api/local/town/me", Init::method("GET")).await;
+    expect_error(&reply, 409, "CLOUD_NOT_LINKED");
+    assert!(stub.calls().is_empty());
+
+    // The map and a visited town are public: relayed without credentials.
+    stub.answer("GET /api/town/map", Answer::json(json!({"towns": []})));
+    stub.answer("GET /api/town/u/builder_1", Answer::json(json!({"alias": "builder_1"})));
+    let reply = server
+        .request("/api/town/map?x0=-5&y0=-5&x1=5&y1=5", Init::method("GET"))
+        .await;
+    assert_eq!((reply.status, reply.json()), (200, json!({"towns": []})));
+    let reply = server.request("/api/town/u/builder_1", Init::method("GET")).await;
+    assert_eq!((reply.status, reply.json()), (200, json!({"alias": "builder_1"})));
+    let map = &stub.to("GET /api/town/map")[0];
+    assert_eq!(map.query.get("x1").map(String::as_str), Some("5"));
+    assert_eq!(map.header("authorization"), None);
+
+    stub.answer(
+        "GET /api/device-policy",
+        Answer::json(json!({"publication": publication(json!({}))})),
+    );
+    let link =
+        json!({"url": stub.url, "deviceToken": TOKEN, "historyStart": null, "shareTools": false, "shareCost": false});
+    assert_eq!(server.request("/api/local/cloud", put(link)).await.status, 200);
+
+    // Reads and actions carry the device token; a body goes on as JSON.
+    let town = json!({"alias": "stub-builder", "level": 1});
+    stub.answer("GET /api/town/me", Answer::json(town.clone()));
+    stub.answer("POST /api/town/plots", Answer::json(town.clone()));
+    stub.answer("POST /api/town/collect", Answer::json(town.clone()));
+    let reply = server.request("/api/local/town/me", Init::method("GET")).await;
+    assert_eq!((reply.status, reply.json()), (200, town.clone()));
+    replies.push(reply);
+    let reply = server
+        .request(
+            "/api/local/town/plots",
+            Init::method("POST").json(json!({"x": 1, "y": 0})),
+        )
+        .await;
+    assert_eq!((reply.status, reply.json()), (200, town.clone()));
+    replies.push(reply);
+    assert_eq!(
+        server
+            .request("/api/local/town/collect", Init::method("POST"))
+            .await
+            .status,
+        200
+    );
+    let claim = &stub.to("POST /api/town/plots")[0];
+    assert_eq!(claim.header("authorization"), Some(bearer(TOKEN).as_str()));
+    assert!(claim.header("content-type").unwrap().starts_with("application/json"));
+    assert_eq!(claim.body, Some(json!({"x": 1, "y": 0})));
+    let me = &stub.to("GET /api/town/me")[0];
+    assert_eq!(me.header("authorization"), Some(bearer(TOKEN).as_str()));
+    assert!(me.body.is_none());
+
+    // Hosted refusals keep their status and body.
+    let paused = json!({"error": {"code": "TOWN_PAUSED", "message": "Paused."}});
+    stub.answer("POST /api/town/move", Answer::json(paused.clone()).with_status(403));
+    let reply = server.request("/api/local/town/move", Init::method("POST")).await;
+    assert_eq!((reply.status, reply.json()), (403, paused));
+    replies.push(reply);
+    stub.answer("POST /api/town/trade", Answer::text("<html>not json</html>"));
+    let reply = server
+        .request("/api/local/town/trade", Init::method("POST").json(json!({"bricks": 8})))
+        .await;
+    expect_error(&reply, 502, "CLOUD_UNAVAILABLE");
+    replies.push(reply);
+
+    // The session's protections of local changes apply before anything is forwarded.
+    let calls = stub.calls().len();
+    let reply = server
+        .request("/api/local/town/collect", Init::method("POST").header("origin", None))
+        .await;
+    expect_error(&reply, 403, "ORIGIN_REQUIRED");
+    assert_eq!(stub.calls().len(), calls);
+    // The token is never echoed.
+    assert!(replies.iter().all(|reply| !reply.text.contains(TOKEN)));
 }
 
 #[tokio::test]

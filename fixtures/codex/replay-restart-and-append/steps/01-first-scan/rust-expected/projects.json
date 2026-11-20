@@ -1,0 +1,21 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 40,
+      "cacheWrite": 0,
+      "input": 60,
+      "output": 20,
+      "reasoning": 10
+    },
+    "costMicrousd": null,
+    "daily": [
+      {
+        "day": "2026-10-20",
+        "tokens": 120
+      }
+    ],
+    "name": "/synthetic/codex-project",
+    "sessions": 1,
+    "tokens": 120
+  }
+]

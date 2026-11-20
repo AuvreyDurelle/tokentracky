@@ -14,6 +14,7 @@ import { AchievementsView } from './mac/AchievementsView';
 import { TokensView } from './mac/TokensView';
 import { SettingsView } from './mac/SettingsView';
 import { Popover } from './mac/Popover';
+import { TownView } from './mac/TownView';
 import { JoinPrompt, askToJoin } from './mac/JoinPrompt';
 import '@fontsource-variable/inter/opsz.css';
 import './styles.css';
@@ -65,16 +66,17 @@ function App() {
   // `/` is the leaderboard; the website's own pages exist only on the website.
   const page: Route['page'] = route.page === 'home' ? 'leaderboard' : route.page === 'join' || route.page === 'wrapped' || route.page === 'vs' ? 'missing' : route.page;
   // The Mac app's own pages bring their layout (.m-page); the rest keep the site's column.
-  const ported = (['leaderboard', 'profile', 'achievements', 'tokens', 'you', 'settings', 'popover'] as const).some((mac) => mac === page);
+  const ported = (['leaderboard', 'profile', 'achievements', 'tokens', 'you', 'settings', 'popover', 'town', 'town-map', 'town-visit'] as const).some((mac) => mac === page);
   const body = <main className={ported ? undefined : 'page'}>
       {healthError && <Notice tone="error">{healthError}</Notice>}
-      {(page === 'leaderboard' || page === 'profile') && <LeaderboardView api={api} me={me} canJoin={canJoin} syncedAt={localStatus?.lastSyncAt ?? null} onProfile={(alias) => navigate({ page: 'profile', alias })} onJoin={() => navigate({ page: 'settings' })} />}
+      {(page === 'leaderboard' || page === 'profile') && <LeaderboardView api={api} me={me} canJoin={canJoin} syncedAt={localStatus?.lastSyncAt ?? null} site={health.cloudUrl} onProfile={(alias) => navigate({ page: 'profile', alias })} onJoin={() => navigate({ page: 'settings' })} />}
       {route.page === 'profile' && <ProfileModal key={route.alias} api={api} alias={route.alias} me={me} onClose={leaderboard} />}
       {page === 'achievements' && <AchievementsView api={api} me={me} revision={`${usageRevision(localStatus)}|${localStatus?.lastSyncAt ?? ''}`} />}
       {page === 'missing' && <div className="empty page-missing"><strong>This page does not exist</strong><button type="button" className="btn" onClick={leaderboard}>Go to the leaderboard</button></div>}
       {(page === 'you' || page === 'tokens') && <TokensView api={api} status={localStatus} />}
       {page === 'settings' && <SettingsView api={api} health={health} status={localStatus} refresh={refreshLocal} />}
       {page === 'popover' && <Popover api={api} status={localStatus} site={health.cloudUrl} />}
+      {(page === 'town' || page === 'town-map' || page === 'town-visit') && <TownView api={api} route={route} me={me} go={navigate} />}
     </main>;
   const commands = palette && <CommandPalette api={api} local onClose={() => setPalette(false)}
       onProject={() => navigate({ page: 'tokens' })}
@@ -82,6 +84,8 @@ function App() {
         { id: 'leaderboard', label: 'Leaderboard', hint: 'Page', run: leaderboard },
         { id: 'you', label: 'Tokens', hint: 'Page', run: () => navigate({ page: 'you' }) },
         { id: 'achievements', label: 'Achievements', hint: 'Page', run: () => navigate({ page: 'achievements' }) },
+        { id: 'town', label: 'Town', hint: 'Page', run: () => navigate({ page: 'town' }) },
+        { id: 'town-map', label: 'Town map', hint: 'Page', run: () => navigate({ page: 'town-map' }) },
         { id: 'settings', label: 'Settings', hint: 'Page', run: () => navigate({ page: 'settings' }) },
         ...(me ? [{ id: 'profile', label: 'Your public profile', hint: 'Page', run: () => navigate({ page: 'profile', alias: me }) }] : []),
         { id: 'privacy', label: 'Privacy policy', hint: 'Page', run: () => { window.location.href = '/privacy'; } },

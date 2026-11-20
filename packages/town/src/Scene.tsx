@@ -1,0 +1,225 @@
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type Ref } from 'react';
+import { BUILDINGS, RESOURCE_IDS, terrainAt, type BuildingId, type ResourceId, type Resources, type TownMapResponse, type TownPlot } from '@tokentracky/core';
+import { BUILDING_HEIGHT, SCENE_DEFS, circle, createArt, isoProjection, r, spark } from './art.ts';
+import { compact, count } from './format.ts';
+import { plotKey, plotKind, plotTile, plotsBackToFront, type PlotKind, type SceneLayout } from './layout.ts';
+import { townColour, townPieces } from './pieces.ts';
+import { atHome, useSpin } from './spin.ts';
+import { spunProjection } from './view.ts';
+import type { World3D } from './world3d.ts';
+
+export interface SceneBuilding {id?: string; kind: BuildingId; x: number; y: number; level: number}
+export type Selection = {type: 'building'; id: string} | {type: 'plot'; x: number; y: number};
+/** Uncollected harvest to float over the town, with what would spill. */
+export interface SceneHarvest {resources: Resources; spill: Resources}
+
+/** Which building a resource's harvest bubble floats over. */
+const SOURCE: Record<ResourceId, BuildingId> = {power: 'power-plant', bricks: 'brickworks', water: 'reservoir', crystals: 'observatory'};
+const BUBBLE: Record<ResourceId, string> = {power: '#ffd23f', bricks: '#ff9a5c', water: '#6fd3ff', crystals: '#c4a4ff'};
+
+/** The sky behind every town: stars, a low moon and the glow of the horizon. Fixed, so it is drawn once. */
+function skyMarkup(): string {
+  let z = 7;
+  const rn = () => (z = z * 16807 % 2147483647) / 2147483647;
+  let s = '<defs><linearGradient id="tt-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#070823"/><stop offset=".4" stop-color="#17184a"/><stop offset=".68" stop-color="#33276a"/><stop offset=".85" stop-color="#6a3e78"/><stop offset="1" stop-color="#b45e78"/></linearGradient>'
+    + '<radialGradient id="tt-moon"><stop offset="0" stop-color="#ffd9b0" stop-opacity=".55"/><stop offset="1" stop-color="#ffd9b0" stop-opacity="0"/></radialGradient>'
+    + '<radialGradient id="tt-horizon"><stop offset="0" stop-color="#ff9a7a" stop-opacity=".38"/><stop offset="1" stop-color="#ff9a7a" stop-opacity="0"/></radialGradient></defs>';
+  s += '<rect width="1192" height="760" fill="url(#tt-sky)"/>';
+  for (let i = 0; i < 170; i++) {
+    const x = rn() * 1192, y = rn() * 620, a = rn();
+    s += `<circle class="tt-twinkle" style="animation-delay:${r(a * 4)}s" cx="${r(x)}" cy="${r(y)}" r="${a > 0.94 ? 1.5 : a > 0.6 ? 0.9 : 0.6}" fill="#fff" opacity="${(0.2 + a * 0.7 * (1 - y / 800)).toFixed(2)}"/>`;
+  }
+  for (const [x, y, size] of [[150, 46, 7], [700, 96, 6], [880, 64, 5], [300, 40, 4], [1040, 40, 6], [86, 420, 5], [960, 250, 5]] as const) s += spark(x, y, size);
+  s += '<ellipse cx="600" cy="770" rx="780" ry="190" fill="url(#tt-horizon)"/>' + circle(980, 120, 160, 'url(#tt-moon)') + circle(980, 120, 38, '#fff0d0')
+    + [[-12, -10, 8], [10, 6, 5], [3, -19, 4]].map(([a, b, size]) => circle(980 + a!, 120 + b!, size!, '#f1dcb4', 'opacity=".65"')).join('');
+  return s;
+}
+let sky: string | null = null;
+export function Sky() {
+  sky ??= skyMarkup();
+  return <svg className="tt-sky" viewBox="0 0 1192 760" preserveAspectRatio="xMidYMid slice" aria-hidden="true" dangerouslySetInnerHTML={{__html: sky}} />;
+}
+
+interface Props {
+  layout: SceneLayout;
+  plots: readonly TownPlot[];
+  buildings: readonly SceneBuilding[];
+  map: TownMapResponse | null;
+  selected: Selection | null;
+  claimMode?: boolean;
+  harvest?: SceneHarvest | null;
+  /** What happens on a plot. Without it the scene can only be looked at. */
+  onSelect?: (selection: Selection | null) => void;
+  onCollect?: () => void;
+  label: string;
+  svgRef?: Ref<SVGSVGElement>;
+  /** Someone else's town: no claim markers, since its free plots are not yours to claim. */
+  visiting?: boolean;
+  /** How far the town is turned, in radians, and what turning it does. Without `onSpin` the town stays put. */
+  angle?: number;
+  onSpin?: (angle: number) => void;
+}
+
+/**
+ * A town at night in isometric view: its plots, the neighbourhood around it, and everything happening there. The town
+ * itself is drawn in 3D where the browser has WebGL, so it can turn; labels, badges and click targets are a flat overlay
+ * that turns with it. Without WebGL the flat drawing stays, facing one way.
+ */
+export function TownScene({layout, plots, buildings, map, selected, claimMode = false, harvest, onSelect, onCollect, label, svgRef, visiting = false, angle = 0, onSpin}: Props) {
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const [world3d, setWorld3d] = useState<World3D | null>(null);
+  const spinnable = !!onSpin && !!world3d;
+  const turned = spinnable ? angle : 0;
+  const P = useMemo(() => spunProjection(layout, turned), [layout, turned]);
+  const spin = useSpin(turned, spinnable ? onSpin : undefined);
+  const own = useMemo(() => new Set(plots.map(p => plotKey(p.x, p.y))), [plots]);
+  const others = useMemo(() => {
+    const out = new Map<string, number>();
+    for (const [x, y, town] of map?.plots ?? []) if (!own.has(plotKey(x, y))) out.set(plotKey(x, y), town);
+    return out;
+  }, [map, own]);
+  const kindAt = (x: number, y: number): PlotKind => {
+    const kind = plotKind(x, y, own, others);
+    return visiting && kind.kind === 'claimable' ? {kind: terrainAt(x, y) === 'forest' ? 'forest' : 'free'} : kind;
+  };
+
+  // The world: ground, borders, neighbours' homes, trees and every building, back to front. Redrawn when the town changes.
+  const pieces = useMemo(() => townPieces({layout, kindAt, buildings, map}), [layout, buildings, own, others, map, visiting]);
+  useEffect(() => {
+    let live = true, made: World3D | null = null;
+    import('./world3d.ts').then(({createWorld3D}) => {
+      if (!live || !canvas.current) return;
+      try { made = createWorld3D(canvas.current); } catch { return; }
+      setWorld3d(made);
+    }, () => {});
+    return () => { live = false; made?.dispose(); };
+  }, []);
+  // Before paint, so the flat drawing and the 3D town never both show or both go missing.
+  useLayoutEffect(() => { world3d?.draw(pieces, layout); }, [world3d, pieces, layout]);
+  useLayoutEffect(() => { world3d?.turn(turned); }, [world3d, turned]);
+  // The flat drawing of the same pieces, until the 3D town is ready or where it can't be.
+  const world = useMemo(() => {
+    if (world3d) return '';
+    const P = isoProjection(layout.originX, layout.originY);
+    const art = createArt(P, 'tts');
+    const nx = layout.cols * 2, ny = layout.rows * 2;
+    let ground = '', edges = '', objects = '';
+    const B0 = P(nx, ny)[1];
+    const L = P(0, ny, -26), R = P(nx, 0, -26), F = P(nx, ny, -26);
+    let rock = art.poly([L, [L[0] + (F[0] - L[0]) * 0.35, B0 + 70], [F[0], B0 + 150], [F[0] + (R[0] - F[0]) * 0.65, B0 + 70], R, F], '#1b1534')
+      + art.poly([L, [L[0] + (F[0] - L[0]) * 0.35, B0 + 70], [F[0], B0 + 150], F], '#231b40');
+    rock += [[-0.6, 50], [-0.25, 96], [0.15, 110], [0.5, 70]].map(([k, dy], i) => art.dot([F[0] + k! * (R[0] - L[0]) * 0.5, B0 + dy!], 2.2, i % 2 ? '#b18cff' : '#7fe3ff')).join('');
+    const slab = art.poly([P(0, ny), P(nx, ny), P(nx, ny, -26), P(0, ny, -26)], '#2c2347') + art.poly([P(nx, 0), P(nx, ny), P(nx, ny, -26), P(nx, 0, -26)], '#201a39')
+      + art.poly([P(0, ny), P(nx, ny), P(nx, ny, -6), P(0, ny, -6)], '#2e4c48') + art.poly([P(nx, 0), P(nx, ny), P(nx, ny, -6), P(nx, 0, -6)], '#243d3b');
+    for (const piece of pieces) {
+      switch (piece.type) {
+        case 'tile': ground += art.poly(art.sq(piece.x, piece.y, 1, 1), piece.colour); break;
+        case 'ripple': { const c = P(piece.x, piece.y); ground += `<path d="M${r(c[0] - 14)},${r(c[1])}h28" stroke="#9fb6f0" stroke-opacity=".3" stroke-width="1.5" stroke-linecap="round"/>`; break; }
+        case 'border': edges += art.line(P(...piece.a), P(...piece.b), piece.colour, piece.own ? 2.6 : 1.6, piece.own ? '' : 'opacity=".6"'); break;
+        case 'building': objects += art.building(piece.kind, piece.x, piece.y, piece.level); break;
+        case 'house': objects += art.house(piece.x, piece.y, piece.roof, piece.variant); break;
+        case 'tree': objects += art.tree(piece.x, piece.y, piece.size, piece.pine); break;
+        case 'lamp': objects += art.lamp(piece.x, piece.y); break;
+      }
+    }
+    return `${rock}${slab}${ground}<g filter="url(#tt-mg)">${edges}</g>${objects}<defs>${art.defs}</defs>`;
+  }, [layout, pieces, world3d]);
+
+  const tile = (x: number, y: number) => plotTile(layout, x, y);
+  const diamond = (x: number, y: number, inset = 0) => {
+    const [tx, ty] = tile(x, y);
+    return [P(tx + inset, ty + inset), P(tx + 2 - inset, ty + inset), P(tx + 2 - inset, ty + 2 - inset), P(tx + inset, ty + 2 - inset)].map(p => `${r(p[0])},${r(p[1])}`).join(' ');
+  };
+  const order = plotsBackToFront(layout);
+  const byPlot = new Map(buildings.map(b => [plotKey(b.x, b.y), b]));
+  const selectedPlot = selected?.type === 'plot' ? selected : selected ? buildings.find(b => b.id === selected.id) : undefined;
+
+  // Labels for neighbouring towns, at the middle of their visible land.
+  const labels = useMemo(() => {
+    const groups = new Map<number, Array<[number, number]>>();
+    for (const [x, y] of plotsBackToFront(layout)) { const k = plotKind(x, y, own, others); if (k.kind === 'other') groups.set(k.town, [...(groups.get(k.town) ?? []), [x, y]]); }
+    return [...groups].map(([town, cells]) => {
+      const cx = cells.reduce((sum, [x]) => sum + x, 0) / cells.length, cy = cells.reduce((sum, [, y]) => sum + y, 0) / cells.length;
+      const [tx, ty] = plotTile(layout, cx, cy);
+      return {town, at: P(tx + 1, ty + 1, 8)};
+    });
+  }, [P, layout, own, others]);
+
+  // Each bubble floats over the building that makes its resource, or over the Town Hall; bubbles sharing a building sit side by side.
+  const placed = harvest ? RESOURCE_IDS.filter(id => harvest.resources[id] > 0).map(id => ({id, source: buildings.find(b => b.kind === SOURCE[id]) ?? buildings.find(b => b.kind === 'town-hall') ?? buildings[0]}))
+    .filter((b): b is {id: ResourceId; source: SceneBuilding} => !!b.source) : [];
+  const bubbles = placed.map(({id, source}) => {
+    const sharing = placed.filter(other => other.source === source);
+    const [tx, ty] = tile(source.x, source.y);
+    const top = P(tx + 1, ty + 1, BUILDING_HEIGHT[source.kind] + 40);
+    const shift = (sharing.findIndex(other => other.id === id) - (sharing.length - 1) / 2) * 64;
+    // Spill warnings alternate in height so neighbouring ones never overlap.
+    return {id, x: top[0] + shift, y: top[1], value: harvest!.resources[id], spill: harvest!.spill[id], lift: sharing.findIndex(other => other.id === id) % 2 * 20};
+  });
+
+  const activate = (selection: Selection) => onSelect?.(selection);
+  const keyed = (selection: Selection) => (event: KeyboardEvent) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); activate(selection); } };
+
+  return <>
+  <canvas ref={canvas} className="tt-world" aria-hidden="true" />
+  <svg ref={svgRef} className={spinnable ? 'tt-town tt-spins' : 'tt-town'} viewBox={`0 0 ${layout.width} ${layout.height}`} preserveAspectRatio="xMidYMid meet" role="group"
+    aria-label={spinnable ? `${label}. Drag or use the arrow keys to turn it.` : label} tabIndex={spinnable ? 0 : undefined} {...spin.handlers}>
+    <defs dangerouslySetInnerHTML={{__html: SCENE_DEFS}} />
+    <g dangerouslySetInnerHTML={{__html: world}} />
+    {/* Claimable plots: a dashed gold outline and a plus. */}
+    {order.filter(([x, y]) => kindAt(x, y).kind === 'claimable').map(([x, y]) => {
+      const [tx, ty] = tile(x, y);
+      const c = P(tx + 1, ty + 1);
+      return <g key={`c${x},${y}`} className={claimMode ? 'tt-claim on' : 'tt-claim'} pointerEvents="none">
+        <polygon points={diamond(x, y, 0.16)} fill="rgba(255,211,107,.05)" stroke="#ffd36b" strokeOpacity={claimMode ? 1 : 0.55} strokeWidth={claimMode ? 2.4 : 1.6} strokeDasharray="6 5" />
+        <circle cx={c[0]} cy={c[1]} r={9} fill="rgba(20,16,50,.75)" stroke="#ffd36b" strokeWidth={1.5} />
+        <path d={`M${r(c[0] - 4)},${r(c[1])}h8M${r(c[0])},${r(c[1] - 4)}v8`} stroke="#ffd36b" strokeWidth={2} strokeLinecap="round" />
+      </g>;
+    })}
+    {selectedPlot && <polygon points={diamond(selectedPlot.x, selectedPlot.y, 0.05)} fill="rgba(255,211,107,.18)" stroke="#ffd36b" strokeWidth={3} strokeLinejoin="round" filter="url(#tt-gl)" pointerEvents="none" />}
+    {/* Level badges. */}
+    {buildings.map(b => {
+      const [tx, ty] = tile(b.x, b.y);
+      const p = P(tx + 1.7, ty + 1.7, 30);
+      const gold = selected?.type === 'building' && selected.id === b.id;
+      return <g key={`l${b.x},${b.y}`} pointerEvents="none">
+        <circle cx={p[0]} cy={p[1]} r={10.5} fill={gold ? '#ffd36b' : '#211e4c'} stroke={gold ? '#fff3c4' : '#bdb8ff'} strokeWidth={1.6} />
+        <text x={p[0]} y={p[1] + 4} textAnchor="middle" fill={gold ? '#2a1d00' : '#fff'} fontSize={11} fontWeight={800}>{b.level}</text>
+      </g>;
+    })}
+    {labels.map(({town, at}) => {
+      const t = map?.towns[town];
+      if (!t) return null;
+      const text = t.alias ? `@${t.alias}${t.level ? ` · Lv ${t.level}` : ''}` : 'Under review';
+      const w = text.length * 6.6 + 34;
+      return <g key={`n${town}`} pointerEvents="none">
+        <rect x={at[0] - w / 2} y={at[1] - 11} width={w} height={22} rx={11} fill="rgba(14,12,40,.86)" stroke="rgba(200,195,255,.3)" />
+        <circle cx={at[0] - w / 2 + 13} cy={at[1]} r={4.5} fill={townColour(t.alias)} filter="url(#tt-gl)" />
+        <text x={at[0] + 7} y={at[1] + 4} textAnchor="middle" fill="#f2f1ff" fontSize={11.5} fontWeight={700}>{text}</text>
+      </g>;
+    })}
+    {/* Plots you can act on take clicks and keys. */}
+    {onSelect && order.map(([x, y]) => {
+      const kind = kindAt(x, y);
+      const building = byPlot.get(plotKey(x, y));
+      if (kind.kind !== 'own' && kind.kind !== 'claimable') return null;
+      const selection: Selection = building?.id ? {type: 'building', id: building.id} : {type: 'plot', x, y};
+      const name = building ? `${BUILDINGS[building.kind].name}, level ${building.level}` : kind.kind === 'own' ? 'Empty plot' : 'Plot you can claim';
+      return <polygon key={`h${x},${y}`} className="tt-hit" points={diamond(x, y)} fill="transparent" role="button" tabIndex={0} aria-label={name}
+        aria-pressed={selectedPlot?.x === x && selectedPlot?.y === y} onClick={() => activate(selection)} onKeyDown={keyed(selection)} />;
+    })}
+    {bubbles.map(b => <g key={b.id} className="tt-bubble" role={onCollect ? 'button' : undefined} tabIndex={onCollect ? 0 : undefined}
+      aria-label={onCollect ? `Collect ${count(b.value)} ${b.id}` : undefined} onClick={onCollect} onKeyDown={event => { if (onCollect && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); onCollect(); } }}>
+      <circle cx={b.x} cy={b.y} r={27} fill={BUBBLE[b.id]} opacity={0.2} filter="url(#tt-gl)" />
+      <circle cx={b.x} cy={b.y} r={21} fill="url(#tt-bub)" stroke={BUBBLE[b.id]} strokeWidth={2} />
+      <use href={`#tt-${b.id}`} x={b.x - 12} y={b.y - 14} width={24} height={24} />
+      <path d={`M${b.x - 13},${b.y - 6}a14,14 0 0 1 8,-9`} stroke="#fff" strokeWidth={2.4} strokeOpacity={0.75} fill="none" strokeLinecap="round" />
+      <rect x={b.x - 27} y={b.y + 12} width={54} height={19} rx={9.5} fill={BUBBLE[b.id]} />
+      <text x={b.x} y={b.y + 25.5} textAnchor="middle" fill="#1a1530" fontSize={12.5} fontWeight={800}>+{compact(b.value)}</text>
+      {b.spill > 0 && <g><rect x={b.x - (compact(b.spill).length * 6.2 + 74) / 2} y={b.y - 52 - b.lift} width={compact(b.spill).length * 6.2 + 74} height={18} rx={9} fill="#ff5a4a" filter="url(#tt-gl)" />
+        <text x={b.x} y={b.y - 39.5 - b.lift} textAnchor="middle" fill="#fff" fontSize={10.5} fontWeight={800}>{compact(b.spill)} will spill</text><title>{`${count(b.spill)} will spill: the store is full`}</title></g>}
+    </g>)}
+  </svg>
+  {spinnable && !atHome(angle) && <div className="tt-glass tt-reset"><button type="button" onClick={spin.home}>Reset view</button></div>}
+  </>;
+}

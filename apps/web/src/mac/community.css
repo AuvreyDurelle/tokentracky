@@ -52,39 +52,21 @@
 .mac .m-lb .you-id { min-width: 120px; line-height: 1.3; }
 .mac .m-lb .lb-you-rank { display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 .mac .m-lb .you-sub { color: var(--text-3); font-size: 12px; }
-.mac .m-lb .you-vsep { width: 1px; height: 30px; background: var(--border-2); }
-.mac .m-lb .you-stat { line-height: 1.3; }
-.mac .m-lb .you-stat .v { font-size: 17px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
-.mac .m-lb .you-chase { flex: 1; min-width: 200px; max-width: 360px; }
-.mac .m-lb .you-chase .row { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-3); }
-.mac .m-lb .you-chase .row b { color: var(--text-2); font-weight: 500; }
-.mac .m-lb .chase-bar { position: relative; height: 4px; margin-top: 8px; border-radius: 2px; background: var(--surface-3); }
-.mac .m-lb .chase-bar span { position: absolute; inset: 0 auto 0 0; border-radius: 2px; background: linear-gradient(90deg, rgba(123, 127, 246, 0.5), var(--accent)); }
-.mac .m-lb .chase-bar i { position: absolute; right: -1px; top: -3px; width: 2px; height: 10px; border-radius: 1px; background: var(--text-3); }
-.mac .m-lb .you-periods { display: flex; gap: 6px; margin-left: auto; }
-.mac .m-lb .you-periods b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
 .mac .m-lb .you-join .m-btn { margin-left: auto; }
 
 .mac .m-lb .lb-board { margin-top: 16px; overflow: hidden; }
 .mac .m-lb .lb-note { padding: 0 18px; }
 .mac .m-lb .lb-table { table-layout: fixed; transition: opacity 0.15s; }
-.mac .m-lb .lb-table .lbc-rank { width: 64px; }
+.mac .m-lb .lb-table .lbc-rank { width: 96px; }
 .mac .m-lb .lb-table .lbc-total { width: 88px; }
 .mac .m-lb .lb-table .lbc-cost { width: 92px; }
-.mac .m-lb .lb-table .lbc-claude, .mac .m-lb .lb-table .lbc-other { width: 96px; }
-.mac .m-lb .lb-table .lbc-codex, .mac .m-lb .lb-table .lbc-gemini { width: 84px; }
-.mac .m-lb .lb-table .lbc-opencode { width: 104px; }
 .mac .m-lb .lb-table .lbc-spark { width: 96px; }
 .mac .m-lb .lb-table .lbc-24h { width: 72px; }
 .mac .m-lb .lb-table th { height: 40px; padding: 0 9px; border-bottom: 0; }
 .mac .m-lb .lb-table th:first-child, .mac .m-lb .lb-table td:first-child { padding-left: 18px; }
 .mac .m-lb .lb-table th:last-child, .mac .m-lb .lb-table td:last-child { padding-right: 18px; }
-.mac .m-lb .lb-table .th { display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px; }
-.mac .m-lb .lb-table .th .tool-ic { width: 12px; height: 12px; }
 .mac .m-lb .lb-table th.sorted { color: var(--text-2); }
 .mac .m-lb .lb-table th.sorted svg { display: inline-block; width: 11px; height: 11px; vertical-align: -1px; }
-.mac .m-lb .lb-table .other-ics { display: inline-flex; gap: 2px; }
-.mac .m-lb .lb-table .other-ics .tool-ic { width: 8px; height: 8px; }
 .mac .m-lb .lb-table td { height: 58px; padding: 0 9px; border-top: 1px solid var(--border); border-bottom: 0; color: var(--text-3); }
 .mac .m-lb .lb-table tbody tr { cursor: pointer; }
 .mac .m-lb .lb-table tbody tr:hover td { background: var(--hover); }
@@ -99,13 +81,6 @@
 .mac .m-lb .lb-name a { overflow: hidden; color: var(--text); font-size: 13.5px; font-weight: 500; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
 .mac .m-lb .lb-table tbody tr:hover .lb-name a { color: #fff; }
 .mac .m-lb .lb-name .m-badge { font-size: 10.5px; }
-/* The name comes first and the badges take what is left: those that don't fit wrap onto a second line, out of sight.
-   The empty first item lets even the first one go; the padding, taken back by the margins, keeps their glow inside the clip. */
-.mac .m-lb .lb-badges { display: flex; flex-wrap: wrap; row-gap: 60px; height: 50px; margin: -14px -14px -14px -10px; padding: 14px; overflow: hidden; }
-.mac .m-lb .lb-badges::before { content: ""; }
-.mac .m-lb .lb-badges .ts { display: grid; place-items: center; width: 22px; height: 22px; margin-left: -4px; }
-.mac .m-lb .lb-badges .ts:first-child { margin-left: 0; }
-.mac .m-lb .lb-badges .m-emb { width: 22px; height: 22px; }
 .mac .m-lb .lb-total { color: var(--text); font-size: 13.5px; font-weight: 600; }
 .mac .m-lb .lb-cost { color: var(--text-2); }
 .mac .m-lb .lb-table .lb-spark { display: flex; justify-content: flex-end; }
@@ -125,29 +100,20 @@
 .mac .m-lb .lb-pager .ell { padding: 0 4px; color: var(--text-4); }
 .mac .m-lb .lb-empty { margin-top: 24px; }
 
-/* Narrower windows. The sidebar is a fixed width, so the window's width sets the page's.
-   The table drops its least-read columns first, keeping the builder column wide enough for a name and badges:
-   Gemini and OpenCode (the 7th and 8th) below the page's full width, then Other and 7 days (9th and 10th), then Est. cost (4th). */
-@media (max-width: 1427px) {
-  .mac .m-lb .lb-table .lbc-gemini, .mac .m-lb .lb-table .lbc-opencode, .mac .m-lb .lb-table tr > :nth-child(7), .mac .m-lb .lb-table tr > :nth-child(8) { display: none; }
-}
-/* Your strip takes two rows: who you are and your totals, then the chase and your week and month ranks. */
-@media (max-width: 1349px) {
-  .mac .m-lb .you-strip:not(.you-join) { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto auto; gap: 14px 22px; }
-  .mac .m-lb .you-vsep { display: none; }
-  .mac .m-lb .you-chase { grid-row: 2; grid-column: 1 / 4; max-width: none; }
-  .mac .m-lb .you-periods { grid-row: 2; grid-column: 4 / -1; justify-self: end; }
-}
+/* Narrower windows. The sidebar is a fixed width, so the window's width sets the page's. The table drops its least-read
+   columns first, keeping the builder column wide enough for a name, tools and streak: the 24-hour figure (5th), then Est.
+   cost (4th). The 24-hour board has neither. */
 @media (max-width: 1239px) {
-  .mac .m-lb .lb-table .lbc-other, .mac .m-lb .lb-table .lbc-spark, .mac .m-lb .lb-table tr > :nth-child(9), .mac .m-lb .lb-table tr > :nth-child(10) { display: none; }
+  .mac .m-lb .lb-table:not(.lb-hours) .lbc-24h, .mac .m-lb .lb-table:not(.lb-hours) tr > :nth-child(5) { display: none; }
 }
 /* The chart moves under the community figures. */
 @media (max-width: 1199px) {
   .mac .m-lb .hero-main { grid-template-columns: minmax(0, 1fr); gap: 24px; }
 }
 @media (max-width: 1039px) {
-  .mac .m-lb .lb-table .lbc-cost, .mac .m-lb .lb-table tr > :nth-child(4) { display: none; }
+  .mac .m-lb .lb-table:not(.lb-hours) .lbc-cost, .mac .m-lb .lb-table:not(.lb-hours) tr > :nth-child(4) { display: none; }
 }
+
 
 /* ---------- profile modal (leaderboard.html#profile): a full-window dialog whose panel scrolls ---------- */
 .mac .m-pf { width: 100%; max-width: none; height: 100%; max-height: none; margin: 0; padding: 40px; overflow: hidden; border: 0; background: transparent; color: var(--text); font-size: 13px; letter-spacing: -0.005em; }
@@ -229,7 +195,7 @@
 .mac .m-pf .pf-legend em b { color: var(--text-2); font-weight: 500; }
 .mac .m-pf .pf-legend .pf-key { width: 8px; height: 8px; border-radius: 2px; }
 /* The website's usage chart (ProfileUsage), aligned with the sections around it. */
-.mac .m-pf .profile-usage { padding: 0; border-top: 0; }
+.mac .m-pf .pu { margin: 0; }
 
 .mac .m-pf .pf-models { overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-md); }
 .mac .m-pf .pf-model { display: grid; grid-template-columns: 22px 190px minmax(0, 1fr) 64px 76px; align-items: center; gap: 10px; height: 42px; padding: 0 14px; border-top: 1px solid var(--border); font-variant-numeric: tabular-nums; }
@@ -374,3 +340,70 @@
 @media (max-width: 1139px) {
   .mac .m-ach .next-grid, .mac .m-ach .grid3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* League: your standing in the shown window, racing your rival (always the builder directly above you). */
+.mac .m-lb { --flame: #ff8a3d; }
+.mac .m-lb .hero-eyebrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.mac .m-lb .lb-hero-link { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 9px; border: 1px solid var(--border-2); border-radius: 7px; color: var(--text-2); font-size: 11.5px; text-decoration: none; }
+.mac .m-lb .lb-hero-link:hover { background: var(--hover); color: var(--text); }
+.mac .m-lb .lb-hero-link svg { width: 11px; height: 11px; }
+.mac .m-lb .rival-strip { display: grid; grid-template-columns: minmax(160px, 210px) minmax(0, 1fr) minmax(210px, 300px); gap: 0; padding: 0; align-items: stretch;
+  border-color: rgba(123, 127, 246, 0.32); border-radius: 14px; background: linear-gradient(180deg, rgba(123, 127, 246, 0.07), transparent 80%), var(--surface); }
+.mac .m-lb .rival-strip .ys-col { min-width: 0; padding: 16px 18px; }
+.mac .m-lb .rival-strip .ys-col + .ys-col { border-left: 1px solid var(--border); }
+.mac .m-lb .ys-k { display: flex; align-items: center; gap: 8px; color: var(--text-3); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+.mac .m-lb .ys-ic { width: 13px; height: 13px; flex: none; }
+.mac .m-lb .ys-rank-row { display: flex; align-items: baseline; gap: 8px; margin-top: 8px; }
+.mac .m-lb .ys-rank { font-size: 40px; font-weight: 650; letter-spacing: -0.04em; line-height: 1; font-variant-numeric: tabular-nums; }
+.mac .m-lb .ys-sub { margin-top: 6px; color: var(--text-3); font-size: 12px; }
+.mac .m-lb .race { position: relative; height: 86px; margin: 4px 8px 0; }
+.mac .m-lb .race .track { position: absolute; top: 34px; left: 0; right: 0; height: 4px; border-radius: 2px; background: linear-gradient(90deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.12)); }
+.mac .m-lb .race .seg-gap { position: absolute; top: 34px; height: 4px; border-radius: 2px; }
+.mac .m-lb .race .seg-gap.gap-behind { background: linear-gradient(90deg, rgba(123, 127, 246, 0.5), rgba(123, 127, 246, 0.9)); }
+.mac .m-lb .race .seg-gap.gap-ahead { background: repeating-linear-gradient(90deg, rgba(255, 138, 61, 0.9) 0 6px, transparent 6px 10px); }
+.mac .m-lb .race .gapl { position: absolute; top: 8px; transform: translateX(-50%); font-size: 11px; font-weight: 600; white-space: nowrap; }
+.mac .m-lb .race .gapl.gap-behind { color: var(--accent-text); }
+.mac .m-lb .race .gapl.gap-ahead { color: #ffb37a; }
+.mac .m-lb .racer { position: absolute; top: 36px; display: grid; place-items: center; transform: translate(-50%, -50%); }
+.mac .m-lb .racer .avatar { width: 22px; height: 22px; font-size: 9px; box-shadow: 0 0 0 3px var(--surface); }
+.mac .m-lb .racer-me .avatar { width: 26px; height: 26px; box-shadow: 0 0 0 3px var(--surface), 0 0 0 4.5px var(--accent); }
+.mac .m-lb .racer .lab { position: absolute; top: calc(100% + 6px); display: flex; flex-direction: column; align-items: center; line-height: 1.25; white-space: nowrap; }
+.mac .m-lb .racer .lab b { color: var(--text); font-size: 12px; font-weight: 600; }
+.mac .m-lb .racer .lab span { color: var(--text-3); font-size: 11px; font-variant-numeric: tabular-nums; }
+.mac .m-lb .racer-me .lab b { color: var(--accent-text); }
+.mac .m-lb .ys-pass { font-size: 12.5px; }
+.mac .m-lb .ys-pass b { font-weight: 600; }
+.mac .m-lb .ys-pass span { color: var(--text-3); }
+.mac .m-lb .ys-side { display: flex; flex-direction: column; gap: 10px; }
+.mac .m-lb .ys-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.mac .m-lb .ys-pills b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.mac .m-lb .ys-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; }
+.mac .m-lb .ys-actions .m-btn { gap: 6px; text-decoration: none; }
+.mac .m-lb .ys-actions svg { width: 13px; height: 13px; }
+@media (max-width: 980px) {
+  .mac .m-lb .rival-strip { grid-template-columns: minmax(0, 1fr); }
+  .mac .m-lb .rival-strip .ys-col + .ys-col { border-left: 0; border-top: 1px solid var(--border); }
+}
+
+/* The rankings' header, with when the window resets. */
+.mac .m-lb .lb-head { display: flex; align-items: center; gap: 8px; padding: 14px 18px 6px; }
+.mac .m-lb .lb-head h2 { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; }
+.mac .m-lb .lb-count { background: var(--surface-3); color: var(--text-2); font-variant-numeric: tabular-nums; }
+.mac .m-lb .lb-reset { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; color: var(--text-3); font-size: 12px; }
+.mac .m-lb .lb-reset svg { width: 13px; height: 13px; }
+.mac .m-lb .lb-reset b { color: var(--text-2); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* Each row's move since yesterday, tools, streak and your rival. */
+.mac .m-lb .lb-rk { display: inline-flex; align-items: center; gap: 4px; }
+.mac .m-lb .lb-mv { font-size: 10.5px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.mac .m-lb .lb-mv-up { color: var(--green); }
+.mac .m-lb .lb-mv-down { color: var(--red); }
+.mac .m-lb .lb-mv-same { color: var(--text-4); }
+.mac .m-lb .lb-mv-new { padding: 1px 5px; border-radius: 4px; background: var(--accent-soft); color: var(--accent-text); }
+.mac .m-lb .lb-meta { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.mac .m-lb .lb-tools { display: inline-flex; gap: 3px; }
+.mac .m-lb .lb-tools .tool-ic { width: 12px; height: 12px; }
+.mac .m-lb .lb-flame { display: inline-flex; align-items: center; gap: 2px; color: var(--flame); font-size: 11.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.mac .m-lb .lb-flame svg { width: 11px; height: 11px; }
+.mac .m-lb .m-badge.rival { background: rgba(255, 138, 61, 0.13); color: #ffb37a; }
+.mac .m-lb .lb-table tr.rival { background: linear-gradient(90deg, rgba(255, 138, 61, 0.07), transparent 50%); }

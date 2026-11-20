@@ -1,34 +1,39 @@
-import { useEffect, useId, useMemo, useState, type MouseEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type MouseEvent, type ReactNode } from 'react';
 import type { ProjectSummary, SessionSummary, TokenCounts, ToolId, UsageBreakdownRow, UsageSummary } from '@tokentracky/core';
 import type { ApiClient, LocalStatus } from '../api';
 import { TOOLS, errorText, formatCompact, formatCost, formatCostCompact, formatExact, formatShare, shortDay, timeAgo, toolLabel } from '../format';
 import { costGroups } from '../Insights';
-import { dayRange, fillRange, hourList, last24Hours, previousRange, previousWindow, rangeLabel, utcToday, type DayRange, type HourWindow } from '../ranges';
+import { addDays, fillRange, hourList, last24Hours, previousRange, previousWindow, utcToday, type DayRange, type HourWindow } from '../ranges';
 import { usageRevision } from '../refresh';
 import { Loading, Notice, ToolIcon } from '../ui';
+import { comparedWith } from '../usage-span';
 import { downloadCsv } from '../You';
 import { ActivityGrid } from './ActivityGrid';
-import { monotonePath } from './chart';
 import { ICONS } from './icons';
-import { busiestHour, busiestWeekdayUtc, changeVsPrevious, dailyByModel, dailyByTool, favouriteModel, longestSession, mostExpensiveDay, recentTotals, trendingModel } from './insights';
+import { busiestHour, busiestWeekdayUtc, changeVsPrevious, dailyByModel, dailyByTool, favouriteModel, longestSession, mostExpensiveDay, trendingModel } from './insights';
 import { ToolbarActions } from './Shell';
 import { OverviewStrip, StackedAreaChart, type ChartSeries } from './StackedAreaChart';
+import { bestWeek, cachePerDay, costPerMillion, kindSeries, modelMix, paceToday, projectName, projectSeries, sessionLengths, tokensSpan, weekdayHourStats, weekly, type TokensPeriod, type TokensSpan } from './tokens-model';
 import './personal.css';
 
-type Days = '24h' | 7 | 30 | 90 | 365;
+export type Period = '24h' | TokensPeriod;
 type Metric = 'tokens' | 'cost';
 type Group = 'tools' | 'models';
-/** A period's usage, with the range and tool it was loaded for. Over the last 24 hours `breakdown` is by hour: each row's `day` is its hour's first instant.
- *  `hours` is its tokens by hour of day on this computer's clock. */
-export interface TokensData { range: DayRange | HourWindow; tool: 'all' | ToolId; summary: UsageSummary; before: UsageSummary; breakdown: UsageBreakdownRow[]; projects: ProjectSummary[]; sessions: SessionSummary[]; hours: number[] }
+type Split = Group | 'projects' | 'kinds';
+type Grain = 'hour' | 'day' | 'week';
+/** A period's usage, with the range and tool it was loaded for. Over hours `breakdown` is by hour: each row's `day` is its hour's first instant.
+ *  `hours` is its tokens by hour of day on this computer's clock, and `grid` by weekday and hour. */
+export interface TokensData { range: DayRange | HourWindow; tool: 'all' | ToolId; summary: UsageSummary; before: UsageSummary; breakdown: UsageBreakdownRow[]; projects: ProjectSummary[]; sessions: SessionSummary[]; hours: number[]; grid?: number[][] }
 
 /** This computer's time zone, for the hours of the day. */
 const ZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
-const RANGES: Array<{ value: Days; label: string }> = [{ value: '24h', label: '24h' }, { value: 7, label: '7d' }, { value: 30, label: '30d' }, { value: 90, label: '90d' }, { value: 365, label: '12m' }];
+const PERIODS: Array<{ value: Period; label: string }> = [{ value: '24h', label: '24h' }, { value: 'week', label: 'Week' }, { value: 'month', label: 'Month' }, { value: 'all', label: 'All time' }];
 const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-const LONG = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 const WEEKDAY_DAY = new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
+const FULL_DAY = new Intl.DateTimeFormat(undefined, { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
 const WEEKDAY_HOUR = new Intl.DateTimeFormat(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' });
+const TIME = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' });
+const HOUR_MS = 3_600_000, DAY_MS = 86_400_000;
 const utc = (day: string) => new Date(`${day}T00:00:00Z`);
 const sum = (values: number[]) => values.reduce((total, value) => total + value, 0);
 /** Dollars as the mockups write them: cents below $1,000, whole dollars above. Unknown pricing stays unknown. */
@@ -40,12 +45,15 @@ const duration = (ms: number) => {
 };
 /** An hour of the day as a clock reads it: 22 is 22:00, 24 is 00:00. */
 const clock = (hour: number) => `${String(hour % 24).padStart(2, '0')}:00`;
-const projectName = (path: string | null) => path?.split(/[\\/]/).filter(Boolean).at(-1) ?? 'No project';
-/** How long a period is: "24 hours", "7 days", "12 months". */
-const spanOf = (days: Days) => days === '24h' ? '24 hours' : days === 365 ? '12 months' : `${days} days`;
-const previousLabel = (days: Days) => `previous ${spanOf(days)}`;
 /** A range as a key that changes when its span does. */
 const rangeKey = (range: DayRange | HourWindow) => 'since' in range ? `${range.since}-${range.until}` : `${range.from}-${range.to}`;
+/** What the span is called in sentences: "the last 24 hours", "this month", "Oct 1 – Oct 31". */
+const spanPhrase = (period: Period, span: TokensSpan | null) => !span ? 'the last 24 hours' : period === 'all' ? 'all time' : span.title.startsWith('1–') || span.title.includes('day ') ? `this ${period}` : `${shortDay(span.from)} – ${shortDay(span.to)}`;
+/** What the span is compared with: the same length just before it. */
+const beforePhrase = (range: DayRange | HourWindow) => 'since' in range ? (range.until - range.since <= DAY_MS ? 'the 24 hours before' : `the ${Math.round((range.until - range.since) / HOUR_MS)} hours before`) : comparedWith(range.from, range.to);
+const weekend = (day: string) => [0, 6].includes(utc(day).getUTCDay());
+/** All input: plain, read from the cache and written to it. Cache hit rate is cache reads over this. */
+const inputOf = (counts: TokenCounts) => counts.input + counts.cacheRead + counts.cacheWrite;
 
 /** The tool each model was used with most. */
 function mainTools(rows: UsageBreakdownRow[]): Map<string, ToolId> {
@@ -94,16 +102,26 @@ function openPage(path: string) {
   };
 }
 
-/** The Tokens page: your local usage over a chosen period, loaded and kept current with each refresh cycle. */
+/** The Tokens page: your local usage over a week, a month, all time, the last 24 hours or a custom range, stepping back through earlier ones and opening any day. */
 export function TokensView({ api, status }: { api: ApiClient; status: LocalStatus | null }) {
   const [metric, setMetric] = useState<Metric>('tokens');
-  const [days, setDays] = useState<Days>(30);
+  const [period, setPeriodState] = useState<Period>('month');
+  const [back, setBack] = useState(0);
+  const [custom, setCustom] = useState<{ from: string; to: string } | null>(null);
+  const [grain, setGrain] = useState<Grain>('day');
   const [tool, setTool] = useState<'all' | ToolId>('all');
+  const [drill, setDrill] = useState<string | null>(null);
+  const [first, setFirst] = useState<string | null>(null);
   const [data, setData] = useState<TokensData | null>(null);
   const [year, setYear] = useState<UsageSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
-  // The last 24 hours move on when an hour ends, at the next render.
-  const range = days === '24h' ? last24Hours() : dayRange({ preset: days });
+  const today = utcToday();
+  const span = period === '24h' ? null : tokensSpan(period, back, today, first, custom);
+  // A week can be read hour by hour; the last 24 hours always are.
+  const range: DayRange | HourWindow = !span ? last24Hours()
+    : grain === 'hour' && period === 'week' && !custom ? { since: Date.parse(`${span.from}T00:00:00Z`), until: Math.min(Date.parse(`${span.to}T00:00:00Z`) + DAY_MS, Math.floor(Date.now() / HOUR_MS) * HOUR_MS + HOUR_MS) }
+      : { from: span.from, to: span.to };
+  const setPeriod = (next: Period) => { setPeriodState(next); setBack(0); setCustom(null); setGrain(next === 'all' ? 'week' : 'day'); };
   // New data arrives with each scan, refresh cycle and price table.
   const revision = usageRevision(status);
   useEffect(() => {
@@ -113,40 +131,56 @@ export function TokensView({ api, status }: { api: ApiClient; status: LocalStatu
       ? api.localHours(range, tool).then(({ items }) => items.map(({ hour, ...row }) => ({ ...row, day: hour })))
       : api.localBreakdown(range, tool).then(({ items }) => items);
     Promise.all([api.localSummary(range, tool), api.localSummary(before, tool), breakdown, api.localProjects(range, tool), api.localSessions(range, tool), api.localSummary(range, tool, ZONE)])
-      .then(([summary, before, breakdown, projects, sessions, local]) => { if (live) setData({ range, tool, summary, before, breakdown, projects: projects.items, sessions: sessions.items, hours: local.byHour }); })
+      .then(([summary, before, breakdown, projects, sessions, local]) => { if (live) setData({ range, tool, summary, before, breakdown, projects: projects.items, sessions: sessions.items, hours: local.byHour, grid: local.byWeekdayHour }); })
       .catch((value: unknown) => { if (live) setError(errorText(value)); });
     return () => { live = false; };
   }, [api, rangeKey(range), tool, revision]);
   useEffect(() => {
     let live = true;
-    api.localSummary(dayRange({ preset: 365 }), tool).then((value) => { if (live) setYear(value); }).catch(() => { if (live) setYear(null); });
+    api.localSummary({ from: addDays(today, -364), to: today }, tool).then((value) => { if (live) setYear(value); }).catch(() => { if (live) setYear(null); });
     return () => { live = false; };
   }, [api, tool, revision]);
-  return <TokensPage data={data} year={year} status={status} range={range} days={days} metric={metric} tool={tool} error={error}
-    onMetric={setMetric} onDays={setDays} onTool={setTool} onExport={() => { downloadCsv(api, range, tool).catch((value: unknown) => setError(errorText(value))); }} />;
+  // The first day used, where all time starts.
+  useEffect(() => {
+    let live = true;
+    api.localSummary({ from: '2015-01-01', to: today }).then((value) => { if (live) setFirst(value.daily.find((day) => day.tokens > 0)?.day ?? null); }).catch(() => {});
+    return () => { live = false; };
+  }, [api, revision]);
+  if (drill) return <DayView api={api} day={drill} tool={tool} back={span?.title.split(' · ')[0] ?? 'Last 24 hours'} onBack={() => setDrill(null)} onStep={(days) => setDrill(addDays(drill, days))} />;
+  return <TokensPage data={data} year={year} status={status} range={range} period={period} span={span} metric={metric} tool={tool} grain={grain} custom={custom !== null} error={error}
+    onMetric={setMetric} onPeriod={setPeriod} onStep={(delta) => setBack(Math.max(0, back + delta))} onCustom={(value) => { setCustom(value); if (value) { setPeriodState('week'); setGrain('day'); } }} onTool={setTool} onGrain={setGrain}
+    onDrill={setDrill} onExport={() => { downloadCsv(api, range, tool).catch((value: unknown) => setError(errorText(value))); }} />;
 }
 
-export function TokensPage({ data: loaded, year, status, range, days, metric, tool, error, onMetric, onDays, onTool, onExport }: {
-  data: TokensData | null; year: UsageSummary | null; status: LocalStatus | null; range: DayRange | HourWindow; days: Days; metric: Metric; tool: 'all' | ToolId; error: string | null;
-  onMetric: (metric: Metric) => void; onDays: (days: Days) => void; onTool: (tool: 'all' | ToolId) => void; onExport: () => void;
+export function TokensPage({ data: loaded, year, status, range, period, span, metric, tool, grain, custom = false, error, onMetric, onPeriod, onStep, onCustom, onTool, onGrain, onDrill, onExport }: {
+  data: TokensData | null; year: UsageSummary | null; status: LocalStatus | null; range: DayRange | HourWindow; period: Period; span: TokensSpan | null; metric: Metric; tool: 'all' | ToolId; grain: Grain; custom?: boolean; error: string | null;
+  onMetric: (metric: Metric) => void; onPeriod: (period: Period) => void; onStep: (delta: number) => void; onCustom: (range: { from: string; to: string } | null) => void; onTool: (tool: 'all' | ToolId) => void;
+  onGrain: (grain: Grain) => void; onDrill: (day: string) => void; onExport: () => void;
 }) {
+  const [picking, setPicking] = useState(false);
   // A new range or tool takes seconds to load; until it has, the last one's totals would sit under the new labels.
   const data = loaded && rangeKey(loaded.range) === rangeKey(range) && loaded.tool === tool ? loaded : null;
   const tracking = status === null || status.sources.some((source) => source.enabled && source.state !== 'unsupported');
-  const yearDays = useMemo(() => year ? fillRange(year.daily, dayRange({ preset: 365 })) : null, [year]);
+  const yearDays = useMemo(() => year ? fillRange(year.daily, { from: addDays(utcToday(), -364), to: utcToday() }) : null, [year]);
   // The chart's points: the range's days, or its hours.
   const points = useMemo(() => 'since' in range ? hourList(range) : fillRange([], range).map((point) => point.day), [rangeKey(range)]);
-  const period = `${days === '24h' ? 'last 24 hours' : rangeLabel({ preset: days })}${tool === 'all' ? '' : ` · ${toolLabel(tool)}`}`;
+  const phrase = `${spanPhrase(period, span)}${tool === 'all' ? '' : ` · ${toolLabel(tool)}`}`;
   return <div className="m-page tk-page">
     <ToolbarActions>
-      <Seg label="Metric" value={metric} options={[{ value: 'tokens', label: 'Tokens' }, { value: 'cost', label: 'Cost' }]} onChange={onMetric} />
-      <Seg label="Range" value={days} options={RANGES} onChange={onDays} />
+      <Seg label="Period" value={period} options={PERIODS} onChange={onPeriod} />
+      <div className="tk-step" role="group" aria-label="Step through periods">
+        <button type="button" aria-label="Earlier" disabled={!span?.canBack} onClick={() => onStep(1)}>{ICONS.chevronLeft}</button>
+        <b>{span ? span.title.split(' · ')[0] : 'Last 24 hours'}</b>
+        <button type="button" aria-label="Later" disabled={!span?.canForward} onClick={() => onStep(-1)}>{ICONS.chevronRight}</button>
+      </div>
+      <button type="button" className={`m-btn${picking ? ' on' : ''}`} aria-expanded={picking} onClick={() => setPicking(!picking)}>{ICONS.calendar}Custom range</button>
       <label className="tk-select m-btn"><span className="sr-only">Tool</span>
         <select value={tool} onChange={(event) => onTool(event.target.value as 'all' | ToolId)}>
           <option value="all">All tools</option>{TOOLS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
         </select>{ICONS.chevronDown}</label>
       <button type="button" className="m-btn icon" title="Export CSV" aria-label="Export CSV" onClick={onExport}>{ICONS.download}</button>
     </ToolbarActions>
+    {picking && <CustomRange span={span} onApply={(value) => { onCustom(value); setPicking(false); }} onClear={() => { onCustom(null); setPicking(false); }} />}
     {!tracking && <div className="m-card tk-setup">
       <span className="tk-setup-icon">{ICONS.folder}</span>
       <div><b>Tokentracky isn’t reading any tools yet.</b><span>Choose which tools to read in Settings. Only token counts are kept; prompts and code never are.</span></div>
@@ -154,16 +188,325 @@ export function TokensPage({ data: loaded, year, status, range, days, metric, to
     </div>}
     {error && <Notice tone="error">Could not load your usage: {error}</Notice>}
     {!data ? !error && <Loading>Loading your usage…</Loading> : <>
-      <Hero data={data} metric={metric} days={days} range={range} period={period} refreshedAt={status?.lastRefreshAt ?? null} />
-      <ChartCard data={data} year={yearDays} recent={year?.daily ?? null} range={range} points={points} metric={metric} period={period} activeDays={year?.activity.activeDays ?? null} averagePerActiveDay={year?.activity.averagePerActiveDay ?? null} />
-      {data.summary.tokens > 0 && <div className="tk-row-2"><Totals summary={data.summary} period={period} /><CostByType summary={data.summary} /></div>}
-      <ToolCards data={data} points={points} days={days} period={period} />
-      <Insights data={data} year={year} yearDays={yearDays} range={range} days={days} />
+      <div className="tk-span">
+        <span><b>{span ? span.title : 'Last 24 hours'}</b> · {'since' in range ? `${WEEKDAY_HOUR.format(range.since)} – ${WEEKDAY_HOUR.format(range.until)} · local time` : 'UTC days'}</span>
+        <span className="tk-faint">Compared with {beforePhrase(range)}{status?.lastRefreshAt ? ` · updated ${timeAgo(status.lastRefreshAt)}` : ''}</span>
+      </div>
+      <ChartCard data={data} year={year} yearDays={yearDays} range={range} points={points} metric={metric} grain={grain} custom={custom} period={period} phrase={phrase} onMetric={onMetric} onGrain={onGrain} onDrill={onDrill} />
+      <SectionHead title="Breakdown" note="Where the tokens went · projects and sessions stay on this Mac" />
+      <Breakdown data={data} range={range} onExport={onExport} />
+      <SectionHead title="When you work" note="Your hours, your days, and how long your sessions run" />
+      <WhenYouWork data={data} />
+      {!('since' in range) && <>
+        <SectionHead title="Models and cost" note="Which models you lean on, and what a token costs you" />
+        <ModelsAndCost data={data} points={points} />
+      </>}
+      <SectionHead title="Cache and token types" note="How much of your input comes from the cache, and what each kind of token costs" />
+      <CacheAndTypes data={data} points={points} phrase={phrase} />
+      <Insights data={data} year={year} yearDays={yearDays} range={range} span={phrase} previous={beforePhrase(range)} />
       {yearDays && year && <>
-        <SectionHead title="Activity" note="Every day you used an AI coding tool" />
+        <SectionHead title="Your year" note="Every day you used an AI coding tool" />
         <ActivityGrid days={yearDays} stats={year.activity} label="Last 12 months" />
       </>}
-      <Breakdown data={data} range={range} onExport={onExport} />
+    </>}
+  </div>;
+}
+
+/** Two days to read between, applied together. */
+function CustomRange({ span, onApply, onClear }: { span: TokensSpan | null; onApply: (range: { from: string; to: string }) => void; onClear: () => void }) {
+  const today = utcToday();
+  const [from, setFrom] = useState(span?.from ?? addDays(today, -29));
+  const [to, setTo] = useState(span?.to ?? today);
+  const valid = from <= to && to <= today && (utc(to).getTime() - utc(from).getTime()) / DAY_MS < 3660;
+  return <div className="m-card tk-custom" role="group" aria-label="Custom range">
+    <label>From<input type="date" value={from} max={to} onChange={(event) => setFrom(event.target.value)} /></label>
+    <label>To<input type="date" value={to} min={from} max={today} onChange={(event) => setTo(event.target.value)} /></label>
+    <button type="button" className="m-btn primary" disabled={!valid} onClick={() => onApply({ from, to })}>Show these days</button>
+    <button type="button" className="m-btn" onClick={onClear}>Back to periods</button>
+  </div>;
+}
+
+function ChartCard({ data, year, yearDays, range, points, metric, grain, custom, period, phrase, onMetric, onGrain, onDrill }: {
+  data: TokensData; year: UsageSummary | null; yearDays: Array<{ day: string; tokens: number }> | null; range: DayRange | HourWindow; points: string[]; metric: Metric; grain: Grain; custom: boolean; period: Period; phrase: string;
+  onMetric: (metric: Metric) => void; onGrain: (grain: Grain) => void; onDrill: (day: string) => void;
+}) {
+  const [split, setSplit] = useState<Split>('tools');
+  const [mode, setMode] = useState<'stacked' | 'lines'>('stacked');
+  const [compare, setCompare] = useState(false);
+  const hours = 'since' in range;
+  // Projects and token types split days; a split the span can't take falls back to tools.
+  const shown: Split = hours && split === 'projects' ? 'tools' : metric === 'cost' && (split === 'projects' || split === 'kinds') ? 'tools' : split;
+  const daily = useMemo(() => shown === 'projects' ? projectSeries(data.projects, points, data.breakdown) : shown === 'kinds' ? kindSeries(data.breakdown, points) : chartSeries(data.breakdown, points, shown, metric), [data, points, shown, metric]);
+  const byWeek = !hours && grain === 'week';
+  const series = byWeek ? daily.map((item) => ({ ...item, values: weekly(points, item.values).values, costs: item.costs && weekly(points, item.costs).values })) : daily;
+  const days = byWeek ? weekly(points, points.map(() => 0)).days : points;
+  const total = sum(series.flatMap((item) => item.values));
+  const format = metric === 'tokens' ? formatCompact : formatCostCompact;
+  const { summary, before } = data;
+  // The period before, day by day under this one's days, for the dashed comparison.
+  const previous = useMemo(() => {
+    if (hours || byWeek || !compare) return undefined;
+    const prior = fillRange(before.daily, { from: addDays(points[0]!, -points.length), to: addDays(points[0]!, -1) }, (day) => metric === 'tokens' ? day.tokens : day.costMicrousd ?? 0);
+    return prior.map((day) => day.tokens);
+  }, [hours, byWeek, compare, before, points, metric]);
+  const today = utcToday();
+  const todayTokens = points.at(-1) === today ? sum(series.map((item) => item.values.at(-1) ?? 0)) : 0;
+  const pace = !hours && !byWeek && metric === 'tokens' && todayTokens > 0 ? paceToday(todayTokens) : null;
+  const unit = hours ? 'hour' : byWeek ? 'week' : 'day';
+  const title = `${metric === 'tokens' ? 'Tokens' : 'Est. cost'} per ${unit}`;
+  const change = (now: number | null, then: number | null) => now === null || then === null || (!now && !then) ? undefined : changeVsPrevious(now, then);
+  const activeDays = summary.daily.filter((day) => day.tokens > 0).length;
+  const grains: Array<{ value: Grain; label: string }> = [...(period === 'week' && !custom ? [{ value: 'hour' as const, label: 'Hour' }] : []), { value: 'day', label: 'Day' }, ...(period !== 'week' ? [{ value: 'week' as const, label: 'Week' }] : [])];
+  return <section className="m-card tk-chart-card" aria-label="Usage over time">
+    <div className="tk-tiles">
+      <Tile label="Tokens" on={metric === 'tokens'} onClick={() => onMetric('tokens')} value={formatCompact(summary.tokens)} title={`${formatExact(summary.tokens)} tokens`} change={change(summary.tokens, before.tokens)} sub={`vs ${formatCompact(before.tokens)}`} />
+      <Tile label="Est. cost" on={metric === 'cost'} onClick={() => onMetric('cost')} value={money(summary.costMicrousd)} change={change(summary.costMicrousd, before.costMicrousd)} sub={`vs ${money(before.costMicrousd)}`} />
+      <Tile label="Sessions" value={formatExact(summary.sessions)} change={change(summary.sessions, before.sessions)} sub={`across ${formatExact(data.projects.length)} ${data.projects.length === 1 ? 'project' : 'projects'}`} />
+      <Tile label={hours ? 'Avg / active hour' : 'Avg / active day'} value={activeDays && !hours ? formatCompact(Math.round(summary.tokens / activeDays)) : hours ? formatCompact(Math.round(summary.tokens / Math.max(1, data.breakdown.filter((row) => row.tokens > 0).map((row) => row.day).filter((day, index, all) => all.indexOf(day) === index).length))) : '—'}
+        sub={hours ? 'hours with tokens' : `${formatExact(activeDays)} of ${formatExact(points.length)} days active`} />
+      <Tile label="Cache hit rate" value={`${(summary.cacheRate * 100).toFixed(1)}%`} sub={`${formatCompact(summary.breakdown.cacheRead)} of ${formatCompact(inputOf(summary.breakdown))} input`} />
+    </div>
+    <div className="tk-controls">
+      <span className="tk-ctl-k">Split by</span>
+      <Seg small label="Split by" value={shown} onChange={setSplit} options={[{ value: 'tools', label: 'Tool' }, { value: 'models', label: 'Model' }, ...(hours || metric === 'cost' ? [] : [{ value: 'projects' as const, label: 'Project' }, { value: 'kinds' as const, label: 'Token type' }])]} />
+      {!hours && <Seg small label="Chart style" value={mode} options={[{ value: 'stacked', label: 'Stacked' }, { value: 'lines', label: 'Lines' }]} onChange={setMode} />}
+      <span className="tk-push" />
+      {period !== '24h' && <><span className="tk-ctl-k">Granularity</span><Seg small label="Granularity" value={hours ? 'hour' : grain} options={grains} onChange={onGrain} /></>}
+      {!hours && !byWeek && <label className="tk-toggle"><input type="checkbox" checked={compare} onChange={(event) => setCompare(event.target.checked)} /><i aria-hidden="true" />Compare <span className="tk-faint">with {beforePhrase(range)}</span></label>}
+    </div>
+    <div className="tk-legend-row">
+      <b>{title}</b>
+      {series.map((item) => { const value = sum(item.values); return value > 0 && <span key={item.key}><i style={{ background: item.color }} />{item.label} <span className="tk-faint">{format(value)} · {formatShare(value, total)}</span></span>; })}
+    </div>
+    <div className="tk-chart-box">
+      {total > 0
+        ? <StackedAreaChart days={days} series={series} mode={mode} hours={hours} average={!hours && mode === 'stacked' && days.length > 1 ? total / days.length : undefined} format={format}
+          label={`${title} by ${shown === 'tools' ? 'tool' : shown === 'models' ? 'model' : shown === 'projects' ? 'project' : 'token type'}, ${phrase}`}
+          previous={previous} shade={!hours && !byWeek && days.length <= 62 ? days.map(weekend) : undefined} pace={pace} onPick={!hours && !byWeek ? (index) => onDrill(days[index]!) : undefined} />
+        : <p className="tk-empty">No usage in this range yet.</p>}
+    </div>
+    {yearDays && !hours && <div className="tk-strip-box"><OverviewStrip days={yearDays} from={range.from} to={range.to} /></div>}
+    {year && yearDays && <Bests year={year} yearDays={yearDays} />}
+  </section>;
+}
+
+/** A total that can switch the chart to it, with its change on the period before. */
+function Tile({ label, value, title, change, sub, on, onClick }: { label: string; value: string; title?: string; change?: number | null; sub: ReactNode; on?: boolean; onClick?: () => void }) {
+  const body = <><div className="tk-tile-k">{onClick && <i className={on ? 'on' : undefined} aria-hidden="true" />}{label}</div><div className="tk-tile-v" title={title}>{value}</div>
+    <div className="tk-tile-s">{change !== undefined && <Delta compact value={change} />} {sub}</div></>;
+  return onClick ? <button type="button" className={`tk-tile${on ? ' on' : ''}`} aria-pressed={on} onClick={onClick}>{body}</button> : <div className="tk-tile">{body}</div>;
+}
+
+/** Your records, as three meters: this week against your best week, today against your best day, and your streak against your longest. */
+function Bests({ year, yearDays }: { year: UsageSummary; yearDays: Array<{ day: string; tokens: number }> }) {
+  const today = utcToday();
+  const monday = addDays(today, -((utc(today).getUTCDay() + 6) % 7));
+  const thisWeek = sum(yearDays.filter((day) => day.day >= monday).map((day) => day.tokens));
+  const best = bestWeek(yearDays);
+  const todayTokens = yearDays.at(-1)?.day === today ? yearDays.at(-1)!.tokens : 0;
+  const bestDay = year.activity.bestDay;
+  const { currentStreak, longestStreak } = year.activity;
+  const meter = (share: number, color: string) => <div className="tk-meter" style={{ ['--c' as string]: color }}><i style={{ width: `${Math.min(100, share * 100)}%` }} /></div>;
+  return <div className="tk-bests" aria-label="Personal bests">
+    <div className="tk-bests-k">{ICONS.star}<span><b>Personal best watch</b>Against your own records</span></div>
+    <div><div className="tk-bests-row"><span>This week</span><b>{formatCompact(thisWeek)}{best && <span className="tk-faint"> of {formatCompact(best.tokens)}</span>}</b></div>
+      {best && meter(thisWeek / best.tokens, 'var(--text)')}<div className="tk-bests-s">{best ? `best: week of ${shortDay(best.from)}` : 'No weeks yet'}</div></div>
+    <div><div className="tk-bests-row"><span>Today</span><b>{formatCompact(todayTokens)}</b></div>
+      {bestDay && meter(todayTokens / bestDay.tokens, 'var(--pink-2)')}<div className="tk-bests-s">{bestDay ? `best day ${formatCompact(bestDay.tokens)} on ${shortDay(bestDay.day)}` : 'No days yet'}</div></div>
+    <div><div className="tk-bests-row"><span>Streak</span><b>{formatExact(currentStreak)} {currentStreak === 1 ? 'day' : 'days'} <span className="tk-faint">best {formatExact(longestStreak)}</span></b></div>
+      {longestStreak > 0 && meter(currentStreak / longestStreak, 'var(--flame, #ff8a3d)')}
+      <div className="tk-bests-s">{currentStreak >= longestStreak && currentStreak > 0 ? 'Your best yet' : `${formatExact(Math.max(0, longestStreak - currentStreak + 1))} more days to beat your best`}</div></div>
+  </div>;
+}
+
+/** Your hours of the week, how long your sessions run, and the longest of them. */
+function WhenYouWork({ data }: { data: TokensData }) {
+  const grid = data.grid;
+  const stats = grid ? weekdayHourStats(grid) : null;
+  const lengths = sessionLengths(data.sessions);
+  const counted = sum(lengths.map((bucket) => bucket.sessions));
+  const peak = Math.max(1, ...(grid ?? []).flat());
+  const top = Math.max(1, ...lengths.map((bucket) => bucket.sessions));
+  const longest = data.sessions.filter((session) => session.startedAt && session.lastUsedAt)
+    .map((session) => ({ session, length: Date.parse(session.lastUsedAt!) - Date.parse(session.startedAt!) })).sort((a, b) => b.length - a.length).slice(0, 5);
+  const longestLength = Math.max(1, ...longest.map((item) => item.length));
+  const median = (() => {
+    const all = data.sessions.filter((session) => session.startedAt && session.lastUsedAt).map((session) => Date.parse(session.lastUsedAt!) - Date.parse(session.startedAt!)).sort((a, b) => a - b);
+    return all.length ? all[Math.floor((all.length - 1) / 2)]! : null;
+  })();
+  const level = (tokens: number) => tokens <= 0 ? 0 : Math.min(5, 1 + Math.floor((tokens / peak) * 5));
+  return <div className="tk-work">
+    {grid && stats && <section className="m-card tk-heat" aria-label="Hour by weekday">
+      <div className="m-card-head"><span className="m-card-title">Hour by weekday</span><span className="tk-faint">Your local time · each square is one hour of the week</span></div>
+      <div className="tk-heat-body">
+        <div className="tk-heat-grid" role="img" aria-label={`Busiest: ${WEEKDAYS[stats.peak.day]} at ${clock(stats.peak.hour)}`}>
+          {grid.map((row, day) => <div key={day} className="tk-heat-row"><span className={day === stats.busiestDay ? 'on' : undefined}>{WEEKDAYS[day]!.slice(0, 3)}</span>
+            {row.map((tokens, hour) => <i key={hour} className={`l${level(tokens)}${day === stats.peak.day && hour === stats.peak.hour ? ' peak' : ''}`} title={`${WEEKDAYS[day]} ${clock(hour)}: ${formatCompact(tokens)} tokens`} />)}
+            <b style={{ ['--w' as string]: `${(stats.days[day]! / Math.max(1, ...stats.days)) * 100}%` }}><em />{formatCompact(stats.days[day]!)}</b>
+          </div>)}
+          <div className="tk-heat-hours">{stats.hours.map((tokens, hour) => <i key={hour} className={hour === stats.busiestHour ? 'on' : undefined} style={{ height: `${Math.max(2, (tokens / Math.max(1, ...stats.hours)) * 100)}%` }} />)}</div>
+          <div className="tk-heat-axis">{[0, 3, 6, 9, 12, 15, 18, 21].map((hour) => <span key={hour}>{String(hour).padStart(2, '0')}</span>)}</div>
+        </div>
+      </div>
+      <div className="tk-heat-foot">
+        <span>Busiest hour <b>{clock(stats.busiestHour)}–{clock(stats.busiestHour + 1)}</b> · {formatShare(stats.hours[stats.busiestHour]!, stats.total)}</span>
+        <span>Busiest weekday <b>{WEEKDAYS[stats.busiestDay]}</b> · {formatShare(stats.days[stats.busiestDay]!, stats.total)}</span>
+        <span>Hottest hour of the week <b>{WEEKDAYS[stats.peak.day]!.slice(0, 3)} {clock(stats.peak.hour)}</b> · {formatCompact(stats.peak.tokens)}</span>
+        <span>Weekends <b>{formatShare(stats.weekend, stats.total)}</b></span>
+        <span>After 20:00 <b>{formatShare(sum(stats.hours.slice(20)), stats.total)}</b></span>
+      </div>
+    </section>}
+    <section className="m-card tk-lengths" aria-label="Session length">
+      <div className="m-card-head"><span className="m-card-title">Session length</span><span className="tk-faint">{formatExact(counted)} {counted === 1 ? 'session' : 'sessions'}{median !== null && ` · median ${duration(median)}`}</span></div>
+      <div className="tk-len-bars">{lengths.map((bucket) => <div key={bucket.label}>
+        <span className="tk-len-n">{bucket.sessions ? formatExact(bucket.sessions) : ''}</span>
+        <i style={{ height: `${Math.max(2, (bucket.sessions / top) * 100)}%` }} className={bucket.label.startsWith('1–') || bucket.label.startsWith('2–') ? 'long' : undefined} />
+        <span className="tk-len-k">{bucket.label}</span><span className="tk-len-s">{formatShare(bucket.tokens, Math.max(1, data.summary.tokens))}</span>
+      </div>)}</div>
+      <p className="tk-len-note">Length runs from a session’s first request to its last. The second row is each length’s share of tokens.</p>
+    </section>
+    <section className="m-card tk-longest" aria-label="Longest sessions">
+      <div className="m-card-head"><span className="m-card-title">Longest sessions</span><span className="tk-faint">{data.sessions.length} in this span</span></div>
+      {longest.length ? <ul>{longest.map(({ session, length }) => <li key={session.id ?? `${session.startedAt}${session.project}`}>
+        <ToolIcon id={session.tool} />
+        <span className="tk-ls-who"><b>{projectName(session.project)}</b><small className="mono">{session.model} · {WEEKDAY_DAY.format(new Date(session.startedAt!))}</small></span>
+        <span className="tk-ls-bar"><i style={{ width: `${(length / longestLength) * 100}%` }} /></span>
+        <span className="tk-ls-len">{duration(length)}</span>
+        <span className="tk-ls-tok"><b>{formatCompact(session.tokens)}</b><small>{money(session.costMicrousd ?? null)}</small></span>
+      </li>)}</ul> : <p className="tk-empty">No sessions in this span.</p>}
+    </section>
+  </div>;
+}
+
+/** Which models carry each day, and what a million tokens cost, day by day and by tool. */
+function ModelsAndCost({ data, points }: { data: TokensData; points: string[] }) {
+  const mix = useMemo(() => modelMix(data.breakdown, points), [data.breakdown, points]);
+  const colors = useMemo(() => modelColors(mix.map((item) => ({ key: item.key, ...(item.key === 'other' ? { other: true as const } : {}) })), mainTools(data.breakdown)), [mix, data.breakdown]);
+  const series: ChartSeries[] = mix.map((item) => ({ key: item.key, label: item.label, color: colors.get(item.key) ?? 'var(--heat-2)', values: item.values.map((share) => share * 100) }));
+  const rates = costPerMillion(data.summary.daily, points);
+  // Quiet days carry the last known rate on, so the line doesn't drop to nothing.
+  let last = 0;
+  const carried = rates.map((rate) => (last = rate ?? last));
+  const total = data.summary.costMicrousd && data.summary.tokens ? data.summary.costMicrousd / data.summary.tokens : null;
+  const before = data.before.costMicrousd && data.before.tokens ? data.before.costMicrousd / data.before.tokens : null;
+  const tools = data.summary.byTool.filter((item) => item.tokens > 0 && item.costMicrousd !== null).sort((a, b) => b.tokens - a.tokens);
+  const topRate = Math.max(0.01, ...tools.map((item) => item.costMicrousd! / item.tokens));
+  return <div className="tk-row-2 tk-even">
+    <section className="m-card" aria-label="Model mix">
+      <div className="m-card-head"><span className="m-card-title">Model mix</span><span className="tk-faint">Share of tokens per day</span></div>
+      {series.length ? <StackedAreaChart days={points} series={series} mode="stacked" format={(value) => `${Math.round(value)}%`} label="Each day's share of tokens by model" small best={false} /> : <p className="tk-empty">No models in this span.</p>}
+      <div className="tk-mix-legend">{data.summary.byModel.filter((item) => item.tokens > 0).sort((a, b) => b.tokens - a.tokens).slice(0, 6).map((item) => {
+        const was = data.before.byModel.find((entry) => entry.model === item.model)?.tokens ?? 0;
+        const pts = (item.tokens / Math.max(1, data.summary.tokens) - was / Math.max(1, data.before.tokens)) * 100;
+        return <span key={item.model}><i style={{ background: colors.get(item.model) ?? 'var(--heat-2)' }} /><span className="mono">{item.model}</span><b>{formatShare(item.tokens, data.summary.tokens)}</b><em className={pts >= 0 ? 'up' : 'down'}>{pts >= 0 ? '+' : '−'}{Math.abs(pts).toFixed(1)}</em></span>;
+      })}</div>
+    </section>
+    <section className="m-card" aria-label="Cost per million tokens">
+      <div className="m-card-head"><span className="m-card-title">Cost per 1M tokens</span><span className="tk-faint">Est. cost ÷ tokens, per day</span></div>
+      <div className="tk-rate"><b>{total === null ? '—' : `$${total.toFixed(2)}`}</b>{total !== null && before !== null && <span className={total <= before ? 'up' : 'down'}>{total <= before ? '▼' : '▲'} {formatShare(Math.abs(total - before), before)} vs ${before.toFixed(2)} before</span>}</div>
+      {rates.some((rate) => rate !== null) ? <StackedAreaChart days={points} series={[{ key: 'rate', label: 'Per 1M tokens', color: 'var(--text-2)', values: carried }]} mode="lines" format={(value) => `$${value.toFixed(2)}`} label="Estimated dollars per million tokens, per day" small best={false} /> : <p className="tk-empty">No priced days in this span.</p>}
+      <div className="tk-rates">{tools.map((item) => { const rate = item.costMicrousd! / item.tokens; return <div key={item.tool}>
+        <span><ToolIcon id={item.tool} />{toolLabel(item.tool)}</span><span className="tk-share"><i style={{ width: `${(rate / topRate) * 100}%`, background: `var(--tool-${item.tool})` }} /></span><b>${rate.toFixed(2)}</b>
+      </div>; })}</div>
+    </section>
+  </div>;
+}
+
+/** How much input the cache serves, day by day and by tool, and the totals and cost by kind of token. */
+function CacheAndTypes({ data, points, phrase }: { data: TokensData; points: string[]; phrase: string }) {
+  const hours = 'since' in data.range;
+  const daily = hours ? [] : cachePerDay(data.breakdown, points);
+  let last = 0;
+  const carried = daily.map((rate) => (last = rate ?? last) * 100);
+  const rate = data.summary.cacheRate * 100, before = data.before.cacheRate * 100;
+  const tools = data.summary.byTool.filter((item) => item.tokens > 0).sort((a, b) => b.tokens - a.tokens);
+  return <>
+    <div className="tk-row-2">
+      <section className="m-card" aria-label="Cache efficiency">
+        <div className="m-card-head"><span className="m-card-title">Cache efficiency</span><span className="tk-faint">Cache reads ÷ all input</span></div>
+        <div className="tk-rate"><b>{rate.toFixed(1)}%</b><span className={rate >= before ? 'up' : 'down'}>{rate >= before ? '▲' : '▼'} {Math.abs(rate - before).toFixed(1)} pts vs before</span>
+          {data.summary.costParts && <span className="tk-save"><b>{money(data.summary.costParts.cacheSavings)}</b> saved by the cache</span>}</div>
+        {!hours && daily.some((value) => value !== null) && <StackedAreaChart days={points} series={[{ key: 'cache', label: 'Cache hit rate', color: 'var(--kind-cache-read)', values: carried }]} mode="lines" format={(value) => `${Math.round(value)}%`} label="Cache hit rate per day" small best={false} />}
+        <div className="tk-rates">{tools.map((item) => { const share = item.breakdown.cacheRead / Math.max(1, inputOf(item.breakdown)); return <div key={item.tool}>
+          <span><ToolIcon id={item.tool} />{toolLabel(item.tool)}</span><span className="tk-share"><i style={{ width: `${share * 100}%`, background: `var(--tool-${item.tool})` }} /></span><b>{(share * 100).toFixed(1)}%</b>
+        </div>; })}</div>
+      </section>
+      <CostByType summary={data.summary} />
+    </div>
+    <Totals summary={data.summary} period={phrase} />
+  </>;
+}
+
+/** One day opened from the chart: its totals, its hours by tool and its sessions, with the days either side a step away. */
+function DayView({ api, day, tool, back, onBack, onStep }: { api: ApiClient; day: string; tool: 'all' | ToolId; back: string; onBack: () => void; onStep: (days: number) => void }) {
+  const [state, setState] = useState<{ day: string; summary: UsageSummary; hours: UsageBreakdownRow[]; sessions: SessionSummary[] } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const window = { since: Date.parse(`${day}T00:00:00Z`), until: Date.parse(`${day}T00:00:00Z`) + DAY_MS };
+  useEffect(() => {
+    let live = true; setError(null);
+    Promise.all([api.localSummary({ from: day, to: day }, tool), api.localHours(window, tool), api.localSessions({ from: day, to: day }, tool)])
+      .then(([summary, hours, sessions]) => { if (live) setState({ day, summary, hours: hours.items.map(({ hour, ...row }) => ({ ...row, day: hour })), sessions: sessions.items }); })
+      .catch((value: unknown) => { if (live) setError(errorText(value)); });
+    return () => { live = false; };
+  }, [api, day, tool]);
+  // Esc goes back to the period, as the header says.
+  useEffect(() => {
+    const key = (event: KeyboardEvent) => { if (event.key === 'Escape') onBack(); };
+    document.addEventListener('keydown', key);
+    return () => document.removeEventListener('keydown', key);
+  }, [onBack]);
+  const today = utcToday();
+  const loaded = state?.day === day ? state : null;
+  const points = hourList(window);
+  // Within the day: a session that began the day before counts from midnight.
+  const clamp = (at: number) => Math.max(window.since, Math.min(window.until, at));
+  const series = loaded ? chartSeries(loaded.hours, points, 'tools', 'tokens') : [];
+  const busiest = loaded ? points.map((hour) => sum(loaded.hours.filter((row) => row.day === hour).map((row) => row.tokens))) : [];
+  const peak = busiest.indexOf(Math.max(0, ...busiest));
+  const timed = loaded?.sessions.filter((session) => session.startedAt && session.lastUsedAt) ?? [];
+  const first = timed.length ? clamp(Math.min(...timed.map((session) => Date.parse(session.startedAt!)))) : null;
+  const lastAt = timed.length ? clamp(Math.max(...timed.map((session) => Date.parse(session.lastUsedAt!)))) : null;
+  return <div className="m-page tk-page">
+    <ToolbarActions>
+      <button type="button" className="m-btn" onClick={onBack}>{ICONS.chevronLeft}{back}</button>
+      <div className="tk-step" role="group" aria-label="Step through days">
+        <button type="button" aria-label="The day before" onClick={() => onStep(-1)}>{ICONS.chevronLeft}</button>
+        <b>{shortDay(day)}</b>
+        <button type="button" aria-label="The day after" disabled={day >= today} onClick={() => onStep(1)}>{ICONS.chevronRight}</button>
+      </div>
+    </ToolbarActions>
+    <div className="tk-day-head"><h1>{FULL_DAY.format(utc(day))}</h1><span className="tk-faint">UTC day · Esc or the button goes back to {back}</span></div>
+    {error && <Notice tone="error">Could not load the day: {error}</Notice>}
+    {!loaded ? !error && <Loading>Loading the day…</Loading> : <>
+      <div className="tk-tiles">
+        <Tile label="Tokens" value={formatCompact(loaded.summary.tokens)} title={`${formatExact(loaded.summary.tokens)} tokens`} sub="this day" />
+        <Tile label="Est. cost" value={money(loaded.summary.costMicrousd)} sub={loaded.summary.costMicrousd && loaded.summary.tokens ? `$${(loaded.summary.costMicrousd / loaded.summary.tokens).toFixed(2)} per 1M tokens` : 'API-price estimate'} />
+        <Tile label="Sessions" value={formatExact(loaded.summary.sessions)} sub={`across ${new Set(loaded.sessions.map((session) => session.project)).size} projects`} />
+        <Tile label="Busiest hour" value={busiest[peak] ? `${TIME.format(new Date(points[peak]!))}` : '—'} sub={busiest[peak] ? `${formatCompact(busiest[peak]!)} · ${formatShare(busiest[peak]!, loaded.summary.tokens)} of the day` : 'no usage'} />
+        <Tile label="Active span" value={first !== null && lastAt !== null ? duration(lastAt - first) : '—'} sub={first !== null && lastAt !== null ? `${TIME.format(first)} → ${TIME.format(lastAt)}` : 'no sessions'} />
+        <Tile label="Cache hit rate" value={`${(loaded.summary.cacheRate * 100).toFixed(1)}%`} sub={`${formatCompact(loaded.summary.breakdown.cacheRead)} of ${formatCompact(inputOf(loaded.summary.breakdown))} input`} />
+      </div>
+      <section className="m-card tk-chart-card" aria-label="By hour">
+        <div className="tk-legend-row"><b>By hour</b>{series.map((item) => { const value = sum(item.values); return value > 0 && <span key={item.key}><i style={{ background: item.color }} />{item.label} <span className="tk-faint">{formatCompact(value)} · {formatShare(value, loaded.summary.tokens)}</span></span>; })}</div>
+        <div className="tk-chart-box">{loaded.summary.tokens > 0 ? <StackedAreaChart days={points} series={series} mode="stacked" hours format={formatCompact} label={`Tokens per hour by tool, ${shortDay(day)}`} /> : <p className="tk-empty">No usage on this day.</p>}</div>
+      </section>
+      <section className="m-card tk-day-sessions" aria-label="Sessions">
+        <div className="m-card-head"><span className="m-card-title">Sessions on {shortDay(day)}</span><span className="tk-faint">{loaded.sessions.length} {loaded.sessions.length === 1 ? 'session' : 'sessions'} · sorted by start</span></div>
+        <table className="m-table tk-table">
+          <thead><tr><th className="l">Time</th><th className="l">Across the day</th><th className="l">Project</th><th className="l">Tool · model</th><th>Length</th><th>Of day</th><th>Est. cost</th><th>Tokens</th></tr></thead>
+          <tbody>{[...timed].sort((a, b) => a.startedAt!.localeCompare(b.startedAt!)).map((session) => {
+            const start = Date.parse(session.startedAt!), end = Date.parse(session.lastUsedAt!);
+            const from = clamp(start), to = clamp(end);
+            return <tr key={session.id ?? `${session.startedAt}${session.project}`}>
+              <td className="l">{TIME.format(start)}–{TIME.format(end)}</td>
+              <td className="l"><span className="tk-dayline"><i style={{ left: `${((from - window.since) / DAY_MS) * 100}%`, width: `${Math.max(1, ((to - from) / DAY_MS) * 100)}%` }} /></span></td>
+              <td className="l"><span className="tk-project">{projectName(session.project)}</span></td>
+              <td className="l"><span className="tk-model-name"><ToolIcon id={session.tool} /><span className="mono">{session.model}</span></span></td>
+              <td>{duration(end - start)}</td><td>{formatShare(session.tokens, loaded.summary.tokens)}</td><td>{money(session.costMicrousd ?? null)}</td><td className="tk-tok">{formatCompact(session.tokens)}</td>
+            </tr>;
+          })}</tbody>
+        </table>
+      </section>
     </>}
   </div>;
 }
@@ -187,83 +530,6 @@ function Delta({ value, compact }: { value: number | null; compact?: boolean }) 
   if (compact) return <span className={`tk-delta sm${tone}`}>{tone === ' flat' ? '±' : value < 0 ? '−' : '+'}{shown}%</span>;
   return <span className={`tk-delta${tone}`} aria-label={`${value < 0 ? 'Down' : 'Up'} ${shown}%`}>{tone === ' flat' ? null : value < 0 ? ICONS.arrowDown : ICONS.arrowUp}{shown}%</span>;
 }
-
-function Hero({ data, metric, days, range, period, refreshedAt }: { data: TokensData; metric: Metric; days: Days; range: DayRange | HourWindow; period: string; refreshedAt: string | null }) {
-  const { summary, before } = data;
-  const [value, previous] = metric === 'tokens' ? [summary.tokens, before.tokens] : [summary.costMicrousd, before.costMicrousd];
-  const change = value === null || previous === null || (!value && !previous) ? undefined : changeVsPrevious(value, previous);
-  const tools = summary.byTool.filter((item) => item.tokens > 0).sort((a, b) => b.tokens - a.tokens);
-  return <section className="tk-hero" aria-label="Totals">
-    <div>
-      <div className="m-eyebrow">{metric === 'tokens' ? 'Total tokens' : 'Estimated cost'} · {period}</div>
-      <div className="tk-hero-total">
-        <span className="m-big-number" title={metric === 'tokens' ? `${formatExact(summary.tokens)} tokens` : formatCost(summary.costMicrousd)}>{metric === 'tokens' ? formatCompact(summary.tokens) : money(summary.costMicrousd)}</span>
-        {change !== undefined && <Delta value={change} />}
-      </div>
-      <div className="tk-hero-meta">
-        {metric === 'tokens' ? <><b>{money(summary.costMicrousd)}</b> est. cost</> : <><b>{formatCompact(summary.tokens)}</b> tokens</>}<span className="tk-sep">·</span>
-        <b>{formatExact(summary.sessions)}</b> sessions<span className="tk-sep">·</span>{metric === 'tokens' ? formatCompact(before.tokens) : money(before.costMicrousd)} {previousLabel(days)}
-      </div>
-      <div className="tk-hero-range">{'since' in range ? `${WEEKDAY_HOUR.format(range.since)} – ${WEEKDAY_HOUR.format(range.until)} · local time`
-        : `${range.from === range.to ? LONG.format(utc(range.to)) : `${shortDay(range.from)} – ${LONG.format(utc(range.to))}`} · UTC days`} · API-price estimate{refreshedAt ? ` · updated ${timeAgo(refreshedAt)}` : ''}</div>
-    </div>
-    {tools.length > 0 && <table className="tk-tools">
-      <thead><tr><th scope="col">Tool</th><th scope="col">Share</th><th scope="col">Tokens</th><th scope="col">%</th><th scope="col">Cost</th></tr></thead>
-      <tbody>{tools.map((item) => <tr key={item.tool} style={{ ['--c' as string]: `var(--tool-${item.tool})` }}>
-        <th scope="row"><ToolIcon id={item.tool} />{toolLabel(item.tool)} <small>{formatExact(item.sessions)} {item.sessions === 1 ? 'session' : 'sessions'}</small></th>
-        <td><span className="tk-share"><i style={{ width: `${(item.tokens / (summary.tokens || 1)) * 100}%` }} /></span></td>
-        <td className="tk-v" title={`${formatExact(item.tokens)} tokens`}>{formatCompact(item.tokens)}</td>
-        <td>{formatShare(item.tokens, summary.tokens)}</td>
-        <td>{money(item.costMicrousd)}</td>
-      </tr>)}</tbody>
-    </table>}
-  </section>;
-}
-
-function ChartCard({ data, year, recent, range, points, metric, period, activeDays, averagePerActiveDay }: { data: TokensData; year: Array<{ day: string; tokens: number }> | null; recent: UsageSummary['daily'] | null; range: DayRange | HourWindow; points: string[]; metric: Metric; period: string; activeDays: number | null; averagePerActiveDay: number | null }) {
-  const [group, setGroup] = useState<Group>('tools');
-  const [mode, setMode] = useState<'stacked' | 'lines'>('stacked');
-  const series = useMemo(() => chartSeries(data.breakdown, points, group, metric), [data.breakdown, points, group, metric]);
-  const total = sum(series.flatMap((item) => item.values));
-  const format = metric === 'tokens' ? formatCompact : formatCostCompact;
-  const hours = 'since' in range;
-  const title = `${hours ? 'Hourly' : 'Daily'} ${metric === 'tokens' ? 'tokens' : 'estimated cost'}`;
-  return <section className="m-card tk-chart-card" aria-label={hours ? 'Hourly usage' : 'Daily usage'}>
-    <div className="tk-chart-head">
-      <div>
-        <div className="m-card-title">{title}</div>
-        <div className="tk-legend" aria-hidden="true">{series.map((item) => <span key={item.key}><i style={{ background: item.color }} />{item.label}</span>)}</div>
-      </div>
-      <div className="tk-chart-controls">
-        <Seg small label="Group by" value={group} options={[{ value: 'tools', label: 'Tools' }, { value: 'models', label: 'Models' }]} onChange={setGroup} />
-        {!hours && <Seg small label="Chart style" value={mode} options={[{ value: 'stacked', label: 'Stacked' }, { value: 'lines', label: 'Lines' }]} onChange={setMode} />}
-      </div>
-    </div>
-    <div className="tk-chart-box">
-      {total > 0
-        ? <StackedAreaChart days={points} series={series} mode={mode} hours={hours} average={!hours && mode === 'stacked' && points.length > 1 ? total / points.length : undefined} format={format}
-          label={`${title} by ${group === 'tools' ? 'tool' : 'model'}, ${period}`} />
-        : <p className="tk-empty">No usage in this range yet.</p>}
-    </div>
-    {year && !hours && <div className="tk-strip-box"><OverviewStrip days={year} from={range.from} /></div>}
-    <div className="m-stat-strip tk-kpis">
-      {[1, 7, 30].map((span) => {
-        const totals = recent && recentTotals(recent, utcToday(), span);
-        return <Kpi key={span} label={span === 1 ? 'Today' : `${span} days`} value={totals ? formatCompact(totals.tokens) : '—'}
-          sub={!totals ? '' : <>{money(totals.costMicrousd)} · {span === 1 ? 'so far · UTC' : <Delta compact value={totals.change} />}</>} />;
-      })}
-      <Kpi label="Avg / active day" value={averagePerActiveDay !== null && activeDays ? formatCompact(averagePerActiveDay) : '—'} sub={activeDays !== null ? `last 12 months · ${formatExact(activeDays)} days` : ''} />
-      <Kpi label="Cache hit rate" value={`${(data.summary.cacheRate * 100).toFixed(1)}%`} sub={`${formatCompact(data.summary.breakdown.cacheRead)} of ${formatCompact(inputOf(data.summary.breakdown))} input`} />
-    </div>
-  </section>;
-}
-
-function Kpi({ label, value, sub }: { label: string; value: string; sub: ReactNode }) {
-  return <div><div className="m-label">{label}</div><div className="m-stat-value">{value}</div><div className="tk-kpi-sub">{sub}</div></div>;
-}
-
-/** All input: plain, read from the cache and written to it. Cache hit rate is cache reads over this. */
-const inputOf = (counts: TokenCounts) => counts.input + counts.cacheRead + counts.cacheWrite;
 
 function Total({ label, value, title, sub, up }: { label: string; value: string; title?: string; sub: string; up?: boolean }) {
   return <div><div className="m-label">{label}</div><div className={`m-stat-value${up ? ' tk-up' : ''}`} title={title}>{value}</div><div className="tk-t-sub">{sub}</div></div>;
@@ -307,37 +573,6 @@ export function CostByType({ summary }: { summary: UsageSummary }) {
   </section>;
 }
 
-function ToolCards({ data, points, days, period }: { data: TokensData; points: string[]; days: Days; period: string }) {
-  const daily = useMemo(() => new Map(dailyByTool(data.breakdown, points).map((item) => [item.key, item.tokens])), [data.breakdown, points]);
-  const tools = data.summary.byTool.filter((item) => item.tokens > 0).sort((a, b) => b.tokens - a.tokens);
-  if (!tools.length) return null;
-  return <>
-    <SectionHead title="By tool" note={`Share of tokens · ${period} vs ${previousLabel(days)}`} />
-    <div className="tk-tool-cards">{tools.map((item) => {
-      const before = data.before.byTool.find((entry) => entry.tool === item.tool)?.tokens ?? 0;
-      const models = new Set(data.breakdown.filter((row) => row.tool === item.tool && row.tokens > 0).map((row) => row.model)).size;
-      return <div key={item.tool} className="m-card tk-tool-card">
-        <div className="tk-tc-head"><ToolIcon id={item.tool} />{toolLabel(item.tool)}</div>
-        <div className="tk-tc-pct"><b>{formatShare(item.tokens, data.summary.tokens)}</b><Delta compact value={changeVsPrevious(item.tokens, before)} /></div>
-        <div className="tk-tc-sub">{formatCompact(item.tokens)} · {models} {models === 1 ? 'model' : 'models'}</div>
-        <Sparkline values={daily.get(item.tool) ?? []} color={`var(--tool-${item.tool})`} />
-      </div>;
-    })}</div>
-  </>;
-}
-
-function Sparkline({ values, color }: { values: number[]; color: string }) {
-  const id = useId().replace(/[^\w-]/g, '');
-  if (values.length < 2) return null;
-  const max = Math.max(1, ...values);
-  const line = monotonePath(values.map((value, index) => [Math.round((index / (values.length - 1)) * 2000) / 10, Math.round((40 - (value / max) * 32) * 10) / 10]));
-  return <svg className="tk-spark" viewBox="0 0 200 44" preserveAspectRatio="none" aria-hidden="true">
-    <defs><linearGradient id={id} x1="0" y1="0" x2="0" y2="1"><stop offset="0" style={{ stopColor: color }} stopOpacity="0.28" /><stop offset="1" style={{ stopColor: color }} stopOpacity="0" /></linearGradient></defs>
-    <path d={`${line}L200,44L0,44Z`} fill={`url(#${id})`} />
-    <path d={line} fill="none" style={{ stroke: color }} strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
-  </svg>;
-}
-
 function Insight({ icon, label, value, mono, sub, children }: { icon: ReactNode; label: string; value: ReactNode; mono?: boolean; sub: ReactNode; children?: ReactNode }) {
   return <div className="m-card tk-ins">
     <div className="tk-ins-label">{icon}{label}</div>
@@ -352,7 +587,7 @@ function Meter({ share, color, caption }: { share: number; color: string; captio
     {caption && <div className="tk-meter-cap"><span>{caption[0]}</span><span>{caption[1]}</span></div>}</>;
 }
 
-function Insights({ data, year, yearDays, range, days }: { data: TokensData; year: UsageSummary | null; yearDays: Array<{ day: string; tokens: number }> | null; range: DayRange | HourWindow; days: Days }) {
+function Insights({ data, year, yearDays, range, span, previous }: { data: TokensData; year: UsageSummary | null; yearDays: Array<{ day: string; tokens: number }> | null; range: DayRange | HourWindow; span: string; previous: string }) {
   const { summary, before, breakdown, projects, sessions } = data;
   const toolOf = useMemo(() => mainTools(breakdown), [breakdown]);
   const favourite = favouriteModel(summary.byModel);
@@ -367,14 +602,13 @@ function Insights({ data, year, yearDays, range, days }: { data: TokensData; yea
   const session = longestSession(sessions);
   const trending = trendingModel(summary.byModel, before.byModel);
   const streak = year?.activity;
-  const span = spanOf(days);
   const glyph = (model: string) => { const tool = toolOf.get(model); return tool ? <ToolIcon id={tool} /> : null; };
   return <>
-    <SectionHead title="Insights" note={`From your local records · last ${span} unless noted`} />
+    <SectionHead title="Insights" note={`From your local records · ${span} unless noted`} />
     <div className="tk-insights">
       <Insight icon={ICONS.star} label="Favourite model" mono value={favourite ? <span className="tk-model">{glyph(favourite.model)}{favourite.model}</span> : '—'}
         sub={favourite ? `${formatShare(favourite.tokens, summary.tokens)} of tokens · ${formatCompact(favourite.tokens)}` : 'No usage in this range yet'}>
-        {favourite && <Meter share={favourite.share} color={`var(--tool-${toolOf.get(favourite.model) ?? 'cursor'})`} caption={[`${summary.byModel.filter((item) => item.tokens > 0).length} models used`, `last ${span}`]} />}
+        {favourite && <Meter share={favourite.share} color={`var(--tool-${toolOf.get(favourite.model) ?? 'cursor'})`} caption={[`${summary.byModel.filter((item) => item.tokens > 0).length} models used`, span]} />}
       </Insight>
       <Insight icon={ICONS.clock} label="Busiest hour" value={hour ? `${clock(hour.hour)} – ${clock(hour.hour + 1)}` : '—'}
         sub={hour ? `${formatShare(hour.share, 1)} of tokens · your local time` : 'No usage in this range yet'}>
@@ -411,7 +645,7 @@ function Insights({ data, year, yearDays, range, days }: { data: TokensData; yea
         {session && <span className="m-pill"><ToolIcon id={session.tool} />{session.model} in {toolLabel(session.tool)}</span>}
       </Insight>
       <Insight icon={ICONS.trending} label="Trending model" mono value={trending ? <span className="tk-model">{glyph(trending.model)}{trending.model}</span> : '—'}
-        sub={trending ? <><span className="tk-up">+{trending.gain.toFixed(1)} pts</span> share vs {previousLabel(days)}</> : 'No model gained share'}>
+        sub={trending ? <><span className="tk-up">+{trending.gain.toFixed(1)} pts</span> share vs {previous}</> : 'No model gained share'}>
         {trending && <>
           <div className="tk-compare"><span>Before</span><Meter share={trending.previousShare / Math.max(trending.share, trending.previousShare)} color="var(--heat-2)" /><b>{(trending.previousShare * 100).toFixed(1)}%</b></div>
           <div className="tk-compare"><span>Now</span><Meter share={trending.share / Math.max(trending.share, trending.previousShare)} color={`var(--tool-${toolOf.get(trending.model) ?? 'cursor'})`} /><b>{(trending.share * 100).toFixed(1)}%</b></div>

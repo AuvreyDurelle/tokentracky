@@ -325,6 +325,11 @@ pub struct UsageSummary {
     /// Tokens by hour of day, 0 to 23, in the query's zone (UTC without one).
     #[ts(type = "Array<number>")]
     pub by_hour: Vec<u64>,
+    /// Tokens by weekday and hour of day: seven rows from Monday, each of 24 hours, in the same zone. Absent from apps
+    /// that predate it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional, type = "Array<Array<number>>")]
+    pub by_weekday_hour: Option<Vec<Vec<u64>>>,
 }
 /// One tool's share of a summary (`UsageSummary.byTool`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -406,6 +411,11 @@ pub struct ProjectSummary {
     #[ts(type = "number | null")]
     pub cost_microusd: Option<u64>,
     pub sessions: u32,
+    /// The project's tokens on each day of the query that has any (UTC days, or local in the query's zone), oldest
+    /// first, for its trend; absent from apps that predate it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional, inline)]
+    pub daily: Option<Vec<DayTokens>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -445,6 +455,11 @@ pub struct PublicProfile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub top_badges: Option<Vec<BadgeId>>,
+    /// Consecutive UTC days with tokens across every tool, ending today or yesterday, as on the profile; absent from
+    /// servers that predate it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub streak: Option<u32>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -608,9 +623,10 @@ pub struct ProfileStats {
     /// Rank and tokens in each leaderboard window.
     #[ts(inline)]
     pub periods: PeriodRanks,
-    /// Tokens per UTC day for the 365 days ending today, oldest first.
+    /// Tokens per UTC day for the 365 days ending today, oldest first, each with its estimated cost when shared (absent
+    /// from servers that predate it).
     #[ts(inline)]
-    pub daily: Vec<DayTokens>,
+    pub daily: Vec<UsageDay>,
     /// Tokens per UTC hour across every tool for the 24 whole hours before the hour under way, oldest first: the
     /// leaderboard's `last24h_tokens` hour by hour, and absent likewise.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -636,6 +652,11 @@ pub struct ProfileStats {
     pub likes: u32,
     /// The UTC day (`YYYY-MM-DD`) the member's account was created.
     pub member_since: String,
+    /// The member's earliest published UTC day with tokens, which can come before the account when joining brought
+    /// earlier history. Absent with nothing published, and from servers that predate it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub first_day: Option<String>,
     /// Present when the member signed in with GitHub; read from GitHub's identity, never typed by the member.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
@@ -682,6 +703,71 @@ pub struct Wrapped {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional, inline)]
     pub models: Option<Vec<ModelTokens>>,
+}
+/// A builder's usage over any span of UTC days (`/api/profiles/:alias/usage?from=&to=`), limited to what they share:
+/// the profile's usage chart reads a week, a month or all time from it, and steps back through earlier ones.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+pub struct UsageWindow {
+    pub alias: String,
+    /// The first UTC day asked for.
+    pub from: String,
+    /// The last UTC day counted: the one asked for, or today for a span that runs past it.
+    pub to: String,
+    #[ts(type = "number")]
+    pub tokens: u64,
+    /// Tokens over the same number of days just before `from`.
+    #[ts(type = "number")]
+    pub previous_tokens: u64,
+    /// Estimated cost over the span, when shared; null when any of its days lacks a price.
+    #[serde(default, deserialize_with = "present", skip_serializing_if = "Option::is_none")]
+    #[ts(optional, type = "number | null")]
+    pub cost_microusd: Option<Option<u64>>,
+    /// Each UTC day from `from` to `to`, oldest first.
+    #[ts(inline)]
+    pub daily: Vec<UsageDay>,
+    /// Tokens per tool over the span, when the tool split is shared.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional, type = "Partial<Record<ToolId, number>>")]
+    pub tool_tokens: Option<BTreeMap<ToolId, u64>>,
+    /// The span's five largest models, largest first, when the model mix is shared. They carry no cost.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional, inline)]
+    pub models: Option<Vec<ModelTokens>>,
+}
+/// One UTC day of a usage window (`UsageWindow.daily`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+pub struct UsageDay {
+    pub day: String,
+    #[ts(type = "number")]
+    pub tokens: u64,
+    /// The day's estimated cost, when shared; null when it lacks a price.
+    #[serde(default, deserialize_with = "present", skip_serializing_if = "Option::is_none")]
+    #[ts(optional, type = "number | null")]
+    pub cost_microusd: Option<Option<u64>>,
+    /// The day's largest tool and its tokens, when the tool split is shared and the day has tokens.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional, inline)]
+    pub top_tool: Option<ToolDay>,
+    /// The day's largest model and its tokens, when the model mix is shared and the day has tokens.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional, inline)]
+    pub top_model: Option<ModelDay>,
+}
+/// A tool's tokens on one day (`UsageDay.top_tool`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+pub struct ToolDay {
+    pub tool: ToolId,
+    #[ts(type = "number")]
+    pub tokens: u64,
+}
+/// A model's tokens on one day (`UsageDay.top_model`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+pub struct ModelDay {
+    pub model: String,
+    #[ts(type = "number")]
+    pub tokens: u64,
 }
 /// Rank and tokens in each leaderboard window (`ProfileStats.periods`, a `Record<Period, …>`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -754,6 +840,106 @@ pub struct CommunityStats {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional, type = "number")]
     pub median_tokens: Option<u64>,
+    /// Community tokens in the last 24 whole UTC hours, from builders with a computer that sends hours; absent from
+    /// servers that predate it, or beyond the safe integer range.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional, type = "number")]
+    pub last24h_tokens: Option<u64>,
+    /// The same builders' tokens on yesterday's UTC day, to compare the last 24 hours with (hours are kept for a day
+    /// only, so the 24 hours before are not known); absent likewise.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional, type = "number")]
+    pub yesterday_tokens: Option<u64>,
+    /// Community tokens per UTC hour over those last 24 hours, oldest first; absent likewise.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional, inline)]
+    pub hourly: Option<Vec<HourTokens>>,
+}
+/// The community over one leaderboard window (`/api/community/stats?period=`), for the Community page: its totals and
+/// their change, how builders spread, the models in use, and series of days and weeks that do not depend on the window.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+pub struct CommunityPeriod {
+    pub period: LeaderboardPeriod,
+    /// The window's first instant; null for all time.
+    pub window_start: Option<String>,
+    pub updated_at: String,
+    #[ts(type = "number")]
+    pub tokens: u64,
+    /// Tokens in the same span of the window before: the same days of last week or month, or yesterday's UTC day for
+    /// the last 24 hours (hours are kept for a day only); 0 for all time.
+    #[ts(type = "number")]
+    pub previous_tokens: u64,
+    /// Builders with tokens in the window.
+    pub builders: u32,
+    /// Builders whose account was created in the window.
+    pub new_builders: u32,
+    /// Sum of the known costs builders share in the window; null when none is known.
+    #[ts(type = "number | null")]
+    pub cost_microusd: Option<u64>,
+    /// Tokens by tool in the window, from builders who share their tool split.
+    #[ts(type = "Partial<Record<ToolId, number>>")]
+    pub tool_totals: BTreeMap<ToolId, u64>,
+    /// Tokens by kind in the window, with reasoning, over the buckets that carry kinds; null when none do.
+    pub breakdown: Option<TokenCounts>,
+    /// The window's ten largest models, largest first, with their tokens in the same span before and their cost.
+    #[ts(inline)]
+    pub models: Vec<CommunityModel>,
+    /// Builders by their tokens in the window: each bucket runs from `min` up to the next one's.
+    #[ts(inline)]
+    pub distribution: Vec<TokenBucket>,
+    /// The ten largest builders' tokens in the window.
+    #[ts(type = "number")]
+    pub top10_tokens: u64,
+    /// The middle builder's tokens in the window, the lower middle one for an even count; 0 without builders.
+    #[ts(type = "number")]
+    pub median_tokens: u64,
+    /// Community tokens per UTC day for the 365 days ending today, oldest first.
+    #[ts(inline)]
+    pub daily: Vec<DayTokens>,
+    /// Builders with tokens on each UTC day, for the 84 days ending today, oldest first.
+    #[ts(inline)]
+    pub daily_builders: Vec<DayBuilders>,
+    /// The 12 weeks ending this one, each from Monday, oldest first: tokens by tool and new builders.
+    #[ts(inline)]
+    pub weeks: Vec<CommunityWeek>,
+}
+/// A model's tokens in a window (`CommunityPeriod.models`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+pub struct CommunityModel {
+    pub model: String,
+    #[ts(type = "number")]
+    pub tokens: u64,
+    #[ts(type = "number")]
+    pub previous_tokens: u64,
+    #[ts(type = "number | null")]
+    pub cost_microusd: Option<u64>,
+}
+/// Builders whose tokens in a window are at least `min` and under the next bucket's (`CommunityPeriod.distribution`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+pub struct TokenBucket {
+    #[ts(type = "number")]
+    pub min: u64,
+    pub builders: u32,
+    #[ts(type = "number")]
+    pub tokens: u64,
+}
+/// Builders with tokens on one UTC day (`CommunityPeriod.daily_builders`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+pub struct DayBuilders {
+    pub day: String,
+    pub builders: u32,
+}
+/// One week from Monday (`CommunityPeriod.weeks`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+pub struct CommunityWeek {
+    /// The week's Monday, a UTC day.
+    pub week: String,
+    #[ts(type = "Partial<Record<ToolId, number>>")]
+    pub tool_totals: BTreeMap<ToolId, u64>,
+    pub new_builders: u32,
 }
 /// One UTC calendar month's tokens (`YYYY-MM`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]

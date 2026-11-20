@@ -1,0 +1,21 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 1000,
+      "cacheWrite": 100,
+      "input": 420,
+      "output": 255,
+      "reasoning": 50
+    },
+    "costMicrousd": null,
+    "daily": [
+      {
+        "day": "2026-10-23",
+        "tokens": 1775
+      }
+    ],
+    "name": "/synthetic/cline-project",
+    "sessions": 2,
+    "tokens": 1775
+  }
+]

@@ -8,6 +8,12 @@
       "reasoning": 50
     },
     "costMicrousd": null,
+    "daily": [
+      {
+        "day": "2026-10-23",
+        "tokens": 900
+      }
+    ],
     "name": "/synthetic/mimo-project",
     "sessions": 2,
     "tokens": 900

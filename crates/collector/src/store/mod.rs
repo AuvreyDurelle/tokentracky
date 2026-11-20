@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::borrow::Cow;
 use std::cell::RefCell;
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::hash::Hash;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
@@ -363,6 +363,20 @@ fn hour_of_day(ms: i64, tz: Option<&TimeZone>) -> Option<usize> {
         None => 0,
     };
     usize::try_from((ms + offset).div_euclid(3_600_000).rem_euclid(24)).ok()
+}
+/// The weekday, Monday first, and hour of day of an instant in `tz` (UTC without one).
+fn weekday_hour(ms: i64, tz: Option<&TimeZone>) -> Option<(usize, usize)> {
+    let offset = match tz {
+        Some(tz) => i64::from(tz.to_offset(Timestamp::from_millisecond(ms).ok()?).seconds()) * 1000,
+        None => 0,
+    };
+    let local = ms + offset;
+    // 1 January 1970 was a Thursday, three days after a Monday.
+    let weekday = usize::try_from((local.div_euclid(86_400_000) + 3).rem_euclid(7)).ok()?;
+    Some((
+        weekday,
+        usize::try_from(local.div_euclid(3_600_000).rem_euclid(24)).ok()?,
+    ))
 }
 fn local_today(now: OffsetDateTime, tz: &TimeZone) -> time::Date {
     let now = now.unix_timestamp_nanos().div_euclid(1_000_000) as i64;
@@ -1264,11 +1278,17 @@ impl UsageStore {
             })
             .collect();
         let tz = options.tz.as_ref();
-        // Each slot is a quarter hour, so it falls within one hour in any zone.
+        // Each slot is a quarter hour, so it falls within one hour, and one weekday, in any zone.
         let mut by_hour = vec![0u64; 24];
+        let mut by_weekday_hour = vec![vec![0u64; 24]; 7];
         for row in &rows {
-            if let Some(hour) = row.slot.key.slot.and_then(|at| hour_of_day(at, options.tz.as_ref())) {
-                by_hour[hour] = sum([by_hour[hour], sum(row.slot.tokens[..4].iter().copied())?])?;
+            let Some(at) = row.slot.key.slot else { continue };
+            let tokens = sum(row.slot.tokens[..4].iter().copied())?;
+            if let Some(hour) = hour_of_day(at, options.tz.as_ref()) {
+                by_hour[hour] = sum([by_hour[hour], tokens])?;
+            }
+            if let Some((weekday, hour)) = weekday_hour(at, options.tz.as_ref()) {
+                by_weekday_hour[weekday][hour] = sum([by_weekday_hour[weekday][hour], tokens])?;
             }
         }
         let tool_sessions = sessions_by(&rows, |row| row.slot.key.tool);
@@ -1313,6 +1333,7 @@ impl UsageStore {
                 .collect::<Result<_>>()?,
             daily,
             by_hour,
+            by_weekday_hour: Some(by_weekday_hour),
         })
     }
     /// In UTC days, or local days in `tz` (the menu-bar title and `tokentracky status`). Cached until usage changes,
@@ -1519,10 +1540,26 @@ impl UsageStore {
     pub fn projects(&self, options: &QueryOptions) -> Result<Vec<ProjectSummary>> {
         let rows = self.slots(options, true)?;
         let named = || rows.iter().filter(|row| row.slot.key.project.is_some());
+        // Each project's tokens by day, for its trend.
+        let mut by_day: BTreeMap<(&Option<String>, &str), u64> = BTreeMap::new();
+        for row in named() {
+            let Some(day) = row.day.as_deref() else { continue };
+            let total = by_day.entry((&row.slot.key.project, day)).or_default();
+            *total = sum([*total, sum(row.slot.tokens[..4].iter().copied())?])?;
+        }
         let mut projects = slots::totals_by(named(), |row| row.slot.key.project.clone())?
             .into_iter()
             .map(|(name, totals)| {
+                let daily = by_day
+                    .iter()
+                    .filter(|((project, _), tokens)| **project == name && **tokens > 0)
+                    .map(|((_, day), tokens)| DayTokens {
+                        day: (*day).to_owned(),
+                        tokens: *tokens,
+                    })
+                    .collect();
                 Ok(ProjectSummary {
+                    daily: Some(daily),
                     sessions: sessions_of(named().filter(|row| row.slot.key.project == name)),
                     name: name.unwrap_or_default(),
                     repository: None,

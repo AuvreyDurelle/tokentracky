@@ -2,7 +2,8 @@ import { useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEv
 import { totalTokens, type BadgeProgress, type ProfileStats, type TokenCounts } from '@tokentracky/core';
 import { ApiError, type ApiClient } from '../api';
 import { KINDS, TOOLS, errorText, formatCompact, formatCost, formatCostCompact, formatExact, formatShare, shortDay } from '../format';
-import { ProfileUsage } from '../ProfileUsage';
+import { ProfileUsage, type UsageApi } from '../ProfileUsage';
+import { historyStart } from '../usage-span';
 import { Avatar, Empty, Loading, Notice, ToolIcon } from '../ui';
 import { ActivityGrid } from './ActivityGrid';
 import { ACHIEVEMENT_COPY, TIER_NAMES } from './achievement-copy';
@@ -52,7 +53,7 @@ export function ProfileModal({ api, alias, me, onClose }: { api: ApiClient; alia
   const missing = stats.error instanceof ApiError && stats.error.status === 404;
   return <ProfileDialog labelledBy={headingId} onClose={onClose}>
     {stats.value
-      ? <ProfileCard stats={stats.value} likes={likes ?? stats.value.likes} like={liked === null ? null : { liked, pending }} onLike={toggle} onClose={onClose} headingId={headingId} />
+      ? <ProfileCard stats={stats.value} likes={likes ?? stats.value.likes} like={liked === null ? null : { liked, pending }} onLike={toggle} onClose={onClose} headingId={headingId} api={api} />
       : <div className="pf-state">
         <div className="pf-actions"><CloseButton onClose={onClose} /></div>
         <h2 className="sr-only" id={headingId}>{alias}</h2>
@@ -86,7 +87,7 @@ export function ProfileDialog({ labelledBy, onClose, children }: { labelledBy: s
 }
 
 /** The profile itself, from `profileStats`. `like` is null where you can't like (your profile, or this Mac isn't linked); the count still shows. */
-export function ProfileCard({ stats, likes, like, onLike, onClose, headingId }: { stats: ProfileStats; likes: number; like: { liked: boolean; pending: boolean } | null; onLike: () => void; onClose: () => void; headingId: string }) {
+export function ProfileCard({ stats, likes, like, onLike, onClose, headingId, api }: { stats: ProfileStats; likes: number; like: { liked: boolean; pending: boolean } | null; onLike: () => void; onClose: () => void; headingId: string; api?: UsageApi }) {
   const [allModels, setAllModels] = useState(false);
   const rank = stats.periods.all.rank;
   const { activity } = stats;
@@ -133,7 +134,7 @@ export function ProfileCard({ stats, likes, like, onLike, onClose, headingId }: 
         {favourite ? <span className="fav-model">{favourite.model}</span> : <small>{stats.models ? 'None yet' : 'Not shared'}</small>}</Highlight>
     </div>
 
-    <div className="pf-sec"><ProfileUsage daily={stats.daily} hours={stats.hours} /></div>
+    {api && <div className="pf-sec"><ProfileUsage alias={stats.alias} api={api} hours={stats.hours} start={historyStart(stats)} /></div>}
 
     {stats.breakdown && <TokenTypes breakdown={stats.breakdown} />}
 
