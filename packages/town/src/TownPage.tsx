@@ -5,7 +5,7 @@ import { BUILDING_HEIGHT } from './art.ts';
 import { BuildingThumb, CostChips, Crest, RESOURCE_NAMES, ResourceBar, StreakClock, usePoint, useNow, useToast } from './Hud.tsx';
 import { ResourceIcon } from './icons.tsx';
 import { BuildIcon, CloseIcon, FlagIcon, MapIcon, MoveIcon, SparkIcon } from './icons.tsx';
-import { afterCollect, compact, count, daysToAfford, paceText, shortfall, sinceText } from './format.ts';
+import { afterCollect, compact, count, daysToAfford, paceText, shortfall, sinceText, tooBig } from './format.ts';
 import { plotKey, plotKind, plotTile, sceneLayout } from './layout.ts';
 import { Sky, TownScene, type Selection } from './Scene.tsx';
 import { spunProjection } from './view.ts';
@@ -17,6 +17,11 @@ const HALL_TEXT = "The heart of your town. No building can rise above the Town H
 const shortText = (reach: Resources, cost: Cost) => {
   const missing = shortfall(reach, cost);
   return RESOURCE_IDS.filter(id => missing[id]).map(id => `${count(missing[id]!)} ${RESOURCE_NAMES[id]}`).join(' · ');
+};
+/** The hosted rules' "Your Bricks store holds 17,000. Upgrade a store first." when no store can ever hold `cost`, or null. */
+const storeText = (caps: Resources, cost: Cost) => {
+  const id = tooBig(cost, caps);
+  return id ? `Your ${RESOURCE_NAMES[id]} store holds ${count(caps[id])}. Upgrade a store first.` : null;
 };
 
 /** The signed-in member's own town: the scene, the stores, the drawer, the dock and everything you can do there. */
@@ -167,20 +172,22 @@ function Progress({have, need}: {have: number; need: number}) {
 function LandPane({town, reach, claimable, busy, onClaim, onMove}: {town: TownSelf; reach: Resources; claimable: number; busy: boolean; onClaim: () => void; onMove: () => void}) {
   const [confirm, setConfirm] = useState(false);
   const price = town.nextPlot.cost.bricks ?? 0;
-  const short = Math.max(0, price - town.wallet.bricks);
-  const pace = paceText(daysToAfford(price - reach.bricks, town.bricksPerDay));
+  // What collecting would leave to spend, as the Claim button counts it.
+  const short = Math.max(0, price - reach.bricks);
+  const full = storeText(town.caps, town.nextPlot.cost);
+  const note = short > 0 ? full ?? paceText(daysToAfford(short, town.bricksPerDay)) : town.wallet.bricks < price ? 'Your uncollected harvest covers it' : null;
   const move = town.move.cost.bricks ?? 0;
   return <>
     <div className="tt-ph"><b>Your land</b><span className="tt-mu">{town.plots.length} {town.plots.length === 1 ? 'plot' : 'plots'} · {town.buildings.length} built</span></div>
     <div className="tt-kv"><span>Next plot #{town.nextPlot.number}</span><b><CostChips cost={town.nextPlot.cost} /></b></div>
-    <Progress have={town.wallet.bricks} need={price} />
-    <div className="tt-kv tt-mu"><span>You have {count(town.wallet.bricks)}</span>{short > 0 ? <span className="tt-sh">{count(short)} short</span> : <span className="tt-ok">Ready</span>}</div>
-    {short > 0 && pace && <div className="tt-mu tt-note">{reach.bricks >= price ? 'Your uncollected harvest covers it' : pace}</div>}
+    <Progress have={reach.bricks} need={price} />
+    <div className="tt-kv tt-mu"><span>You can spend {count(reach.bricks)}</span>{short > 0 ? <span className="tt-sh">{count(short)} short</span> : <span className="tt-ok">Ready</span>}</div>
+    {note && <div className="tt-mu tt-note">{note}</div>}
     <button type="button" className="tt-btn" disabled={busy || reach.bricks < price || !claimable || !!town.paused} onClick={onClaim}>Claim plot #{town.nextPlot.number}</button>
     <div className="tt-fr"><i aria-hidden="true">+</i><span>{claimable ? `${claimable} free ${claimable === 1 ? 'plot touches' : 'plots touch'} your land` : 'No free plots touch your land. Move to the frontier.'}</span></div>
     <div className="tt-sep" />
     <div className="tt-kv"><span>Boxed in? Move town</span><b><CostChips cost={town.move.cost} /></b></div>
-    <div className="tt-mu tt-note">Half what your land cost. Every building comes with you to the frontier.</div>
+    <div className="tt-mu tt-note">Half what your land cost, and never more than a full Bricks store. Every building comes with you to the frontier.</div>
     {confirm
       ? <div className="tt-two"><button type="button" className="tt-btn go" disabled={busy || reach.bricks < move} onClick={() => { setConfirm(false); onMove(); }}>Move for {count(move)} Bricks</button>
         <button type="button" className="tt-btn" onClick={() => setConfirm(false)}>Keep</button></div>
@@ -198,7 +205,7 @@ function HarvestPane({town, spill, busy, now, onCollect, onTrade}: {town: TownSe
     <div className="tt-mu tt-note">{compact(town.harvest.tokens)} new tokens · {town.harvest.streak}-day streak ×{town.harvest.multiplier.toFixed(2)}</div>
     <button type="button" className="tt-btn go" disabled={!pending || busy || !!town.paused} onClick={onCollect}>Collect harvest</button>
     <div className="tt-sep" />
-    <div className="tt-mu tt-note">1 Brick per 1M tokens of any kind. 1 Power per 10K output tokens, 1 Water per 50K input and cache-write tokens, 1 Crystal per 100K reasoning tokens.</div>
+    <div className="tt-mu tt-note">1 Brick per {compact(town.rates.bricks)} tokens of any kind. 1 Power per {compact(town.rates.power)} output tokens, 1 Water per {compact(town.rates.water)} input and cache-write tokens, 1 Crystal per {compact(town.rates.crystals)} reasoning tokens.</div>
     {town.trade && <>
       <div className="tt-sep" />
       <div className="tt-kv"><span>Market</span><span className="tt-mu">{town.trade.rate} Bricks per Water</span></div>
@@ -268,11 +275,12 @@ function ClaimPanel({town, reach, busy, onClaim}: {town: TownSelf; reach: Resour
   const cost = town.nextPlot.cost;
   const missing = shortfall(reach, cost).bricks ?? 0;
   const pace = paceText(daysToAfford(missing, town.bricksPerDay));
+  const full = storeText(town.caps, cost);
   return <>
     <div className="tt-p-h"><div className="tt-tn" aria-hidden="true"><FlagIcon /></div><div><b>Plot #{town.nextPlot.number}</b><span className="tt-mu">Free land next to yours</span></div></div>
     <CostChips cost={cost} have={reach} />
     <p className="tt-desc">Each plot costs 1.43 times the last.</p>
-    {missing > 0 ? <div className="tt-blocked">{count(missing)} Bricks short{pace ? `. ${pace}.` : '.'}</div>
+    {missing > 0 ? <div className="tt-blocked">{full ?? `${count(missing)} Bricks short${pace ? `. ${pace}.` : '.'}`}</div>
       : <button type="button" className="tt-go" disabled={busy || !!town.paused} onClick={onClaim}>Claim plot #{town.nextPlot.number}</button>}
   </>;
 }
@@ -295,12 +303,13 @@ function BuildMenu({town, reach, busy, full, onClose, onBuild}: {town: TownSelf;
       {entries.map(entry => {
         const info = BUILDINGS[entry.kind];
         const short = shortText(reach, entry.cost);
+        const store = storeText(town.caps, entry.cost);
         return <button key={entry.kind} type="button" className={`tt-card ${info.rarity}`} disabled={busy || full || !!short || !!entry.locked || !!town.paused} onClick={() => onBuild(entry.kind)}>
           <BuildingThumb kind={entry.kind} size={72} />
           <span className="tt-card-b"><b>{info.name}</b><span className={`tt-rar ${info.rarity}`}>{info.rarity}</span>
             <span className="tt-desc">{entry.description}</span>
             {entry.locked ? <span className="tt-lock">{entry.locked}</span> : <><CostChips cost={entry.cost} have={reach} />
-              <span className="tt-mu">{entry.limit !== null ? `${entry.owned} of ${entry.limit}` : entry.owned ? `You have ${entry.owned}` : 'New'}{short ? ` · ${short} short` : ''}</span></>}
+              <span className="tt-mu">{entry.limit !== null ? `${entry.owned} of ${entry.limit}` : entry.owned ? `You have ${entry.owned}` : 'New'}{short ? ` · ${store ?? `${short} short`}` : ''}</span></>}
           </span>
         </button>;
       })}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { TOWN_MAP_SPAN, terrainAt } from '@tokentracky/core';
-import { afterCollect, compact, daysToAfford, duration, paceText, shortfall } from './format.ts';
+import { afterCollect, compact, daysToAfford, duration, paceText, shortfall, tooBig } from './format.ts';
 import { cellAt, clampCell, fetchArea, screenOf, visibleArea, zoomAt } from './map-view.ts';
 import { plotKey, plotKind, plotsBackToFront, plotTile, sceneLayout } from './layout.ts';
 
@@ -21,6 +21,12 @@ describe('town numbers', () => {
     expect(daysToAfford(10, 0)).toBeNull();
     expect(paceText(6)).toBe('About 6 days of coding');
     expect(paceText(0)).toBe('Ready now');
+  });
+  it('tells a price no store can ever hold from one that coding will pay for', () => {
+    const room = {power: 7000, bricks: 17_000, water: 24_000, crystals: 300};
+    expect(tooBig({bricks: 17_200}, room)).toBe('bricks');
+    expect(tooBig({power: 100, crystals: 301}, room)).toBe('crystals');
+    expect(tooBig({bricks: 17_000, crystals: 300}, room)).toBeNull();
   });
   it('counts only the harvest the stores have room for, as collecting does', () => {
     // 1,500 Bricks stored and 800 to collect with room for 2,000: 300 spill, so 2,000 is all there is to spend.

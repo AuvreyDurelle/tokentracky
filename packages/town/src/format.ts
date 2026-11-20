@@ -1,4 +1,4 @@
-import { RESOURCE_IDS, type Cost, type Resources } from '@tokentracky/core';
+import { RESOURCE_IDS, type Cost, type ResourceId, type Resources } from '@tokentracky/core';
 
 export const count = (n: number) => Math.round(n).toLocaleString('en-US');
 /** 84.2M, 12.3K. */
@@ -26,6 +26,10 @@ export function shortfall(wallet: Resources, cost: Cost): Cost {
     if (missing > 0) out[id] = missing;
   }
   return out;
+}
+/** The first resource whose store can never hold `cost`, or null: a bigger store must come first, whatever the pace. */
+export function tooBig(cost: Cost, room: Resources): ResourceId | null {
+  return RESOURCE_IDS.find(id => (cost[id] ?? 0) > room[id]) ?? null;
 }
 /** What the stores hold once the harvest is collected: each fills up to its room and the rest spills. Paying collects first, so this is what can be spent. */
 export function afterCollect(wallet: Resources, harvest: Resources, room: Resources): Resources {

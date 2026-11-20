@@ -3,7 +3,7 @@ import { BUILDINGS, terrainAt, type TownMapResponse, type TownPublic, type TownS
 import type { TownApi } from './api.ts';
 import { CostChips, Crest, useToast } from './Hud.tsx';
 import { CloseIcon, GlyphIcon, HeartIcon, HomeIcon, MinusIcon, MoveIcon, PlusIcon } from './icons.tsx';
-import { count, daysToAfford, paceText } from './format.ts';
+import { afterCollect, count, daysToAfford, paceText, tooBig } from './format.ts';
 import { plotKey } from './layout.ts';
 import { cellAt, clampCell, fetchArea, screenOf, visibleArea, within, zoomAt, type Area, type MapView } from './map-view.ts';
 import { townColour } from './pieces.ts';
@@ -210,7 +210,9 @@ export function MapPage({api, signedIn, feature = false, aside, onHome, onVisit}
   };
   const anchor = selected ? screenOf(view, size.width, size.height, selected.at[0], selected.at[1]) : null;
   const price = me?.nextPlot.cost.bricks ?? 0;
-  const short = me ? Math.max(0, price - me.wallet.bricks) : 0;
+  // What collecting would leave to spend, as claiming counts it.
+  const spendable = me ? afterCollect(me.wallet, me.harvest.resources, me.caps).bricks : 0;
+  const short = me ? Math.max(0, price - spendable) : 0;
 
   return <div ref={stage} className="tt tt-stage tt-map">
     <canvas ref={canvas} className="tt-canvas" role="img" aria-label="The public map of every town"
@@ -247,8 +249,8 @@ export function MapPage({api, signedIn, feature = false, aside, onHome, onVisit}
     {(onHome || me) && <div className="tt-glass tt-dock tt-dock-map">
       {onHome && <button type="button" className="tt-db" onClick={onHome}><HomeIcon />Your town</button>}
       {me && <div className="tt-cl"><div className="tt-kv"><span>Next plot #{me.nextPlot.number}</span><b><CostChips cost={me.nextPlot.cost} /></b></div>
-        <div className="tt-pb"><i style={{width: `${Math.min(100, price ? me.wallet.bricks / price * 100 : 100)}%`}} /></div>
-        <div className="tt-kv tt-mu"><span>{count(me.wallet.bricks)} of {count(price)}</span>{short > 0 ? <span className="tt-sh">{paceText(daysToAfford(short, me.bricksPerDay)) ?? `${count(short)} short`}</span> : <span className="tt-ok">Ready</span>}</div></div>}
+        <div className="tt-pb"><i style={{width: `${Math.min(100, price ? spendable / price * 100 : 100)}%`}} /></div>
+        <div className="tt-kv tt-mu"><span>{count(spendable)} of {count(price)}</span>{short > 0 ? <span className="tt-sh">{tooBig(me.nextPlot.cost, me.caps) ? 'Needs a bigger store' : paceText(daysToAfford(short, me.bricksPerDay)) ?? `${count(short)} short`}</span> : <span className="tt-ok">Ready</span>}</div></div>}
       {me && <div className="tt-cl"><div className="tt-kv"><span className="tt-with"><MoveIcon size={18} />Move town</span><b><CostChips cost={me.move.cost} /></b></div>
         <div className="tt-mu">Moves in your town</div></div>}
     </div>}
