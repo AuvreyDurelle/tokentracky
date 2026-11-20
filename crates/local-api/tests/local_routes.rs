@@ -1255,7 +1255,8 @@ async fn usage_queries_filter_by_range_tool_and_text_and_name_git_repositories()
         summary,
         json!({"tokens": 0, "breakdown": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0, "reasoning": 0},
             "costMicrousd": null, "costParts": null, "sessions": 0, "cacheRate": 0.0, "byTool": [], "byModel": [], "daily": [],
-            "byHour": vec![0; 24], "activity": {"activeDays": 0, "currentStreak": 0, "longestStreak": 0, "bestDay": null, "averagePerActiveDay": 0}})
+            "byHour": vec![0; 24], "byWeekdayHour": vec![vec![0; 24]; 7],
+            "activity": {"activeDays": 0, "currentStreak": 0, "longestStreak": 0, "bestDay": null, "averagePerActiveDay": 0}})
     );
     let sessions = server.get("/api/local/sessions?days=30").await.json();
     let ids: Vec<&Value> = sessions["items"]
@@ -1540,6 +1541,8 @@ async fn reports_exact_totals_and_costs_from_synthetic_claude_code_and_codex_log
             "byModel": [with(&claude_total, "model", "claude-sonnet-4-6"), with(&codex_total, "model", "gpt-5-codex")],
             "daily": [{"day": FIXTURE_DAY, "tokens": 532, "breakdown": kinds["all"], "costMicrousd": 1780, "costParts": parts["all"]}],
             "byHour": (0..24).map(|hour| if hour == 12 { 532 } else { 0 }).collect::<Vec<u64>>(),
+            // The fixture day is a Tuesday, the second row.
+            "byWeekdayHour": (0..7).map(|day| (0..24).map(|hour| if day == 1 && hour == 12 { 532 } else { 0 }).collect::<Vec<u64>>()).collect::<Vec<_>>(),
             "activity": {"activeDays": 1, "currentStreak": streak, "longestStreak": 1, "bestDay": {"day": FIXTURE_DAY, "tokens": 532},
                 "averagePerActiveDay": 532},
         })
@@ -1679,7 +1682,7 @@ async fn reports_exact_totals_and_costs_from_synthetic_claude_code_and_codex_log
         get_json(&server, &empty("summary")).await,
         json!({"tokens": 0, "breakdown": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0, "reasoning": 0},
             "costMicrousd": null, "costParts": null, "sessions": 0, "cacheRate": 0.0, "byTool": [], "byModel": [], "daily": [],
-            "byHour": vec![0; 24],
+            "byHour": vec![0; 24], "byWeekdayHour": vec![vec![0; 24]; 7],
             "activity": {"activeDays": 0, "currentStreak": 0, "longestStreak": 0, "bestDay": null, "averagePerActiveDay": 0}})
     );
     for route in ["sessions", "breakdown", "projects"] {
@@ -1963,9 +1966,9 @@ async fn usage_queries_take_an_exact_window_and_the_hours_route_gives_its_hours(
         hours(window).await,
         [json!(["2026-10-20T23:00:00.000Z", "claude", "claude-sonnet-4-6", 140])]
     );
-    // 22:30 on the 20th to 22:30 on the 21st: a whole day, the longest it takes.
+    // 22:30 on the 20th to 22:30 on the 27th: a whole week, the longest it takes, for the Tokens page's hourly bars.
     assert_eq!(
-        hours("since=1792535400000&until=1792621800000&tool=claude").await,
+        hours("since=1792535400000&until=1793140200000&tool=claude").await,
         [json!(["2026-10-20T23:30:00.000Z", "claude", "claude-sonnet-4-6", 140])]
     );
     assert_eq!(
@@ -1977,9 +1980,9 @@ async fn usage_queries_take_an_exact_window_and_the_hours_route_gives_its_hours(
         "days=7",
         "from=2026-10-20&to=2026-10-20",
         "since=1792537200000",
-        // Not whole hours, and more than a day.
+        // Not whole hours, and more than a week.
         "since=1792537200000&until=1792539900000",
-        "since=1792535400000&until=1792625400000",
+        "since=1792535400000&until=1793143800000",
         "since=1792537200000&until=1792540800000&days=7",
     ] {
         expect_error(

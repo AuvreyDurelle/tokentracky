@@ -325,6 +325,11 @@ pub struct UsageSummary {
     /// Tokens by hour of day, 0 to 23, in the query's zone (UTC without one).
     #[ts(type = "Array<number>")]
     pub by_hour: Vec<u64>,
+    /// Tokens by weekday and hour of day: seven rows from Monday, each of 24 hours, in the same zone. Absent from apps
+    /// that predate it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional, type = "Array<Array<number>>")]
+    pub by_weekday_hour: Option<Vec<Vec<u64>>>,
 }
 /// One tool's share of a summary (`UsageSummary.byTool`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]

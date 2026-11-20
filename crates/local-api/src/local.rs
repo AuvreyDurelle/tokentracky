@@ -848,15 +848,16 @@ fn current(cached: &Option<(Date, LocalOverview)>, today: Date) -> Option<LocalO
 }
 
 /// `GET /api/local/hours?since=&until=`, with the usage queries' `tool` and `q`: the window's tokens by hour, tool and
-/// model, hours counted from `since` (the Tokens page's bars of the last 24 hours). The window is whole hours, at most
-/// a day. Rust only.
+/// model, hours counted from `since` (the Tokens page's hourly bars). The window is whole hours, at most a week. Rust
+/// only.
 async fn hours(State(state): State<LocalState>, uri: Uri) -> Result<Response, LocalError> {
     const HOUR_MS: i64 = 3_600_000;
     let options = query_options(uri.query())?;
     let (Some(since), Some(until)) = (options.since, options.until) else {
         return Err(INVALID_FILTER);
     };
-    if (until - since) % HOUR_MS != 0 || until - since > 24 * HOUR_MS {
+    // Up to a week of hours, for the Tokens page's hourly bars over a week.
+    if (until - since) % HOUR_MS != 0 || until - since > 7 * 24 * HOUR_MS {
         return Err(INVALID_FILTER);
     }
     let store = state.store.clone();

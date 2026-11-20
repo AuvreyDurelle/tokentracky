@@ -89,6 +89,8 @@ sessions: number }>;
   daily: Array<{ day: string, tokens: number, breakdown: TokenCounts, costMicrousd: number | null, costParts: CostParts | null }>;
   /** Tokens by hour of day, 0 to 23, in the query's zone (UTC without one). */
   byHour: Array<number>;
+  /** Tokens by weekday and hour of day: seven rows from Monday, each of 24 hours, in the same zone. Absent from apps that predate it. */
+  byWeekdayHour?: Array<Array<number>>;
 };
 export type SessionSummary = {
   id: string;

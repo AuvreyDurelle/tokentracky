@@ -246,6 +246,35 @@ fn a_summary_adds_its_tokens_up_by_hour_of_day_in_utc_or_the_zone() {
 }
 
 #[test]
+fn a_summary_adds_its_tokens_up_by_weekday_and_hour_in_utc_or_the_zone() {
+    // Tuesday 20 October 22:10 UTC, then Wednesday 23:50, 22:59 and 06:00 UTC; in Kathmandu (+05:45) Wednesday 03:55,
+    // Thursday 05:35 and 04:44, and Wednesday 11:45. Rows are weekdays from Monday, columns hours.
+    let store = store(&[
+        event("late", "2026-10-20T22:10:00.000Z", 1),
+        event("later", "2026-10-21T23:50:00.000Z", 10),
+        event("late-again", "2026-10-21T22:59:59.999Z", 100),
+        event("morning", "2026-10-21T06:00:00.000Z", 1000),
+    ]);
+    let utc = store
+        .summary(&days("2026-10-20", "2026-10-21", None))
+        .unwrap()
+        .by_weekday_hour
+        .unwrap();
+    assert_eq!((utc.len(), utc[0].len()), (7, 24));
+    assert_eq!((utc[1][22], utc[2][23], utc[2][22], utc[2][6]), (1, 10, 100, 1000));
+    assert_eq!(utc.iter().flatten().sum::<u64>(), 1111);
+    let kathmandu = store
+        .summary(&days("2026-10-20", "2026-10-22", Some("Asia/Kathmandu")))
+        .unwrap()
+        .by_weekday_hour
+        .unwrap();
+    assert_eq!(
+        (kathmandu[2][3], kathmandu[3][5], kathmandu[3][4], kathmandu[2][11]),
+        (1, 10, 100, 1000)
+    );
+}
+
+#[test]
 fn a_session_starts_at_the_quarter_hour_of_its_first_event_in_the_query() {
     let store = store(&[
         event("first", "2026-10-20T09:07:00.000Z", 1),
