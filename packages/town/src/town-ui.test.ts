@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { TOWN_MAP_SPAN, terrainAt } from '@tokentracky/core';
 import { afterCollect, compact, daysToAfford, duration, paceText, shortfall, tooBig } from './format.ts';
-import { cellAt, clampCell, fetchArea, screenOf, visibleArea, zoomAt } from './map-view.ts';
+import { cellAt, clampCell, fetchArea, fitView, screenOf, visibleArea, within, zoomAt } from './map-view.ts';
 import { plotKey, plotKind, plotsBackToFront, plotTile, sceneLayout } from './layout.ts';
 
 describe('town numbers', () => {
@@ -91,5 +91,13 @@ describe('the public map camera', () => {
     expect(area.x1).toBeGreaterThan(visible.x1);
     const wide = fetchArea({cx: 0, cy: 0, cell: clampCell(1, 2400, 1400)}, 2400, 1400);
     expect(wide.x1 - wide.x0).toBeLessThan(TOWN_MAP_SPAN);
+  });
+  it('grows the plots when the canvas grows, so what shows still fits one request', () => {
+    // Zoomed right out in a small window, then the window is made wide.
+    const small = {cx: 0, cy: 0, cell: clampCell(1, 600, 400)};
+    expect(within(visibleArea(small, 1400, 800), fetchArea(small, 1400, 800))).toBe(false);
+    const fitted = fitView(small, 1400, 800);
+    expect(within(visibleArea(fitted, 1400, 800), fetchArea(fitted, 1400, 800))).toBe(true);
+    expect(fitView(view, 400, 300)).toBe(view);
   });
 });

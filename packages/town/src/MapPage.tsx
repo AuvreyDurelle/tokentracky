@@ -5,7 +5,7 @@ import { CostChips, Crest, useToast } from './Hud.tsx';
 import { CloseIcon, GlyphIcon, HeartIcon, HomeIcon, MinusIcon, MoveIcon, PlusIcon } from './icons.tsx';
 import { afterCollect, count, daysToAfford, paceText, tooBig } from './format.ts';
 import { plotKey } from './layout.ts';
-import { cellAt, clampCell, fetchArea, screenOf, visibleArea, within, zoomAt, type Area, type MapView } from './map-view.ts';
+import { cellAt, clampCell, fetchArea, fitView, screenOf, visibleArea, within, zoomAt, type Area, type MapView } from './map-view.ts';
 import { townColour } from './pieces.ts';
 
 const hash = (c: number, q: number) => ((Math.imul(c, 73856093) ^ Math.imul(q, 19349663)) >>> 0);
@@ -156,7 +156,12 @@ export function MapPage({api, signedIn, feature = false, aside, onHome, onVisit}
   useLayoutEffect(() => {
     const el = stage.current;
     if (!el) return;
-    const measure = () => setSize({width: el.clientWidth, height: el.clientHeight});
+    const measure = () => {
+      const width = el.clientWidth, height = el.clientHeight;
+      setSize({width, height});
+      // A wider canvas may need bigger plots for what shows to fit one request.
+      setView(v => fitView(v, width, height));
+    };
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(el);

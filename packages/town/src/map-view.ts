@@ -8,6 +8,11 @@ const MAX_CELL = 48;
 /** The smallest plot size that keeps the whole canvas within one request's area. */
 export const minCell = (width: number, height: number) => Math.max(6, Math.ceil(Math.max(width, height) / (TOWN_MAP_SPAN - 8)));
 export const clampCell = (cell: number, width: number, height: number) => Math.min(MAX_CELL, Math.max(minCell(width, height), cell));
+/** The view with plots big enough for a canvas of this size; the same view when they already are. */
+export const fitView = (view: MapView, width: number, height: number): MapView => {
+  const cell = clampCell(view.cell, width, height);
+  return cell === view.cell ? view : {...view, cell};
+};
 
 /** The plot under a point on the canvas. */
 export function cellAt(view: MapView, width: number, height: number, px: number, py: number): [number, number] {
