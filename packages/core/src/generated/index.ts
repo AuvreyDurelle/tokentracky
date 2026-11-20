@@ -243,6 +243,37 @@ export type Wrapped = {
   /** The period's five largest models, largest first, when the model mix is shared. They carry no cost. */
   models?: Array<{ model: string, tokens: number, costMicrousd?: number | null }>;
 };
+/** A builder's usage over any span of UTC days (`/api/profiles/:alias/usage?from=&to=`), limited to what they share: the profile's usage chart reads a week, a month or all time from it, and steps back through earlier ones. */
+export type UsageWindow = {
+  alias: string;
+  /** The first UTC day asked for. */
+  from: string;
+  /** The last UTC day counted: the one asked for, or today for a span that runs past it. */
+  to: string;
+  tokens: number;
+  /** Tokens over the same number of days just before `from`. */
+  previousTokens: number;
+  /** Estimated cost over the span, when shared; null when any of its days lacks a price. */
+  costMicrousd?: number | null;
+  /** Each UTC day from `from` to `to`, oldest first. */
+  daily: Array<{ day: string, tokens: number, 
+/**
+ * The day's estimated cost, when shared; null when it lacks a price.
+ */
+costMicrousd?: number | null, 
+/**
+ * The day's largest tool and its tokens, when the tool split is shared and the day has tokens.
+ */
+topTool?: { tool: ToolId, tokens: number }, 
+/**
+ * The day's largest model and its tokens, when the model mix is shared and the day has tokens.
+ */
+topModel?: { model: string, tokens: number } }>;
+  /** Tokens per tool over the span, when the tool split is shared. */
+  toolTokens?: Partial<Record<ToolId, number>>;
+  /** The span's five largest models, largest first, when the model mix is shared. They carry no cost. */
+  models?: Array<{ model: string, tokens: number, costMicrousd?: number | null }>;
+};
 /** Landing-page totals across every published builder. */
 export type CommunityStats = {
   builders: number;

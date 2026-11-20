@@ -170,6 +170,7 @@ pub fn base_router(
         .route("/api/leaderboard", get(leaderboard))
         .route("/api/profiles/{alias}", get(profile))
         .route("/api/profiles/{alias}/stats", get(profile_stats))
+        .route("/api/profiles/{alias}/usage", get(profile_usage))
         // For the Mac app's pages.
         .route("/api/community", get(community))
         .route("/api/leaderboard/around/{alias}", get(neighbours))
@@ -284,6 +285,15 @@ async fn profile_stats(
     uri: Uri,
 ) -> Result<Response, LocalError> {
     profile_page(&state, &alias, "/stats", uri.query()).await
+}
+
+/// A profile's usage over a span of days, for its usage chart.
+async fn profile_usage(
+    State(state): State<LocalState>,
+    Path(alias): Path<String>,
+    uri: Uri,
+) -> Result<Response, LocalError> {
+    profile_page(&state, &alias, "/usage", uri.query()).await
 }
 
 /// Relays `/api/profiles/:alias` followed by `page`.

@@ -20,6 +20,7 @@ import type {
   UsageBreakdownRow,
   UsageSummary,
   Wrapped,
+  UsageWindow,
 } from '@tokentracky/core';
 import type { PublicationRequest } from './publication';
 import type { LinkTag } from './route';
@@ -148,6 +149,8 @@ export class ApiClient {
   }
   profile(alias: string, period: LeaderboardPeriod) { return this.request<PublicProfile>(`/api/profiles/${encodeURIComponent(alias)}?${query({ period })}`); }
   profileStats(alias: string) { return this.request<ProfileStats>(`/api/profiles/${encodeURIComponent(alias)}/stats`); }
+  /** A profile's usage over a span of UTC days, for its usage chart. */
+  profileUsage(alias: string, from: string, to: string) { return this.request<UsageWindow>(`/api/profiles/${encodeURIComponent(alias)}/usage?${query({ from, to })}`); }
   community() { return this.request<CommunityStats>('/api/community'); }
   /** A month (`YYYY-MM`) or year (`YYYY`) wrap; the hosted site only. */
   wrapped(alias: string, period: string) { return this.request<Wrapped>(`/api/wrapped/${encodeURIComponent(alias)}/${encodeURIComponent(period)}`); }

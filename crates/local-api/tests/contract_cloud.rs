@@ -327,6 +327,16 @@ async fn leaderboard_profile_and_profile_stats_proxies() {
     stub.answer("GET /api/profiles/x%20y/stats", Answer::json(stats.clone()));
     assert_eq!(server.get("/api/profiles/x%20y/stats").await.json(), stats);
 
+    // Relays a profile's usage over a span of days with its query, for the usage chart.
+    let usage = json!({"alias": "builder_1", "from": "2026-11-01", "to": "2026-11-19", "tokens": 99, "previousTokens": 80, "daily": []});
+    stub.answer("GET /api/profiles/builder_1/usage", Answer::json(usage.clone()));
+    assert_eq!(server.get("/api/profiles/builder_1/usage?from=2026-11-01&to=2026-11-30").await.json(), usage);
+    let query = &stub.to("GET /api/profiles/builder_1/usage")[0].query;
+    assert_eq!(
+        (query.get("from").map(String::as_str), query.get("to").map(String::as_str)),
+        (Some("2026-11-01"), Some("2026-11-30"))
+    );
+
     // 404 CLOUD_UNAVAILABLE when the hosted service has no such page.
     stub.answer("GET /api/profiles/nobody", Answer::text(NOT_FOUND).with_status(404));
     expect_error(&server.get("/api/profiles/nobody").await, 404, "CLOUD_UNAVAILABLE");

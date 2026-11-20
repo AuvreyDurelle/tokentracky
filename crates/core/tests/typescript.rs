@@ -55,6 +55,7 @@ fn generates_typescript_types() {
         (PublicHour::docs(), PublicHour::decl(&cfg)),
         (ProfileStats::docs(), ProfileStats::decl(&cfg)),
         (Wrapped::docs(), Wrapped::decl(&cfg)),
+        (UsageWindow::docs(), UsageWindow::decl(&cfg)),
         (CommunityStats::docs(), CommunityStats::decl(&cfg)),
         (ExactAggregates::docs(), ExactAggregates::decl(&cfg)),
         (ExactTokenCounts::docs(), ExactTokenCounts::decl(&cfg)),

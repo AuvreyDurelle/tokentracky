@@ -688,6 +688,71 @@ pub struct Wrapped {
     #[ts(optional, inline)]
     pub models: Option<Vec<ModelTokens>>,
 }
+/// A builder's usage over any span of UTC days (`/api/profiles/:alias/usage?from=&to=`), limited to what they share:
+/// the profile's usage chart reads a week, a month or all time from it, and steps back through earlier ones.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+pub struct UsageWindow {
+    pub alias: String,
+    /// The first UTC day asked for.
+    pub from: String,
+    /// The last UTC day counted: the one asked for, or today for a span that runs past it.
+    pub to: String,
+    #[ts(type = "number")]
+    pub tokens: u64,
+    /// Tokens over the same number of days just before `from`.
+    #[ts(type = "number")]
+    pub previous_tokens: u64,
+    /// Estimated cost over the span, when shared; null when any of its days lacks a price.
+    #[serde(default, deserialize_with = "present", skip_serializing_if = "Option::is_none")]
+    #[ts(optional, type = "number | null")]
+    pub cost_microusd: Option<Option<u64>>,
+    /// Each UTC day from `from` to `to`, oldest first.
+    #[ts(inline)]
+    pub daily: Vec<UsageDay>,
+    /// Tokens per tool over the span, when the tool split is shared.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional, type = "Partial<Record<ToolId, number>>")]
+    pub tool_tokens: Option<BTreeMap<ToolId, u64>>,
+    /// The span's five largest models, largest first, when the model mix is shared. They carry no cost.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional, inline)]
+    pub models: Option<Vec<ModelTokens>>,
+}
+/// One UTC day of a usage window (`UsageWindow.daily`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+pub struct UsageDay {
+    pub day: String,
+    #[ts(type = "number")]
+    pub tokens: u64,
+    /// The day's estimated cost, when shared; null when it lacks a price.
+    #[serde(default, deserialize_with = "present", skip_serializing_if = "Option::is_none")]
+    #[ts(optional, type = "number | null")]
+    pub cost_microusd: Option<Option<u64>>,
+    /// The day's largest tool and its tokens, when the tool split is shared and the day has tokens.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional, inline)]
+    pub top_tool: Option<ToolDay>,
+    /// The day's largest model and its tokens, when the model mix is shared and the day has tokens.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional, inline)]
+    pub top_model: Option<ModelDay>,
+}
+/// A tool's tokens on one day (`UsageDay.top_tool`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+pub struct ToolDay {
+    pub tool: ToolId,
+    #[ts(type = "number")]
+    pub tokens: u64,
+}
+/// A model's tokens on one day (`UsageDay.top_model`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+pub struct ModelDay {
+    pub model: String,
+    #[ts(type = "number")]
+    pub tokens: u64,
+}
 /// Rank and tokens in each leaderboard window (`ProfileStats.periods`, a `Record<Period, …>`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct PeriodRanks {
