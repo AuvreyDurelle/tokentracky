@@ -1,4 +1,4 @@
-import type { BuildingId, TownJob, TownMapResponse } from '@tokentracky/core';
+import type { BuildingId, TownMapResponse } from '@tokentracky/core';
 import { hash } from './art.ts';
 import { plotKey, plotTile, plotsBackToFront, type PlotKind, type SceneLayout } from './layout.ts';
 
@@ -22,7 +22,6 @@ export type Piece =
   | {type: 'ripple'; x: number; y: number}
   | {type: 'border'; a: [number, number]; b: [number, number]; colour: string; own: boolean}
   | {type: 'building'; kind: BuildingId; x: number; y: number; level: number}
-  | {type: 'scaffold'; x: number; y: number}
   | {type: 'house'; x: number; y: number; roof: string; variant: number}
   | {type: 'tree'; x: number; y: number; size: number; pine: boolean}
   | {type: 'lamp'; x: number; y: number};
@@ -31,15 +30,13 @@ export interface TownLand {
   layout: SceneLayout;
   kindAt: (x: number, y: number) => PlotKind;
   buildings: ReadonlyArray<{kind: BuildingId; x: number; y: number; level: number}>;
-  jobs: readonly TownJob[];
   map: TownMapResponse | null;
 }
 
 /** Ground, borders, neighbours' homes, trees and every building, plot by plot from back to front. */
-export function townPieces({layout, kindAt, buildings, jobs, map}: TownLand): Piece[] {
+export function townPieces({layout, kindAt, buildings, map}: TownLand): Piece[] {
   const out: Piece[] = [];
   const built = new Map(buildings.map(b => [plotKey(b.x, b.y), b]));
-  const working = new Set(jobs.filter(job => job.status === 'running').map(job => plotKey(job.x, job.y)));
   for (const [x, y] of plotsBackToFront(layout)) {
     const kind = kindAt(x, y);
     const [tx, ty] = plotTile(layout, x, y);
@@ -65,13 +62,12 @@ export function townPieces({layout, kindAt, buildings, jobs, map}: TownLand): Pi
     }
     const building = built.get(plotKey(x, y));
     if (building) out.push({type: 'building', kind: building.kind, x: tx, y: ty, level: building.level});
-    if (working.has(plotKey(x, y))) out.push({type: 'scaffold', x: tx, y: ty});
     if (kind.kind === 'other') out.push({type: 'house', x: tx, y: ty, roof: townColour(map?.towns[kind.town]?.alias ?? null), variant: h % 3});
     if (kind.kind === 'forest' || (kind.kind === 'free' && h % 4 === 0)) {
       out.push({type: 'tree', x: tx + 0.2 + (h % 5) / 10, y: ty + 0.1, size: 0.85, pine: h % 2 === 0}, {type: 'tree', x: tx + 0.9, y: ty + 0.8 + (h % 3) / 10, size: 0.8, pine: h % 3 === 0});
       if (kind.kind === 'forest') out.push({type: 'tree', x: tx + 0.2, y: ty + 1, size: 0.75, pine: true});
     }
-    if (kind.kind === 'own' && !building && !working.has(plotKey(x, y)) && h % 2 === 0) out.push({type: 'lamp', x: tx + 1.85, y: ty + 1.85});
+    if (kind.kind === 'own' && !building && h % 2 === 0) out.push({type: 'lamp', x: tx + 1.85, y: ty + 1.85});
   }
   return out;
 }

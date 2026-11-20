@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Group, Mesh, OrthographicCamera, ShaderLib, Sprite, Vector3 } from 'three';
-import { BUILDING_IDS, type TownJob } from '@tokentracky/core';
+import { BUILDING_IDS } from '@tokentracky/core';
 import { isoProjection } from './art.ts';
 import { plotKey, plotKind, sceneLayout } from './layout.ts';
 import { buildTown } from './models.ts';
@@ -92,15 +92,8 @@ describe('spinning by hand', () => {
 
 describe("the town's pieces", () => {
   it('borders only the outside edge of your land', () => {
-    const pieces = townPieces({...landOf([{x: 0, y: 0}, {x: 1, y: 0}]), buildings: [], jobs: []});
+    const pieces = townPieces({...landOf([{x: 0, y: 0}, {x: 1, y: 0}]), buildings: []});
     expect(pieces.filter(p => p.type === 'border' && p.own)).toHaveLength(6);
-  });
-  it('puts up scaffolding only where work is running', () => {
-    const job = (x: number, status: TownJob['status']): TownJob => ({id: `j${x}`, action: 'build', kind: 'park', buildingId: null, x, y: 0, targetLevel: 1, status, cost: {},
-      queuedAt: '', startedAt: null, readyAt: null});
-    const land = landOf([{x: 0, y: 0}, {x: 1, y: 0}]);
-    const pieces = townPieces({...land, buildings: [], jobs: [job(0, 'running'), job(1, 'waiting')]});
-    expect(pieces.filter(p => p.type === 'scaffold')).toEqual([{type: 'scaffold', x: (0 - land.layout.x0) * 2, y: (0 - land.layout.y0) * 2}]);
   });
 });
 
@@ -109,7 +102,7 @@ describe('the 3D town', () => {
     const plots = Array.from({length: 16}, (_, i) => ({x: i % 4, y: Math.floor(i / 4)}));
     const buildings = BUILDING_IDS.map((kind, i) => ({kind, x: i % 4, y: Math.floor(i / 4), level: [1, 6, 10][i % 3]!}));
     const land = landOf(plots);
-    const town = buildTown(townPieces({...land, buildings, jobs: []}), land.layout);
+    const town = buildTown(townPieces({...land, buildings}), land.layout);
     let triangles = 0, sprites = 0;
     town.traverse(object => {
       if (object instanceof Sprite) { sprites++; expect(object.position.toArray().every(Number.isFinite)).toBe(true); }
