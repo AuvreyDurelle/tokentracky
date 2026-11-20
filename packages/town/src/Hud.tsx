@@ -94,12 +94,12 @@ export function useToast(): [ReactNode, (message: string, tone?: 'error' | 'ok')
   return [node, (message, tone = 'error') => setToast({message, tone, at: Date.now()})];
 }
 
-/** A short wait, refreshed once a second while something is counting down. */
-export function useNow(active: boolean): number {
+/** The time, refreshed every 30 seconds for the streak clock and "6h of coding". */
+export function useNow(): number {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), active ? 1000 : 30_000);
+    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
     return () => window.clearInterval(timer);
-  }, [active]);
+  }, []);
   return now;
 }

@@ -11,7 +11,6 @@ export function townApi(api: ApiClient): TownApi {
     claim: (x, y) => api.townAct('plots', { x, y }),
     build: (kind, x, y) => api.townAct('jobs', { action: 'build', kind, x, y }),
     upgrade: (buildingId) => api.townAct('jobs', { action: 'upgrade', buildingId }),
-    cancel: (jobId) => api.townCancel(jobId),
     move: () => api.townAct('move'),
     trade: (bricks) => api.townAct('trade', { bricks }),
     map: (area) => api.townMap(area),

@@ -202,7 +202,6 @@ export class ApiClient {
   townOf(alias: string) { return this.request<TownPublic>(`/api/town/u/${encodeURIComponent(alias)}`); }
   townMe() { return this.request<TownSelf>('/api/local/town/me'); }
   townAct(path: 'collect' | 'plots' | 'jobs' | 'move' | 'trade', body: object = {}) { return this.request<TownSelf>(`/api/local/town/${path}`, { method: 'POST', body: JSON.stringify(body) }); }
-  townCancel(jobId: string) { return this.request<TownSelf>(`/api/local/town/jobs/${encodeURIComponent(jobId)}`, { method: 'DELETE' }); }
   async exportCsv(range: UsageRange, tool: 'all' | ToolId = 'all'): Promise<Blob> {
     const response = await fetch(`/api/local/export?${query({ ...range, tool })}`, { credentials: 'include' });
     if (!response.ok) throw await readError(response);

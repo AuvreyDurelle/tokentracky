@@ -119,11 +119,8 @@
 .tt-two .tt-btn { margin-top: 0; }
 .tt-two .tt-input + .tt-btn { width: auto; }
 .tt-input { flex: 1; min-width: 0; background: rgba(0, 0, 0, 0.25); border: 1px solid var(--tt-line); color: var(--tt-ink); border-radius: 10px; padding: 7px 10px; font: inherit; }
-.tt-job { padding: 9px 0; border-top: 1px solid rgba(255, 255, 255, 0.08); }
-.tt-job .tt-two { margin-top: 6px; }
 .tt-cost { display: inline-flex; flex-wrap: wrap; gap: 6px; }
 .tt-cost > span { display: inline-flex; align-items: center; gap: 4px; background: rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 3px 8px; font-weight: 700; font-size: 12.5px; }
-.tt-chip { display: inline-flex; align-items: center; gap: 4px; background: rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 3px 8px; font-weight: 700; font-size: 12.5px; white-space: nowrap; }
 
 /* Popovers next to the building or plot they describe. */
 .tt-pop { width: 290px; padding: 12px 14px 13px; border-color: rgba(255, 211, 107, 0.5); box-shadow: 0 10px 30px rgba(0, 0, 12, 0.45), 0 0 28px rgba(255, 211, 107, 0.2); z-index: 4; }
@@ -146,7 +143,6 @@
 .tt-st b { color: #7ff0b0; }
 .tt-st i { color: #8a87ba; font-style: normal; }
 .tt-blocked { margin-top: 10px; padding: 8px 10px; border-radius: 10px; background: rgba(255, 90, 74, 0.12); color: #ffb3a8; font-weight: 600; font-size: 12.5px; }
-.tt-jobbox { display: grid; gap: 4px; margin-top: 10px; padding: 9px 10px; border-radius: 10px; background: rgba(255, 194, 61, 0.1); box-shadow: inset 0 0 0 1px rgba(255, 194, 61, 0.35); }
 .tt-go { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 10px; text-align: center; font-weight: 800 !important; font-size: 14px !important; color: #062a17 !important; background: linear-gradient(#8ff7bf, #2ec778) !important; border-radius: 12px; padding: 9px !important; box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.55); filter: drop-shadow(0 0 8px rgba(60, 220, 140, 0.5)); }
 .tt-go:disabled { filter: none; opacity: 0.55; }
 .tt-two .tt-go { margin-top: 0; }

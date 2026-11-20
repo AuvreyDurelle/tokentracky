@@ -15,7 +15,7 @@ export function VisitPage({api, alias, signedIn, me, onMap, onHome}: {api: TownA
   const [error, setError] = useState<string | null>(null);
   const [angle, setAngle] = useState(0);
   const [toast, say] = useToast();
-  const now = useNow(false);
+  const now = useNow();
   useEffect(() => {
     let live = true;
     setTown(null); setError(null);
@@ -40,7 +40,7 @@ export function VisitPage({api, alias, signedIn, me, onMap, onHome}: {api: TownA
   };
   return <div className="tt tt-stage">
     <Sky />
-    <TownScene layout={layout} plots={town.plots} buildings={town.buildings} map={map} selected={null} now={now} label={`${town.alias}'s town`} visiting angle={angle} onSpin={setAngle} />
+    <TownScene layout={layout} plots={town.plots} buildings={town.buildings} map={map} selected={null} label={`${town.alias}'s town`} visiting angle={angle} onSpin={setAngle} />
     <div className="tt-top">
       <Crest alias={town.alias} level={town.level} plots={town.plots.length} />
       <StreakClock streak={town.streak} now={now} />
