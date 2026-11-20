@@ -36,7 +36,8 @@ export function LeaderboardView({ api, me, canJoin, syncedAt, site, onProfile, o
   const neighbours = around.value?.items ?? [];
 
   const unavailable = !list.value && list.error instanceof ApiError && list.error.code === 'CLOUD_UNAVAILABLE';
-  const board = list.value;
+  // Rankings from the period being loaded are never shown under the new period's name.
+  const board = list.value?.period === period ? list.value : null;
   const mine = neighbours.find((item) => item.alias === me) ?? null;
   const rival = mine && gapToNext(neighbours, mine.alias);
   const ranks = otherRanks(period, periods.value, period === '24h' ? null : lastDay.value?.items.find((item) => item.alias === me)?.rank ?? null);
