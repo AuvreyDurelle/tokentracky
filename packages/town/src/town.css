@@ -110,6 +110,7 @@
 .tt-fr i { width: 20px; height: 20px; border-radius: 5px; border: 1.5px dashed var(--tt-gold); display: grid; place-items: center; font-style: normal; color: var(--tt-gold); font-weight: 800; flex: none; box-shadow: 0 0 8px rgba(255, 211, 107, 0.35); }
 .tt-two { display: flex; gap: 8px; margin-top: 10px; align-items: center; justify-content: space-between; }
 .tt-two .tt-btn { margin-top: 0; }
+.tt-two .tt-input + .tt-btn { width: auto; }
 .tt-input { flex: 1; min-width: 0; background: rgba(0, 0, 0, 0.25); border: 1px solid var(--tt-line); color: var(--tt-ink); border-radius: 10px; padding: 7px 10px; font: inherit; }
 .tt-job { padding: 9px 0; border-top: 1px solid rgba(255, 255, 255, 0.08); }
 .tt-job .tt-two { margin-top: 6px; }
