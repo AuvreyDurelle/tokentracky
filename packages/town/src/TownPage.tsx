@@ -172,16 +172,17 @@ function Progress({have, need}: {have: number; need: number}) {
 function LandPane({town, reach, claimable, busy, onClaim, onMove}: {town: TownSelf; reach: Resources; claimable: number; busy: boolean; onClaim: () => void; onMove: () => void}) {
   const [confirm, setConfirm] = useState(false);
   const price = town.nextPlot.cost.bricks ?? 0;
-  const short = Math.max(0, price - town.wallet.bricks);
-  const pace = paceText(daysToAfford(price - reach.bricks, town.bricksPerDay));
+  // What collecting would leave to spend, as the Claim button counts it.
+  const short = Math.max(0, price - reach.bricks);
   const full = storeText(town.caps, town.nextPlot.cost);
+  const note = short > 0 ? full ?? paceText(daysToAfford(short, town.bricksPerDay)) : town.wallet.bricks < price ? 'Your uncollected harvest covers it' : null;
   const move = town.move.cost.bricks ?? 0;
   return <>
     <div className="tt-ph"><b>Your land</b><span className="tt-mu">{town.plots.length} {town.plots.length === 1 ? 'plot' : 'plots'} · {town.buildings.length} built</span></div>
     <div className="tt-kv"><span>Next plot #{town.nextPlot.number}</span><b><CostChips cost={town.nextPlot.cost} /></b></div>
-    <Progress have={town.wallet.bricks} need={price} />
-    <div className="tt-kv tt-mu"><span>You have {count(town.wallet.bricks)}</span>{short > 0 ? <span className="tt-sh">{count(short)} short</span> : <span className="tt-ok">Ready</span>}</div>
-    {short > 0 && (full ?? pace) && <div className="tt-mu tt-note">{full ?? (reach.bricks >= price ? 'Your uncollected harvest covers it' : pace)}</div>}
+    <Progress have={reach.bricks} need={price} />
+    <div className="tt-kv tt-mu"><span>You can spend {count(reach.bricks)}</span>{short > 0 ? <span className="tt-sh">{count(short)} short</span> : <span className="tt-ok">Ready</span>}</div>
+    {note && <div className="tt-mu tt-note">{note}</div>}
     <button type="button" className="tt-btn" disabled={busy || reach.bricks < price || !claimable || !!town.paused} onClick={onClaim}>Claim plot #{town.nextPlot.number}</button>
     <div className="tt-fr"><i aria-hidden="true">+</i><span>{claimable ? `${claimable} free ${claimable === 1 ? 'plot touches' : 'plots touch'} your land` : 'No free plots touch your land. Move to the frontier.'}</span></div>
     <div className="tt-sep" />
