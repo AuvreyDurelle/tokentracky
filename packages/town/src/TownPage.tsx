@@ -5,7 +5,7 @@ import { BUILDING_HEIGHT } from './art.ts';
 import { BuildingThumb, CostChips, Crest, RESOURCE_NAMES, ResourceBar, StreakClock, usePoint, useNow, useToast } from './Hud.tsx';
 import { ResourceIcon } from './icons.tsx';
 import { BuildIcon, CloseIcon, FlagIcon, MapIcon, MoveIcon, SparkIcon } from './icons.tsx';
-import { compact, count, daysToAfford, paceText, shortfall, sinceText } from './format.ts';
+import { afterCollect, compact, count, daysToAfford, paceText, shortfall, sinceText } from './format.ts';
 import { plotKey, plotKind, plotTile, sceneLayout } from './layout.ts';
 import { Sky, TownScene, type Selection } from './Scene.tsx';
 import { spunProjection } from './view.ts';
@@ -18,7 +18,6 @@ const shortText = (reach: Resources, cost: Cost) => {
   const missing = shortfall(reach, cost);
   return RESOURCE_IDS.filter(id => missing[id]).map(id => `${count(missing[id]!)} ${RESOURCE_NAMES[id]}`).join(' · ');
 };
-const add = (a: Resources, b: Resources): Resources => ({power: a.power + b.power, bricks: a.bricks + b.bricks, water: a.water + b.water, crystals: a.crystals + b.crystals});
 
 /** The signed-in member's own town: the scene, the stores, the drawer, the dock and everything you can do there. */
 export function TownPage({api, onMap}: {api: TownApi; onMap: () => void}) {
@@ -75,7 +74,7 @@ export function TownPage({api, onMap}: {api: TownApi; onMap: () => void}) {
 
   const own = new Set(town.plots.map(p => plotKey(p.x, p.y)));
   const others = new Map((map?.plots ?? []).filter(([x, y]) => !own.has(plotKey(x, y))).map(([x, y, i]) => [plotKey(x, y), i]));
-  const reach = add(town.wallet, town.harvest.resources);
+  const reach = afterCollect(town.wallet, town.harvest.resources, town.caps);
   const spill = Object.fromEntries(RESOURCE_IDS.map(id => [id, Math.max(0, town.wallet[id] + town.harvest.resources[id] - town.caps[id])])) as Resources;
   const pending = RESOURCE_IDS.some(id => town.harvest.resources[id] > 0);
   const building = selected?.type === 'building' ? town.buildings.find(b => b.id === selected.id) ?? null : null;
