@@ -195,8 +195,20 @@ export type ProfileStats = {
   alias: string;
   /** Rank and tokens in each leaderboard window. */
   periods: { week: { rank: number, tokens: number, builders: number }, month: { rank: number, tokens: number, builders: number }, all: { rank: number, tokens: number, builders: number } };
-  /** Tokens per UTC day for the 365 days ending today, oldest first. */
-  daily: Array<{ day: string, tokens: number }>;
+  /** Tokens per UTC day for the 365 days ending today, oldest first, each with its estimated cost when shared (absent from servers that predate it). */
+  daily: Array<{ day: string, tokens: number, 
+/**
+ * The day's estimated cost, when shared; null when it lacks a price.
+ */
+costMicrousd?: number | null, 
+/**
+ * The day's largest tool and its tokens, when the tool split is shared and the day has tokens.
+ */
+topTool?: { tool: ToolId, tokens: number }, 
+/**
+ * The day's largest model and its tokens, when the model mix is shared and the day has tokens.
+ */
+topModel?: { model: string, tokens: number } }>;
   /** Tokens per UTC hour across every tool for the 24 whole hours before the hour under way, oldest first: the leaderboard's `last24h_tokens` hour by hour, and absent likewise. */
   hours?: Array<{ hour: string, tokens: number }>;
   activity: ActivityStats;

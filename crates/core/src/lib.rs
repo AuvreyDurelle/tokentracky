@@ -613,9 +613,10 @@ pub struct ProfileStats {
     /// Rank and tokens in each leaderboard window.
     #[ts(inline)]
     pub periods: PeriodRanks,
-    /// Tokens per UTC day for the 365 days ending today, oldest first.
+    /// Tokens per UTC day for the 365 days ending today, oldest first, each with its estimated cost when shared (absent
+    /// from servers that predate it).
     #[ts(inline)]
-    pub daily: Vec<DayTokens>,
+    pub daily: Vec<UsageDay>,
     /// Tokens per UTC hour across every tool for the 24 whole hours before the hour under way, oldest first: the
     /// leaderboard's `last24h_tokens` hour by hour, and absent likewise.
     #[serde(default, skip_serializing_if = "Option::is_none")]
