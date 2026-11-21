@@ -53,6 +53,16 @@ export function Sky() {
   </>;
 }
 
+/** Starts fetching the 3D town's code, so it is ready by the time the town's data is. */
+export const preloadWorld = () => import('./world3d.ts');
+
+/** `value` as last time when its `key` hasn't changed, so a fresh copy of the same town redraws nothing. */
+function useSame<T>(value: T, key: string): T {
+  const last = useRef<{key: string; value: T} | null>(null);
+  if (last.current?.key !== key) last.current = {key, value};
+  return last.current.value;
+}
+
 interface Props {
   layout: SceneLayout;
   plots: readonly TownPlot[];
@@ -80,9 +90,15 @@ export interface StageSize {width: number; height: number}
  * itself is drawn in 3D where the browser has WebGL, so it can turn; labels, badges and click targets are a flat overlay
  * that turns with it. Without WebGL the flat drawing stays, facing one way.
  */
-export function TownScene({layout, plots, buildings, map, selected, claimMode = false, harvest, onSelect, onCollect, label, visiting = false, spins = false, popover}: Props) {
+export function TownScene({layout: given, plots: givenPlots, buildings: givenBuildings, map, selected, claimMode = false, harvest, onSelect, onCollect, label, visiting = false, spins = false, popover}: Props) {
+  // Every refresh brings new copies of the same town; only a real change rebuilds the 3D world.
+  const layout = useSame(given, JSON.stringify(given));
+  const plots = useSame(givenPlots, givenPlots.map(p => plotKey(p.x, p.y)).join(' '));
+  const buildings = useSame(givenBuildings, givenBuildings.map(b => `${b.id ?? ''}:${b.kind}:${b.x},${b.y}:${b.level}`).join(' '));
   const canvas = useRef<HTMLCanvasElement>(null);
-  const [world3d, setWorld3d] = useState<World3D | null>(null);
+  // The 3D world once it's made, or 'flat' where the browser can't make one and the flat drawing shows instead.
+  const [made, setMade] = useState<World3D | 'flat' | null>(null);
+  const world3d = made === 'flat' ? null : made;
   // The plot under the pointer or keyboard focus, as its key.
   const [hover, setHover] = useState<string | null>(null);
   const svg = useRef<SVGSVGElement>(null);
@@ -123,20 +139,21 @@ export function TownScene({layout, plots, buildings, map, selected, claimMode = 
   // The world: ground, borders, neighbours' homes, trees and every building, back to front. Redrawn when the town changes.
   const pieces = useMemo(() => townPieces({layout, kindAt, buildings, map}), [layout, buildings, own, others, map, visiting]);
   useEffect(() => {
-    let live = true, made: World3D | null = null;
-    import('./world3d.ts').then(({createWorld3D}) => {
+    let live = true, world: World3D | null = null;
+    preloadWorld().then(({createWorld3D}) => {
       if (!live || !canvas.current) return;
-      try { made = createWorld3D(canvas.current); } catch { return; }
-      setWorld3d(made);
-    }, () => {});
-    return () => { live = false; made?.dispose(); };
+      try { world = createWorld3D(canvas.current); } catch { setMade('flat'); return; }
+      setMade(world);
+    }, () => { if (live) setMade('flat'); });
+    return () => { live = false; world?.dispose(); };
   }, []);
-  // Before paint, so the flat drawing and the 3D town never both show or both go missing.
+  const ready = made !== null;
+  // Before paint, so the town and its overlay arrive together.
   useLayoutEffect(() => { world3d?.draw(pieces, layout); }, [world3d, pieces, layout]);
   useLayoutEffect(() => { world3d?.turn(turned); }, [world3d, turned]);
-  // The flat drawing of the same pieces, until the 3D town is ready or where it can't be.
+  // The flat drawing of the same pieces, where there's no 3D town.
   const world = useMemo(() => {
-    if (world3d) return '';
+    if (made !== 'flat') return '';
     const P = isoProjection(layout.originX, layout.originY);
     const art = createArt(P, 'tts');
     const nx = layout.cols * 2, ny = layout.rows * 2;
@@ -160,7 +177,7 @@ export function TownScene({layout, plots, buildings, map, selected, claimMode = 
       }
     }
     return `${rock}${slab}${ground}<g filter="url(#tt-mg)">${edges}</g>${objects}<defs>${art.defs}</defs>`;
-  }, [layout, pieces, world3d]);
+  }, [layout, pieces, made]);
 
   const tile = (x: number, y: number) => plotTile(layout, x, y);
   const diamond = (x: number, y: number, inset = 0) => {
@@ -208,10 +225,12 @@ export function TownScene({layout, plots, buildings, map, selected, claimMode = 
   const keyed = (selection: Selection) => (event: KeyboardEvent) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); activate(selection); } };
 
   return <>
-  <canvas ref={canvas} className="tt-world" aria-hidden="true" />
-  <svg ref={svg} className={spinnable ? 'tt-town tt-spins' : 'tt-town'} viewBox={`0 0 ${layout.width} ${layout.height}`} preserveAspectRatio="xMidYMid meet" role="group"
+  <canvas ref={canvas} className={ready ? 'tt-world tt-in' : 'tt-world'} aria-hidden="true" />
+  <svg ref={svg} className={`tt-town${spinnable ? ' tt-spins' : ''}${ready ? ' tt-in' : ''}`} viewBox={`0 0 ${layout.width} ${layout.height}`} preserveAspectRatio="xMidYMid meet" role="group"
     aria-label={spinnable ? `${label}. Drag or use the arrow keys to turn it.` : label} tabIndex={spinnable ? 0 : undefined} {...spin.handlers}>
     <defs dangerouslySetInnerHTML={{__html: SCENE_DEFS}} />
+    {/* The overlay waits for the town under it, so labels never float over an empty island. */}
+    {ready && <>
     <g dangerouslySetInnerHTML={{__html: world}} />
     {/* Claimable plots: a dashed gold outline and a plus. */}
     {order.filter(([x, y]) => kindAt(x, y).kind === 'claimable').map(([x, y]) => {
@@ -268,8 +287,9 @@ export function TownScene({layout, plots, buildings, map, selected, claimMode = 
         aria-pressed={selectedPlot?.x === x && selectedPlot?.y === y} onClick={() => activate(selection)} onKeyDown={keyed(selection)}
         onPointerEnter={enter} onPointerLeave={leave} onFocus={enter} onBlur={leave} />;
     })}
+    </>}
   </svg>
-  {bubbles.length > 0 && size.width > 0 && <div className="tt-bubbles">
+  {ready && bubbles.length > 0 && size.width > 0 && <div className="tt-bubbles tt-in">
     {bubbles.map((b, i) => <button key={b.id} type="button" className="tt-bubble" disabled={!onCollect} onClick={onCollect} aria-label={`Collect ${count(b.value)} ${b.id}`}
       style={{left: b.x, top: b.y, '--tt-c': BUBBLE[b.id], animationDelay: `${-1.4 * (i % 2)}s`} as CSSProperties}>
       <span className="tt-orb"><ResourceIcon id={b.id} size={24} /></span>

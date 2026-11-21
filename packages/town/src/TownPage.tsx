@@ -7,7 +7,7 @@ import { ResourceIcon } from './icons.tsx';
 import { BuildIcon, CloseIcon, FlagIcon, MapIcon, MoveIcon, SparkIcon } from './icons.tsx';
 import { afterCollect, collected, compact, count, daysToAfford, paceText, shortfall, sinceText, tooBig } from './format.ts';
 import { plotKey, plotKind, plotTile, sceneLayout } from './layout.ts';
-import { Sky, TownScene, type Place, type Selection, type StageSize } from './Scene.tsx';
+import { Sky, TownScene, preloadWorld, type Place, type Selection, type StageSize } from './Scene.tsx';
 
 type Tab = 'land' | 'harvest';
 /** The action waiting on the server, so its button can say so. */
@@ -52,6 +52,8 @@ export function TownPage({api, onMap}: {api: TownApi; onMap: () => void}) {
       return next;
     } catch (failure) { setError(failure instanceof Error ? failure.message : String(failure)); return null; }
   }, [api]);
+  // The 3D town's code loads alongside the town's data.
+  useEffect(() => { void preloadWorld().catch(() => {}); }, []);
   useEffect(() => { void load().then(next => { if (next) void loadMap(next); }); }, [load, loadMap]);
   // Refresh every minute for new uploads, counting attempts so a failed one schedules the next too.
   const [refreshes, setRefreshes] = useState(0);

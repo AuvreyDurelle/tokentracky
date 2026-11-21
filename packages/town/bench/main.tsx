@@ -5,6 +5,7 @@
 //   select=N       click the Nth plot once the town shows
 //   zoom=out       start the map zoomed right out
 //   slow=MS        the fake server takes this long to answer an action
+//   nowebgl        a browser without WebGL, to see the flat drawing
 //   notwinkle, nobob, noblur, nofilter  switch an effect off, to see what it costs
 import { createRoot } from 'react-dom/client';
 import { BUILDING_IDS, terrainAt, type BuildingId, type TownMapResponse, type TownSelf } from '@tokentracky/core';
@@ -21,6 +22,13 @@ const off: Record<string, string> = {
 const style = document.createElement('style');
 style.textContent = Object.keys(off).filter(flag => q.has(flag)).map(flag => off[flag]).join('\n');
 document.head.append(style);
+
+if (q.has('nowebgl')) {
+  const real = HTMLCanvasElement.prototype.getContext;
+  HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement, kind: string, ...rest: unknown[]) {
+    return kind.startsWith('webgl') ? null : (real as (...a: unknown[]) => unknown).call(this, kind, ...rest);
+  } as typeof real;
+}
 
 const plots: Array<{x: number; y: number}> = [];
 for (let x = 0; x < side; x++) for (let y = 0; y < side; y++) plots.push({x: x + 10, y: y + 10});

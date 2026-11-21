@@ -5,7 +5,7 @@ import { Crest, StreakClock, useNow, useToast } from './Hud.tsx';
 import { HeartIcon, HomeIcon, MapIcon } from './icons.tsx';
 import { count } from './format.ts';
 import { sceneLayout } from './layout.ts';
-import { Sky, TownScene } from './Scene.tsx';
+import { Sky, TownScene, preloadWorld } from './Scene.tsx';
 
 /** Someone else's town, to look at and like. */
 export function VisitPage({api, alias, signedIn, me, onMap, onHome}: {api: TownApi; alias: string; signedIn: boolean; me: string | null; onMap: () => void; onHome?: () => void}) {
@@ -15,6 +15,8 @@ export function VisitPage({api, alias, signedIn, me, onMap, onHome}: {api: TownA
   const [error, setError] = useState<string | null>(null);
   const [toast, say] = useToast();
   const now = useNow();
+  // The 3D town's code loads alongside the town's data.
+  useEffect(() => { void preloadWorld().catch(() => {}); }, []);
   useEffect(() => {
     let live = true;
     setTown(null); setError(null);

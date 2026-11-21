@@ -63,6 +63,7 @@ async function trace(run) {
   return {
     wall,
     busy: sum(e => thread(e) === 'CrRendererMain' && e.name === 'RunTask'),
+    longest: Math.max(0, ...events.filter(e => thread(e) === 'CrRendererMain' && e.name === 'RunTask').map(e => (e.dur ?? 0) / 1000)),
     gpu: sum(e => /Compositor|CrGpuMain|VizCompositor|Raster/i.test(thread(e)) && task(e)),
     paints: events.filter(e => thread(e) === 'CrRendererMain' && e.name === 'Paint').length,
   };
@@ -89,6 +90,8 @@ const drag = async (x, y, moves, step) => {
 const MOVES = 90;
 
 console.log(`36-plot town with a harvest waiting · 1440×900 at 2× · CPU ${throttle}× slower\n`);
+const loaded = await trace(async () => { await send('Page.navigate', {url: `${BASE}?side=6`}); await sleep(2500 + 500 * throttle); });
+row('town, first load', loaded, 0, `longest task ${Math.round(loaded.longest)} ms`);
 await open('side=6');
 await shot('town');
 row('town, idle 3 s', await trace(() => sleep(3000)), 0);

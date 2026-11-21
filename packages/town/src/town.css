@@ -33,6 +33,9 @@
 .tt-town { overflow: visible; }
 .tt-canvas { touch-action: none; cursor: grab; }
 .tt-canvas:active { cursor: grabbing; }
+/* The town fades in once it's drawn, rather than popping in. */
+.tt-in { animation: tt-fade-in 0.35s ease-out; }
+@keyframes tt-fade-in { from { opacity: 0; } }
 /* The 3D town sits under the flat overlay, which takes the drags and clicks. */
 .tt-world { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .tt-town.tt-spins { touch-action: none; cursor: grab; }
@@ -58,7 +61,7 @@
 @keyframes tt-bob { 50% { transform: translateY(-6px); } }
 @keyframes tt-pulse { 50% { opacity: 0.55; } }
 @keyframes tt-twinkle { to { opacity: 0.15; } }
-@media (prefers-reduced-motion: reduce) { .tt-bubble, .tt-claim.on, .tt-stars i { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .tt-bubble, .tt-claim.on, .tt-stars i, .tt-in { animation: none; } }
 
 /* Glass panels. */
 .tt-glass {
