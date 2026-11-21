@@ -22,6 +22,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 use tokentracky_collector::detect::{DetectedTool, detect_tools};
+use tokentracky_collector::gemini_hook::REFRESH_REQUEST;
 use tokentracky_collector::limits::claude_config_file;
 use tokentracky_collector::scheduler::{IntervalError, refresh_interval};
 use tokentracky_collector::store::{PeriodTotals, StoreError};
@@ -136,7 +137,12 @@ impl Transport for PricingDownload {
 pub struct LocalApp {
     state: LocalState,
     router: Router,
+    /// Touched by Gemini CLI's `SessionEnd` hook ([`tokentracky_collector::gemini_hook`]) to refresh now.
+    refresh_request: Option<PathBuf>,
 }
+
+/// How often [`LocalApp::start`] looks for a refresh request.
+const REFRESH_REQUEST_CHECK: Duration = Duration::from_secs(2);
 
 impl LocalApp {
     /// Opens the collector (taking the database's single-writer lock) and builds the router: the routes of
@@ -151,9 +157,14 @@ impl LocalApp {
             claude_config_file: options.claude_config_file.clone(),
         })?;
         let web_root = options.web_root.clone();
+        let refresh_request = options.database_path.parent().map(|data| data.join(REFRESH_REQUEST));
         let state = LocalState::with_collector(collector, options)?;
         let router = base_router(web_root, None, local_routes(), state.clone());
-        Ok(Self { state, router })
+        Ok(Self {
+            state,
+            router,
+            refresh_request,
+        })
     }
 
     pub fn state(&self) -> &LocalState {
@@ -168,9 +179,30 @@ impl LocalApp {
         self.router.clone()
     }
 
-    /// Starts the refresh cycle: a cycle now when a source is enabled and collection runs, then every interval.
+    /// Starts the refresh cycle: a cycle now when a source is enabled and collection runs, then every interval, and one
+    /// within seconds of each touch of the refresh request.
     pub fn start(&self) {
         self.collection().scheduler.start();
+        let Some(request) = self.refresh_request.clone() else {
+            return;
+        };
+        // Weak, so the watch never keeps the collector open past `close`.
+        let collection = Arc::downgrade(self.collection());
+        tokio::spawn(async move {
+            let touched = |path: &std::path::Path| std::fs::metadata(path).and_then(|file| file.modified()).ok();
+            let mut seen = touched(&request);
+            loop {
+                tokio::time::sleep(REFRESH_REQUEST_CHECK).await;
+                let Some(collection) = collection.upgrade() else {
+                    return;
+                };
+                let now = touched(&request);
+                if now.is_some() && now != seen {
+                    collection.scheduler.trigger();
+                }
+                seen = now;
+            }
+        });
     }
 
     /// Runs one full cycle, or joins the one in flight, and answers the overview after it. While collection is

@@ -852,10 +852,7 @@ async fn uninstall_does_not_wait_for_the_refresh_in_flight() {
     assert_eq!(result.code, 0, "{}", result.stderr);
     assert_eq!(
         result.stdout,
-        format!(
-            "Removed {}. Tokentracky never changed your tools' settings, so there is nothing else to undo.\n",
-            f.data_dir.display()
-        )
+        format!("Removed {}. There is nothing else to undo.\n", f.data_dir.display())
     );
     assert!(!f.data_dir.exists());
     assert_eq!(serving.join().unwrap().code, 0);
@@ -958,10 +955,7 @@ async fn uninstalls_only_after_confirmation_removing_data_and_the_credential() {
     assert_eq!(removed.code, 0);
     assert_eq!(
         removed.stdout,
-        format!(
-            "Removed {}. Tokentracky never changed your tools' settings, so there is nothing else to undo.\n",
-            f.data_dir.display()
-        )
+        format!("Removed {}. There is nothing else to undo.\n", f.data_dir.display())
     );
     assert!(!f.data_dir.exists());
     assert_eq!(f.secrets.get().await.unwrap(), None);
@@ -1092,6 +1086,37 @@ async fn serve_says_when_enter_gives_a_new_link_and_when_credentials_are_kept_in
 }
 
 /// On a terminal `serve` opens the dashboard itself, with a link of its own: the printed one stays unused.
+/// Rust only. Gemini CLI's `SessionEnd` hook asks this data folder for a refresh; `uninstall` takes it out again.
+#[tokio::test(flavor = "multi_thread")]
+async fn serve_installs_gemini_clis_hook_for_its_data_folder_and_uninstall_removes_it() {
+    let mut f = Fixture::new();
+    let settings = f.home.join(".gemini").join("settings.json");
+    fs::create_dir_all(settings.parent().unwrap()).unwrap();
+    fs::write(&settings, r#"{"theme": "dark"}"#).unwrap();
+    f.context.on_serve = Some(Box::new(|_| Box::pin(async {})));
+    let result = f.run(&["serve"]).await;
+    assert_eq!(result.code, 0, "{}", result.stderr);
+    let installed = parse(&fs::read_to_string(&settings).unwrap());
+    let command = installed["hooks"]["SessionEnd"][0]["hooks"][0]["command"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    assert!(
+        command.contains(&f.data_dir.join("refresh-now").display().to_string()),
+        "{command}"
+    );
+    assert_eq!(installed["theme"], "dark");
+
+    let removed = f.run(&["uninstall", "--yes"]).await;
+    assert_eq!(removed.code, 0, "{}", removed.stderr);
+    assert!(
+        removed.stdout.contains("and Tokentracky's hook from"),
+        "{}",
+        removed.stdout
+    );
+    assert_eq!(parse(&fs::read_to_string(&settings).unwrap()), json!({"theme": "dark"}));
+}
+
 #[tokio::test(flavor = "multi_thread")]
 async fn serve_opens_the_dashboard_in_the_browser_on_a_terminal() {
     let mut f = Fixture::new();

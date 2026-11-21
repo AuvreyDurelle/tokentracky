@@ -2,6 +2,7 @@
 //! and the refresh scheduler.
 mod collector;
 pub mod detect;
+pub mod gemini_hook;
 pub mod git_remote;
 pub mod limits;
 pub mod readers;

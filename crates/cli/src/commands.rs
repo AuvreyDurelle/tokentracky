@@ -12,6 +12,7 @@ use std::time::Duration;
 use time::format_description::well_known::Rfc3339;
 use time::{OffsetDateTime, UtcOffset};
 use tokentracky_collector::detect::{DetectedTool, detect_tools};
+use tokentracky_collector::gemini_hook::{self, Outcome};
 use tokentracky_collector::limits::claude_config_file;
 use tokentracky_collector::store::{StoreError, UsageStore};
 use tokentracky_local_api::{ConnectStatus, DEFAULT_CLOUD_ORIGIN, LocalApp, LocalOptions, ReqwestClient, cloud_origin};
@@ -394,10 +395,17 @@ pub async fn uninstall(directory: &Path, flags: &Flags, context: &mut Context) -
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
         Err(error) => return Err(error.into()),
     }
-    context.out(&format!(
-        "Removed {}. Tokentracky never changed your tools' settings, so there is nothing else to undo.\n",
-        directory.display()
-    ));
+    // Gemini CLI's hook would only ask a folder that is gone for a refresh.
+    let settings = gemini_hook::settings_path(|key| context.var(key), &context.home());
+    let message = match gemini_hook::remove(&settings) {
+        Ok(Outcome::Written { .. }) => format!(
+            "Removed {} and Tokentracky's hook from {}. There is nothing else to undo.\n",
+            directory.display(),
+            settings.display()
+        ),
+        _ => format!("Removed {}. There is nothing else to undo.\n", directory.display()),
+    };
+    context.out(&message);
     Ok(0)
 }
 
