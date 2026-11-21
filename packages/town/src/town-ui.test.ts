@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { TOWN_MAP_SPAN, terrainAt } from '@tokentracky/core';
-import { afterCollect, collected, compact, tweenAt, daysToAfford, duration, paceText, shortfall, tooBig } from './format.ts';
+import { afterCollect, collected, compact, tweenAt, untilDayEnds, daysToAfford, duration, paceText, shortfall, tooBig } from './format.ts';
 import { cellAt, clampCell, fetchArea, fitView, screenOf, visibleArea, wheelIntent, within, zoomAt } from './map-view.ts';
 import { plotKey, plotKind, plotsBackToFront, plotTile, sceneLayout } from './layout.ts';
 import { indexMap } from './MapPage.tsx';
@@ -104,6 +104,14 @@ describe('collecting at once', () => {
     expect(after.harvest.resources).toEqual(res(0, 0, 0, 0));
     expect(after.harvest.tokens).toBe(0);
     expect(after.harvest.streak).toBe(2);
+  });
+});
+
+describe("the game's day", () => {
+  it('counts down to midnight UTC', () => {
+    expect(untilDayEnds(Date.parse('2026-11-21T17:48:00Z'))).toBe(6 * 3600 + 12 * 60);
+    expect(untilDayEnds(Date.parse('2026-11-21T00:00:00Z'))).toBe(86_400);
+    expect(duration(untilDayEnds(Date.parse('2026-11-21T23:59:30Z')))).toBe('30s');
   });
 });
 

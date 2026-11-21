@@ -18,6 +18,8 @@ export function duration(seconds: number): string {
   const d = Math.floor(h / 24);
   return h % 24 ? `${d}d ${h % 24}h` : `${d}d`;
 }
+/** Seconds from `now` (milliseconds) to the next midnight UTC, when the game's day, and a streak's chance to grow, ends. */
+export const untilDayEnds = (now: number) => (86_400_000 - (now % 86_400_000)) / 1000;
 /** What is still missing to pay `cost`, resource by resource. Empty when it is covered. */
 export function shortfall(wallet: Resources, cost: Cost): Cost {
   const out: Cost = {};

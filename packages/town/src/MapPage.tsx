@@ -3,7 +3,7 @@ import { flushSync } from 'react-dom';
 import { BUILDINGS, terrainAt, type Terrain, type TownMapResponse, type TownPublic, type TownSelf } from '@tokentracky/core';
 import type { TownApi } from './api.ts';
 import { CostChips, Crest, useToast } from './Hud.tsx';
-import { CloseIcon, GlyphIcon, HeartIcon, HomeIcon, MinusIcon, MoveIcon, PlusIcon } from './icons.tsx';
+import { CloseIcon, GlyphIcon, HeartIcon, HomeIcon, MinusIcon, PlusIcon } from './icons.tsx';
 import { afterCollect, count, daysToAfford, paceText, tooBig, tweenAt } from './format.ts';
 import { EASE_MS, glide, releaseSpeed } from './spin.ts';
 import { cellAt, clampCell, fetchArea, fitView, screenOf, visibleArea, wheelIntent, within, zoomAt, type Area, type MapView } from './map-view.ts';
@@ -423,8 +423,6 @@ export function MapPage({api, signedIn, feature = false, aside, onHome, onVisit}
       {me && <div className="tt-cl"><div className="tt-kv"><span>Next plot #{me.nextPlot.number}</span><b><CostChips cost={me.nextPlot.cost} /></b></div>
         <div className="tt-pb"><i style={{width: `${Math.min(100, price ? spendable / price * 100 : 100)}%`}} /></div>
         <div className="tt-kv tt-mu"><span>{count(spendable)} of {count(price)}</span>{short > 0 ? <span className="tt-sh">{tooBig(me.nextPlot.cost, me.caps) ? 'Needs a bigger store' : paceText(daysToAfford(short, me.bricksPerDay)) ?? `${count(short)} short`}</span> : <span className="tt-ok">Ready</span>}</div></div>}
-      {me && <div className="tt-cl"><div className="tt-kv"><span className="tt-with"><MoveIcon size={18} />Move town</span><b><CostChips cost={me.move.cost} /></b></div>
-        <div className="tt-mu">Moves in your town</div></div>}
     </div>}
     {aside && <div className="tt-aside">{aside}</div>}
     {toast}

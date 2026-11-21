@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { BUILDINGS, RESOURCE_IDS, type BuildingId, type Cost, type ResourceId, type Resources } from '@tokentracky/core';
 import { GlyphIcon, ResourceIcon } from './icons.tsx';
 import { createArt, isoProjection, SCENE_DEFS } from './art.ts';
-import { count, tweenAt } from './format.ts';
+import { compact, count, duration, tweenAt, untilDayEnds } from './format.ts';
 
 export const RESOURCE_NAMES: Record<ResourceId, string> = {power: 'Power', bricks: 'Bricks', water: 'Water', crystals: 'Crystals'};
 const BAR: Record<ResourceId, string> = {power: '#ffd23f', bricks: '#e0784a', water: '#4cc3f0', crystals: '#b18cff'};
@@ -38,7 +38,7 @@ export function useTween(value: number, ms = 700): number {
   return shown;
 }
 
-/** Each store with its fill. A store 80% full warns that the next harvest may spill. */
+/** Each store with its fill. A store 80% full warns, in amber, that the next harvest may spill; a full one turns red. */
 export function ResourceBar({wallet, caps}: {wallet: Resources; caps: Resources}) {
   return <div className="tt-glass tt-res" role="list" aria-label="Your stores">
     {RESOURCE_IDS.map(id => <Store key={id} id={id} have={wallet[id]} cap={caps[id]} />)}
@@ -48,23 +48,26 @@ export function ResourceBar({wallet, caps}: {wallet: Resources; caps: Resources}
 function Store({id, have, cap}: {id: ResourceId; have: number; cap: number}) {
   const shown = useTween(have);
   const fill = cap > 0 ? Math.min(1, shown / cap) : 0;
-  const hot = fill >= 0.8;
-  return <div role="listitem" data-store={id} className={hot ? 'tt-rs hot' : 'tt-rs'} aria-label={`${RESOURCE_NAMES[id]} ${count(have)} of ${count(cap)}`}>
+  const level = fill >= 1 ? 'full' : fill >= 0.8 ? 'warm' : null;
+  // A store of six figures or more reads better short, both numbers alike; the whole numbers show on hover.
+  const short = (n: number) => cap >= 100_000 ? compact(n) : count(n);
+  return <div role="listitem" data-store={id} className={level ? `tt-rs ${level}` : 'tt-rs'} title={`${RESOURCE_NAMES[id]}: ${count(have)} of ${count(cap)}`} aria-label={`${RESOURCE_NAMES[id]} ${count(have)} of ${count(cap)}`}>
     <ResourceIcon id={id} size={22} />
-    <div><b>{count(shown)}</b><s>/ {count(cap)}</s><span className="tt-meter"><i style={{width: `${fill * 100}%`, background: hot ? '#ff6b5b' : BAR[id]}} /></span></div>
-    {hot && <span className="tt-full">{Math.round(fill * 100)}% full</span>}
+    <div><b>{short(shown)}</b><s>/ {short(cap)}</s><span className="tt-meter"><i style={{width: `${fill * 100}%`, background: level === 'full' ? '#ff6b5b' : level === 'warm' ? '#ffb648' : BAR[id]}} /></span></div>
+    {level && <span className="tt-full">{level === 'full' ? 'Full' : `${Math.round(fill * 100)}% full`}</span>}
   </div>;
 }
 
-/** The streak and the UTC clock the game's days follow. */
+/** The streak, and how long is left of the game's day, which ends at midnight UTC. */
 export function StreakClock({streak, now, children}: {streak?: number; now: number; children?: ReactNode}) {
   const date = new Date(now);
-  const day = date.toLocaleDateString('en-GB', {weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC'}).replace(',', '');
   const time = date.toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit', timeZone: 'UTC'});
+  // Minutes are enough; the clock refreshes every 30 seconds.
+  const left = duration(Math.max(60, Math.floor(untilDayEnds(now) / 60) * 60));
   return <div className="tt-glass tt-clk">
     {streak !== undefined && <span className="tt-stk"><GlyphIcon id="flame" size={22} /><span><b>{streak}</b>-day streak</span></span>}
     {children}
-    <span className="tt-mu">{day} · {time} UTC</span>
+    <span className="tt-mu" title={`It's ${time} UTC. Each day in Token Town runs midnight to midnight UTC.`}>Day ends in {left}</span>
   </div>;
 }
 
