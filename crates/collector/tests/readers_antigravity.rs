@@ -367,3 +367,39 @@ fn reads_only_transcripts_in_an_install_layout() {
     );
     assert_eq!(outside.diagnostics, ["unsupported_source"]);
 }
+
+#[test]
+fn reads_the_transcript_again_rather_than_estimate_over_a_database_it_could_not_open() {
+    let install = Install::new();
+    // Present, but SQLite cannot open it this scan.
+    fs::create_dir_all(install.database()).unwrap();
+    assert_eq!(
+        install.read(&turns(&[("hello", "hi", "think1")])).diagnostics,
+        [PENDING]
+    );
+}
+
+#[test]
+fn keeps_the_database_closed_when_the_service_rejected_its_wal() {
+    let install = Install::new().generations(&[generation("gemini-3.8-flash", 0, Some(25_000), None)]);
+    let writer = Connection::open(install.database()).unwrap();
+    writer
+        .execute_batch("PRAGMA journal_mode=WAL; UPDATE gen_metadata SET idx = idx")
+        .unwrap();
+    let mut wal = install.database().into_os_string();
+    wal.push("-wal");
+    assert!(Path::new(&wal).exists());
+    let lines = turns(&[("hello", "hi", "think1")]);
+    let content = lines.iter().map(Value::to_string).collect::<Vec<_>>().join("\n");
+    fs::write(install.transcript(), &content).unwrap();
+    let read = |wal: Option<String>| {
+        let mut sidecars = Sidecars::new();
+        sidecars.insert("database", Some(String::new()));
+        sidecars.insert("wal", wal);
+        parse_document(ToolId::Antigravity, &install.transcript(), &content, &sidecars)
+    };
+    assert_eq!(sum(&read(Some(String::new())).events).input, 25_000);
+    let rejected = read(None);
+    assert_eq!(rejected.diagnostics, ["database_unreadable"]);
+    assert_eq!(sum(&rejected.events).input, ascii("hello"));
+}

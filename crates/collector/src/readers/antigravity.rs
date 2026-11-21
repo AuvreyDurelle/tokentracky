@@ -27,6 +27,7 @@ use rusqlite::types::ValueRef;
 use rusqlite::{Connection, ErrorCode, OpenFlags};
 use serde_json::Value;
 use std::collections::BTreeMap;
+use std::fs;
 use std::path::{Path, PathBuf};
 use tokentracky_core::{MAX_SAFE_INTEGER, ParseResult, SourceCapabilities, TokenCounts, ToolId, is_js_space};
 
@@ -78,10 +79,14 @@ fn database(root: &Path, id: &str) -> PathBuf {
 pub(crate) fn database_files(path: &Path) -> SidecarPaths {
     conversation(path).map_or_else(Vec::new, |(root, id)| {
         let database = database(root, &id);
-        let mut wal = database.clone().into_os_string();
-        wal.push("-wal");
-        vec![("database", database), ("wal", wal.into())]
+        let wal = wal(&database);
+        vec![("database", database), ("wal", wal)]
     })
+}
+fn wal(database: &Path) -> PathBuf {
+    let mut wal = database.as_os_str().to_owned();
+    wal.push("-wal");
+    wal.into()
 }
 
 fn read_transcript(path: &Path, content: &str, sidecars: &Sidecars) -> ParseResult {
@@ -92,19 +97,25 @@ fn read_transcript(path: &Path, content: &str, sidecars: &Sidecars) -> ParseResu
         return only("missing_stable_identity");
     }
     let mut diagnostics = Vec::new();
-    // The service hands the reader the database's role only when it is present inside the authorised folder.
-    let generations = if sidecar(sidecars, "database").is_some() {
-        match read_database(&database(root, &id)) {
+    // The service hands the reader the database's and the WAL's roles only when each is present inside the authorised
+    // folder. SQLite opens the WAL by its path, so a WAL there that the service rejected keeps the database closed.
+    let database = database(root, &id);
+    let wal_rejected = sidecar(sidecars, "wal").is_none() && fs::symlink_metadata(wal(&database)).is_ok();
+    let generations = if sidecar(sidecars, "database").is_none() {
+        BTreeMap::new()
+    } else if wal_rejected {
+        note(&mut diagnostics, "database_unreadable");
+        BTreeMap::new()
+    } else {
+        match read_database(&database) {
             Ok(generations) => generations,
-            // Antigravity is writing it: read the transcript again next scan rather than estimating its turns.
-            Err(error) if busy(&error) => return only(PENDING),
-            Err(_) => {
+            Err(error) if permanent(&error) => {
                 note(&mut diagnostics, "database_unreadable");
                 BTreeMap::new()
             }
+            // Antigravity may be writing it: read the transcript again next scan rather than estimate over its usage.
+            Err(_) => return only(PENDING),
         }
-    } else {
-        BTreeMap::new()
     };
     let settings = sidecar(sidecars, "settings").and_then(parse_json);
     let default_model = settings
@@ -118,10 +129,11 @@ fn read_transcript(path: &Path, content: &str, sidecars: &Sidecars) -> ParseResu
     result
 }
 
-fn busy(error: &rusqlite::Error) -> bool {
+/// Failures another read will not fix: not a database, a corrupt one, or one without `gen_metadata`.
+fn permanent(error: &rusqlite::Error) -> bool {
     matches!(
         error.sqlite_error_code(),
-        Some(ErrorCode::DatabaseBusy | ErrorCode::DatabaseLocked)
+        None | Some(ErrorCode::NotADatabase | ErrorCode::DatabaseCorrupt | ErrorCode::Unknown)
     )
 }
 
