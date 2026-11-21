@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState, type ReactNode, type RefObject } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { BUILDINGS, RESOURCE_IDS, type BuildingId, type Cost, type ResourceId, type Resources } from '@tokentracky/core';
 import { GlyphIcon, ResourceIcon } from './icons.tsx';
 import { createArt, isoProjection, SCENE_DEFS } from './art.ts';
@@ -61,26 +61,6 @@ export function BuildingThumb({kind, level = 1, size = 64}: {kind: BuildingId; l
     dangerouslySetInnerHTML={{__html: `<defs>${SCENE_DEFS}${art.defs}</defs>${art.poly(art.sq(0, 0, 2, 2), '#2b3d4a')}${body}`}} />;
 }
 export const buildingName = (kind: BuildingId) => BUILDINGS[kind].name;
-
-/** Where a point in the scene's drawing sits on the stage, kept up to date as the stage resizes. */
-export function usePoint(svg: RefObject<SVGSVGElement | null>, stage: RefObject<HTMLElement | null>, point: [number, number] | null): {left: number; top: number} | null {
-  const [at, setAt] = useState<{left: number; top: number} | null>(null);
-  useLayoutEffect(() => {
-    const place = () => {
-      const s = svg.current, host = stage.current;
-      const matrix = s?.getScreenCTM();
-      if (!point || !s || !host || !matrix) { setAt(null); return; }
-      const p = new DOMPoint(point[0], point[1]).matrixTransform(matrix);
-      const box = host.getBoundingClientRect();
-      setAt({left: p.x - box.left, top: p.y - box.top});
-    };
-    place();
-    const observer = new ResizeObserver(place);
-    if (stage.current) observer.observe(stage.current);
-    return () => observer.disconnect();
-  }, [svg, stage, point?.[0], point?.[1]]);
-  return at;
-}
 
 /** Shows a message for a few seconds. */
 export function useToast(): [ReactNode, (message: string, tone?: 'error' | 'ok') => void] {

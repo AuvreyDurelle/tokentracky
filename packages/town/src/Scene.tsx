@@ -1,11 +1,12 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type Ref } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 import { BUILDINGS, RESOURCE_IDS, terrainAt, type BuildingId, type ResourceId, type Resources, type TownMapResponse, type TownPlot } from '@tokentracky/core';
 import { BUILDING_HEIGHT, SCENE_DEFS, circle, createArt, isoProjection, r, spark } from './art.ts';
 import { compact, count } from './format.ts';
 import { plotKey, plotKind, plotTile, plotsBackToFront, type PlotKind, type SceneLayout } from './layout.ts';
 import { townColour, townPieces } from './pieces.ts';
 import { atHome, useSpin } from './spin.ts';
-import { buildingOutline, spunProjection } from './view.ts';
+import { buildingOutline, spunProjection, toStage } from './view.ts';
+import { ResourceIcon } from './icons.tsx';
 import type { World3D } from './world3d.ts';
 
 export interface SceneBuilding {id?: string; kind: BuildingId; x: number; y: number; level: number}
@@ -64,28 +65,50 @@ interface Props {
   onSelect?: (selection: Selection | null) => void;
   onCollect?: () => void;
   label: string;
-  svgRef?: Ref<SVGSVGElement>;
   /** Someone else's town: no claim markers, since its free plots are not yours to claim. */
   visiting?: boolean;
-  /** How far the town is turned, in radians, and what turning it does. Without `onSpin` the town stays put. */
-  angle?: number;
-  onSpin?: (angle: number) => void;
+  /** Whether the town can be turned. The scene keeps the angle, so turning redraws only the scene. */
+  spins?: boolean;
+  /** A card over the scene, given where a point of the town (tile x, tile y, height) sits on the stage as it turns. */
+  popover?: (place: Place, stage: StageSize) => ReactNode;
 }
+export type Place = (tx: number, ty: number, z: number) => {left: number; top: number};
+export interface StageSize {width: number; height: number}
 
 /**
  * A town at night in isometric view: its plots, the neighbourhood around it, and everything happening there. The town
  * itself is drawn in 3D where the browser has WebGL, so it can turn; labels, badges and click targets are a flat overlay
  * that turns with it. Without WebGL the flat drawing stays, facing one way.
  */
-export function TownScene({layout, plots, buildings, map, selected, claimMode = false, harvest, onSelect, onCollect, label, svgRef, visiting = false, angle = 0, onSpin}: Props) {
+export function TownScene({layout, plots, buildings, map, selected, claimMode = false, harvest, onSelect, onCollect, label, visiting = false, spins = false, popover}: Props) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const [world3d, setWorld3d] = useState<World3D | null>(null);
   // The plot under the pointer or keyboard focus, as its key.
   const [hover, setHover] = useState<string | null>(null);
-  const spinnable = !!onSpin && !!world3d;
+  const svg = useRef<SVGSVGElement>(null);
+  const [angle, setAngle] = useState(0);
+  // Pointer moves can come faster than the screen draws; the town turns once a frame, to the latest angle.
+  const frame = useRef(0), latest = useRef(0);
+  const spinTo = useCallback((to: number) => {
+    latest.current = to;
+    frame.current ||= requestAnimationFrame(() => { frame.current = 0; setAngle(latest.current); });
+  }, []);
+  useEffect(() => () => cancelAnimationFrame(frame.current), []);
+  const spinnable = spins && !!world3d;
   const turned = spinnable ? angle : 0;
   const P = useMemo(() => spunProjection(layout, turned), [layout, turned]);
-  const spin = useSpin(turned, spinnable ? onSpin : undefined);
+  const spin = useSpin(turned, spinnable ? spinTo : undefined);
+  const [size, setSize] = useState<StageSize>({width: 0, height: 0});
+  useLayoutEffect(() => {
+    const el = svg.current;
+    if (!el) return;
+    const measure = () => setSize(s => s.width === el.clientWidth && s.height === el.clientHeight ? s : {width: el.clientWidth, height: el.clientHeight});
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  const place: Place = (tx, ty, z) => toStage(layout, size.width, size.height, P(tx, ty, z));
   const own = useMemo(() => new Set(plots.map(p => plotKey(p.x, p.y))), [plots]);
   const others = useMemo(() => {
     const out = new Map<string, number>();
@@ -165,10 +188,10 @@ export function TownScene({layout, plots, buildings, map, selected, claimMode = 
   const bubbles = placed.map(({id, source}) => {
     const sharing = placed.filter(other => other.source === source);
     const [tx, ty] = tile(source.x, source.y);
-    const top = P(tx + 1, ty + 1, BUILDING_HEIGHT[source.kind] + 40);
-    const shift = (sharing.findIndex(other => other.id === id) - (sharing.length - 1) / 2) * 64;
+    const top = place(tx + 1, ty + 1, BUILDING_HEIGHT[source.kind] + 40);
+    const shift = (sharing.findIndex(other => other.id === id) - (sharing.length - 1) / 2) * 62;
     // Spill warnings alternate in height so neighbouring ones never overlap.
-    return {id, x: top[0] + shift, y: top[1], value: harvest!.resources[id], spill: harvest!.spill[id], lift: sharing.findIndex(other => other.id === id) % 2 * 20};
+    return {id, x: top.left + shift, y: top.top, value: harvest!.resources[id], spill: harvest!.spill[id], lift: sharing.findIndex(other => other.id === id) % 2 * 20};
   });
 
   // The hovered plot's highlight, with a building's name over its roof.
@@ -186,7 +209,7 @@ export function TownScene({layout, plots, buildings, map, selected, claimMode = 
 
   return <>
   <canvas ref={canvas} className="tt-world" aria-hidden="true" />
-  <svg ref={svgRef} className={spinnable ? 'tt-town tt-spins' : 'tt-town'} viewBox={`0 0 ${layout.width} ${layout.height}`} preserveAspectRatio="xMidYMid meet" role="group"
+  <svg ref={svg} className={spinnable ? 'tt-town tt-spins' : 'tt-town'} viewBox={`0 0 ${layout.width} ${layout.height}`} preserveAspectRatio="xMidYMid meet" role="group"
     aria-label={spinnable ? `${label}. Drag or use the arrow keys to turn it.` : label} tabIndex={spinnable ? 0 : undefined} {...spin.handlers}>
     <defs dangerouslySetInnerHTML={{__html: SCENE_DEFS}} />
     <g dangerouslySetInnerHTML={{__html: world}} />
@@ -245,18 +268,16 @@ export function TownScene({layout, plots, buildings, map, selected, claimMode = 
         aria-pressed={selectedPlot?.x === x && selectedPlot?.y === y} onClick={() => activate(selection)} onKeyDown={keyed(selection)}
         onPointerEnter={enter} onPointerLeave={leave} onFocus={enter} onBlur={leave} />;
     })}
-    {bubbles.map(b => <g key={b.id} className="tt-bubble" role={onCollect ? 'button' : undefined} tabIndex={onCollect ? 0 : undefined}
-      aria-label={onCollect ? `Collect ${count(b.value)} ${b.id}` : undefined} onClick={onCollect} onKeyDown={event => { if (onCollect && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); onCollect(); } }}>
-      <circle cx={b.x} cy={b.y} r={27} fill={BUBBLE[b.id]} opacity={0.2} filter="url(#tt-gl)" />
-      <circle cx={b.x} cy={b.y} r={21} fill="url(#tt-bub)" stroke={BUBBLE[b.id]} strokeWidth={2} />
-      <use href={`#tt-${b.id}`} x={b.x - 12} y={b.y - 14} width={24} height={24} />
-      <path d={`M${b.x - 13},${b.y - 6}a14,14 0 0 1 8,-9`} stroke="#fff" strokeWidth={2.4} strokeOpacity={0.75} fill="none" strokeLinecap="round" />
-      <rect x={b.x - 27} y={b.y + 12} width={54} height={19} rx={9.5} fill={BUBBLE[b.id]} />
-      <text x={b.x} y={b.y + 25.5} textAnchor="middle" fill="#1a1530" fontSize={12.5} fontWeight={800}>+{compact(b.value)}</text>
-      {b.spill > 0 && <g><rect x={b.x - (compact(b.spill).length * 6.2 + 74) / 2} y={b.y - 52 - b.lift} width={compact(b.spill).length * 6.2 + 74} height={18} rx={9} fill="#ff5a4a" filter="url(#tt-gl)" />
-        <text x={b.x} y={b.y - 39.5 - b.lift} textAnchor="middle" fill="#fff" fontSize={10.5} fontWeight={800}>{compact(b.spill)} will spill</text><title>{`${count(b.spill)} will spill: the store is full`}</title></g>}
-    </g>)}
   </svg>
+  {bubbles.length > 0 && size.width > 0 && <div className="tt-bubbles">
+    {bubbles.map((b, i) => <button key={b.id} type="button" className="tt-bubble" disabled={!onCollect} onClick={onCollect} aria-label={`Collect ${count(b.value)} ${b.id}`}
+      style={{left: b.x, top: b.y, '--tt-c': BUBBLE[b.id], animationDelay: `${-1.4 * (i % 2)}s`} as CSSProperties}>
+      <span className="tt-orb"><ResourceIcon id={b.id} size={24} /></span>
+      <span className="tt-amt">+{compact(b.value)}</span>
+      {b.spill > 0 && <span className="tt-spill" style={{marginBottom: b.lift}} title={`${count(b.spill)} will spill: the store is full`}>{compact(b.spill)} will spill</span>}
+    </button>)}
+  </div>}
+  {popover && size.width > 0 && popover(place, size)}
   {spinnable && !atHome(angle) && <div className="tt-glass tt-reset"><button type="button" onClick={spin.home}>Reset view</button></div>}
   </>;
 }

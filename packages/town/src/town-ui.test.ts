@@ -3,7 +3,7 @@ import { TOWN_MAP_SPAN, terrainAt } from '@tokentracky/core';
 import { afterCollect, collected, compact, daysToAfford, duration, paceText, shortfall, tooBig } from './format.ts';
 import { cellAt, clampCell, fetchArea, fitView, screenOf, visibleArea, within, zoomAt } from './map-view.ts';
 import { plotKey, plotKind, plotsBackToFront, plotTile, sceneLayout } from './layout.ts';
-import { buildingOutline, hull, spunProjection } from './view.ts';
+import { buildingOutline, hull, spunProjection, toStage } from './view.ts';
 import type { Pt } from './art.ts';
 
 /** True when `p` lies inside the polygon. */
@@ -44,6 +44,20 @@ describe('town numbers', () => {
     // 1,500 Bricks stored and 800 to collect with room for 2,000: 300 spill, so 2,000 is all there is to spend.
     expect(afterCollect({power: 10, bricks: 1500, water: 0, crystals: 0}, {power: 5, bricks: 800, water: 0, crystals: 0}, {power: 1000, bricks: 2000, water: 1000, crystals: 100}))
       .toEqual({power: 15, bricks: 2000, water: 0, crystals: 0});
+  });
+});
+
+describe('placing things over the town', () => {
+  const layout = sceneLayout([{x: 0, y: 0}]);
+  it('centres the drawing in a wider stage and scales it to the height', () => {
+    const k = 600 / layout.height;
+    expect(toStage(layout, 2000, 600, [0, 0])).toEqual({left: (2000 - layout.width * k) / 2, top: 0});
+    expect(toStage(layout, 2000, 600, [layout.width, layout.height])).toEqual({left: (2000 + layout.width * k) / 2, top: 600});
+  });
+  it('centres it in a taller stage and scales it to the width', () => {
+    const at = toStage(layout, 400, 2000, [layout.width / 2, layout.height / 2]);
+    expect(at.left).toBeCloseTo(200);
+    expect(at.top).toBeCloseTo(1000);
   });
 });
 

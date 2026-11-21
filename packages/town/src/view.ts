@@ -55,3 +55,9 @@ export function buildingOutline(P: Project, tx: number, ty: number, height: numb
   const square = (inset: number, z: number) => [P(tx + inset, ty + inset, z), P(tx + 2 - inset, ty + inset, z), P(tx + 2 - inset, ty + 2 - inset, z), P(tx + inset, ty + 2 - inset, z)];
   return hull([...square(0, 0), ...square(0.45, height)]);
 }
+
+/** Where a point of the drawing lands on a `width` × `height` stage, with the layout's viewBox fitted in (`xMidYMid meet`). */
+export function toStage(layout: SceneLayout, width: number, height: number, [x, y]: Pt): {left: number; top: number} {
+  const k = Math.min(width / layout.width, height / layout.height);
+  return {left: (width - layout.width * k) / 2 + x * k, top: (height - layout.height * k) / 2 + y * k};
+}

@@ -1,14 +1,13 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { BUILDINGS, RESOURCE_IDS, type BuildingGroup, type BuildingId, type Cost, type Resources, type TownBuilding, type TownMapResponse, type TownSelf } from '@tokentracky/core';
 import type { TownApi } from './api.ts';
 import { BUILDING_HEIGHT } from './art.ts';
-import { BuildingThumb, CostChips, Crest, RESOURCE_NAMES, ResourceBar, StreakClock, usePoint, useNow, useToast } from './Hud.tsx';
+import { BuildingThumb, CostChips, Crest, RESOURCE_NAMES, ResourceBar, StreakClock, useNow, useToast } from './Hud.tsx';
 import { ResourceIcon } from './icons.tsx';
 import { BuildIcon, CloseIcon, FlagIcon, MapIcon, MoveIcon, SparkIcon } from './icons.tsx';
 import { afterCollect, collected, compact, count, daysToAfford, paceText, shortfall, sinceText, tooBig } from './format.ts';
 import { plotKey, plotKind, plotTile, sceneLayout } from './layout.ts';
-import { Sky, TownScene, type Selection } from './Scene.tsx';
-import { spunProjection } from './view.ts';
+import { Sky, TownScene, type Place, type Selection, type StageSize } from './Scene.tsx';
 
 type Tab = 'land' | 'harvest';
 /** The action waiting on the server, so its button can say so. */
@@ -36,12 +35,9 @@ export function TownPage({api, onMap}: {api: TownApi; onMap: () => void}) {
   const [selected, setSelected] = useState<Selection | null>(null);
   const [tab, setTab] = useState<Tab | null>(() => typeof window !== 'undefined' && window.innerWidth >= 1100 ? 'land' : null);
   const [claiming, setClaiming] = useState(false);
-  const [angle, setAngle] = useState(0);
   // The build menu, for a plot, or with none free to browse what there is.
   const [menu, setMenu] = useState<{x: number; y: number} | 'browse' | null>(null);
   const [toast, say] = useToast();
-  const stage = useRef<HTMLDivElement>(null);
-  const svg = useRef<SVGSVGElement>(null);
   const now = useNow();
 
   const layout = useMemo(() => town ? sceneLayout(town.plots) : null, [town?.plots]);
@@ -97,8 +93,10 @@ export function TownPage({api, onMap}: {api: TownApi; onMap: () => void}) {
   const plot = selected?.type === 'plot' ? selected : null;
   const plotState = plot ? plotKind(plot.x, plot.y, own, others).kind : null;
   const anchorPlot = building ?? plot;
-  const P = spunProjection(layout, angle);
-  const anchor = anchorPlot ? (() => { const [tx, ty] = plotTile(layout, anchorPlot.x, anchorPlot.y); return P(tx + 1, ty + 1, building ? BUILDING_HEIGHT[building.kind] * 0.6 : 10); })() : null;
+  // Where the card points: up the building, or just above an empty plot.
+  const anchor = anchorPlot ? (() => { const [tx, ty] = plotTile(layout, anchorPlot.x, anchorPlot.y); return [tx + 1, ty + 1, building ? BUILDING_HEIGHT[building.kind] * 0.6 : 10] as const; })() : null;
+  const reserve = tab ? 340 : 80;
+  const deselect = () => setSelected(null);
 
   const select = (next: Selection | null) => {
     if (next?.type === 'plot' && claiming && plotKind(next.x, next.y, own, others).kind === 'claimable') {
@@ -118,11 +116,25 @@ export function TownPage({api, onMap}: {api: TownApi; onMap: () => void}) {
   })();
   const fresh = town.catalogue.some(entry => !entry.locked && entry.owned === 0);
 
-  return <div ref={stage} className="tt tt-stage">
+  return <div className="tt tt-stage">
     <Sky />
-    <TownScene svgRef={svg} layout={layout} plots={town.plots} buildings={town.buildings} map={map} selected={selected} claimMode={claiming}
+    <TownScene layout={layout} plots={town.plots} buildings={town.buildings} map={map} selected={selected} claimMode={claiming}
       harvest={harvestWaiting ? {resources: town.harvest.resources, spill} : null} onSelect={select} onCollect={collect}
-      label={`${town.alias}'s town`} angle={angle} onSpin={setAngle} />
+      label={`${town.alias}'s town`} spins
+      popover={(place, size) => {
+        if (!anchor) return null;
+        const at = place(...anchor);
+        if (building) return <Popover at={at} stage={size} reserve={reserve} onClose={deselect}>
+          <BuildingPanel town={town} building={building} reach={reach} pending={pending} onUpgrade={() => void run('upgrade', () => api.upgrade(building.id), `Upgraded to Lv ${building.level + 1}`)} />
+        </Popover>;
+        if (plot && plotState === 'own') return <Popover at={at} stage={size} reserve={reserve} onClose={deselect}>
+          <EmptyPlotPanel onBuild={() => openBuild(plot)} />
+        </Popover>;
+        if (plot && plotState === 'claimable') return <Popover at={at} stage={size} reserve={reserve} onClose={deselect}>
+          <ClaimPanel town={town} reach={reach} pending={pending} onClaim={() => { setSelected(null); void run('claim', () => api.claim(plot.x, plot.y), `Plot #${town.nextPlot.number} is yours`, true); }} />
+        </Popover>;
+        return null;
+      }} />
     <div className="tt-top">
       <Crest alias={town.alias} level={town.level} plots={town.plots.length} />
       <ResourceBar wallet={town.wallet} caps={town.caps} />
@@ -137,16 +149,6 @@ export function TownPage({api, onMap}: {api: TownApi; onMap: () => void}) {
       {tab === 'harvest' && <HarvestPane town={town} spill={spill} pending={pending} now={now} onCollect={collect}
         onTrade={bricks => void run('trade', () => api.trade(bricks), 'Traded')} />}
     </Drawer>
-
-    {building && <Popover svg={svg} stage={stage} point={anchor} reserve={tab ? 340 : 80} onClose={() => setSelected(null)}>
-      <BuildingPanel town={town} building={building} reach={reach} pending={pending} onUpgrade={() => void run('upgrade', () => api.upgrade(building.id), `Upgraded to Lv ${building.level + 1}`)} />
-    </Popover>}
-    {plot && plotState === 'own' && <Popover svg={svg} stage={stage} point={anchor} reserve={tab ? 340 : 80} onClose={() => setSelected(null)}>
-      <EmptyPlotPanel onBuild={() => openBuild(plot)} />
-    </Popover>}
-    {plot && plotState === 'claimable' && <Popover svg={svg} stage={stage} point={anchor} reserve={tab ? 340 : 80} onClose={() => setSelected(null)}>
-      <ClaimPanel town={town} reach={reach} pending={pending} onClaim={() => { setSelected(null); void run('claim', () => api.claim(plot.x, plot.y), `Plot #${town.nextPlot.number} is yours`, true); }} />
-    </Popover>}
 
     {menu && <BuildMenu town={town} reach={reach} busy={busy} full={menu === 'browse'} onClose={() => setMenu(null)}
       onBuild={kind => { if (menu === 'browse') return; const at = menu; setMenu(null); void run('build', () => api.build(kind, at.x, at.y), `Built a ${BUILDINGS[kind].name}`); }} />}
@@ -231,20 +233,19 @@ function HarvestPane({town, spill, pending: action, now, onCollect, onTrade}: {t
 }
 
 /** A glass card next to a point in the scene, with a short line pointing at it. On narrow screens it becomes a bottom sheet. */
-function Popover({svg, stage, point, reserve, onClose, children}: {svg: RefObject<SVGSVGElement | null>; stage: RefObject<HTMLDivElement | null>; point: [number, number] | null; reserve: number; onClose: () => void; children: ReactNode}) {
-  const at = usePoint(svg, stage, point);
+function Popover({at, stage, reserve, onClose, children}: {at: ReturnType<Place>; stage: StageSize; reserve: number; onClose: () => void; children: ReactNode}) {
   // Opens to the right of the point unless that would run into the drawer (`reserve` pixels at the right edge).
-  const width = (stage.current?.clientWidth ?? 0) - reserve;
-  const left = at ? at.left + 26 + 290 > width ? Math.max(8, at.left - 26 - 290) : at.left + 26 : 20;
-  const top = at ? Math.min(Math.max(70, at.top - 120), (stage.current?.clientHeight ?? 600) - 360) : 74;
-  const side = at && left < at.left ? 'right' : 'left';
+  const width = stage.width - reserve;
+  const left = at.left + 26 + 290 > width ? Math.max(8, at.left - 26 - 290) : at.left + 26;
+  const top = Math.min(Math.max(70, at.top - 120), stage.height - 360);
+  const side = left < at.left ? 'right' : 'left';
   useEffect(() => {
     const close = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); };
     window.addEventListener('keydown', close);
     return () => window.removeEventListener('keydown', close);
   }, [onClose]);
   return <>
-    {at && <svg className="tt-leader" aria-hidden="true"><line x1={at.left} y1={at.top} x2={side === 'left' ? left : left + 290} y2={Math.max(top + 30, Math.min(top + 200, at.top))} /><circle cx={at.left} cy={at.top} r={4} /></svg>}
+    <svg className="tt-leader" aria-hidden="true"><line x1={at.left} y1={at.top} x2={side === 'left' ? left : left + 290} y2={Math.max(top + 30, Math.min(top + 200, at.top))} /><circle cx={at.left} cy={at.top} r={4} /></svg>
     <div className="tt-glass tt-pop" style={{left, top}} role="dialog" aria-modal="false">
       <button type="button" className="tt-x" aria-label="Close" onClick={onClose}><CloseIcon size={16} /></button>
       {children}

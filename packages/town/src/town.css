@@ -42,8 +42,16 @@
 .tt-reset button { padding: 8px 14px; font-weight: 700; }
 .tt-town text { font-family: inherit; font-weight: 700; }
 .tt-hit { cursor: pointer; outline: none; }
-.tt-bubble { cursor: pointer; animation: tt-bob 3.2s ease-in-out infinite; transform-box: fill-box; }
-.tt-bubble:nth-of-type(2n) { animation-delay: -1.4s; }
+/* Harvest bubbles float over the buildings that make them. They bob on their own layers, so bobbing repaints nothing. */
+.tt-bubbles { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+.tt-bubble { position: absolute; display: flex; flex-direction: column; align-items: center; pointer-events: auto; translate: -50% -50%; animation: tt-bob 3.2s ease-in-out infinite; will-change: transform; }
+.tt-bubble:disabled { cursor: default; }
+.tt-orb { position: relative; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; border: 2px solid var(--tt-c);
+  background: radial-gradient(circle at 38% 32%, rgba(255, 255, 255, 0.4), rgba(156, 152, 255, 0.16) 55%, rgba(21, 19, 56, 0.75));
+  box-shadow: 0 0 14px color-mix(in srgb, var(--tt-c) 55%, transparent), inset 0 0 6px rgba(255, 255, 255, 0.15); }
+.tt-orb::after { content: ''; position: absolute; left: 7px; top: 7px; width: 12px; height: 8px; border-top: 2.4px solid rgba(255, 255, 255, 0.75); border-radius: 50% 50% 0 0; rotate: -35deg; }
+.tt-amt { margin-top: -6px; min-width: 54px; padding: 1px 8px; border-radius: 10px; background: var(--tt-c); color: #1a1530; font-size: 12.5px; font-weight: 800; text-align: center; }
+.tt-spill { position: absolute; bottom: 100%; translate: 0 -4px; white-space: nowrap; padding: 1px 9px; border-radius: 9px; background: #ff5a4a; box-shadow: 0 0 10px rgba(255, 90, 74, 0.7); font-size: 10.5px; font-weight: 800; }
 .tt-claim.on { animation: tt-pulse 1.4s ease-in-out infinite; }
 .tt-stars { position: absolute; inset: 0; pointer-events: none; }
 .tt-stars i { position: absolute; border-radius: 50%; background: #fff; box-shadow: 0 0 4px #fff; opacity: 0.9; animation: tt-twinkle 4s ease-in-out infinite alternate; will-change: opacity; }
