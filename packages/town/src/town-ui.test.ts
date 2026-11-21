@@ -5,7 +5,7 @@ import { cellAt, clampCell, fetchArea, fitView, screenOf, visibleArea, within, z
 import { plotKey, plotKind, plotsBackToFront, plotTile, sceneLayout } from './layout.ts';
 import { indexMap } from './MapPage.tsx';
 import { buildingOutline, hull, spunProjection, toStage } from './view.ts';
-import type { Pt } from './art.ts';
+import { levelLook, type Pt } from './art.ts';
 
 /** True when `p` lies inside the polygon. */
 const inside = (poly: Pt[], [x, y]: Pt) => {
@@ -45,6 +45,16 @@ describe('town numbers', () => {
     // 1,500 Bricks stored and 800 to collect with room for 2,000: 300 spill, so 2,000 is all there is to spend.
     expect(afterCollect({power: 10, bricks: 1500, water: 0, crystals: 0}, {power: 5, bricks: 800, water: 0, crystals: 0}, {power: 1000, bricks: 2000, water: 1000, crystals: 100}))
       .toEqual({power: 15, bricks: 2000, water: 0, crystals: 0});
+  });
+});
+
+describe('how a building looks at each level', () => {
+  it('adds something you can see at Lv 3, 6, 9, 10 and 15', () => {
+    const looks = Array.from({length: 15}, (_, i) => JSON.stringify(levelLook(i + 1)));
+    const changes = looks.flatMap((look, i) => i > 0 && look !== looks[i - 1] ? [i + 1] : []);
+    expect(changes).toEqual([3, 6, 9, 10, 15]);
+    expect(levelLook(1)).toEqual({litFrom: 2, pennant: null, lamps: false, glow: false, crown: false});
+    expect(levelLook(15)).toEqual({litFrom: 1, pennant: '#ffc23d', lamps: true, glow: true, crown: true});
   });
 });
 

@@ -52,6 +52,26 @@ ${[['halo', '#ffd9b0', 0.55], ['hz', '#ff9a7a', 0.38], ['lamp', '#ffc770', 0.6],
 export const BUILDING_HEIGHT: Record<BuildingId, number> = {'town-hall': 96, 'power-plant': 100, brickworks: 70, reservoir: 104, observatory: 60, 'data-center': 52, vault: 50,
   market: 40, workshop: 44, park: 30, tavern: 70, arena: 42, statue: 56, museum: 42, 'token-tower': 196};
 
+/**
+ * What a building's level adds to its look, the same in the flat and 3D drawings: more windows lit from Lv 3, a pennant
+ * from Lv 6 (gold from Lv 10), lamps at its front corners from Lv 9, a gold glow and sparkles from Lv 10, and a crown
+ * star floating over it at Lv 15.
+ */
+export function levelLook(level: number) {
+  return {
+    /** A window is lit when its pattern number (0 to 4) reaches this: four in five lit, or three in five below Lv 3. */
+    litFrom: level >= 3 ? 1 : 2,
+    pennant: level >= 10 ? '#ffc23d' : level >= 6 ? '#9a92ff' : null,
+    lamps: level >= 9,
+    glow: level >= 10,
+    crown: level >= 15,
+  };
+}
+/** Where a building's corner lamps stand: the plot's left and right corners as the town first appears. */
+export const CORNER_LAMPS = [[0.15, 1.85], [1.85, 0.15]] as const;
+/** How far over a building's top its crown star floats, in drawing pixels. */
+export const CROWN_LIFT = 30;
+
 /** Drawing helpers bound to one scene's projection. `defs` collects the cylinder gradients the drawings ask for. */
 export function createArt(P: Project, prefix: string) {
   let defs = '';
@@ -71,8 +91,8 @@ export function createArt(P: Project, prefix: string) {
   const rq = (xF: number, y: number, w: number, z: number, h: number, c: string, e = '') => poly([P(xF, y, z), P(xF, y + w, z), P(xF, y + w, z + h), P(xF, y, z + h)], c, e);
   const box = (x: number, y: number, w: number, d: number, h: number, c: string, z = 0) => fq(x, y + d, w, z, h, shade(c, -0.08)) + rq(x + w, y, d, z, h, shade(c, -0.3)) + poly(sq(x, y, w, d, z + h), shade(c, 0.1));
   // Lit windows follow a fixed pattern per building, so a town looks the same on every visit.
-  let windows = 1;
-  const lit = () => hash(windows++, 9) % 5 > 0;
+  let windows = 1, litFrom = 1;
+  const lit = () => hash(windows++, 9) % 5 >= litFrom;
   const glass = (on: boolean): [string, string] => [on ? '#ffd27a' : '#2c3058', on ? GLOW : ''];
   const winL = (x: number, yF: number, z: number, w = 0.2, h = 8) => fq(x, yF, w, z, h, ...glass(lit()));
   const winR = (xF: number, y: number, z: number, w = 0.2, h = 8) => rq(xF, y, w, z, h, ...glass(lit()));
@@ -243,23 +263,28 @@ export function createArt(P: Project, prefix: string) {
     },
   };
 
-  /** A building, with its level's look: a pennant from Lv 6, and a gold glow and star from Lv 10. */
+  /** A building, with its level's look (see `levelLook`). */
   function building(kind: BuildingId, ox: number, oy: number, level: number): string {
+    const look = levelLook(level);
     windows = (hash(ox, oy) % 97) + 1;
+    litFrom = look.litFrom;
     let s = '';
-    if (level >= 10) s += `<ellipse cx="${r(P(ox + 1, oy + 1)[0])}" cy="${r(P(ox + 1, oy + 1)[1])}" rx="58" ry="29" fill="url(#tt-halo)" opacity=".7"/>`;
+    if (look.glow) s += `<ellipse cx="${r(P(ox + 1, oy + 1)[0])}" cy="${r(P(ox + 1, oy + 1)[1])}" rx="58" ry="29" fill="url(#tt-halo)" opacity=".7"/>`;
     s += B[kind](ox, oy);
     const top = P(ox + 1, oy + 1, BUILDING_HEIGHT[kind]);
-    if (level >= 6 && kind !== 'town-hall' && kind !== 'token-tower') {
+    if (look.pennant && kind !== 'town-hall' && kind !== 'token-tower') {
       const pole = P(ox + 1.75, oy + 0.35, Math.min(BUILDING_HEIGHT[kind], 60));
-      s += line(pole, [pole[0], pole[1] - 22], '#cfd2ee', 1.5) + `<polygon points="${r(pole[0])},${r(pole[1] - 22)} ${r(pole[0] + 14)},${r(pole[1] - 18)} ${r(pole[0])},${r(pole[1] - 13)}" fill="${level >= 10 ? '#ffc23d' : '#9a92ff'}"/>`;
+      s += line(pole, [pole[0], pole[1] - 22], '#cfd2ee', 1.5) + `<polygon points="${r(pole[0])},${r(pole[1] - 22)} ${r(pole[0] + 14)},${r(pole[1] - 18)} ${r(pole[0])},${r(pole[1] - 13)}" fill="${look.pennant}"/>`;
     }
-    if (level >= 10) s += spark(top[0] + 10, top[1] - 12, 7, '#fff3c4') + spark(top[0] - 14, top[1] + 4, 4, '#fff3c4', 0.7);
+    if (look.lamps) for (const [x, y] of CORNER_LAMPS) s += lamp(ox + x, oy + y);
+    if (look.glow) s += spark(top[0] + 10, top[1] - 12, 7, '#fff3c4') + spark(top[0] - 14, top[1] + 4, 4, '#fff3c4', 0.7);
+    if (look.crown) { const c = P(ox + 1, oy + 1, BUILDING_HEIGHT[kind] + CROWN_LIFT); s += halo(c, 26, 'halo') + star(c[0], c[1], 10, '#ffe07a'); }
     return s;
   }
   /** A small home on someone else's land. The roof takes their colour. */
   function house(ox: number, oy: number, roof: string, variant: number): string {
     const W = '#5a5679';
+    litFrom = 1;
     return box(ox + 0.35, oy + 0.35, 1.3, 1.3, 20, W) + winL(ox + 0.55, oy + 1.65, 7, 0.22, 7) + winL(ox + 1.15, oy + 1.65, 7, 0.22, 7)
       + (variant ? gableY(ox + 0.3, oy + 0.3, 1.4, 1.4, 20, 16, roof, W) : gableX(ox + 0.3, oy + 0.3, 1.4, 1.4, 20, 16, roof, W));
   }

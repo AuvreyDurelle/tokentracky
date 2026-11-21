@@ -100,7 +100,7 @@ describe("the town's pieces", () => {
 describe('the 3D town', () => {
   it('builds every building, at every level look, without a broken point', () => {
     const plots = Array.from({length: 16}, (_, i) => ({x: i % 4, y: Math.floor(i / 4)}));
-    const buildings = BUILDING_IDS.map((kind, i) => ({kind, x: i % 4, y: Math.floor(i / 4), level: [1, 6, 10][i % 3]!}));
+    const buildings = BUILDING_IDS.map((kind, i) => ({kind, x: i % 4, y: Math.floor(i / 4), level: [1, 3, 6, 9, 10, 15][i % 6]!}));
     const land = landOf(plots);
     const town = buildTown(townPieces({...land, buildings}), land.layout);
     let triangles = 0, sprites = 0;
