@@ -1,8 +1,8 @@
 //! Which files each tool's reader opens and how it reads them.
 use super::parser::{Counted, PENDING, ParserState, file_name, only, parent_name, parse_gemini_session, parse_json};
 use super::{
-    cline, codebuddy, commandcode, copilot, deepseek, dumate, everycode, goose, grok, hermes, kimi, lmstudio, mimo,
-    openclaw, opencode, pi, roo, unsloth, zcode, zed,
+    antigravity, cline, codebuddy, commandcode, copilot, deepseek, dumate, everycode, goose, grok, hermes, kimi,
+    lmstudio, mimo, openclaw, opencode, pi, roo, unsloth, zcode, zed,
 };
 use serde_json::{Map, Value};
 use std::collections::BTreeMap;
@@ -264,6 +264,7 @@ pub fn adapter(tool: ToolId) -> Option<&'static Adapter> {
         ToolId::Hermes => hermes::adapter(tool),
         ToolId::Goose => goose::adapter(tool),
         ToolId::Grok => grok::adapter(tool),
+        ToolId::Antigravity => antigravity::adapter(tool),
     }
 }
 pub fn is_supported(tool: ToolId) -> bool {
@@ -274,6 +275,15 @@ pub fn is_supported(tool: ToolId) -> bool {
 /// of the database already counted, and a copied or moved database adds nothing.
 pub fn counts_across_copies(tool: ToolId) -> bool {
     matches!(tool, ToolId::Zed | ToolId::Hermes | ToolId::Goose)
+}
+/// Siblings of a document that its reader opens itself, by role (Antigravity's conversation database and its WAL). A
+/// change to one reads the document again, as a sidecar's does, but the service never reads them: the reader gets an
+/// empty sidecar for each one present inside the root, `None` otherwise.
+pub fn watched_files(tool: ToolId, path: &Path) -> SidecarPaths {
+    match tool {
+        ToolId::Antigravity => antigravity::database_files(path),
+        _ => Vec::new(),
+    }
 }
 pub fn source_kind(tool: ToolId, path: &Path) -> Option<SourceKind> {
     adapter(tool).and_then(|adapter| (adapter.kind)(path))

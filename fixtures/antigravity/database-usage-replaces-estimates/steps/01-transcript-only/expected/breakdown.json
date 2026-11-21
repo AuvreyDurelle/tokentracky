@@ -1,0 +1,16 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 12,
+      "output": 16,
+      "reasoning": 8
+    },
+    "costMicrousd": null,
+    "day": "2026-10-23",
+    "model": "gemini-3-pro",
+    "tokens": 28,
+    "tool": "antigravity"
+  }
+]

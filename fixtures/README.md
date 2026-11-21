@@ -130,6 +130,13 @@ Keep this inventory aligned with the `description` in each `case.json`.
 
 <!-- cases:start -->
 
+### antigravity
+
+| Case | Steps | What it covers |
+| --- | --- | --- |
+| `database-usage-replaces-estimates` | 3 | Turns are estimated until Antigravity's conversation database records them: when it appears beside an unchanged transcript the first turn takes its recorded usage, model and context, and the second its context growth; a later generation for the second turn replaces that estimate. The default model comes from settings.json. Rust only. |
+| `estimated-turns-and-copies` | 1 | Turns without recorded usage are estimated from the transcript (a CJK character or four other characters to a token; input is the context added since the previous turn), the model comes from the last Model Selection change, and the same conversation in the app's and the IDE's folders counts once. Encrypted .pb conversations are never opened. Rust only. |
+
 ### claude
 
 | Case | Steps | What it covers |

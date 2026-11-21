@@ -15,6 +15,8 @@
 //! - `Json`: a document of at most [`MAX_DOCUMENT_BYTES`] goes to [`parse_document`] with the [`Sidecars`] that
 //!   `adapter.sidecars` names, each read inside the same root (`None` when absent, out of scope or too large).
 //!   A [`PENDING`] diagnostic means the document or a sidecar is mid-write: retry next scan, write no checkpoint.
+//!   [`watched_files`] are siblings the reader opens itself (a database): a change to one re-reads the document as a
+//!   sidecar's does, and each is passed as an empty sidecar when present inside the root, `None` otherwise.
 //! - `Sqlite`: an OpenCode-format database (OpenCode, Kilo Code, Mimo Code, DuMate: [`read_opencode_database`]) opens
 //!   the file read-only, given the events already counted from it (the store's `file_events`); an `Err` (busy, locked,
 //!   unreadable) fails that file for this scan. Any other database has `incremental`, which reads from the watermark
@@ -29,6 +31,7 @@
 //! [`parse_usage_file`] reads a whole log at once (a valid final line needs no newline); tests compare it with goldens.
 //! Events and diagnostics never hold prompts, responses, paths or raw records, and diagnostics are fixed codes.
 mod adapters;
+mod antigravity;
 mod cline;
 mod codebuddy;
 mod commandcode;
@@ -54,7 +57,7 @@ mod zed;
 
 pub use adapters::{
     Adapter, IncrementalReader, MAX_DOCUMENT_BYTES, NO_CAPABILITIES, SidecarPaths, Sidecars, SourceKind, adapter,
-    counts_across_copies, is_supported, parse_document, source_kind,
+    counts_across_copies, is_supported, parse_document, source_kind, watched_files,
 };
 pub(crate) use opencode::read_database_with_origins;
 pub use opencode::read_opencode_database;

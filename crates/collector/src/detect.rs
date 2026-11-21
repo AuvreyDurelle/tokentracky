@@ -210,6 +210,21 @@ pub fn default_source_paths(env: impl Fn(&str) -> Option<String>, home: &Path) -
             )],
         ),
         (ToolId::Grok, vec![join(home, &[".grok", "sessions"])]),
+        // The desktop app, its IDE and Insiders builds and the `agy` CLI each keep a folder in `~/.gemini`; T3 Code
+        // runs `agy` with a folder per profile.
+        (
+            ToolId::Antigravity,
+            [
+                "antigravity",
+                "antigravity-ide",
+                "antigravity-insiders",
+                "antigravity-cli",
+            ]
+            .iter()
+            .map(|install| join(home, &[".gemini", install]))
+            .chain([join(home, &[".t3", "userdata", "providers", "antigravity"])])
+            .collect(),
+        ),
     ]
 }
 

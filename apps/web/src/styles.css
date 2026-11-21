@@ -55,6 +55,7 @@
   --tool-hermes: #30a100;
   --tool-goose: #b5cbb4;
   --tool-grok: #e5484d;
+  --tool-antigravity: #7dd3a8;
   /* Token kinds: monochrome steps alternating light and dark, so neighbours in a stack stay apart. */
   --kind-input: #9a9ea5;
   --kind-output: #eceef0;
@@ -329,6 +330,7 @@ td.c-total { font-weight: 500; }
 .tool-hermes { background: var(--tool-hermes); }
 .tool-goose { background: var(--tool-goose); }
 .tool-grok { background: var(--tool-grok); }
+.tool-antigravity { background: var(--tool-antigravity); }
 .kind-input { background: var(--kind-input); fill: var(--kind-input); }
 .kind-output { background: var(--kind-output); fill: var(--kind-output); }
 .kind-cacheRead { background: var(--kind-cache-read); fill: var(--kind-cache-read); }
@@ -366,6 +368,7 @@ td.c-total { font-weight: 500; }
 .ic-hermes { --c: var(--tool-hermes); --m: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M14 2C7 2 2 7 2 14c7 0 12-5 12-12zM4.2 11.2l7-7 .6.6-7 7z'/%3E%3C/svg%3E"); }
 .ic-goose { --c: var(--tool-goose); --m: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 1.5c3.2 0 5.5 4.6 5.5 8a5.5 5 0 0 1-11 0c0-3.4 2.3-8 5.5-8z'/%3E%3C/svg%3E"); }
 .ic-grok { --c: var(--tool-grok); --m: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill-rule='evenodd' d='M9.27 15.29l7.978-5.897c.391-.29.95-.177 1.137.272.98 2.369.542 5.215-1.41 7.169-1.951 1.954-4.667 2.382-7.149 1.406l-2.711 1.257c3.889 2.661 8.611 2.003 11.562-.953 2.341-2.344 3.066-5.539 2.388-8.42l.006.007c-.983-4.232.242-5.924 2.75-9.383.06-.082.12-.164.179-.248l-3.301 3.305v-.01L9.267 15.292M7.623 16.723c-2.792-2.67-2.31-6.801.071-9.184 1.761-1.763 4.647-2.483 7.166-1.425l2.705-1.25a7.808 7.808 0 00-1.829-1A8.975 8.975 0 005.984 5.83c-2.533 2.536-3.33 6.436-1.962 9.764 1.022 2.487-.653 4.246-2.34 6.022-.599.63-1.199 1.259-1.682 1.925l7.62-6.815'/%3E%3C/svg%3E"); }
+.ic-antigravity { --c: var(--tool-antigravity); --m: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 1.5 14.5 14H11L8 7.8 5 14H1.5z'/%3E%3C/svg%3E"); }
 
 /* Podium medals: <span class="medal g1">1</span>. */
 .medal { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }

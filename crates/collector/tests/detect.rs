@@ -346,4 +346,14 @@ fn lists_the_phase_6_tools_honouring_their_own_home_overrides() {
     assert_eq!(one(&[], ToolId::Goose), ["/Users/ada/.local/share/goose/sessions"]);
     assert_eq!(one(&[("XDG_DATA_HOME", "/d")], ToolId::Goose), ["/d/goose/sessions"]);
     assert_eq!(one(&[("GOOSE_PATH_ROOT", "/g")], ToolId::Goose), ["/g/data/sessions"]);
+    assert_eq!(
+        one(&[("GEMINI_CLI_HOME", "/g")], ToolId::Antigravity),
+        [
+            "/Users/ada/.gemini/antigravity",
+            "/Users/ada/.gemini/antigravity-ide",
+            "/Users/ada/.gemini/antigravity-insiders",
+            "/Users/ada/.gemini/antigravity-cli",
+            "/Users/ada/.t3/userdata/providers/antigravity",
+        ]
+    );
 }

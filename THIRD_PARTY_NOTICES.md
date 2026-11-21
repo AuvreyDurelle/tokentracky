@@ -4,4 +4,6 @@ Inline interface icons use Lucide shapes, including icons derived from Feather. 
 
 The bundled LiteLLM snapshot records its upstream commit and data source in `crates/pricing/data/litellm-prices.json`. Its MIT licence remains in `crates/pricing/data/LICENSE-litellm.txt`. Hand-maintained prices record their independent sources in `crates/pricing/data/curated-prices.json`.
 
+The Antigravity reader (`crates/collector/src/readers/antigravity.rs`) ports the transcript and `gen_metadata` accounting of [TokenTracker](https://github.com/xiufengsun/TokenTracker) (MIT, commit `3f72861`), and its tests port TokenTracker's cases. Its MIT licence is included in the distributed notices.
+
 Other dependencies retain their own licences. Rust and npm dependency versions are recorded in the committed lockfiles; release inventories should cover the actual distributed dependency set.
