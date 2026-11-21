@@ -84,9 +84,12 @@ pub(crate) fn database_files(path: &Path) -> SidecarPaths {
     })
 }
 fn wal(database: &Path) -> PathBuf {
-    let mut wal = database.as_os_str().to_owned();
-    wal.push("-wal");
-    wal.into()
+    beside(database, "-wal")
+}
+fn beside(database: &Path, suffix: &str) -> PathBuf {
+    let mut path = database.as_os_str().to_owned();
+    path.push(suffix);
+    path.into()
 }
 
 fn read_transcript(path: &Path, content: &str, sidecars: &Sidecars) -> ParseResult {
@@ -98,12 +101,14 @@ fn read_transcript(path: &Path, content: &str, sidecars: &Sidecars) -> ParseResu
     }
     let mut diagnostics = Vec::new();
     // The service hands the reader the database's and the WAL's roles only when each is present inside the authorised
-    // folder. SQLite opens the WAL by its path, so a WAL there that the service rejected keeps the database closed.
+    // folder. SQLite opens the WAL and its shared-memory file by their paths, so a WAL there that the service rejected,
+    // or a shared-memory file that is a link, keeps the database closed.
     let database = database(root, &id);
     let wal_rejected = sidecar(sidecars, "wal").is_none() && fs::symlink_metadata(wal(&database)).is_ok();
+    let shm_linked = fs::symlink_metadata(beside(&database, "-shm")).is_ok_and(|shm| !shm.is_file());
     let generations = if sidecar(sidecars, "database").is_none() {
         BTreeMap::new()
-    } else if wal_rejected {
+    } else if wal_rejected || shm_linked {
         note(&mut diagnostics, "database_unreadable");
         BTreeMap::new()
     } else {

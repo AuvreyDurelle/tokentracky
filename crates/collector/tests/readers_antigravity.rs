@@ -403,3 +403,16 @@ fn keeps_the_database_closed_when_the_service_rejected_its_wal() {
     assert_eq!(rejected.diagnostics, ["database_unreadable"]);
     assert_eq!(sum(&rejected.events).input, ascii("hello"));
 }
+
+#[cfg(unix)]
+#[test]
+fn keeps_the_database_closed_when_its_shared_memory_file_is_a_link() {
+    let install = Install::new().generations(&[generation("gemini-3.8-flash", 0, Some(25_000), None)]);
+    let outside = tempfile::NamedTempFile::new().unwrap();
+    let mut shm = install.database().into_os_string();
+    shm.push("-shm");
+    std::os::unix::fs::symlink(outside.path(), &shm).unwrap();
+    let result = install.read(&turns(&[("hello", "hi", "think1")]));
+    assert_eq!(result.diagnostics, ["database_unreadable"]);
+    assert_eq!(sum(&result.events).input, ascii("hello"));
+}
