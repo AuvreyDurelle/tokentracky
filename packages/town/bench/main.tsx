@@ -53,8 +53,14 @@ const mapOf = (a: {x0: number; y0: number; x1: number; y1: number}): TownMapResp
 };
 const later = <T,>(value: T, ms = 30) => new Promise<T>(done => setTimeout(() => done(structuredClone(value)), ms));
 const act = () => later(town, Number(q.get('slow') ?? 30));
+// Actions change the fake town as the hosted rules would, near enough to see what each one shows.
+const change = (apply: () => void) => { apply(); return act(); };
 const api: TownApi = {
-  me: () => later(town), collect: act, claim: act, build: act, upgrade: act, move: act, trade: act, map: area => later(mapOf(area)),
+  me: () => later(town), move: act, trade: act, map: area => later(mapOf(area)),
+  collect: () => change(() => { town.wallet = res(Math.min(10000, town.wallet.power + 400)); town.harvest = {...town.harvest, resources: res(0), tokens: 0}; }),
+  claim: (x, y) => change(() => { town.plots = [...town.plots, {x, y}]; town.nextPlot = {...town.nextPlot, number: town.nextPlot.number + 1}; }),
+  build: (kind, x, y) => change(() => { town.buildings = [...town.buildings, {...town.buildings[0]!, id: `b${town.buildings.length}`, kind, x, y, level: 1}]; }),
+  upgrade: id => change(() => { town.buildings = town.buildings.map(b => b.id === id ? {...b, level: Math.min(15, b.level + 1)} : b); }),
   town: alias => later({alias, level: 3, plots, buildings: town.buildings, rarest: null, likes: 2, streak: 3}),
 };
 

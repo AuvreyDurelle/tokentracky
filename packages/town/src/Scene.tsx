@@ -5,7 +5,7 @@ import { compact, count } from './format.ts';
 import { plotKey, plotKind, plotTile, plotsBackToFront, type PlotKind, type SceneLayout } from './layout.ts';
 import { townColour, townPieces } from './pieces.ts';
 import { atHome, useSpin } from './spin.ts';
-import { buildingOutline, spunProjection, toStage } from './view.ts';
+import { buildingOutline, spunProjection, toStage, type Moment } from './view.ts';
 import { ResourceIcon } from './icons.tsx';
 import type { World3D } from './world3d.ts';
 
@@ -79,6 +79,8 @@ interface Props {
   visiting?: boolean;
   /** Whether the town can be turned. The scene keeps the angle, so turning redraws only the scene. */
   spins?: boolean;
+  /** What just happened, played once when it arrives. */
+  moment?: Moment | null;
   /** A card over the scene, given where a point of the town (tile x, tile y, height) sits on the stage as it turns. */
   popover?: (place: Place, stage: StageSize) => ReactNode;
 }
@@ -90,7 +92,7 @@ export interface StageSize {width: number; height: number}
  * itself is drawn in 3D where the browser has WebGL, so it can turn; labels, badges and click targets are a flat overlay
  * that turns with it. Without WebGL the flat drawing stays, facing one way.
  */
-export function TownScene({layout: given, plots: givenPlots, buildings: givenBuildings, map, selected, claimMode = false, harvest, onSelect, onCollect, label, visiting = false, spins = false, popover}: Props) {
+export function TownScene({layout: given, plots: givenPlots, buildings: givenBuildings, map, selected, claimMode = false, harvest, onSelect, onCollect, label, visiting = false, spins = false, moment = null, popover}: Props) {
   // Every refresh brings new copies of the same town; only a real change rebuilds the 3D world.
   const layout = useSame(given, JSON.stringify(given));
   const plots = useSame(givenPlots, givenPlots.map(p => plotKey(p.x, p.y)).join(' '));
@@ -151,6 +153,13 @@ export function TownScene({layout: given, plots: givenPlots, buildings: givenBui
   // Before paint, so the town and its overlay arrive together.
   useLayoutEffect(() => { world3d?.draw(pieces, layout); }, [world3d, pieces, layout]);
   useLayoutEffect(() => { world3d?.turn(turned); }, [world3d, turned]);
+  // After the draw above, so the moment plays on the town as it now stands.
+  const played = useRef(0);
+  useLayoutEffect(() => {
+    if (!world3d || !moment || moment.at === played.current) return;
+    played.current = moment.at;
+    world3d.play(moment.kind, plotTile(layout, moment.x, moment.y));
+  }, [world3d, moment, layout]);
   // The flat drawing of the same pieces, where there's no 3D town.
   const world = useMemo(() => {
     if (made !== 'flat') return '';
@@ -248,7 +257,9 @@ export function TownScene({layout: given, plots: givenPlots, buildings: givenBui
       const [tx, ty] = tile(b.x, b.y);
       const p = P(tx + 1.7, ty + 1.7, 30);
       const gold = selected?.type === 'building' && selected.id === b.id;
-      return <g key={`l${b.x},${b.y}`} pointerEvents="none">
+      // A badge whose building just went up a level pops; its key changes with the level so the pop replays.
+      const pops = (moment?.kind === 'upgrade' || moment?.kind === 'build') && moment.x === b.x && moment.y === b.y;
+      return <g key={`l${b.x},${b.y},${b.level}`} className={pops ? 'tt-badge-pop' : undefined} pointerEvents="none">
         <circle cx={p[0]} cy={p[1]} r={10.5} fill={gold ? '#ffd36b' : '#211e4c'} stroke={gold ? '#fff3c4' : '#bdb8ff'} strokeWidth={1.6} />
         <text x={p[0]} y={p[1] + 4} textAnchor="middle" fill={gold ? '#2a1d00' : '#fff'} fontSize={11} fontWeight={800}>{b.level}</text>
       </g>;

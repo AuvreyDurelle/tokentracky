@@ -61,3 +61,26 @@ export function toStage(layout: SceneLayout, width: number, height: number, [x, 
   const k = Math.min(width / layout.width, height / layout.height);
   return {left: (width - layout.width * k) / 2 + x * k, top: (height - layout.height * k) / 2 + y * k};
 }
+
+/** Something that just happened in the town, to animate: where (a plot), what, and when, so each plays once. */
+export interface Moment {kind: 'upgrade' | 'build' | 'claim' | 'move'; x: number; y: number; at: number}
+/** How long a moment plays, in milliseconds. */
+export const MOMENT_MS = 900;
+const easeOut = (t: number) => 1 - (1 - t) ** 3;
+/**
+ * A building's stretch `t` (0 to 1) into its moment, as [width, height] scales: a new one rises out of the ground and
+ * overshoots a little; an upgraded one squashes, then springs up past its size and settles.
+ */
+export function momentScale(kind: Moment['kind'], t: number): [number, number] {
+  const u = Math.min(1, Math.max(0, t));
+  if (kind === 'build') {
+    const rise = 1 + 2.2 * (u - 1) ** 3 + 1.2 * (u - 1) ** 2; // ease-out-back: 0, a little over 1, then 1
+    return [0.6 + 0.4 * easeOut(u), rise];
+  }
+  if (kind === 'upgrade') {
+    if (u < 0.2) { const k = u / 0.2; return [1 + 0.1 * k, 1 - 0.18 * k]; }
+    const k = (u - 0.2) / 0.8, wobble = Math.cos(k * Math.PI * 2.5) * (1 - k) ** 2;
+    return [1 + 0.1 * wobble, 1 - 0.18 * wobble];
+  }
+  return [1, 1];
+}

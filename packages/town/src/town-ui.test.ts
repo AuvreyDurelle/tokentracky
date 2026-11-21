@@ -4,7 +4,7 @@ import { afterCollect, collected, compact, daysToAfford, duration, paceText, sho
 import { cellAt, clampCell, fetchArea, fitView, screenOf, visibleArea, within, zoomAt } from './map-view.ts';
 import { plotKey, plotKind, plotsBackToFront, plotTile, sceneLayout } from './layout.ts';
 import { indexMap } from './MapPage.tsx';
-import { buildingOutline, hull, spunProjection, toStage } from './view.ts';
+import { buildingOutline, hull, momentScale, spunProjection, toStage } from './view.ts';
 import { levelLook, type Pt } from './art.ts';
 
 /** True when `p` lies inside the polygon. */
@@ -55,6 +55,28 @@ describe('how a building looks at each level', () => {
     expect(changes).toEqual([3, 6, 9, 10, 15]);
     expect(levelLook(1)).toEqual({litFrom: 2, pennant: null, lamps: false, glow: false, crown: false});
     expect(levelLook(15)).toEqual({litFrom: 1, pennant: '#ffc23d', lamps: true, glow: true, crown: true});
+  });
+});
+
+describe('a moment in the town', () => {
+  const heights = (kind: 'build' | 'upgrade') => Array.from({length: 21}, (_, i) => momentScale(kind, i / 20)[1]);
+  it('raises a new building out of the ground, overshooting a little before it settles', () => {
+    expect(momentScale('build', 0)[1]).toBeCloseTo(0);
+    expect(Math.max(...heights('build'))).toBeGreaterThan(1.03);
+    expect(Math.max(...heights('build'))).toBeLessThan(1.15);
+    expect(momentScale('build', 1)).toEqual([1, 1]);
+  });
+  it('squashes an upgraded building, springs it up past its size and settles', () => {
+    expect(momentScale('upgrade', 0)).toEqual([1, 1]);
+    expect(momentScale('upgrade', 0.2)[1]).toBeCloseTo(0.82);
+    expect(Math.max(...heights('upgrade').slice(5))).toBeGreaterThan(1.02);
+    const [w, h] = momentScale('upgrade', 1);
+    expect(w).toBeCloseTo(1);
+    expect(h).toBeCloseTo(1);
+  });
+  it('leaves other moments and times past the end alone', () => {
+    expect(momentScale('claim', 0.5)).toEqual([1, 1]);
+    expect(momentScale('upgrade', 2)[1]).toBeCloseTo(1);
   });
 });
 

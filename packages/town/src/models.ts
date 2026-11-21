@@ -519,11 +519,37 @@ function createModels(solid: Batch, film: Batch, glows: Glow[]) {
   };
 }
 
-/** The whole town as 3D objects, in tiles with the back corner of the ground at the origin. */
-export function buildTown(pieces: readonly Piece[], layout: SceneLayout): Group {
+/**
+ * The whole town as 3D objects, in tiles with the back corner of the ground at the origin. With `apart`, the building on
+ * the plot whose back tile is there is built on its own, in a group named 'apart' that stands at the plot's middle, so it
+ * can be squashed and stretched on its own.
+ */
+export function buildTown(pieces: readonly Piece[], layout: SceneLayout, apart: readonly [number, number] | null = null): Group {
+  const lone = (p: Piece) => apart !== null && p.type === 'building' && p.x === apart[0] && p.y === apart[1];
+  const group = buildPieces(pieces.filter(p => !lone(p)), layout, true);
+  const single = apart ? pieces.filter(lone) : [];
+  if (apart && single.length) {
+    const pivot = new Group(), inner = buildPieces(single, layout, false);
+    pivot.name = 'apart';
+    pivot.position.set(apart[0] + 1, 0, apart[1] + 1);
+    inner.position.set(-apart[0] - 1, 0, -apart[1] - 1);
+    pivot.add(inner);
+    group.add(pivot);
+  }
+  return group;
+}
+
+/** A sparkle for a moment's effects, with its own material so it can fade. Dispose the material after. */
+export function effectSprite(colour: string): Sprite {
+  const sprite = new Sprite(new SpriteMaterial({map: texture('spark'), color: new Color(colour), transparent: true, depthWrite: false}));
+  sprite.renderOrder = 3;
+  return sprite;
+}
+
+function buildPieces(pieces: readonly Piece[], layout: SceneLayout, island: boolean): Group {
   const solid = new Batch(), film = new Batch(), glows: Glow[] = [];
   const art = createModels(solid, film, glows);
-  art.island(layout);
+  if (island) art.island(layout);
   for (const piece of pieces) {
     switch (piece.type) {
       case 'tile': art.face(art.sq(piece.x, piece.y, 1, 1), piece.colour, true); break;

@@ -8,6 +8,7 @@ import { BuildIcon, CloseIcon, FlagIcon, MapIcon, MoveIcon, SparkIcon } from './
 import { afterCollect, collected, compact, count, daysToAfford, paceText, shortfall, sinceText, tooBig } from './format.ts';
 import { plotKey, plotKind, plotTile, sceneLayout } from './layout.ts';
 import { Sky, TownScene, preloadWorld, type Place, type Selection, type StageSize } from './Scene.tsx';
+import type { Moment } from './view.ts';
 
 type Tab = 'land' | 'harvest';
 /** The action waiting on the server, so its button can say so. */
@@ -63,14 +64,18 @@ export function TownPage({api, onMap}: {api: TownApi; onMap: () => void}) {
     return () => window.clearTimeout(timer);
   }, [town, load, refreshes]);
 
-  const run = async (kind: Pending, action: () => Promise<TownSelf>, done?: string, landChanged = false, undo?: () => void) => {
+  // What just happened, for the scene to play once.
+  const [moment, setMoment] = useState<Moment | null>(null);
+  const run = async (kind: Pending, action: () => Promise<TownSelf>, {done, land = false, undo, at}: {done?: string; land?: boolean; undo?: () => void; at?: {x: number; y: number}} = {}) => {
     if (busy) return;
     setPending(kind);
     try {
       const next = await action();
       setTown(next);
       if (done) say(done, 'ok');
-      if (landChanged) void loadMap(next);
+      const play = () => { if (at && kind !== 'collect' && kind !== 'trade') setMoment({kind, x: at.x, y: at.y, at: performance.now()}); };
+      // New land redraws again once the neighbours load, so its moment waits for them.
+      if (land) void loadMap(next).then(play); else play();
     } catch (failure) { undo?.(); say(failure instanceof Error ? failure.message : String(failure)); }
     finally { setPending(null); }
   };
@@ -79,7 +84,7 @@ export function TownPage({api, onMap}: {api: TownApi; onMap: () => void}) {
     if (busy || !town) return;
     const before = town;
     setTown(collected(town));
-    void run('collect', () => api.collect(), 'Harvest collected', false, () => setTown(before));
+    void run('collect', () => api.collect(), {done: 'Harvest collected', undo: () => setTown(before)});
   };
 
   if (error && !town) return <div className="tt tt-stage tt-center"><Sky /><div className="tt-glass tt-card"><b>Your town could not load</b><p>{error}</p>
@@ -103,7 +108,7 @@ export function TownPage({api, onMap}: {api: TownApi; onMap: () => void}) {
   const select = (next: Selection | null) => {
     if (next?.type === 'plot' && claiming && plotKind(next.x, next.y, own, others).kind === 'claimable') {
       setClaiming(false);
-      void run('claim', () => api.claim(next.x, next.y), `Plot #${town.nextPlot.number} is yours`, true);
+      void run('claim', () => api.claim(next.x, next.y), {done: `Plot #${town.nextPlot.number} is yours`, land: true, at: next});
       return;
     }
     setClaiming(false);
@@ -122,18 +127,18 @@ export function TownPage({api, onMap}: {api: TownApi; onMap: () => void}) {
     <Sky />
     <TownScene layout={layout} plots={town.plots} buildings={town.buildings} map={map} selected={selected} claimMode={claiming}
       harvest={harvestWaiting ? {resources: town.harvest.resources, spill} : null} onSelect={select} onCollect={collect}
-      label={`${town.alias}'s town`} spins
+      label={`${town.alias}'s town`} spins moment={moment}
       popover={(place, size) => {
         if (!anchor) return null;
         const at = place(...anchor);
         if (building) return <Popover at={at} stage={size} reserve={reserve} onClose={deselect}>
-          <BuildingPanel town={town} building={building} reach={reach} pending={pending} onUpgrade={() => void run('upgrade', () => api.upgrade(building.id), `Upgraded to Lv ${building.level + 1}`)} />
+          <BuildingPanel town={town} building={building} reach={reach} pending={pending} onUpgrade={() => void run('upgrade', () => api.upgrade(building.id), {done: `Upgraded to Lv ${building.level + 1}`, at: building})} />
         </Popover>;
         if (plot && plotState === 'own') return <Popover at={at} stage={size} reserve={reserve} onClose={deselect}>
           <EmptyPlotPanel onBuild={() => openBuild(plot)} />
         </Popover>;
         if (plot && plotState === 'claimable') return <Popover at={at} stage={size} reserve={reserve} onClose={deselect}>
-          <ClaimPanel town={town} reach={reach} pending={pending} onClaim={() => { setSelected(null); void run('claim', () => api.claim(plot.x, plot.y), `Plot #${town.nextPlot.number} is yours`, true); }} />
+          <ClaimPanel town={town} reach={reach} pending={pending} onClaim={() => { setSelected(null); void run('claim', () => api.claim(plot.x, plot.y), {done: `Plot #${town.nextPlot.number} is yours`, land: true, at: plot}); }} />
         </Popover>;
         return null;
       }} />
@@ -147,13 +152,13 @@ export function TownPage({api, onMap}: {api: TownApi; onMap: () => void}) {
 
     <Drawer tab={tab} onTab={setTab} badges={{land: claimable ? String(claimable) : null, harvest: harvestWaiting ? '' : null}}>
       {tab === 'land' && <LandPane town={town} reach={reach} claimable={claimable} pending={pending} onClaim={() => { setSelected(null); setClaiming(true); }}
-        onMove={() => void run('move', () => api.move(), 'Your town moved to the frontier', true)} />}
+        onMove={() => void run('move', () => api.move(), {done: 'Your town moved to the frontier', land: true, at: {x: 0, y: 0}})} />}
       {tab === 'harvest' && <HarvestPane town={town} spill={spill} pending={pending} now={now} onCollect={collect}
-        onTrade={bricks => void run('trade', () => api.trade(bricks), 'Traded')} />}
+        onTrade={bricks => void run('trade', () => api.trade(bricks), {done: 'Traded'})} />}
     </Drawer>
 
     {menu && <BuildMenu town={town} reach={reach} busy={busy} full={menu === 'browse'} onClose={() => setMenu(null)}
-      onBuild={kind => { if (menu === 'browse') return; const at = menu; setMenu(null); void run('build', () => api.build(kind, at.x, at.y), `Built a ${BUILDINGS[kind].name}`); }} />}
+      onBuild={kind => { if (menu === 'browse') return; const at = menu; setMenu(null); void run('build', () => api.build(kind, at.x, at.y), {done: `Built a ${BUILDINGS[kind].name}`, at}); }} />}
 
     <div className="tt-glass tt-dock">
       <button type="button" className="tt-db" onClick={onMap}><MapIcon />Map</button>
