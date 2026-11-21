@@ -154,7 +154,8 @@ fn write(settings: &Path, root: &Value) -> io::Result<Outcome> {
     } else {
         None
     };
-    let temporary = with_suffix(&target, ".tokentracky");
+    // Its own name per process, so two that update at once never write the same copy.
+    let temporary = with_suffix(&target, &format!(".tokentracky-{}", std::process::id()));
     fs::write(&temporary, format!("{}\n", serde_json::to_string_pretty(root)?))?;
     if let Ok(current) = fs::metadata(&target) {
         fs::set_permissions(&temporary, current.permissions())?;
