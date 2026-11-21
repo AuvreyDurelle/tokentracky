@@ -329,7 +329,7 @@ export function TownScene({layout: given, plots: givenPlots, buildings: givenBui
         and loses its focus. The pointer's go back to front as the town now faces, so a building in front takes the clicks
         over what it hides, over its whole height and not just its ground. */}
     {targets.map(t => <polygon key={`k${t.key}`} className="tt-hit" points={t.points} fill="transparent" pointerEvents="none" role="button" tabIndex={0}
-      aria-label={t.name} aria-pressed={selectedPlot?.x === t.x && selectedPlot?.y === t.y} onKeyDown={keyed(t.selection)} onFocus={t.enter} onBlur={t.leave} />)}
+      aria-label={t.name} aria-pressed={selectedPlot?.x === t.x && selectedPlot?.y === t.y} onClick={() => activate(t.selection)} onKeyDown={keyed(t.selection)} onFocus={t.enter} onBlur={t.leave} />)}
     {plotsByDepth(layout, P, targets.map(t => [t.x, t.y] as const)).map(([x, y]) => {
       const t = targets.find(target => target.x === x && target.y === y)!;
       return <polygon key={`h${t.key}`} className="tt-hit" points={t.points} fill="transparent" aria-hidden="true"
