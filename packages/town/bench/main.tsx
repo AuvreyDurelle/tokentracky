@@ -1,5 +1,6 @@
 // The real town screens against a fake API, for drive.mjs. Query flags:
 //   page=map       the public map instead of your town
+//   page=visit     someone else's town
 //   side=N         a town of N×N plots (default 6)
 //   noharvest      nothing waiting to collect
 //   select=N       click the Nth plot once the town shows
@@ -12,7 +13,7 @@
 //   notwinkle, nobob, noblur, nofilter  switch an effect off, to see what it costs
 import { createRoot } from 'react-dom/client';
 import { BUILDING_IDS, terrainAt, type BuildingId, type TownMapResponse, type TownSelf } from '@tokentracky/core';
-import { MapPage, TownPage, type TownApi } from '../src/index.ts';
+import { MapPage, TownPage, VisitPage, type TownApi } from '../src/index.ts';
 
 const q = new URLSearchParams(location.search);
 const side = Number(q.get('side') ?? 6);
@@ -69,8 +70,9 @@ const api: TownApi = {
 
 const root = document.getElementById('root')!;
 root.style.height = '100vh';
-createRoot(root).render(q.get('page') === 'map'
-  ? <MapPage api={api} signedIn onVisit={() => {}} onHome={() => {}} />
+const page = q.get('page');
+createRoot(root).render(page === 'map' ? <MapPage api={api} signedIn onVisit={() => {}} onHome={() => {}} />
+  : page === 'visit' ? <VisitPage api={api} alias="t33" signedIn me="bench" onMap={() => {}} onHome={() => {}} />
   : <TownPage api={api} onMap={() => {}} />);
 
 const until = (find: () => Element | null | undefined) => new Promise<Element>(done => { const look = () => { const el = find(); if (el) done(el); else setTimeout(look, 50); }; look(); });
