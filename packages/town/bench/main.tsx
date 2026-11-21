@@ -7,6 +7,7 @@
 //   slow=MS        the fake server takes this long to answer an action
 //   nowebgl        a browser without WebGL, to see the flat drawing
 //   empty=N        leave the last N plots without a building
+//   bricks=N       hold this many of each resource (default 9,000)
 //   notwinkle, nobob, noblur, nofilter  switch an effect off, to see what it costs
 import { createRoot } from 'react-dom/client';
 import { BUILDING_IDS, terrainAt, type BuildingId, type TownMapResponse, type TownSelf } from '@tokentracky/core';
@@ -35,7 +36,7 @@ const plots: Array<{x: number; y: number}> = [];
 for (let x = 0; x < side; x++) for (let y = 0; y < side; y++) plots.push({x: x + 10, y: y + 10});
 const res = (n: number) => ({power: n, bricks: n, water: n, crystals: n});
 const town: TownSelf = {
-  alias: 'bench', level: 6, wallet: res(9000), caps: res(10000),
+  alias: 'bench', level: 6, wallet: res(Number(q.get('bricks') ?? 9000)), caps: res(10000),
   harvest: {resources: res(q.has('noharvest') ? 0 : 400), tokens: 4e6, since: new Date(Date.now() - 3600e3).toISOString(), streak: 5, multiplier: 1.2},
   bonuses: res(10), plots,
   buildings: plots.slice(0, plots.length - Number(q.get('empty') ?? 0)).map((p, i) => ({id: `b${i}`, kind: BUILDING_IDS[i % BUILDING_IDS.length] as BuildingId, x: p.x, y: p.y, level: 1 + (i % 15),

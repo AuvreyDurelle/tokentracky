@@ -135,6 +135,10 @@ export function TownPage({api, onMap}: {api: TownApi; onMap: () => void}) {
     return free.size;
   })();
   const fresh = town.catalogue.some(entry => !entry.locked && entry.owned === 0);
+  const plotPrice = town.nextPlot.cost.bricks ?? 0, plotShort = Math.max(0, plotPrice - reach.bricks);
+  const goal = plotShort === 0 ? 'Ready to claim from the Land tab'
+    : tooBig(town.nextPlot.cost, town.caps) ? 'Needs a bigger Bricks store'
+    : `${count(reach.bricks)} of ${count(plotPrice)} Bricks${(pace => pace ? ` · ${pace.toLowerCase()}` : '')(paceText(daysToAfford(plotShort, town.bricksPerDay)))}`;
 
   return <div className="tt tt-stage">
     <Sky />
@@ -178,8 +182,10 @@ export function TownPage({api, onMap}: {api: TownApi; onMap: () => void}) {
       <button type="button" className="tt-db" onClick={onMap}><MapIcon />Map</button>
       <button type="button" className="tt-cta" disabled={!harvestWaiting || busy || !!town.paused} onClick={collect}>
         <span className="tt-ci"><SparkIcon size={24} /></span>
-        <span><b>{harvestWaiting ? 'Collect harvest' : 'Nothing to collect yet'}</b>
-          <small>{harvestWaiting ? `${sinceText(town.harvest.since, now)} · ${compact(town.harvest.tokens)} tokens${town.harvest.multiplier > 1 ? ` · ×${town.harvest.multiplier.toFixed(1)} streak` : ''}` : 'New tokens arrive with each upload'}</small></span>
+        {harvestWaiting
+        ? <span><b>Collect harvest</b><small>{`${sinceText(town.harvest.since, now)} · ${compact(town.harvest.tokens)} tokens${town.harvest.multiplier > 1 ? ` · ×${town.harvest.multiplier.toFixed(1)} streak` : ''}`}</small></span>
+        // Nothing to collect: how close the next plot is, so the biggest button still says something useful.
+        : <span><b>Next plot #{town.nextPlot.number}</b><small>{goal}</small><i className="tt-cta-bar" aria-hidden="true"><i style={{width: `${Math.min(100, plotPrice ? reach.bricks / plotPrice * 100 : 100)}%`}} /></i></span>}
       </button>
       <button type="button" className="tt-db" aria-pressed={placing} onClick={() => placing ? setPlacing(false) : startBuild()}><BuildIcon />Build{fresh && <i className="tt-bd n">New</i>}</button>
     </div>
