@@ -31,10 +31,15 @@ fn finds_the_settings_in_gemini_cli_home_or_the_home_folder() {
 
 #[test]
 fn touches_the_refresh_request_quietly_in_each_shell() {
-    assert_eq!(command(Path::new("/Users/ada/.tokentracky"), false), COMMAND);
+    // The file is joined to the folder with this system's separator.
+    let sep = std::path::MAIN_SEPARATOR;
+    assert_eq!(
+        command(Path::new("/Users/ada/.tokentracky"), false),
+        format!("touch '/Users/ada/.tokentracky{sep}refresh-now' 2>/dev/null || true")
+    );
     assert_eq!(
         command(Path::new("/Users/o'neil/.tokentracky"), false),
-        r"touch '/Users/o'\''neil/.tokentracky/refresh-now' 2>/dev/null || true"
+        format!(r"touch '/Users/o'\''neil/.tokentracky{sep}refresh-now' 2>/dev/null || true")
     );
     let windows = command(Path::new(r"C:\Users\o'neil\.tokentracky"), true);
     assert!(windows.starts_with("New-Item -ItemType File -Force -Path 'C:\\Users\\o''neil\\.tokentracky"));
