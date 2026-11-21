@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { TOWN_MAP_SPAN, terrainAt } from '@tokentracky/core';
-import { afterCollect, compact, daysToAfford, duration, paceText, shortfall, tooBig } from './format.ts';
+import { afterCollect, collected, compact, daysToAfford, duration, paceText, shortfall, tooBig } from './format.ts';
 import { cellAt, clampCell, fetchArea, fitView, screenOf, visibleArea, within, zoomAt } from './map-view.ts';
 import { plotKey, plotKind, plotsBackToFront, plotTile, sceneLayout } from './layout.ts';
 import { buildingOutline, hull, spunProjection } from './view.ts';
@@ -44,6 +44,19 @@ describe('town numbers', () => {
     // 1,500 Bricks stored and 800 to collect with room for 2,000: 300 spill, so 2,000 is all there is to spend.
     expect(afterCollect({power: 10, bricks: 1500, water: 0, crystals: 0}, {power: 5, bricks: 800, water: 0, crystals: 0}, {power: 1000, bricks: 2000, water: 1000, crystals: 100}))
       .toEqual({power: 15, bricks: 2000, water: 0, crystals: 0});
+  });
+});
+
+describe('collecting at once', () => {
+  it('fills the stores as the server will, spills the rest and empties the harvest', () => {
+    const res = (power: number, bricks: number, water: number, crystals: number) => ({power, bricks, water, crystals});
+    const town = {wallet: res(90, 10, 0, 5), caps: res(100, 100, 100, 100), harvest: {resources: res(30, 20, 0, 1), tokens: 5000, since: null, streak: 2, multiplier: 1.1}};
+    const after = collected(town as unknown as Parameters<typeof collected>[0]);
+    expect(after.wallet).toEqual(res(100, 30, 0, 6));
+    expect(after.wallet).toEqual(afterCollect(town.wallet, town.harvest.resources, town.caps));
+    expect(after.harvest.resources).toEqual(res(0, 0, 0, 0));
+    expect(after.harvest.tokens).toBe(0);
+    expect(after.harvest.streak).toBe(2);
   });
 });
 

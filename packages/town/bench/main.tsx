@@ -4,6 +4,7 @@
 //   noharvest      nothing waiting to collect
 //   select=N       click the Nth plot once the town shows
 //   zoom=out       start the map zoomed right out
+//   slow=MS        the fake server takes this long to answer an action
 //   notwinkle, nobob, noblur, nofilter  switch an effect off, to see what it costs
 import { createRoot } from 'react-dom/client';
 import { BUILDING_IDS, terrainAt, type BuildingId, type TownMapResponse, type TownSelf } from '@tokentracky/core';
@@ -42,10 +43,10 @@ const mapOf = (a: {x0: number; y0: number; x1: number; y1: number}): TownMapResp
   return {...a, plots: out, wonders: [[3, 3], [-20, 14]], edge: 70, featured: null, totals: {towns: 301, plots: out.length},
     towns: Array.from({length: 301}, (_, i) => ({alias: i ? `t${i}` : 'bench', level: 3, plots: 8 + (i % 30), wonder: false}))};
 };
-const later = <T,>(value: T) => new Promise<T>(done => setTimeout(() => done(structuredClone(value)), 30));
+const later = <T,>(value: T, ms = 30) => new Promise<T>(done => setTimeout(() => done(structuredClone(value)), ms));
+const act = () => later(town, Number(q.get('slow') ?? 30));
 const api: TownApi = {
-  me: () => later(town), collect: () => later(town), claim: () => later(town), build: () => later(town), upgrade: () => later(town),
-  move: () => later(town), trade: () => later(town), map: area => later(mapOf(area)),
+  me: () => later(town), collect: act, claim: act, build: act, upgrade: act, move: act, trade: act, map: area => later(mapOf(area)),
   town: alias => later({alias, level: 3, plots, buildings: town.buildings, rarest: null, likes: 2, streak: 3}),
 };
 

@@ -5,12 +5,14 @@ import { BUILDING_HEIGHT } from './art.ts';
 import { BuildingThumb, CostChips, Crest, RESOURCE_NAMES, ResourceBar, StreakClock, usePoint, useNow, useToast } from './Hud.tsx';
 import { ResourceIcon } from './icons.tsx';
 import { BuildIcon, CloseIcon, FlagIcon, MapIcon, MoveIcon, SparkIcon } from './icons.tsx';
-import { afterCollect, compact, count, daysToAfford, paceText, shortfall, sinceText, tooBig } from './format.ts';
+import { afterCollect, collected, compact, count, daysToAfford, paceText, shortfall, sinceText, tooBig } from './format.ts';
 import { plotKey, plotKind, plotTile, sceneLayout } from './layout.ts';
 import { Sky, TownScene, type Selection } from './Scene.tsx';
 import { spunProjection } from './view.ts';
 
 type Tab = 'land' | 'harvest';
+/** The action waiting on the server, so its button can say so. */
+type Pending = 'collect' | 'claim' | 'build' | 'upgrade' | 'move' | 'trade';
 const MAX_LEVEL = 15;
 const HALL_TEXT = "The heart of your town. No building can rise above the Town Hall's level, and each level adds room to every store.";
 /** What is still missing to pay `cost`, as "120 Water · 40 Power", or '' once it is covered. */
@@ -29,7 +31,8 @@ export function TownPage({api, onMap}: {api: TownApi; onMap: () => void}) {
   const [town, setTown] = useState<TownSelf | null>(null);
   const [map, setMap] = useState<TownMapResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [pending, setPending] = useState<Pending | null>(null);
+  const busy = pending !== null;
   const [selected, setSelected] = useState<Selection | null>(null);
   const [tab, setTab] = useState<Tab | null>(() => typeof window !== 'undefined' && window.innerWidth >= 1100 ? 'land' : null);
   const [claiming, setClaiming] = useState(false);
@@ -62,16 +65,23 @@ export function TownPage({api, onMap}: {api: TownApi; onMap: () => void}) {
     return () => window.clearTimeout(timer);
   }, [town, load, refreshes]);
 
-  const run = async (action: () => Promise<TownSelf>, done?: string, landChanged = false) => {
+  const run = async (kind: Pending, action: () => Promise<TownSelf>, done?: string, landChanged = false, undo?: () => void) => {
     if (busy) return;
-    setBusy(true);
+    setPending(kind);
     try {
       const next = await action();
       setTown(next);
       if (done) say(done, 'ok');
       if (landChanged) void loadMap(next);
-    } catch (failure) { say(failure instanceof Error ? failure.message : String(failure)); }
-    finally { setBusy(false); }
+    } catch (failure) { undo?.(); say(failure instanceof Error ? failure.message : String(failure)); }
+    finally { setPending(null); }
+  };
+  // Collecting shows at once; the server's answer then corrects it, or a failure puts the harvest back.
+  const collect = () => {
+    if (busy || !town) return;
+    const before = town;
+    setTown(collected(town));
+    void run('collect', () => api.collect(), 'Harvest collected', false, () => setTown(before));
   };
 
   if (error && !town) return <div className="tt tt-stage tt-center"><Sky /><div className="tt-glass tt-card"><b>Your town could not load</b><p>{error}</p>
@@ -82,7 +92,7 @@ export function TownPage({api, onMap}: {api: TownApi; onMap: () => void}) {
   const others = new Map((map?.plots ?? []).filter(([x, y]) => !own.has(plotKey(x, y))).map(([x, y, i]) => [plotKey(x, y), i]));
   const reach = afterCollect(town.wallet, town.harvest.resources, town.caps);
   const spill = Object.fromEntries(RESOURCE_IDS.map(id => [id, Math.max(0, town.wallet[id] + town.harvest.resources[id] - town.caps[id])])) as Resources;
-  const pending = RESOURCE_IDS.some(id => town.harvest.resources[id] > 0);
+  const harvestWaiting = RESOURCE_IDS.some(id => town.harvest.resources[id] > 0);
   const building = selected?.type === 'building' ? town.buildings.find(b => b.id === selected.id) ?? null : null;
   const plot = selected?.type === 'plot' ? selected : null;
   const plotState = plot ? plotKind(plot.x, plot.y, own, others).kind : null;
@@ -93,7 +103,7 @@ export function TownPage({api, onMap}: {api: TownApi; onMap: () => void}) {
   const select = (next: Selection | null) => {
     if (next?.type === 'plot' && claiming && plotKind(next.x, next.y, own, others).kind === 'claimable') {
       setClaiming(false);
-      void run(() => api.claim(next.x, next.y), `Plot #${town.nextPlot.number} is yours`, true);
+      void run('claim', () => api.claim(next.x, next.y), `Plot #${town.nextPlot.number} is yours`, true);
       return;
     }
     setClaiming(false);
@@ -111,7 +121,7 @@ export function TownPage({api, onMap}: {api: TownApi; onMap: () => void}) {
   return <div ref={stage} className="tt tt-stage">
     <Sky />
     <TownScene svgRef={svg} layout={layout} plots={town.plots} buildings={town.buildings} map={map} selected={selected} claimMode={claiming}
-      harvest={pending ? {resources: town.harvest.resources, spill} : null} onSelect={select} onCollect={() => void run(() => api.collect(), 'Harvest collected')}
+      harvest={harvestWaiting ? {resources: town.harvest.resources, spill} : null} onSelect={select} onCollect={collect}
       label={`${town.alias}'s town`} angle={angle} onSpin={setAngle} />
     <div className="tt-top">
       <Crest alias={town.alias} level={town.level} plots={town.plots.length} />
@@ -121,32 +131,32 @@ export function TownPage({api, onMap}: {api: TownApi; onMap: () => void}) {
     {town.paused && <div className="tt-glass tt-banner" role="status">{town.paused}</div>}
     {claiming && <div className="tt-glass tt-banner" role="status">Pick a glowing plot next to your land. <button type="button" className="tt-link" onClick={() => setClaiming(false)}>Cancel</button></div>}
 
-    <Drawer tab={tab} onTab={setTab} badges={{land: claimable ? String(claimable) : null, harvest: pending ? '' : null}}>
-      {tab === 'land' && <LandPane town={town} reach={reach} claimable={claimable} busy={busy} onClaim={() => { setSelected(null); setClaiming(true); }}
-        onMove={() => void run(() => api.move(), 'Your town moved to the frontier', true)} />}
-      {tab === 'harvest' && <HarvestPane town={town} spill={spill} busy={busy} now={now} onCollect={() => void run(() => api.collect(), 'Harvest collected')}
-        onTrade={bricks => void run(() => api.trade(bricks), 'Traded')} />}
+    <Drawer tab={tab} onTab={setTab} badges={{land: claimable ? String(claimable) : null, harvest: harvestWaiting ? '' : null}}>
+      {tab === 'land' && <LandPane town={town} reach={reach} claimable={claimable} pending={pending} onClaim={() => { setSelected(null); setClaiming(true); }}
+        onMove={() => void run('move', () => api.move(), 'Your town moved to the frontier', true)} />}
+      {tab === 'harvest' && <HarvestPane town={town} spill={spill} pending={pending} now={now} onCollect={collect}
+        onTrade={bricks => void run('trade', () => api.trade(bricks), 'Traded')} />}
     </Drawer>
 
     {building && <Popover svg={svg} stage={stage} point={anchor} reserve={tab ? 340 : 80} onClose={() => setSelected(null)}>
-      <BuildingPanel town={town} building={building} reach={reach} busy={busy} onUpgrade={() => void run(() => api.upgrade(building.id), `Upgraded to Lv ${building.level + 1}`)} />
+      <BuildingPanel town={town} building={building} reach={reach} pending={pending} onUpgrade={() => void run('upgrade', () => api.upgrade(building.id), `Upgraded to Lv ${building.level + 1}`)} />
     </Popover>}
     {plot && plotState === 'own' && <Popover svg={svg} stage={stage} point={anchor} reserve={tab ? 340 : 80} onClose={() => setSelected(null)}>
       <EmptyPlotPanel onBuild={() => openBuild(plot)} />
     </Popover>}
     {plot && plotState === 'claimable' && <Popover svg={svg} stage={stage} point={anchor} reserve={tab ? 340 : 80} onClose={() => setSelected(null)}>
-      <ClaimPanel town={town} reach={reach} busy={busy} onClaim={() => { setSelected(null); void run(() => api.claim(plot.x, plot.y), `Plot #${town.nextPlot.number} is yours`, true); }} />
+      <ClaimPanel town={town} reach={reach} pending={pending} onClaim={() => { setSelected(null); void run('claim', () => api.claim(plot.x, plot.y), `Plot #${town.nextPlot.number} is yours`, true); }} />
     </Popover>}
 
     {menu && <BuildMenu town={town} reach={reach} busy={busy} full={menu === 'browse'} onClose={() => setMenu(null)}
-      onBuild={kind => { if (menu === 'browse') return; const at = menu; setMenu(null); void run(() => api.build(kind, at.x, at.y), `Built a ${BUILDINGS[kind].name}`); }} />}
+      onBuild={kind => { if (menu === 'browse') return; const at = menu; setMenu(null); void run('build', () => api.build(kind, at.x, at.y), `Built a ${BUILDINGS[kind].name}`); }} />}
 
     <div className="tt-glass tt-dock">
       <button type="button" className="tt-db" onClick={onMap}><MapIcon />Map</button>
-      <button type="button" className="tt-cta" disabled={!pending || busy || !!town.paused} onClick={() => void run(() => api.collect(), 'Harvest collected')}>
+      <button type="button" className="tt-cta" disabled={!harvestWaiting || busy || !!town.paused} onClick={collect}>
         <span className="tt-ci"><SparkIcon size={24} /></span>
-        <span><b>{pending ? 'Collect harvest' : 'Nothing to collect yet'}</b>
-          <small>{pending ? `${sinceText(town.harvest.since, now)} · ${compact(town.harvest.tokens)} tokens${town.harvest.multiplier > 1 ? ` · ×${town.harvest.multiplier.toFixed(1)} streak` : ''}` : 'New tokens arrive with each upload'}</small></span>
+        <span><b>{harvestWaiting ? 'Collect harvest' : 'Nothing to collect yet'}</b>
+          <small>{harvestWaiting ? `${sinceText(town.harvest.since, now)} · ${compact(town.harvest.tokens)} tokens${town.harvest.multiplier > 1 ? ` · ×${town.harvest.multiplier.toFixed(1)} streak` : ''}` : 'New tokens arrive with each upload'}</small></span>
       </button>
       <button type="button" className="tt-db" onClick={() => openBuild()}><BuildIcon />Build{fresh && <i className="tt-bd n">New</i>}</button>
     </div>
@@ -170,7 +180,8 @@ function Progress({have, need}: {have: number; need: number}) {
   return <div className="tt-pb" role="progressbar" aria-valuemin={0} aria-valuemax={need} aria-valuenow={Math.min(have, need)}><i style={{width: `${Math.min(100, need ? have / need * 100 : 100)}%`}} /></div>;
 }
 
-function LandPane({town, reach, claimable, busy, onClaim, onMove}: {town: TownSelf; reach: Resources; claimable: number; busy: boolean; onClaim: () => void; onMove: () => void}) {
+function LandPane({town, reach, claimable, pending, onClaim, onMove}: {town: TownSelf; reach: Resources; claimable: number; pending: Pending | null; onClaim: () => void; onMove: () => void}) {
+  const busy = pending !== null;
   const [confirm, setConfirm] = useState(false);
   const price = town.nextPlot.cost.bricks ?? 0;
   // What collecting would leave to spend, as the Claim button counts it.
@@ -184,7 +195,7 @@ function LandPane({town, reach, claimable, busy, onClaim, onMove}: {town: TownSe
     <Progress have={reach.bricks} need={price} />
     <div className="tt-kv tt-mu"><span>You can spend {count(reach.bricks)}</span>{short > 0 ? <span className="tt-sh">{count(short)} short</span> : <span className="tt-ok">Ready</span>}</div>
     {note && <div className="tt-mu tt-note">{note}</div>}
-    <button type="button" className="tt-btn" disabled={busy || reach.bricks < price || !claimable || !!town.paused} onClick={onClaim}>Claim plot #{town.nextPlot.number}</button>
+    <button type="button" className="tt-btn" disabled={busy || reach.bricks < price || !claimable || !!town.paused} onClick={onClaim}>{pending === 'claim' ? 'Claiming…' : `Claim plot #${town.nextPlot.number}`}</button>
     <div className="tt-fr"><i aria-hidden="true">+</i><span>{claimable ? `${claimable} free ${claimable === 1 ? 'plot touches' : 'plots touch'} your land` : 'No free plots touch your land. Move to the frontier.'}</span></div>
     <div className="tt-sep" />
     <div className="tt-kv"><span>Boxed in? Move town</span><b><CostChips cost={town.move.cost} /></b></div>
@@ -192,11 +203,12 @@ function LandPane({town, reach, claimable, busy, onClaim, onMove}: {town: TownSe
     {confirm
       ? <div className="tt-two"><button type="button" className="tt-btn go" disabled={busy || reach.bricks < move} onClick={() => { setConfirm(false); onMove(); }}>Move for {count(move)} Bricks</button>
         <button type="button" className="tt-btn" onClick={() => setConfirm(false)}>Keep</button></div>
-      : <button type="button" className="tt-btn" disabled={busy || reach.bricks < move || !!town.paused} onClick={() => setConfirm(true)}><MoveIcon size={16} /> Move town</button>}
+      : <button type="button" className="tt-btn" disabled={busy || reach.bricks < move || !!town.paused} onClick={() => setConfirm(true)}><MoveIcon size={16} /> {pending === 'move' ? 'Moving…' : 'Move town'}</button>}
   </>;
 }
 
-function HarvestPane({town, spill, busy, now, onCollect, onTrade}: {town: TownSelf; spill: Resources; busy: boolean; now: number; onCollect: () => void; onTrade: (bricks: number) => void}) {
+function HarvestPane({town, spill, pending: action, now, onCollect, onTrade}: {town: TownSelf; spill: Resources; pending: Pending | null; now: number; onCollect: () => void; onTrade: (bricks: number) => void}) {
+  const busy = action !== null;
   const [bricks, setBricks] = useState('');
   const pending = RESOURCE_IDS.some(id => town.harvest.resources[id] > 0);
   return <>
@@ -212,7 +224,7 @@ function HarvestPane({town, spill, busy, now, onCollect, onTrade}: {town: TownSe
       <div className="tt-kv"><span>Market</span><span className="tt-mu">{town.trade.rate} Bricks per Water</span></div>
       <form className="tt-two" onSubmit={event => { event.preventDefault(); const n = Number(bricks); if (Number.isInteger(n) && n > 0) { onTrade(n); setBricks(''); } }}>
         <input className="tt-input" inputMode="numeric" aria-label="Bricks to trade" placeholder={`Bricks, up to ${count(town.wallet.bricks)}`} value={bricks} onChange={event => setBricks(event.target.value.replace(/\D/g, ''))} />
-        <button type="submit" className="tt-btn" disabled={busy || !bricks}>Trade</button>
+        <button type="submit" className="tt-btn" disabled={busy || !bricks}>{action === 'trade' ? 'Trading…' : 'Trade'}</button>
       </form>
     </>}
   </>;
@@ -245,7 +257,8 @@ function Pips({level}: {level: number}) {
 }
 const effectValue = (value: number, unit: 'percent' | 'count') => unit === 'percent' ? `+${value}%` : count(value);
 
-function BuildingPanel({town, building, reach, busy, onUpgrade}: {town: TownSelf; building: TownBuilding; reach: Resources; busy: boolean; onUpgrade: () => void}) {
+function BuildingPanel({town, building, reach, pending, onUpgrade}: {town: TownSelf; building: TownBuilding; reach: Resources; pending: Pending | null; onUpgrade: () => void}) {
+  const busy = pending !== null;
   const info = BUILDINGS[building.kind];
   const next = building.next;
   const description = building.kind === 'town-hall' ? HALL_TEXT : town.catalogue.find(c => c.kind === building.kind)?.description;
@@ -258,7 +271,7 @@ function BuildingPanel({town, building, reach, busy, onUpgrade}: {town: TownSelf
     {next ? <>
         <div className="tt-two"><CostChips cost={next.cost} have={reach} /></div>
         {next.blocked ? <div className="tt-blocked">{next.blocked}</div> : <>
-          <button type="button" className="tt-go" disabled={busy || !!short} onClick={onUpgrade}>Upgrade to Lv {building.level + 1}</button>
+          <button type="button" className="tt-go" disabled={busy || !!short} onClick={onUpgrade} aria-busy={pending === 'upgrade'}>{pending === 'upgrade' ? 'Upgrading…' : `Upgrade to Lv ${building.level + 1}`}</button>
           {short && <div className="tt-mu tt-note">{short} short</div>}
         </>}
       </> : <div className="tt-mu tt-note">At the top level.</div>}
@@ -272,7 +285,8 @@ function EmptyPlotPanel({onBuild}: {onBuild: () => void}) {
   </>;
 }
 
-function ClaimPanel({town, reach, busy, onClaim}: {town: TownSelf; reach: Resources; busy: boolean; onClaim: () => void}) {
+function ClaimPanel({town, reach, pending, onClaim}: {town: TownSelf; reach: Resources; pending: Pending | null; onClaim: () => void}) {
+  const busy = pending !== null;
   const cost = town.nextPlot.cost;
   const missing = shortfall(reach, cost).bricks ?? 0;
   const pace = paceText(daysToAfford(missing, town.bricksPerDay));
@@ -282,7 +296,7 @@ function ClaimPanel({town, reach, busy, onClaim}: {town: TownSelf; reach: Resour
     <CostChips cost={cost} have={reach} />
     <p className="tt-desc">Each plot costs 1.43 times the last.</p>
     {missing > 0 ? <div className="tt-blocked">{full ?? `${count(missing)} Bricks short${pace ? `. ${pace}.` : '.'}`}</div>
-      : <button type="button" className="tt-go" disabled={busy || !!town.paused} onClick={onClaim}>Claim plot #{town.nextPlot.number}</button>}
+      : <button type="button" className="tt-go" disabled={busy || !!town.paused} onClick={onClaim}>{pending === 'claim' ? 'Claiming…' : `Claim plot #${town.nextPlot.number}`}</button>}
   </>;
 }
 

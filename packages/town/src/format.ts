@@ -1,4 +1,4 @@
-import { RESOURCE_IDS, type Cost, type ResourceId, type Resources } from '@tokentracky/core';
+import { RESOURCE_IDS, type Cost, type ResourceId, type Resources, type TownSelf } from '@tokentracky/core';
 
 export const count = (n: number) => Math.round(n).toLocaleString('en-US');
 /** 84.2M, 12.3K. */
@@ -36,6 +36,11 @@ export function afterCollect(wallet: Resources, harvest: Resources, room: Resour
   const out = {...wallet};
   for (const id of RESOURCE_IDS) out[id] = Math.max(wallet[id], Math.min(room[id], wallet[id] + harvest[id]));
   return out;
+}
+/** The town as collecting leaves it, for showing at once while the server does it: the stores take what fits and the harvest empties. */
+export function collected(town: TownSelf): TownSelf {
+  const none = Object.fromEntries(RESOURCE_IDS.map(id => [id, 0])) as Resources;
+  return {...town, wallet: afterCollect(town.wallet, town.harvest.resources, town.caps), harvest: {...town.harvest, resources: none, tokens: 0}};
 }
 /** Whole days of coding at `perDay` to make up `missing`, or null with no pace yet. */
 export function daysToAfford(missing: number, perDay: number): number | null {

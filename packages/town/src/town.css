@@ -22,6 +22,10 @@
 .tt *, .tt *::before, .tt *::after { box-sizing: border-box; }
 .tt button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
 .tt button:disabled { cursor: default; }
+/* Buttons give under the finger at once, before the server answers. */
+.tt button { transition: transform 0.08s ease-out; }
+.tt button:not(:disabled):active { transform: scale(0.96); }
+.tt [aria-busy="true"] { cursor: progress; }
 .tt button:focus-visible, .tt [tabindex]:focus-visible { outline: 2px solid var(--tt-gold); outline-offset: 2px; }
 .tt b { font-weight: 700; }
 .tt-center { display: grid; place-items: center; }
