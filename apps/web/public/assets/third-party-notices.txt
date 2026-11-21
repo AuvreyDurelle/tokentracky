@@ -131,7 +131,7 @@ THE SOFTWARE.
 TokenTracker
 https://github.com/xiufengsun/TokenTracker
 
-The Antigravity reader ports TokenTracker's transcript and gen_metadata accounting, used under the MIT License:
+The Antigravity reader ports TokenTracker's transcript and gen_metadata accounting, and the Gemini CLI hook follows its gemini-config.js, both used under the MIT License:
 
 MIT License
 
