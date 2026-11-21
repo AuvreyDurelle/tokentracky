@@ -101,16 +101,18 @@ fn read_transcript(path: &Path, content: &str, sidecars: &Sidecars) -> ParseResu
     }
     let mut diagnostics = Vec::new();
     // The service hands the reader the database's and the WAL's roles only when each is present inside the authorised
-    // folder. SQLite opens the WAL and its shared-memory file by their paths, so a WAL there that the service rejected,
-    // or a shared-memory file that is a link, keeps the database closed and the transcript waiting, with what it
-    // counted kept, until the next scan finds them trustworthy.
+    // folder and opens. SQLite opens the WAL and its shared-memory file by their paths, so a database or WAL that is
+    // there but was not handed over, or a shared-memory file that is a link, keeps the database closed and the
+    // transcript waiting, with what it counted kept, until the next scan finds them trustworthy.
     let database = database(root, &id);
-    let wal_rejected = sidecar(sidecars, "wal").is_none() && fs::symlink_metadata(wal(&database)).is_ok();
+    let there = |path: &Path| fs::symlink_metadata(path).is_ok();
+    let refused = |role: &str, path: &Path| sidecar(sidecars, role).is_none() && there(path);
     let shm_linked = fs::symlink_metadata(beside(&database, "-shm")).is_ok_and(|shm| !shm.is_file());
+    if refused("database", &database) || refused("wal", &wal(&database)) || shm_linked {
+        return only(PENDING);
+    }
     let generations = if sidecar(sidecars, "database").is_none() {
         BTreeMap::new()
-    } else if wal_rejected || shm_linked {
-        return only(PENDING);
     } else {
         match read_database(&database) {
             Ok(generations) => generations,

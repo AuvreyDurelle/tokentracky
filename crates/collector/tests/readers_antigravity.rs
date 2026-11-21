@@ -417,3 +417,16 @@ fn keeps_the_database_closed_when_its_shared_memory_file_is_a_link() {
     fs::remove_file(&shm).unwrap();
     assert_eq!(sum(&install.read(&lines).events).input, 25_000);
 }
+
+#[test]
+fn waits_for_a_database_that_is_there_but_the_service_could_not_hand_over() {
+    let install = Install::new().generations(&[generation("gemini-3.8-flash", 0, Some(25_000), None)]);
+    let lines = turns(&[("hello", "hi", "think1")]);
+    let content = lines.iter().map(Value::to_string).collect::<Vec<_>>().join("\n");
+    fs::write(install.transcript(), &content).unwrap();
+    // As the service passes a database it could not open inside the folder (unreadable, a link out, a folder).
+    let mut sidecars = Sidecars::new();
+    sidecars.insert("database", None);
+    let result = parse_document(ToolId::Antigravity, &install.transcript(), &content, &sidecars);
+    assert_eq!(result.diagnostics, [PENDING]);
+}
