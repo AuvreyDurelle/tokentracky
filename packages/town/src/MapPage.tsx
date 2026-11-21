@@ -1,17 +1,55 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
-import { BUILDINGS, terrainAt, type TownMapResponse, type TownPublic, type TownSelf } from '@tokentracky/core';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { flushSync } from 'react-dom';
+import { BUILDINGS, terrainAt, type Terrain, type TownMapResponse, type TownPublic, type TownSelf } from '@tokentracky/core';
 import type { TownApi } from './api.ts';
 import { CostChips, Crest, useToast } from './Hud.tsx';
 import { CloseIcon, GlyphIcon, HeartIcon, HomeIcon, MinusIcon, MoveIcon, PlusIcon } from './icons.tsx';
 import { afterCollect, count, daysToAfford, paceText, tooBig } from './format.ts';
-import { plotKey } from './layout.ts';
 import { cellAt, clampCell, fetchArea, fitView, screenOf, visibleArea, within, zoomAt, type Area, type MapView } from './map-view.ts';
 import { townColour } from './pieces.ts';
 
 const hash = (c: number, q: number) => ((Math.imul(c, 73856093) ^ Math.imul(q, 19349663)) >>> 0);
+/** A plot as one number, for fast lookups: the map is far smaller than 65,536 plots a side. */
+const cellKey = (x: number, y: number) => (x + 32768) * 65536 + (y + 32768);
 
-/** Draws the public map: terrain, every claimed plot in its town's colour, your land glowing, Wonders as stars, names, and mist past the frontier. */
-function draw(canvas: HTMLCanvasElement, view: MapView, data: TownMapResponse | null, me: string | null, selected: string | null) {
+/** The map's ground never changes, so each plot's terrain is worked out once. */
+const terrains = new Map<number, Terrain>();
+function terrainOf(x: number, y: number): Terrain {
+  const key = cellKey(x, y);
+  let t = terrains.get(key);
+  if (t === undefined) {
+    if (terrains.size > 400_000) terrains.clear();
+    t = terrainAt(x, y);
+    terrains.set(key, t);
+  }
+  return t;
+}
+
+/** Which sides of a plot face another town or open ground, as bits: up, down, left, right. */
+const UP = 1, DOWN = 2, LEFT = 4, RIGHT = 8;
+/** What drawing needs from a map response, worked out once per response rather than once per frame. */
+export interface MapIndex {owners: Map<number, number>; centres: Map<number, [number, number]>; byTown: Map<number, Array<[number, number, number]>>}
+export function indexMap(data: TownMapResponse | null): MapIndex {
+  const owners = new Map<number, number>(), sums = new Map<number, [number, number, number]>(), byTown = new Map<number, Array<[number, number, number]>>();
+  for (const [x, y, town] of data?.plots ?? []) owners.set(cellKey(x, y), town);
+  for (const [x, y, town] of data?.plots ?? []) {
+    const c = sums.get(town) ?? [0, 0, 0];
+    sums.set(town, [c[0] + x + 0.5, c[1] + y + 0.5, c[2] + 1]);
+    const other = (ax: number, ay: number) => owners.get(cellKey(ax, ay)) !== town;
+    const sides = (other(x, y - 1) ? UP : 0) | (other(x, y + 1) ? DOWN : 0) | (other(x - 1, y) ? LEFT : 0) | (other(x + 1, y) ? RIGHT : 0);
+    let list = byTown.get(town);
+    if (!list) byTown.set(town, list = []);
+    if (sides) list.push([x, y, sides]);
+  }
+  return {owners, byTown, centres: new Map([...sums].map(([town, [x, y, n]]) => [town, [x / n, y / n]]))};
+}
+
+/**
+ * Draws the public map: terrain, every claimed plot in its town's colour, your land glowing, Wonders as stars, names, and
+ * mist past the frontier. Shapes of one colour are gathered into one path and filled once: a zoomed-out map shows over
+ * twelve thousand plots, and filling each on its own made panning stutter.
+ */
+function draw(canvas: HTMLCanvasElement, view: MapView, data: TownMapResponse | null, index: MapIndex, me: string | null, selected: string | null) {
   const ratio = window.devicePixelRatio || 1;
   const width = canvas.clientWidth, height = canvas.clientHeight;
   if (canvas.width !== Math.round(width * ratio) || canvas.height !== Math.round(height * ratio)) { canvas.width = Math.round(width * ratio); canvas.height = Math.round(height * ratio); }
@@ -23,66 +61,76 @@ function draw(canvas: HTMLCanvasElement, view: MapView, data: TownMapResponse | 
   ctx.fillStyle = bg; ctx.fillRect(0, 0, width, height);
   const cell = view.cell, gap = Math.max(1, cell * 0.05), round = Math.min(4, cell * 0.16);
   const area = visibleArea(view, width, height);
-  const owners = new Map<string, number>();
-  for (const [x, y, town] of data?.plots ?? []) owners.set(plotKey(x, y), town);
+  const {owners, centres, byTown} = index;
   const towns = data?.towns ?? [];
   const mine = towns.findIndex(t => t.alias !== null && t.alias === me);
   const chosen = towns.findIndex(t => t.alias !== null && t.alias === selected);
   const edge = data?.edge ?? 0;
-  const rect = (x: number, y: number, w: number, h: number) => { ctx.beginPath(); ctx.roundRect(x, y, w, h, round); };
+  // Small plots skip the rounded corners: under 2 pixels they can't be seen, and rounding thousands of them is slow.
+  const tile = (path: Path2D, x: number, y: number, w: number, h: number) => { if (cell >= 14) path.roundRect(x, y, w, h, round); else path.rect(x, y, w, h); };
+  const water = new Path2D(), ripples = new Path2D(), land = new Path2D(), forest = new Path2D(), treeA = new Path2D(), treeB = new Path2D();
+  const plots = new Map<number, Path2D>(), lights = new Map<number, Path2D>();
+  const pathOf = (paths: Map<number, Path2D>, town: number) => { let p = paths.get(town); if (!p) paths.set(town, p = new Path2D()); return p; };
+  const fill = (p: Path2D | undefined, style: string, alpha = 1) => { if (!p) return; ctx.globalAlpha = alpha; ctx.fillStyle = style; ctx.fill(p); ctx.globalAlpha = 1; };
   // Ground and plots.
-  for (let y = area.y0; y <= area.y1; y++) for (let x = area.x0; x <= area.x1; x++) {
-    const [sx, sy] = screenOf(view, width, height, x, y);
-    const town = owners.get(plotKey(x, y));
+  const [x0, y0] = screenOf(view, width, height, area.x0, area.y0);
+  for (let y = area.y0, sy = y0; y <= area.y1; y++, sy += cell) for (let x = area.x0, sx = x0; x <= area.x1; x++, sx += cell) {
+    const town = owners.get(cellKey(x, y));
     if (town === undefined) {
-      const terrain = terrainAt(x, y);
+      const terrain = terrainOf(x, y);
       if (terrain === 'water') {
-        ctx.fillStyle = '#11204c'; ctx.fillRect(sx, sy, cell, cell);
-        if (cell >= 14 && hash(x, y) % 4 === 0) { ctx.strokeStyle = 'rgba(95,128,208,.45)'; ctx.lineWidth = 1.3; ctx.beginPath(); ctx.moveTo(sx + cell * 0.2, sy + cell * 0.5); ctx.quadraticCurveTo(sx + cell * 0.35, sy + cell * 0.38, sx + cell * 0.5, sy + cell * 0.5); ctx.quadraticCurveTo(sx + cell * 0.65, sy + cell * 0.62, sx + cell * 0.8, sy + cell * 0.5); ctx.stroke(); }
+        water.rect(sx, sy, cell, cell);
+        if (cell >= 14 && hash(x, y) % 4 === 0) {
+          const r = ripples;
+          r.moveTo(sx + cell * 0.2, sy + cell * 0.5); r.quadraticCurveTo(sx + cell * 0.35, sy + cell * 0.38, sx + cell * 0.5, sy + cell * 0.5); r.quadraticCurveTo(sx + cell * 0.65, sy + cell * 0.62, sx + cell * 0.8, sy + cell * 0.5);
+        }
         continue;
       }
-      ctx.fillStyle = terrain === 'forest' ? '#10222c' : '#15183c';
-      rect(sx + gap, sy + gap, cell - gap * 2, cell - gap * 2); ctx.fill();
+      tile(terrain === 'forest' ? forest : land, sx + gap, sy + gap, cell - gap * 2, cell - gap * 2);
       if (terrain === 'forest' && cell >= 12) {
-        ctx.fillStyle = '#1d4436'; ctx.beginPath(); ctx.arc(sx + cell * 0.35, sy + cell * 0.42, cell * 0.19, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#265a42'; ctx.beginPath(); ctx.arc(sx + cell * 0.65, sy + cell * 0.62, cell * 0.23, 0, Math.PI * 2); ctx.fill();
+        const a = treeA, b = treeB;
+        a.moveTo(sx + cell * 0.54, sy + cell * 0.42); a.arc(sx + cell * 0.35, sy + cell * 0.42, cell * 0.19, 0, Math.PI * 2);
+        b.moveTo(sx + cell * 0.88, sy + cell * 0.62); b.arc(sx + cell * 0.65, sy + cell * 0.62, cell * 0.23, 0, Math.PI * 2);
       }
       continue;
     }
-    const t = towns[town];
-    const colour = town === mine ? '#ffe39a' : townColour(t?.alias ?? null);
-    ctx.globalAlpha = town === mine ? 0.34 : town === chosen ? 0.24 : 0.13;
-    ctx.fillStyle = colour;
-    rect(sx + gap, sy + gap, cell - gap * 2, cell - gap * 2); ctx.fill();
-    ctx.globalAlpha = 1;
+    tile(pathOf(plots, town), sx + gap, sy + gap, cell - gap * 2, cell - gap * 2);
     if (cell >= 12) {
-      const lights = town === mine ? 3 : 1 + (hash(x, y) % 2);
-      for (let i = 0; i < lights; i++) {
-        const h = hash(x * 7 + i, y * 13 + i);
-        ctx.fillStyle = town === mine ? '#fff6d6' : colour;
-        ctx.beginPath(); ctx.arc(sx + cell * (0.25 + (h % 15) / 30), sy + cell * (0.25 + ((h >> 4) % 15) / 30), cell * (town === mine ? 0.07 : 0.05), 0, Math.PI * 2); ctx.fill();
+      const n = town === mine ? 3 : 1 + (hash(x, y) % 2), radius = cell * (town === mine ? 0.07 : 0.05), p = pathOf(lights, town);
+      for (let i = 0; i < n; i++) {
+        const h = hash(x * 7 + i, y * 13 + i), cx = sx + cell * (0.25 + (h % 15) / 30), cy = sy + cell * (0.25 + ((h >> 4) % 15) / 30);
+        p.moveTo(cx + radius, cy); p.arc(cx, cy, radius, 0, Math.PI * 2);
       }
     }
   }
-  // Borders: each town's outline in its colour; yours glows.
+  fill(water, '#11204c');
+  if (cell >= 14) { ctx.strokeStyle = 'rgba(95,128,208,.45)'; ctx.lineWidth = 1.3; ctx.stroke(ripples); }
+  fill(land, '#15183c'); fill(forest, '#10222c'); fill(treeA, '#1d4436'); fill(treeB, '#265a42');
+  const colourOf = (town: number) => town === mine ? '#ffe39a' : townColour(towns[town]?.alias ?? null);
+  for (const [town, p] of plots) fill(p, colourOf(town), town === mine ? 0.34 : town === chosen ? 0.24 : 0.13);
+  for (const [town, p] of lights) fill(p, town === mine ? '#fff6d6' : colourOf(town));
+  // Borders: each town's outline in its colour, one path a town; yours glows.
   for (const pass of ['others', 'mine'] as const) {
     ctx.save();
     if (pass === 'mine') { ctx.shadowColor = '#ffd36b'; ctx.shadowBlur = 12; }
-    for (const [x, y, town] of data?.plots ?? []) {
+    ctx.lineCap = 'round';
+    for (const [town, cells] of byTown) {
       if ((town === mine) !== (pass === 'mine')) continue;
-      if (x < area.x0 - 1 || x > area.x1 + 1 || y < area.y0 - 1 || y > area.y1 + 1) continue;
-      const [sx, sy] = screenOf(view, width, height, x, y);
-      const same = (ax: number, ay: number) => owners.get(plotKey(ax, ay)) === town;
-      const d = gap + 1;
-      ctx.strokeStyle = town === mine ? '#ffe9b0' : townColour(towns[town]?.alias ?? null);
+      const path = new Path2D(), d = gap + 1;
+      let any = false;
+      for (const [x, y, sides] of cells) {
+        if (x < area.x0 - 1 || x > area.x1 + 1 || y < area.y0 - 1 || y > area.y1 + 1) continue;
+        const [sx, sy] = screenOf(view, width, height, x, y);
+        any = true;
+        if (sides & UP) { path.moveTo(sx + d, sy + d); path.lineTo(sx + cell - d, sy + d); }
+        if (sides & DOWN) { path.moveTo(sx + d, sy + cell - d); path.lineTo(sx + cell - d, sy + cell - d); }
+        if (sides & LEFT) { path.moveTo(sx + d, sy + d); path.lineTo(sx + d, sy + cell - d); }
+        if (sides & RIGHT) { path.moveTo(sx + cell - d, sy + d); path.lineTo(sx + cell - d, sy + cell - d); }
+      }
+      if (!any) continue;
+      ctx.strokeStyle = town === mine ? '#ffe9b0' : colourOf(town);
       ctx.lineWidth = town === mine ? 3 : town === chosen ? 2.6 : 1.6;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      if (!same(x, y - 1)) { ctx.moveTo(sx + d, sy + d); ctx.lineTo(sx + cell - d, sy + d); }
-      if (!same(x, y + 1)) { ctx.moveTo(sx + d, sy + cell - d); ctx.lineTo(sx + cell - d, sy + cell - d); }
-      if (!same(x - 1, y)) { ctx.moveTo(sx + d, sy + d); ctx.lineTo(sx + d, sy + cell - d); }
-      if (!same(x + 1, y)) { ctx.moveTo(sx + cell - d, sy + d); ctx.lineTo(sx + cell - d, sy + cell - d); }
-      ctx.stroke();
+      ctx.stroke(path);
     }
     ctx.restore();
   }
@@ -96,13 +144,20 @@ function draw(canvas: HTMLCanvasElement, view: MapView, data: TownMapResponse | 
     for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, q = (i % 2 ? 0.45 : 1) * cell * 0.34; ctx.lineTo(sx + q * Math.cos(a), sy + q * Math.sin(a)); }
     ctx.closePath(); ctx.fill(); ctx.restore();
   }
-  // Mist past the frontier, where new and moving towns arrive.
-  if (data) for (let y = area.y0; y <= area.y1; y++) for (let x = area.x0; x <= area.x1; x++) {
-    const beyond = Math.max(Math.abs(x), Math.abs(y)) - (edge + 2);
-    if (beyond <= 0) continue;
-    const [sx, sy] = screenOf(view, width, height, x, y);
-    ctx.fillStyle = `rgba(28,25,68,${Math.min(0.85, 0.25 + beyond * 0.12)})`;
-    ctx.fillRect(sx, sy, cell + 0.5, cell + 0.5);
+  // Mist past the frontier, where new and moving towns arrive: thicker with each ring out, as square rings.
+  if (data) {
+    const ring = (inner: number, outer: number | null, alpha: number) => {
+      const [ix0, iy0] = screenOf(view, width, height, -inner, -inner), [ix1, iy1] = screenOf(view, width, height, inner + 1, inner + 1);
+      const p = new Path2D();
+      if (outer === null) p.rect(-1, -1, width + 2, height + 2);
+      else { const [ox0, oy0] = screenOf(view, width, height, -outer, -outer), [ox1, oy1] = screenOf(view, width, height, outer + 1, outer + 1); p.rect(ox0, oy0, ox1 - ox0, oy1 - oy0); }
+      p.rect(ix0, iy0, ix1 - ix0, iy1 - iy0);
+      ctx.fillStyle = `rgba(28,25,68,${alpha})`;
+      ctx.fill(p, 'evenodd');
+    };
+    // A plot `beyond` rings past edge + 2 gets min(0.85, 0.25 + 0.12 × beyond); from the fifth ring on it's all 0.85.
+    for (let beyond = 1; beyond <= 4; beyond++) ring(edge + 1 + beyond, edge + 2 + beyond, 0.25 + beyond * 0.12);
+    ring(edge + 6, null, 0.85);
   }
   // Names: you, the selected town, then the biggest towns, never overlapping.
   const placed: Array<[number, number, number, number]> = [];
@@ -119,9 +174,7 @@ function draw(canvas: HTMLCanvasElement, view: MapView, data: TownMapResponse | 
     ctx.fillStyle = gold ? '#2a1d00' : '#f2f1ff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(text, gold ? x : x + 7, y + 0.5);
   };
-  const centres = new Map<number, [number, number, number]>();
-  for (const [x, y, town] of data?.plots ?? []) { const c = centres.get(town) ?? [0, 0, 0]; centres.set(town, [c[0] + x + 0.5, c[1] + y + 0.5, c[2] + 1]); }
-  const at = (town: number) => { const c = centres.get(town)!; return screenOf(view, width, height, c[0] / c[2], c[1] / c[2]); };
+  const at = (town: number) => { const [x, y] = centres.get(town)!; return screenOf(view, width, height, x, y); };
   // "You" sits just above your land so the land itself stays in view.
   if (mine >= 0 && centres.has(mine)) { const [x, y] = at(mine); label('You', x, y - Math.max(22, cell * 0.9), '#ffd36b', true); }
   const order = [...centres.keys()].filter(t => t !== mine && towns[t]?.alias).sort((a, b) => (b === chosen ? 1 : 0) - (a === chosen ? 1 : 0) || (towns[b]!.plots - towns[a]!.plots));
@@ -171,18 +224,43 @@ export function MapPage({api, signedIn, feature = false, aside, onHome, onVisit}
     if (!signedIn) return;
     void api.me().then(town => { setMe(town); const [first] = town.plots; if (first && !feature) setView(v => ({...v, cx: first.x + 0.5, cy: first.y + 0.5})); }).catch(() => {});
   }, [api, signedIn, feature]);
-  // Fetch the plots around the view whenever it leaves what was fetched.
+  // Fetch the plots around the view as soon as it leaves what was fetched, panning or not. One request at a time, unless
+  // the view leaves that one's area too; only the newest answer is kept.
+  const loading = useRef<Area | null>(null), request = useRef(0);
   useEffect(() => {
     if (!size.width) return;
     const visible = visibleArea(view, size.width, size.height);
     if (fetched && within(visible, fetched)) return;
+    if (loading.current && within(visible, loading.current)) return;
     const area = fetchArea(view, size.width, size.height);
-    const timer = window.setTimeout(() => {
-      api.map(area).then(next => { setData(next); setFetched(area); setError(null); }).catch(failure => setError(failure instanceof Error ? failure.message : String(failure)));
-    }, fetched ? 200 : 0);
-    return () => window.clearTimeout(timer);
+    const ticket = ++request.current;
+    loading.current = area;
+    api.map(area).then(next => {
+      if (ticket !== request.current) return;
+      loading.current = null;
+      setData(next); setFetched(area); setError(null);
+    }, failure => {
+      if (ticket !== request.current) return;
+      loading.current = null;
+      setError(failure instanceof Error ? failure.message : String(failure));
+    });
   }, [api, view, size, fetched]);
-  useEffect(() => { if (canvas.current && size.width) draw(canvas.current, view, data, me?.alias ?? null, selected?.alias ?? null); }, [view, data, me, selected, size]);
+  useEffect(() => () => { request.current++; loading.current = null; }, []);
+  const index = useMemo(() => indexMap(data), [data]);
+  // Drawn before the browser paints, in the same frame as the move that changed the view.
+  useLayoutEffect(() => { if (canvas.current && size.width) draw(canvas.current, view, data, index, me?.alias ?? null, selected?.alias ?? null); }, [view, data, index, me, selected, size]);
+  // Pointers and wheels can report faster than the screen draws: the view moves once a frame, to the latest place.
+  const nextView = useRef<MapView | null>(null), frame = useRef(0);
+  const moveTo = (next: MapView) => {
+    nextView.current = next;
+    frame.current ||= requestAnimationFrame(() => {
+      frame.current = 0;
+      const v = nextView.current;
+      nextView.current = null;
+      if (v) flushSync(() => setView(v));
+    });
+  };
+  useEffect(() => () => cancelAnimationFrame(frame.current), []);
 
   const point = (event: {clientX: number; clientY: number}) => { const box = canvas.current!.getBoundingClientRect(); return [event.clientX - box.left, event.clientY - box.top] as const; };
   const open = useCallback((alias: string, at: [number, number]) => {
@@ -227,10 +305,10 @@ export function MapPage({api, signedIn, feature = false, aside, onHome, onVisit}
         if (!d) return;
         const dx = event.clientX - d.x, dy = event.clientY - d.y;
         if (Math.abs(dx) + Math.abs(dy) > 4) d.moved = true;
-        if (d.moved) setView({...d.view, cx: d.view.cx - dx / d.view.cell, cy: d.view.cy - dy / d.view.cell});
+        if (d.moved) moveTo({...d.view, cx: d.view.cx - dx / d.view.cell, cy: d.view.cy - dy / d.view.cell});
       }}
       onPointerUp={event => { const d = drag.current; drag.current = null; if (d && !d.moved) { const [px, py] = point(event); click(px, py); } }}
-      onWheel={event => { const [px, py] = point(event); setView(v => zoomAt(v, Math.exp(-event.deltaY * 0.0015), size.width, size.height, px, py)); }} />
+      onWheel={event => { const [px, py] = point(event); moveTo(zoomAt(nextView.current ?? view, Math.exp(-event.deltaY * 0.0015), size.width, size.height, px, py)); }} />
     <div className="tt-top">
       {me && <Crest alias={me.alias} level={me.level} plots={me.plots.length} />}
       <div className="tt-glass tt-ttl"><b>Public map</b><span className="tt-mu">{data ? `${count(data.totals.towns)} towns · ${count(data.totals.plots)} plots claimed` : 'Loading…'}</span></div>

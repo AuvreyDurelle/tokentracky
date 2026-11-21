@@ -3,6 +3,7 @@ import { TOWN_MAP_SPAN, terrainAt } from '@tokentracky/core';
 import { afterCollect, collected, compact, daysToAfford, duration, paceText, shortfall, tooBig } from './format.ts';
 import { cellAt, clampCell, fetchArea, fitView, screenOf, visibleArea, within, zoomAt } from './map-view.ts';
 import { plotKey, plotKind, plotsBackToFront, plotTile, sceneLayout } from './layout.ts';
+import { indexMap } from './MapPage.tsx';
 import { buildingOutline, hull, spunProjection, toStage } from './view.ts';
 import type { Pt } from './art.ts';
 
@@ -125,6 +126,20 @@ describe('picking in the town', () => {
       expect(inside(hall, P(fx + 1, fy + 1, 90))).toBe(true);
       expect(inside(hall, P(fx + 1, fy + 1, 160))).toBe(false);
     }
+  });
+});
+
+describe('indexing a map once per answer', () => {
+  it('finds each town\'s outside edges and its middle', () => {
+    // Town 0 holds two plots side by side; town 1 holds the plot below the first.
+    const data = {x0: 0, y0: 0, x1: 4, y1: 4, plots: [[0, 0, 0], [1, 0, 0], [0, 1, 1]] as Array<[number, number, number]>,
+      towns: [], wonders: [], totals: {towns: 2, plots: 3}, edge: 1, featured: null};
+    const {byTown, centres, owners} = indexMap(data);
+    const UP = 1, DOWN = 2, LEFT = 4, RIGHT = 8;
+    expect(byTown.get(0)).toEqual([[0, 0, UP | DOWN | LEFT], [1, 0, UP | DOWN | RIGHT]]);
+    expect(byTown.get(1)).toEqual([[0, 1, UP | DOWN | LEFT | RIGHT]]);
+    expect(centres.get(0)).toEqual([1, 0.5]);
+    expect(owners.size).toBe(3);
   });
 });
 
