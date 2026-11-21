@@ -253,6 +253,17 @@ export function TownScene({layout: given, plots: givenPlots, buildings: givenBui
   useLayoutEffect(() => { shown.current = bubbles; });
 
   const activate = (selection: Selection) => onSelect?.(selection);
+  const targets = !onSelect ? [] : order.flatMap(([x, y]) => {
+    const kind = kindAt(x, y);
+    if (kind.kind !== 'own' && kind.kind !== 'claimable') return [];
+    const building = byPlot.get(plotKey(x, y));
+    const selection: Selection = building?.id ? {type: 'building', id: building.id} : {type: 'plot', x, y};
+    const name = building ? `${BUILDINGS[building.kind].name}, level ${building.level}` : kind.kind === 'own' ? 'Empty plot' : 'Plot you can claim';
+    const [tx, ty] = tile(x, y);
+    const points = building ? buildingOutline(P, tx, ty, BUILDING_HEIGHT[building.kind]).map(p => `${r(p[0])},${r(p[1])}`).join(' ') : diamond(x, y);
+    const key = plotKey(x, y);
+    return [{x, y, key, selection, name, points, enter: () => setHover(key), leave: () => setHover(h => h === key ? null : h)}];
+  });
   const keyed = (selection: Selection) => (event: KeyboardEvent) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); activate(selection); } };
 
   return <>
@@ -314,21 +325,15 @@ export function TownScene({layout: given, plots: givenPlots, buildings: givenBui
         <text x={hovered.at[0]} y={hovered.at[1] + 4.5} textAnchor="middle" fill="#fff3c4" fontSize={12.5} fontWeight={700}>{hovered.name}</text>
       </g>}
     </g>}
-    {/* Plots you can act on take clicks and keys, back to front as the town now faces, so a building in front takes the
-        clicks over what it hides. A building takes them over its whole height, not just its ground. */}
-    {onSelect && plotsByDepth(layout, P, order).map(([x, y]) => {
-      const kind = kindAt(x, y);
-      const building = byPlot.get(plotKey(x, y));
-      if (kind.kind !== 'own' && kind.kind !== 'claimable') return null;
-      const selection: Selection = building?.id ? {type: 'building', id: building.id} : {type: 'plot', x, y};
-      const name = building ? `${BUILDINGS[building.kind].name}, level ${building.level}` : kind.kind === 'own' ? 'Empty plot' : 'Plot you can claim';
-      const [tx, ty] = tile(x, y);
-      const points = building ? buildingOutline(P, tx, ty, BUILDING_HEIGHT[building.kind]).map(p => `${r(p[0])},${r(p[1])}`).join(' ') : diamond(x, y);
-      const key = plotKey(x, y);
-      const enter = () => setHover(key), leave = () => setHover(h => h === key ? null : h);
-      return <polygon key={`h${x},${y}`} className="tt-hit" points={points} fill="transparent" role="button" tabIndex={0} aria-label={name}
-        aria-pressed={selectedPlot?.x === x && selectedPlot?.y === y} onClick={() => activate(selection)} onKeyDown={keyed(selection)}
-        onPointerEnter={enter} onPointerLeave={leave} onFocus={enter} onBlur={leave} />;
+    {/* Plots you can act on. The keyboard's targets stay in one order, so turning the town never moves the focused one
+        and loses its focus. The pointer's go back to front as the town now faces, so a building in front takes the clicks
+        over what it hides, over its whole height and not just its ground. */}
+    {targets.map(t => <polygon key={`k${t.key}`} className="tt-hit" points={t.points} fill="transparent" pointerEvents="none" role="button" tabIndex={0}
+      aria-label={t.name} aria-pressed={selectedPlot?.x === t.x && selectedPlot?.y === t.y} onKeyDown={keyed(t.selection)} onFocus={t.enter} onBlur={t.leave} />)}
+    {plotsByDepth(layout, P, targets.map(t => [t.x, t.y] as const)).map(([x, y]) => {
+      const t = targets.find(target => target.x === x && target.y === y)!;
+      return <polygon key={`h${t.key}`} className="tt-hit" points={t.points} fill="transparent" aria-hidden="true"
+        onClick={() => activate(t.selection)} onPointerEnter={t.enter} onPointerLeave={t.leave} />;
     })}
     </>}
   </svg>

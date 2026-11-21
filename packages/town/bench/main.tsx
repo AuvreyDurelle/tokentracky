@@ -77,7 +77,7 @@ createRoot(root).render(page === 'map' ? <MapPage api={api} signedIn onVisit={()
 
 const until = (find: () => Element | null | undefined) => new Promise<Element>(done => { const look = () => { const el = find(); if (el) done(el); else setTimeout(look, 50); }; look(); });
 const select = q.get('select');
-if (select !== null) void until(() => document.querySelectorAll('.tt-hit')[Number(select)]).then(el => el.dispatchEvent(new MouseEvent('click', {bubbles: true})));
+if (select !== null) void until(() => document.querySelectorAll('.tt-hit[aria-hidden]')[Number(select)]).then(el => el.dispatchEvent(new MouseEvent('click', {bubbles: true})));
 if (q.get('zoom') === 'out') void until(() => document.querySelector('.tt-canvas')).then(canvas => {
   for (let i = 0; i < 12; i++) canvas.dispatchEvent(new WheelEvent('wheel', {bubbles: true, deltaY: 400, deltaMode: 1, clientX: 720, clientY: 450}));
 });
