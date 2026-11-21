@@ -5,6 +5,7 @@ use crate::limits::{LimitReading, MAX_CLAUDE_CONFIG_BYTES, claude_reading, read_
 use crate::readers::{
     MAX_DOCUMENT_BYTES, MayHoldUsage, PARSER_VERSION, PENDING, Parents, ParserState, RateLimits, RawCounts, Sidecars,
     SourceKind, adapter, codex_total, digest, is_supported, line_limit, parse_document, parse_usage_line, source_kind,
+    watched_files,
 };
 use crate::store::{FileCheckpoint, SourceConfiguration, StoreError, UsageStore};
 use crate::{Clock, resolve};
@@ -261,14 +262,15 @@ fn read_sidecar(path: &Path, root: &Path) -> Result<Option<String>> {
 fn js_number(value: f64) -> String {
     ryu_js::Buffer::new().format(value).to_owned()
 }
-/// `sidecarVersion`: identity, size and times of each sidecar (null when absent), so one written after its document
-/// still updates it.
+/// `sidecarVersion`: identity, size and times of each sidecar and watched file (null when absent), so one written after
+/// its document still updates it.
 fn sidecar_version(tool: ToolId, path: &Path, root: &Path) -> String {
     let siblings = adapter(tool).and_then(|adapter| adapter.sidecars);
     // `JSON.stringify([[role, [dev, ino, size, mtimeMs, ctimeMs] or null], ...])`.
     let stamps: Vec<String> = siblings
         .map_or_else(Vec::new, |sidecars| sidecars(path))
         .into_iter()
+        .chain(watched_files(tool, path))
         .map(|(role, sibling)| {
             let stat = if inside(root, &sibling) {
                 Stat::of_path(&sibling).ok()
@@ -839,6 +841,11 @@ impl IngestionService {
             let siblings = adapter(tool).and_then(|adapter| adapter.sidecars);
             for (role, sibling) in siblings.map_or_else(Vec::new, |sidecars| sidecars(path)) {
                 sidecars.insert(role, read_sidecar(&sibling, root)?);
+            }
+            // Never read here: the reader opens them, and only learns that they are present inside the root.
+            for (role, sibling) in watched_files(tool, path) {
+                let present = inside(root, &sibling) && open_inside(&sibling, root).is_ok();
+                sidecars.insert(role, present.then(String::new));
             }
             result = parse_document(tool, path, &content, &sidecars);
             if result.diagnostics.iter().any(|code| code == PENDING) {

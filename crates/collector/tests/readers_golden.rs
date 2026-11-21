@@ -213,6 +213,7 @@ fn document_and_database_readers_give_the_golden_events_and_diagnostics() {
         (ToolId::Copilot, &["document"]),
         (ToolId::Unsloth, &["database"]),
         (ToolId::OpenClaw, &["database", "document"]),
+        (ToolId::Antigravity, &["document"]),
     ];
     if std::env::var_os("TOKENTRACKY_CASES").is_none() {
         assert_eq!(

@@ -6,7 +6,7 @@
 
 ### Waste tokens, not time.
 
-The public leaderboard for AI coding tokens. A native macOS menu-bar app and a Rust CLI read the usage records that **28 AI coding tools** already keep, show you your numbers privately, and rank you on [tokentracky.com](https://tokentracky.com) once you join. Token counts only: never prompts, code or project names.
+The public leaderboard for AI coding tokens. A native macOS menu-bar app and a Rust CLI read the usage records that **29 AI coding tools** already keep, show you your numbers privately, and rank you on [tokentracky.com](https://tokentracky.com) once you join. Token counts only: never prompts, code or project names.
 
 [![Latest release](https://img.shields.io/github/v/release/AuvreyDurelle/tokentracky?color=4f56b8&label=release)](https://github.com/AuvreyDurelle/tokentracky/releases/latest)
 [![npm](https://img.shields.io/npm/v/tokentracky?color=4f56b8&logo=npm&logoColor=white)](https://www.npmjs.com/package/tokentracky)
@@ -96,7 +96,7 @@ Tokentracky is **ad-hoc signed**: Apple has not notarized it yet, so macOS block
 
 ## Features
 
-- **28 tools, nothing installed into them.** Collection is passive: Tokentracky reads records each tool already keeps and never installs hooks or changes a tool's settings. History you already have counts the moment you join.
+- **29 tools, nothing installed into them.** Collection is passive: Tokentracky reads records each tool already keeps and never installs hooks or changes a tool's settings. History you already have counts the moment you join.
 - **A public leaderboard.** The community's total tokens for the week, month or all time, a top-three podium, per-tool filters and the ranked list. Reading it needs no account.
 - **Profiles worth sharing.** Every member gets `/u/<name>`: totals, streaks, a 52-week activity calendar, tool mix, top models, achievements, a share card with **Post on X**, and README badges.
 - **A menu-bar app.** The icon opens a popover with today's tokens, your week, month and all-time totals, streak and recent sessions. The dashboard window has Leaderboard, Tokens (your private usage, models and insights), Achievements and Settings.
@@ -155,7 +155,7 @@ Tokentracky is **ad-hoc signed**: Apple has not notarized it yet, so macOS block
 
 ```mermaid
 flowchart LR
-    A["Your AI coding tools<br/>Claude Code · Codex · Gemini CLI · Copilot<br/>OpenCode · Cline · Grok Build · 21 more"] -->|"their own usage logs,<br/>read in place"| B["Tokentracky<br/>Mac app or CLI"]
+    A["Your AI coding tools<br/>Claude Code · Codex · Gemini CLI · Copilot<br/>OpenCode · Cline · Grok Build · 22 more"] -->|"their own usage logs,<br/>read in place"| B["Tokentracky<br/>Mac app or CLI"]
     B --> C[("~/.tokentracky<br/>on your Mac")]
     C --> D["Menu bar and dashboard<br/>(private)"]
     C -.->|"after you join:<br/>daily totals"| E[("tokentracky.com")]
@@ -169,7 +169,7 @@ flowchart LR
 
 ## Supported tools
 
-Claude Code · Codex · Gemini CLI · Cline · Roo Code · Kilo Code · OpenCode · Every Code · Mimo Code · DuMate · pi · oh-my-pi · OmO · Prime Agent · MiniMax Code · CodeBuddy · Kimi Code · Command Code · DeepSeek Harness · LM Studio · GitHub Copilot · Unsloth Studio · ZCode · Zed Agent · OpenClaw · Hermes Agent · Goose · Grok Build
+Claude Code · Codex · Gemini CLI · Cline · Roo Code · Kilo Code · OpenCode · Every Code · Mimo Code · DuMate · pi · oh-my-pi · OmO · Prime Agent · MiniMax Code · CodeBuddy · Kimi Code · Command Code · DeepSeek Harness · LM Studio · GitHub Copilot · Unsloth Studio · ZCode · Zed Agent · OpenClaw · Hermes Agent · Goose · Grok Build · Antigravity
 
 Cursor (no verified local usage format) and Reasonix are not read yet. Claude.ai and ChatGPT website conversations are not included. Missing a tool? [Open an issue](https://github.com/AuvreyDurelle/tokentracky/issues/new).
 
@@ -212,6 +212,7 @@ The columns match `SourceStatus.capabilities`; a test keeps them in step.
 | Hermes Agent | `~/.hermes/state.db` and `profiles/*/state.db` (opened read-only), not the copies in `state-snapshots` and `backups`. Each scan counts the growth of a session's running total, dated at its latest activity, so its hour and day are coarse | Yes | Yes | No | No | No |
 | Goose | `~/.local/share/goose/sessions/sessions.db` (opened read-only): one record per model request, and for sessions from before Goose kept those, the growth of their running totals, dated when the session was last updated (coarse) | Yes | Yes | No | No | No |
 | Grok Build | `~/.grok/sessions/<project>/<session>/updates.jsonl`: each completed prompt's usage by model, with the cost xAI billed for it; prompts Grok recorded no usage for (most were cancelled) are not counted, and the session's conversation files are never opened | Yes | Yes | Yes | Yes | No |
+| Antigravity | `~/.gemini/antigravity`, `antigravity-ide`, `antigravity-insiders` and `antigravity-cli`, and T3 Code's `~/.t3/userdata/providers/antigravity`: each conversation's `brain/<id>/.system_generated/logs/transcript.jsonl`, with the usage Antigravity recorded in `conversations/<id>.db` (opened read-only) where it did. Turns it recorded none for are estimated from the transcript's text, a token per CJK character or per four others, as TokenTracker does; the text is counted and dropped. Encrypted `conversations/*.pb` files are never opened | Yes | Yes | No | No | No |
 
 **Projects** is the folder a session ran in; it stays on this computer and is never uploaded. Gemini CLI records only a hash of the project folder, so its usage has no project; classic Cline extension tasks do not record one either. **Reported cost** is No for every tool but Grok Build: costs a tool writes into its logs are ignored, and estimated cost comes from the price table whenever the model is known. Grok Build records what xAI billed for each prompt, every long-context rate included; that cost is kept, and the table (xAI's Grok API rates) prices only prompts Grok marks partial or incomplete.
 

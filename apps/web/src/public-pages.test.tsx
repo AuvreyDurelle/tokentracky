@@ -32,7 +32,7 @@ describe('profile sharing', () => {
   });
   it('lists every tool the collector reads, and not Cursor', () => {
     expect(TOOLS.map((tool) => tool.id)).toEqual(TOOL_IDS.filter((id) => id !== 'cursor'));
-    expect(TOOLS).toHaveLength(29);
+    expect(TOOLS).toHaveLength(30);
     expect(TOOLS.map((tool) => tool.label)).toEqual(TOOLS.map((tool) => TOOL_NAMES[tool.id]));
     expect(toolLabel('opencode')).toBe('OpenCode');
   });

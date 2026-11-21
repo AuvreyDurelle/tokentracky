@@ -1,0 +1,266 @@
+{
+  "tools=off,cost=off,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 12,
+        "output": 16,
+        "reasoning": 8
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 3,
+      "tokens": 28,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 12,
+        "output": 16,
+        "reasoning": 8
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 4,
+      "tokens": 28,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 12,
+        "output": 16,
+        "reasoning": 8
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "gemini-3-pro",
+      "revision": 5,
+      "tokens": 28,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 12,
+        "output": 16,
+        "reasoning": 8
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "gemini-3-pro",
+      "revision": 6,
+      "tokens": 28,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 12,
+        "output": 16,
+        "reasoning": 8
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 7,
+      "tokens": 28,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 12,
+        "output": 16,
+        "reasoning": 8
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 8,
+      "tokens": 28,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 12,
+        "output": 16,
+        "reasoning": 8
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "gemini-3-pro",
+      "revision": 9,
+      "tokens": 28,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 12,
+        "output": 16,
+        "reasoning": 8
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "gemini-3-pro",
+      "revision": 10,
+      "tokens": 28,
+      "tool": "all"
+    }
+  ],
+  "tools=on,cost=off,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 12,
+        "output": 16,
+        "reasoning": 8
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 11,
+      "tokens": 28,
+      "tool": "antigravity"
+    }
+  ],
+  "tools=on,cost=off,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 12,
+        "output": 16,
+        "reasoning": 8
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 12,
+      "tokens": 28,
+      "tool": "antigravity"
+    }
+  ],
+  "tools=on,cost=off,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 12,
+        "output": 16,
+        "reasoning": 8
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "gemini-3-pro",
+      "revision": 13,
+      "tokens": 28,
+      "tool": "antigravity"
+    }
+  ],
+  "tools=on,cost=off,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 12,
+        "output": 16,
+        "reasoning": 8
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "gemini-3-pro",
+      "revision": 14,
+      "tokens": 28,
+      "tool": "antigravity"
+    }
+  ],
+  "tools=on,cost=on,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 12,
+        "output": 16,
+        "reasoning": 8
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 15,
+      "tokens": 28,
+      "tool": "antigravity"
+    }
+  ],
+  "tools=on,cost=on,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 12,
+        "output": 16,
+        "reasoning": 8
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 16,
+      "tokens": 28,
+      "tool": "antigravity"
+    }
+  ],
+  "tools=on,cost=on,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 12,
+        "output": 16,
+        "reasoning": 8
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "gemini-3-pro",
+      "revision": 17,
+      "tokens": 28,
+      "tool": "antigravity"
+    }
+  ],
+  "tools=on,cost=on,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 12,
+        "output": 16,
+        "reasoning": 8
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "gemini-3-pro",
+      "revision": 18,
+      "tokens": 28,
+      "tool": "antigravity"
+    }
+  ]
+}

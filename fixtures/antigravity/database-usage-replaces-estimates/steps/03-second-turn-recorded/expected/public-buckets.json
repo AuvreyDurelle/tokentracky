@@ -1,0 +1,386 @@
+{
+  "tools=off,cost=off,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 6900,
+        "cacheWrite": 0,
+        "input": 1600,
+        "output": 370,
+        "reasoning": 70
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 46,
+      "tokens": 8870,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 6900,
+        "cacheWrite": 0,
+        "input": 1600,
+        "output": 370,
+        "reasoning": 70
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 47,
+      "tokens": 8870,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 0,
+        "output": 0,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "gemini-3-pro",
+      "revision": 24,
+      "tokens": 0,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 6900,
+        "cacheWrite": 0,
+        "input": 1600,
+        "output": 370,
+        "reasoning": 70
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "gemini-3.8-flash",
+      "revision": 48,
+      "tokens": 8870,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=off,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 0,
+        "output": 0,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "gemini-3-pro",
+      "revision": 26,
+      "tokens": 0,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 6900,
+        "cacheWrite": 0,
+        "input": 1600,
+        "output": 370,
+        "reasoning": 70
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "gemini-3.8-flash",
+      "revision": 49,
+      "tokens": 8870,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 6900,
+        "cacheWrite": 0,
+        "input": 1600,
+        "output": 370,
+        "reasoning": 70
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 50,
+      "tokens": 8870,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 6900,
+        "cacheWrite": 0,
+        "input": 1600,
+        "output": 370,
+        "reasoning": 70
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 51,
+      "tokens": 8870,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 0,
+        "output": 0,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "gemini-3-pro",
+      "revision": 30,
+      "tokens": 0,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 6900,
+        "cacheWrite": 0,
+        "input": 1600,
+        "output": 370,
+        "reasoning": 70
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "gemini-3.8-flash",
+      "revision": 52,
+      "tokens": 8870,
+      "tool": "all"
+    }
+  ],
+  "tools=off,cost=on,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 0,
+        "output": 0,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "gemini-3-pro",
+      "revision": 32,
+      "tokens": 0,
+      "tool": "all"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 6900,
+        "cacheWrite": 0,
+        "input": 1600,
+        "output": 370,
+        "reasoning": 70
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "gemini-3.8-flash",
+      "revision": 53,
+      "tokens": 8870,
+      "tool": "all"
+    }
+  ],
+  "tools=on,cost=off,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 6900,
+        "cacheWrite": 0,
+        "input": 1600,
+        "output": 370,
+        "reasoning": 70
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 54,
+      "tokens": 8870,
+      "tool": "antigravity"
+    }
+  ],
+  "tools=on,cost=off,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 6900,
+        "cacheWrite": 0,
+        "input": 1600,
+        "output": 370,
+        "reasoning": 70
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 55,
+      "tokens": 8870,
+      "tool": "antigravity"
+    }
+  ],
+  "tools=on,cost=off,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 0,
+        "output": 0,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "gemini-3-pro",
+      "revision": 36,
+      "tokens": 0,
+      "tool": "antigravity"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 6900,
+        "cacheWrite": 0,
+        "input": 1600,
+        "output": 370,
+        "reasoning": 70
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "gemini-3.8-flash",
+      "revision": 56,
+      "tokens": 8870,
+      "tool": "antigravity"
+    }
+  ],
+  "tools=on,cost=off,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 0,
+        "output": 0,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "gemini-3-pro",
+      "revision": 38,
+      "tokens": 0,
+      "tool": "antigravity"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 6900,
+        "cacheWrite": 0,
+        "input": 1600,
+        "output": 370,
+        "reasoning": 70
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "gemini-3.8-flash",
+      "revision": 57,
+      "tokens": 8870,
+      "tool": "antigravity"
+    }
+  ],
+  "tools=on,cost=on,models=off,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 6900,
+        "cacheWrite": 0,
+        "input": 1600,
+        "output": 370,
+        "reasoning": 70
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 58,
+      "tokens": 8870,
+      "tool": "antigravity"
+    }
+  ],
+  "tools=on,cost=on,models=off,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 6900,
+        "cacheWrite": 0,
+        "input": 1600,
+        "output": 370,
+        "reasoning": 70
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "revision": 59,
+      "tokens": 8870,
+      "tool": "antigravity"
+    }
+  ],
+  "tools=on,cost=on,models=on,history=2026-10-21": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 0,
+        "output": 0,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "gemini-3-pro",
+      "revision": 42,
+      "tokens": 0,
+      "tool": "antigravity"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 6900,
+        "cacheWrite": 0,
+        "input": 1600,
+        "output": 370,
+        "reasoning": 70
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "gemini-3.8-flash",
+      "revision": 60,
+      "tokens": 8870,
+      "tool": "antigravity"
+    }
+  ],
+  "tools=on,cost=on,models=on,history=none": [
+    {
+      "breakdown": {
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "input": 0,
+        "output": 0,
+        "reasoning": 0
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "gemini-3-pro",
+      "revision": 44,
+      "tokens": 0,
+      "tool": "antigravity"
+    },
+    {
+      "breakdown": {
+        "cacheRead": 6900,
+        "cacheWrite": 0,
+        "input": 1600,
+        "output": 370,
+        "reasoning": 70
+      },
+      "costMicrousd": null,
+      "day": "2026-10-23",
+      "model": "gemini-3.8-flash",
+      "revision": 61,
+      "tokens": 8870,
+      "tool": "antigravity"
+    }
+  ]
+}

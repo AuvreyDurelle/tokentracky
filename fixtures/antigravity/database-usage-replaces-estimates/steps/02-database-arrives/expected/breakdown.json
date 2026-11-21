@@ -1,0 +1,16 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 3000,
+      "cacheWrite": 0,
+      "input": 1500,
+      "output": 258,
+      "reasoning": 54
+    },
+    "costMicrousd": null,
+    "day": "2026-10-23",
+    "model": "gemini-3.8-flash",
+    "tokens": 4758,
+    "tool": "antigravity"
+  }
+]

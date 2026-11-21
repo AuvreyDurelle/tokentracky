@@ -1,0 +1,4 @@
+{
+  "description": "Turns are estimated until Antigravity's conversation database records them: when it appears beside an unchanged transcript the first turn takes its recorded usage, model and context, and the second its context growth; a later generation for the second turn replaces that estimate. The default model comes from settings.json.",
+  "rustOnly": true
+}

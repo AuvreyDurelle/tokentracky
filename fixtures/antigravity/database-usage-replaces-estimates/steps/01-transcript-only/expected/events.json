@@ -1,0 +1,36 @@
+[
+  {
+    "costMicrousd": null,
+    "eventId": "antigravity:6c86f8e497289e0329f4b98e52231593415c73d5f507bfdc96801116d31cb3f4",
+    "model": "gemini-3-pro",
+    "occurredAt": "2026-10-23T10:01:30.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "c0ffee00-0000-4000-8000-000000000002",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 8,
+      "output": 8,
+      "reasoning": 4
+    },
+    "tool": "antigravity"
+  },
+  {
+    "costMicrousd": null,
+    "eventId": "antigravity:93767066ab20559634dc41ea1d38f03c84b3bee4c49f66d3e86e180e599c7410",
+    "model": "gemini-3-pro",
+    "occurredAt": "2026-10-23T10:00:30.000Z",
+    "pricingVersion": null,
+    "project": null,
+    "sessionId": "c0ffee00-0000-4000-8000-000000000002",
+    "tokens": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 4,
+      "output": 8,
+      "reasoning": 4
+    },
+    "tool": "antigravity"
+  }
+]

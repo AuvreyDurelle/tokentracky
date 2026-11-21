@@ -44,6 +44,7 @@ pub enum ToolId {
     Hermes,
     Goose,
     Grok,
+    Antigravity,
 }
 /// Every tool, in display order (`TOOL_IDS` in TypeScript).
 pub const TOOL_IDS: &[ToolId] = &[
@@ -77,6 +78,7 @@ pub const TOOL_IDS: &[ToolId] = &[
     ToolId::Hermes,
     ToolId::Goose,
     ToolId::Grok,
+    ToolId::Antigravity,
 ];
 impl ToolId {
     /// Display name (`TOOL_NAMES` in TypeScript).
@@ -112,6 +114,7 @@ impl ToolId {
             Self::Hermes => "Hermes Agent",
             Self::Goose => "Goose",
             Self::Grok => "Grok Build",
+            Self::Antigravity => "Antigravity",
         }
     }
     /// Its JSON id.
@@ -147,6 +150,7 @@ impl ToolId {
             Self::Hermes => "hermes",
             Self::Goose => "goose",
             Self::Grok => "grok",
+            Self::Antigravity => "antigravity",
         }
     }
 }

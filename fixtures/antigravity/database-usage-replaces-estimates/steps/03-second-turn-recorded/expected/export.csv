@@ -1,0 +1,3 @@
+"tool","model","timestamp","project","session","input","output","cache_read","cache_write","reasoning","total","cost_microusd"
+"antigravity","gemini-3.8-flash","2026-10-23T10:01:30.000Z","","c0ffee00-0000-4000-8000-000000000002","600","120","3900","0","20","4620",""
+"antigravity","gemini-3.8-flash","2026-10-23T10:00:30.000Z","","c0ffee00-0000-4000-8000-000000000002","1000","250","3000","0","50","4250",""

@@ -1,0 +1,4 @@
+{
+  "description": "Turns without recorded usage are estimated from the transcript (a CJK character or four other characters to a token; input is the context added since the previous turn), the model comes from the last Model Selection change, and the same conversation in the app's and the IDE's folders counts once. Encrypted .pb conversations are never opened.",
+  "rustOnly": true
+}

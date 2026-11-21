@@ -1,0 +1,22 @@
+[
+  {
+    "breakdown": {
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "input": 48,
+      "output": 30,
+      "reasoning": 4
+    },
+    "costMicrousd": null,
+    "id": "c0ffee00-0000-4000-8000-000000000001",
+    "lastUsedAt": "2026-10-23T09:00:09.000Z",
+    "model": "gemini-3.5-flash",
+    "models": [
+      "gemini-3.5-flash"
+    ],
+    "project": null,
+    "startedAt": "2026-10-23T09:00:00.000Z",
+    "tokens": 78,
+    "tool": "antigravity"
+  }
+]
