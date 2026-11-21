@@ -1117,6 +1117,27 @@ async fn serve_installs_gemini_clis_hook_for_its_data_folder_and_uninstall_remov
     assert_eq!(parse(&fs::read_to_string(&settings).unwrap()), json!({"theme": "dark"}));
 }
 
+/// Rust only. Settings Tokentracky cannot read as plain JSON (Gemini CLI also accepts comments) are left alone, and
+/// `uninstall` says where a hook may remain.
+#[tokio::test(flavor = "multi_thread")]
+async fn uninstall_names_gemini_settings_it_could_not_clean() {
+    let mut f = Fixture::new();
+    let settings = f.home.join(".gemini").join("settings.json");
+    fs::create_dir_all(settings.parent().unwrap()).unwrap();
+    let text = "{\n  // mine\n  \"hooks\": {}\n}\n";
+    fs::write(&settings, text).unwrap();
+    let removed = f.run(&["uninstall", "--yes"]).await;
+    assert_eq!(removed.code, 0, "{}", removed.stderr);
+    assert!(
+        removed
+            .stdout
+            .contains(&format!("{} is not plain JSON", settings.display())),
+        "{}",
+        removed.stdout
+    );
+    assert_eq!(fs::read_to_string(&settings).unwrap(), text);
+}
+
 #[tokio::test(flavor = "multi_thread")]
 async fn serve_opens_the_dashboard_in_the_browser_on_a_terminal() {
     let mut f = Fixture::new();

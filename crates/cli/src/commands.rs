@@ -403,7 +403,18 @@ pub async fn uninstall(directory: &Path, flags: &Flags, context: &mut Context) -
             directory.display(),
             settings.display()
         ),
-        _ => format!("Removed {}. There is nothing else to undo.\n", directory.display()),
+        Ok(Outcome::Unreadable) => format!(
+            "Removed {}. {} is not plain JSON, so Tokentracky left it alone: if it has a SessionEnd hook named \
+             tokentracky, remove it by hand.\n",
+            directory.display(),
+            settings.display()
+        ),
+        Err(error) => format!(
+            "Removed {}. Could not update {} ({error}): remove its SessionEnd hook named tokentracky by hand.\n",
+            directory.display(),
+            settings.display()
+        ),
+        Ok(_) => format!("Removed {}. There is nothing else to undo.\n", directory.display()),
     };
     context.out(&message);
     Ok(0)

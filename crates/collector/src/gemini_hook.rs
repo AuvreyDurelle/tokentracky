@@ -99,19 +99,18 @@ pub fn remove(settings: &Path) -> io::Result<Outcome> {
     let Some(entries) = hooks.get_mut(EVENT).and_then(Value::as_array_mut) else {
         return Ok(Outcome::Unchanged);
     };
-    let before = entries.clone();
-    for entry in entries.iter_mut() {
-        if let Some(list) = entry.get_mut("hooks").and_then(Value::as_array_mut) {
-            list.retain(|hook| hook.get("name").and_then(Value::as_str) != Some(NAME));
-        }
-    }
-    entries.retain(|entry| {
-        entry
-            .get("hooks")
-            .and_then(Value::as_array)
-            .is_none_or(|list| !list.is_empty())
+    let mut found = false;
+    entries.retain_mut(|entry| {
+        let Some(list) = entry.get_mut("hooks").and_then(Value::as_array_mut) else {
+            return true;
+        };
+        let count = list.len();
+        list.retain(|hook| hook.get("name").and_then(Value::as_str) != Some(NAME));
+        found |= list.len() < count;
+        // Only a group this emptied goes.
+        !list.is_empty() || list.len() == count
     });
-    if *entries == before {
+    if !found {
         return Ok(Outcome::Unchanged);
     }
     if entries.is_empty() {
@@ -143,7 +142,8 @@ fn session_end(root: &mut Value) -> Option<&mut Vec<Value>> {
         .as_array_mut()
 }
 
-/// Backs up the current file, then replaces it in one rename.
+/// Backs up the current file, then writes over it in place, so a linked settings file stays linked and keeps its
+/// permissions.
 fn write(settings: &Path, root: &Value) -> io::Result<Outcome> {
     let backup = if settings.exists() {
         let stamp = tokentracky_core::iso_timestamp(OffsetDateTime::now_utc()).replace([':', '.'], "-");
@@ -153,9 +153,7 @@ fn write(settings: &Path, root: &Value) -> io::Result<Outcome> {
     } else {
         None
     };
-    let temporary = with_suffix(settings, ".tokentracky");
-    fs::write(&temporary, format!("{}\n", serde_json::to_string_pretty(root)?))?;
-    fs::rename(&temporary, settings)?;
+    fs::write(settings, format!("{}\n", serde_json::to_string_pretty(root)?))?;
     Ok(Outcome::Written { backup })
 }
 fn with_suffix(path: &Path, suffix: &str) -> PathBuf {

@@ -117,3 +117,27 @@ fn removes_only_its_own_hook_and_the_lists_it_leaves_empty() {
     assert!(matches!(remove(&settings).unwrap(), Outcome::Written { .. }));
     assert_eq!(json(&settings), json!({"hooks": {"SessionEnd": [{"hooks": [theirs]}]}}));
 }
+
+#[cfg(unix)]
+#[test]
+fn writes_through_a_linked_settings_file_and_keeps_its_permissions() {
+    use std::os::unix::fs::PermissionsExt;
+    let (home, settings) = gemini();
+    let managed = home.path().join("dotfiles-settings.json");
+    fs::write(&managed, json!({"theme": "dark"}).to_string()).unwrap();
+    fs::set_permissions(&managed, fs::Permissions::from_mode(0o600)).unwrap();
+    std::os::unix::fs::symlink(&managed, &settings).unwrap();
+    assert!(matches!(install(&settings, COMMAND).unwrap(), Outcome::Written { .. }));
+    assert!(fs::symlink_metadata(&settings).unwrap().file_type().is_symlink());
+    assert_eq!(json(&managed)["hooks"]["SessionEnd"][0]["hooks"][0], ours(COMMAND));
+    assert_eq!(fs::metadata(&managed).unwrap().permissions().mode() & 0o777, 0o600);
+}
+
+#[test]
+fn leaves_settings_without_its_hook_exactly_as_they_were() {
+    let (_home, settings) = gemini();
+    let text = json!({"hooks": {"SessionEnd": [{"matcher": "exit", "hooks": []}]}}).to_string();
+    fs::write(&settings, &text).unwrap();
+    assert_eq!(remove(&settings).unwrap(), Outcome::Unchanged);
+    assert_eq!(fs::read_to_string(&settings).unwrap(), text);
+}

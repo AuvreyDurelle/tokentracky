@@ -182,15 +182,16 @@ impl LocalApp {
     /// Starts the refresh cycle: a cycle now when a source is enabled and collection runs, then every interval, and one
     /// within seconds of each touch of the refresh request.
     pub fn start(&self) {
+        let touched = |path: &std::path::Path| std::fs::metadata(path).and_then(|file| file.modified()).ok();
+        // Taken before the first cycle, so a request made from here on is never mistaken for an old one.
+        let watched = self.refresh_request.clone().map(|request| (touched(&request), request));
         self.collection().scheduler.start();
-        let Some(request) = self.refresh_request.clone() else {
+        let Some((mut seen, request)) = watched else {
             return;
         };
         // Weak, so the watch never keeps the collector open past `close`.
         let collection = Arc::downgrade(self.collection());
         tokio::spawn(async move {
-            let touched = |path: &std::path::Path| std::fs::metadata(path).and_then(|file| file.modified()).ok();
-            let mut seen = touched(&request);
             loop {
                 tokio::time::sleep(REFRESH_REQUEST_CHECK).await;
                 let Some(collection) = collection.upgrade() else {
