@@ -142,18 +142,24 @@ fn session_end(root: &mut Value) -> Option<&mut Vec<Value>> {
         .as_array_mut()
 }
 
-/// Backs up the current file, then writes over it in place, so a linked settings file stays linked and keeps its
-/// permissions.
+/// Backs up the current file, then replaces the file it is (a linked one's target, so the link stays) in one rename
+/// of a complete copy with the same permissions.
 fn write(settings: &Path, root: &Value) -> io::Result<Outcome> {
-    let backup = if settings.exists() {
+    let target = fs::canonicalize(settings).unwrap_or_else(|_| settings.to_path_buf());
+    let backup = if target.exists() {
         let stamp = tokentracky_core::iso_timestamp(OffsetDateTime::now_utc()).replace([':', '.'], "-");
         let backup = with_suffix(settings, &format!(".bak.{stamp}"));
-        fs::copy(settings, &backup)?;
+        fs::copy(&target, &backup)?;
         Some(backup)
     } else {
         None
     };
-    fs::write(settings, format!("{}\n", serde_json::to_string_pretty(root)?))?;
+    let temporary = with_suffix(&target, ".tokentracky");
+    fs::write(&temporary, format!("{}\n", serde_json::to_string_pretty(root)?))?;
+    if let Ok(current) = fs::metadata(&target) {
+        fs::set_permissions(&temporary, current.permissions())?;
+    }
+    fs::rename(&temporary, &target)?;
     Ok(Outcome::Written { backup })
 }
 fn with_suffix(path: &Path, suffix: &str) -> PathBuf {
