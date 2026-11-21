@@ -87,6 +87,7 @@ pub use sync::{CHUNK, CloudSync, HOSTED_TIMEOUT, SyncStatus, Synced};
 
 #[doc(no_inline)]
 pub use tokentracky_collector::detect::{DetectedTool, detect_tools};
+pub use tokentracky_collector::gemini_hook;
 #[doc(no_inline)]
 pub use tokentracky_collector::limits::claude_config_file;
 #[doc(no_inline)]

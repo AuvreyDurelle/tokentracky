@@ -96,7 +96,7 @@ Tokentracky is **ad-hoc signed**: Apple has not notarized it yet, so macOS block
 
 ## Features
 
-- **29 tools, nothing installed into them.** Collection is passive: Tokentracky reads records each tool already keeps and never installs hooks or changes a tool's settings. History you already have counts the moment you join.
+- **29 tools, read where they keep their records.** Collection is passive: Tokentracky reads records each tool already keeps. The one exception is Gemini CLI: when its `~/.gemini` folder exists, Tokentracky adds a `SessionEnd` hook to its `settings.json` (backing the file up first, and leaving a file it cannot read as plain JSON alone), so a finished session shows up within seconds rather than at the next five-minute refresh; `tokentracky uninstall` removes it. History you already have counts the moment you join.
 - **A public leaderboard.** The community's total tokens for the week, month or all time, a top-three podium, per-tool filters and the ranked list. Reading it needs no account.
 - **Profiles worth sharing.** Every member gets `/u/<name>`: totals, streaks, a 52-week activity calendar, tool mix, top models, achievements, a share card with **Post on X**, and README badges.
 - **A menu-bar app.** The icon opens a popover with today's tokens, your week, month and all-time totals, streak and recent sessions. The dashboard window has Leaderboard, Tokens (your private usage, models and insights), Achievements and Settings.

@@ -131,7 +131,7 @@ const terms: Doc = {
     { id: 'account', title: 'Your account', body: <p>Give a real email address, keep your sign-in secure and keep to one account per person. You are responsible for activity on your account. Tell us at <Mail /> straight away if you think someone else has used it.</p> },
     { id: 'app', title: 'The app on your computer', body: <>
       <p>The Tokentracky software is provided under the MIT licence, which permits use, copying, modification and redistribution subject to its notice requirements. These service terms do not restrict rights granted by that licence.</p>
-      <p>The app reads only the usual folders of the tools it finds and the folders you choose, and does not change your tools’ settings. It may update itself. Third-party components are covered by their own licences; see the <a href="/assets/third-party-notices.txt">software licences and notices</a>.</p>
+      <p>The app reads only the usual folders of the tools it finds and the folders you choose. The only tool setting it changes is a hook it adds to Gemini CLI’s settings file, which asks the app to refresh when a Gemini CLI session ends; uninstalling removes it. It may update itself. Third-party components are covered by their own licences; see the <a href="/assets/third-party-notices.txt">software licences and notices</a>.</p>
     </> },
     { id: 'leaderboard', title: 'The leaderboard', body: <>
       <p>Rankings are based on totals reported by each member’s app. They are not verified spending or productivity figures and are not an endorsement of anyone. Days are counted in UTC. The leaderboard has no prizes or rewards unless we announce them separately with their own rules.</p>

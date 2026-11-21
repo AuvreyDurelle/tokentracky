@@ -196,7 +196,7 @@ function Sources({ api, status, sources, detected, sessions, paused, busy, act, 
   const isPaused = paused ?? status.sources.some((source) => source.state === 'paused');
   return <Section id="sources" title="Sources" note="The tools Tokentracky reads usage from.">
     {status.firstRun && <div className="st-callout">{ICONS.check}<div><b>{setupHeading(status, detected)}</b></div></div>}
-    <div className="st-callout">{ICONS.shieldCheck}<div><b>Read-only collection.</b> Tokentracky reads the records each tool already keeps. It never installs hooks or changes a tool’s settings, and only opens the folders listed here.</div></div>
+    <div className="st-callout">{ICONS.shieldCheck}<div><b>Read-only collection.</b> Tokentracky reads the records each tool already keeps, and only opens the folders listed here. The one file it changes is Gemini CLI’s settings, where it adds a hook that asks for a refresh as a session ends.</div></div>
     <div className="st-group">
       {sources.map((source) => {
         const line = lines.get(source.id)!;

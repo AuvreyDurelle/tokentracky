@@ -2171,6 +2171,28 @@ async fn without_a_listener_the_overview_waits_for_a_request() {
     app.close().await.unwrap();
 }
 
+/// Rust only. Gemini CLI's `SessionEnd` hook touches `refresh-now` in the data folder: a cycle runs within seconds,
+/// though no source is enabled and so none ran at start.
+#[tokio::test]
+async fn a_touched_refresh_request_runs_a_cycle_within_seconds() {
+    let directory = tempfile::tempdir().unwrap();
+    let app = LocalApp::open(local_options(directory.path())).unwrap();
+    app.start();
+    tokio::time::sleep(Duration::from_millis(2500)).await;
+    assert_eq!(app.overview().await.unwrap().refresh.last_refresh_at, None);
+    fs::write(directory.path().join("data").join("refresh-now"), "").unwrap();
+    let mut refreshed = None;
+    for _ in 0..60 {
+        tokio::time::sleep(Duration::from_millis(100)).await;
+        refreshed = app.overview().await.unwrap().refresh.last_refresh_at;
+        if refreshed.is_some() {
+            break;
+        }
+    }
+    assert!(refreshed.is_some());
+    app.close().await.unwrap();
+}
+
 #[tokio::test]
 async fn serve_tcp_serves_loopback_behind_the_session_and_closes_gracefully() {
     let directory = tempfile::tempdir().unwrap();

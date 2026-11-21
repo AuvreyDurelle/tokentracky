@@ -44,7 +44,7 @@ use tauri_plugin_opener::OpenerExt as _;
 #[cfg(tokentracky_release_updater)]
 use tauri_plugin_updater::UpdaterExt as _;
 use tokentracky_local_api::{
-    LocalOptions, LocalOverview, ReqwestClient, SecretStore, claude_config_file, detect_tools,
+    LocalOptions, LocalOverview, ReqwestClient, SecretStore, claude_config_file, detect_tools, gemini_hook,
 };
 use tokentracky_secrets::FileSecretStore;
 use tower::ServiceExt as _;
@@ -305,7 +305,11 @@ fn open_backend(app: &AppHandle, cloud_url: Option<String>, secrets: Arc<dyn Sec
         let app = handle.clone();
         let _ = handle.run_on_main_thread(move || show(&app, overview));
     });
-    Backend::open(options, publish).ok()
+    let backend = Backend::open(options, publish).ok()?;
+    // Gemini CLI's `SessionEnd` hook, kept up to date at each launch as `tokentracky serve` does.
+    let settings = gemini_hook::settings_path(|key| std::env::var(key).ok(), &home);
+    let _ = gemini_hook::install(&settings, &gemini_hook::command(&data_dir, cfg!(windows)));
+    Some(backend)
 }
 
 /// Stops the cycle and sync and closes the collector, for every way out (Quit, the app menu's Quit, log out), giving

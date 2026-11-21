@@ -6,6 +6,7 @@ use crate::{CliError, Context, control, create_directory, database_path, other};
 use std::path::Path;
 use std::sync::Arc;
 use tokentracky_collector::detect::detect_tools;
+use tokentracky_collector::gemini_hook;
 use tokentracky_collector::limits::claude_config_file;
 use tokentracky_collector::scheduler::refresh_interval;
 use tokentracky_local_api::{
@@ -56,6 +57,10 @@ pub async fn serve(directory: &Path, flags: &Flags, context: &mut Context) -> Re
         detected: detect_tools(|key| context.var(key), &context.home()),
         claude_config_file: Some(claude_config_file(|key| context.var(key), &context.home())),
     })?;
+    // Gemini CLI's `SessionEnd` hook, brought up to date at each start, asks for a refresh as a session ends. Settings it
+    // cannot read are left alone, and nothing else depends on it.
+    let settings = gemini_hook::settings_path(|key| context.var(key), &context.home());
+    let _ = gemini_hook::install(&settings, &gemini_hook::command(directory, cfg!(windows)));
     // Binds, starts the refresh cycle, and closes the app if the port cannot be bound.
     let server = serve_tcp(app, flags.port.unwrap_or(0)).await?;
     let stop = Arc::new(Notify::new());
