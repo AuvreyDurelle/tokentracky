@@ -133,13 +133,13 @@ export function TownPage({api, onMap}: {api: TownApi; onMap: () => void}) {
       popover={(place, size) => {
         if (!anchor) return null;
         const at = place(...anchor);
-        if (building) return <Popover at={at} stage={size} reserve={reserve} onClose={deselect}>
+        if (building) return <Popover key={building.id} at={at} stage={size} reserve={reserve} onClose={deselect}>
           <BuildingPanel town={town} building={building} reach={reach} pending={pending} onUpgrade={() => void run('upgrade', () => api.upgrade(building.id), {done: `Upgraded to Lv ${building.level + 1}`, at: building})} />
         </Popover>;
-        if (plot && plotState === 'own') return <Popover at={at} stage={size} reserve={reserve} onClose={deselect}>
+        if (plot && plotState === 'own') return <Popover key={`${plot.x},${plot.y}`} at={at} stage={size} reserve={reserve} onClose={deselect}>
           <EmptyPlotPanel onBuild={() => openBuild(plot)} />
         </Popover>;
-        if (plot && plotState === 'claimable') return <Popover at={at} stage={size} reserve={reserve} onClose={deselect}>
+        if (plot && plotState === 'claimable') return <Popover key={`${plot.x},${plot.y}`} at={at} stage={size} reserve={reserve} onClose={deselect}>
           <ClaimPanel town={town} reach={reach} pending={pending} onClaim={() => { setSelected(null); void run('claim', () => api.claim(plot.x, plot.y), {done: `Plot #${town.nextPlot.number} is yours`, land: true, at: plot}); }} />
         </Popover>;
         return null;
