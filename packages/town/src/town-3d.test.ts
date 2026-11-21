@@ -5,7 +5,7 @@ import { isoProjection } from './art.ts';
 import { plotKey, plotKind, sceneLayout } from './layout.ts';
 import { buildTown } from './models.ts';
 import { townPieces } from './pieces.ts';
-import { CLICK_SLOP, atHome, dragged, glide, isDrag, releaseSpeed, wrap } from './spin.ts';
+import { CLICK_SLOP, atHome, dragged, glide, homeFrom, isDrag, releaseSpeed, wrap } from './spin.ts';
 import { RISE, spunProjection } from './view.ts';
 import { placeCamera, turnTo } from './world3d.ts';
 
@@ -82,6 +82,12 @@ describe('spinning by hand', () => {
   it("doesn't glide when the pointer stopped before letting go", () => {
     expect(releaseSpeed([[0, 0], [16, 0.2]], 200)).toBe(0);
     expect(releaseSpeed([], 0)).toBe(0);
+  });
+  it('heads home the short way round, however many turns it has made', () => {
+    expect(homeFrom(0.5)).toBeCloseTo(0);
+    expect(homeFrom(2 * Math.PI + 0.5)).toBeCloseTo(2 * Math.PI);
+    expect(homeFrom(-3 * Math.PI / 2)).toBeCloseTo(-2 * Math.PI);
+    expect(atHome(homeFrom(7.3))).toBe(true);
   });
   it('knows when the town faces the way it started', () => {
     expect(atHome(4 * Math.PI)).toBe(true);

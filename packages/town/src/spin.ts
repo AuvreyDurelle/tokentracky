@@ -1,4 +1,5 @@
 import { useEffect, useRef, type KeyboardEvent, type MouseEvent, type PointerEvent } from 'react';
+import { tweenAt } from './format.ts';
 
 /** How far a press can wander, in pixels, and still be a click on a plot rather than a turn. */
 export const CLICK_SLOP = 5;
@@ -15,6 +16,10 @@ export function wrap(angle: number): number {
   const a = angle % (2 * Math.PI);
   return a > Math.PI ? a - 2 * Math.PI : a <= -Math.PI ? a + 2 * Math.PI : a;
 }
+/** How long the town takes to turn to an angle it's sent to, by a key or the reset button, in milliseconds. */
+export const EASE_MS = 300;
+/** The angle facing the way the town first appears, the short way round from `angle`. */
+export const homeFrom = (angle: number) => angle - wrap(angle);
 /** Facing the way the town first appears. */
 export const atHome = (angle: number) => Math.abs(wrap(angle)) < 1e-9;
 
@@ -48,11 +53,26 @@ export function useSpin(angle: number, onSpin: ((angle: number) => void) | undef
   const frame = useRef(0);
   useEffect(() => () => cancelAnimationFrame(frame.current), []);
   const turn = (to: number) => { cancelAnimationFrame(frame.current); change.current?.(to); };
+  // Keys and the reset button turn the town smoothly. Repeated presses add to where it is heading, not where it is.
+  const goal = useRef<number | null>(null);
+  const ease = (to: number) => {
+    cancelAnimationFrame(frame.current);
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { goal.current = null; change.current?.(to); return; }
+    const from = current.current, start = performance.now();
+    goal.current = to;
+    const step = (now: number) => {
+      const t = (now - start) / EASE_MS;
+      change.current?.(tweenAt(from, to, t));
+      if (t < 1) frame.current = requestAnimationFrame(step); else goal.current = null;
+    };
+    frame.current = requestAnimationFrame(step);
+  };
   if (!onSpin) return {handlers: {}, home: () => {}};
 
   const handlers = {
     onPointerDown(event: PointerEvent<Element>) {
       cancelAnimationFrame(frame.current);
+      goal.current = null;
       swallowClick.current = false;
       if (event.button === 0) press.current = {id: event.pointerId, x: event.clientX, y: event.clientY, from: current.current, turning: false, trail: []};
     },
@@ -97,11 +117,12 @@ export function useSpin(angle: number, onSpin: ((angle: number) => void) | undef
       event.preventDefault();
     },
     onKeyDown(event: KeyboardEvent) {
-      const to = event.key === 'ArrowLeft' ? current.current + KEY_STEP : event.key === 'ArrowRight' ? current.current - KEY_STEP : event.key === 'Home' ? 0 : null;
+      const at = goal.current ?? current.current;
+      const to = event.key === 'ArrowLeft' ? at + KEY_STEP : event.key === 'ArrowRight' ? at - KEY_STEP : event.key === 'Home' ? homeFrom(at) : null;
       if (to === null) return;
       event.preventDefault();
-      turn(to);
+      ease(to);
     },
   };
-  return {handlers, home: () => turn(0)};
+  return {handlers, home: () => ease(homeFrom(goal.current ?? current.current))};
 }

@@ -4,7 +4,8 @@ import { BUILDINGS, terrainAt, type Terrain, type TownMapResponse, type TownPubl
 import type { TownApi } from './api.ts';
 import { CostChips, Crest, useToast } from './Hud.tsx';
 import { CloseIcon, GlyphIcon, HeartIcon, HomeIcon, MinusIcon, MoveIcon, PlusIcon } from './icons.tsx';
-import { afterCollect, count, daysToAfford, paceText, tooBig } from './format.ts';
+import { afterCollect, count, daysToAfford, paceText, tooBig, tweenAt } from './format.ts';
+import { EASE_MS, glide, releaseSpeed } from './spin.ts';
 import { cellAt, clampCell, fetchArea, fitView, screenOf, visibleArea, within, zoomAt, type Area, type MapView } from './map-view.ts';
 import { townColour } from './pieces.ts';
 
@@ -202,7 +203,7 @@ export function MapPage({api, signedIn, feature = false, aside, onHome, onVisit}
   const [error, setError] = useState<string | null>(null);
   const [toast, say] = useToast();
   const [size, setSize] = useState({width: 0, height: 0});
-  const drag = useRef<{x: number; y: number; view: MapView; moved: boolean} | null>(null);
+  const drag = useRef<{x: number; y: number; view: MapView; moved: boolean; trail: Array<[number, number, number]>} | null>(null);
   // Until the first map arrives: the featured town to open, if wanted.
   const featuring = useRef(feature);
 
@@ -261,6 +262,38 @@ export function MapPage({api, signedIn, feature = false, aside, onHome, onVisit}
     });
   };
   useEffect(() => () => cancelAnimationFrame(frame.current), []);
+  // The map gliding on after a flick, or easing to where a button sends it. Any touch of the map stops it.
+  const motion = useRef(0);
+  useEffect(() => () => cancelAnimationFrame(motion.current), []);
+  const still = () => cancelAnimationFrame(motion.current);
+  const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const easeTo = (target: MapView) => {
+    still();
+    const from = nextView.current ?? view, start = performance.now();
+    if (reduced()) { setView(target); return; }
+    const step = (now: number) => {
+      const t = (now - start) / EASE_MS;
+      // Zoom eases evenly in scale, so zooming in and out feel alike.
+      flushSync(() => setView({cx: tweenAt(from.cx, target.cx, t), cy: tweenAt(from.cy, target.cy, t), cell: Math.exp(tweenAt(Math.log(from.cell), Math.log(target.cell), t))}));
+      if (t < 1) motion.current = requestAnimationFrame(step);
+    };
+    motion.current = requestAnimationFrame(step);
+  };
+  const glideFrom = (base: MapView, vx: number, vy: number) => {
+    if (reduced() || (!vx && !vy)) return;
+    let v = base, last = performance.now();
+    const step = (now: number) => {
+      const ms = now - last;
+      last = now;
+      vx = glide(vx, ms); vy = glide(vy, ms);
+      // Under a fiftieth of a pixel a millisecond, the map has stopped as far as anyone can see.
+      if (Math.hypot(vx, vy) < 0.02) return;
+      v = {...v, cx: v.cx - vx * ms / v.cell, cy: v.cy - vy * ms / v.cell};
+      flushSync(() => setView(v));
+      motion.current = requestAnimationFrame(step);
+    };
+    motion.current = requestAnimationFrame(step);
+  };
 
   const point = (event: {clientX: number; clientY: number}) => { const box = canvas.current!.getBoundingClientRect(); return [event.clientX - box.left, event.clientY - box.top] as const; };
   const open = useCallback((alias: string, at: [number, number]) => {
@@ -282,7 +315,7 @@ export function MapPage({api, signedIn, feature = false, aside, onHome, onVisit}
     setView(v => ({...v, cx: x + 0.5, cy: y + 0.5}));
     open(alias, [x + 0.5, y + 0.5]);
   }, [data, open]);
-  const zoom = (factor: number) => setView(v => zoomAt(v, factor, size.width, size.height, size.width / 2, size.height / 2));
+  const zoom = (factor: number) => easeTo(zoomAt(nextView.current ?? view, factor, size.width, size.height, size.width / 2, size.height / 2));
   const like = async () => {
     if (!selected?.town || !api.like || selected.liked === null) return;
     const next = !selected.liked;
@@ -299,16 +332,28 @@ export function MapPage({api, signedIn, feature = false, aside, onHome, onVisit}
 
   return <div ref={stage} className="tt tt-stage tt-map">
     <canvas ref={canvas} className="tt-canvas" role="img" aria-label="The public map of every town"
-      onPointerDown={event => { event.currentTarget.setPointerCapture(event.pointerId); drag.current = {x: event.clientX, y: event.clientY, view, moved: false}; }}
+      onPointerDown={event => { still(); event.currentTarget.setPointerCapture(event.pointerId); drag.current = {x: event.clientX, y: event.clientY, view: nextView.current ?? view, moved: false, trail: []}; }}
       onPointerMove={event => {
         const d = drag.current;
         if (!d) return;
         const dx = event.clientX - d.x, dy = event.clientY - d.y;
         if (Math.abs(dx) + Math.abs(dy) > 4) d.moved = true;
-        if (d.moved) moveTo({...d.view, cx: d.view.cx - dx / d.view.cell, cy: d.view.cy - dy / d.view.cell});
+        if (!d.moved) return;
+        d.trail.push([event.timeStamp, dx, dy]);
+        moveTo({...d.view, cx: d.view.cx - dx / d.view.cell, cy: d.view.cy - dy / d.view.cell});
       }}
-      onPointerUp={event => { const d = drag.current; drag.current = null; if (d && !d.moved) { const [px, py] = point(event); click(px, py); } }}
-      onWheel={event => { const [px, py] = point(event); moveTo(zoomAt(nextView.current ?? view, Math.exp(-event.deltaY * 0.0015), size.width, size.height, px, py)); }} />
+      onPointerUp={event => {
+        const d = drag.current;
+        drag.current = null;
+        if (d && !d.moved) { const [px, py] = point(event); click(px, py); return; }
+        // A flick glides on, slowing as the town does when flicked round.
+        if (d?.trail.length) {
+          const last = d.trail[d.trail.length - 1]!;
+          glideFrom({...d.view, cx: d.view.cx - last[1] / d.view.cell, cy: d.view.cy - last[2] / d.view.cell},
+            releaseSpeed(d.trail.map(([t, x]) => [t, x]), event.timeStamp), releaseSpeed(d.trail.map(([t, , y]) => [t, y]), event.timeStamp));
+        }
+      }}
+      onWheel={event => { still(); const [px, py] = point(event); moveTo(zoomAt(nextView.current ?? view, Math.exp(-event.deltaY * 0.0015), size.width, size.height, px, py)); }} />
     <div className="tt-top">
       {me && <Crest alias={me.alias} level={me.level} plots={me.plots.length} />}
       <div className="tt-glass tt-ttl"><b>Public map</b><span className="tt-mu">{data ? `${count(data.totals.towns)} towns · ${count(data.totals.plots)} plots claimed` : 'Loading…'}</span></div>
@@ -324,7 +369,7 @@ export function MapPage({api, signedIn, feature = false, aside, onHome, onVisit}
     <div className="tt-glass tt-zoom">
       <button type="button" aria-label="Zoom in" onClick={() => zoom(1.4)}><PlusIcon size={18} /></button>
       <button type="button" aria-label="Zoom out" onClick={() => zoom(1 / 1.4)}><MinusIcon size={18} /></button>
-      {me && <button type="button" aria-label="Show your town" onClick={() => { const [first] = me.plots; if (first) setView(v => ({...v, cx: first.x + 0.5, cy: first.y + 0.5, cell: clampCell(Math.max(v.cell, 26), size.width, size.height)})); }}><HomeIcon size={18} /></button>}
+      {me && <button type="button" aria-label="Show your town" onClick={() => { const [first] = me.plots; if (first) { const v = nextView.current ?? view; easeTo({cx: first.x + 0.5, cy: first.y + 0.5, cell: clampCell(Math.max(v.cell, 26), size.width, size.height)}); } }}><HomeIcon size={18} /></button>}
     </div>
     {error && <div className="tt-glass tt-banner" role="alert">{error}</div>}
     {selected && anchor && <TownCard selected={selected} anchor={anchor} stage={stage} mine={selected.alias === me?.alias} canLike={!!api.like && signedIn}
