@@ -70,6 +70,8 @@ interface Props {
   map: TownMapResponse | null;
   selected: Selection | null;
   claimMode?: boolean;
+  /** Picking an empty plot of yours to build on: they glow. */
+  buildMode?: boolean;
   harvest?: SceneHarvest | null;
   /** What happens on a plot. Without it the scene can only be looked at. */
   onSelect?: (selection: Selection | null) => void;
@@ -94,7 +96,7 @@ export interface StageSize {width: number; height: number}
  * itself is drawn in 3D where the browser has WebGL, so it can turn; labels, badges and click targets are a flat overlay
  * that turns with it. Without WebGL the flat drawing stays, facing one way.
  */
-export function TownScene({layout: given, plots: givenPlots, buildings: givenBuildings, map, selected, claimMode = false, harvest, onSelect, onCollect, label, visiting = false, spins = false, moment = null, collected = 0, popover}: Props) {
+export function TownScene({layout: given, plots: givenPlots, buildings: givenBuildings, map, selected, claimMode = false, buildMode = false, harvest, onSelect, onCollect, label, visiting = false, spins = false, moment = null, collected = 0, popover}: Props) {
   // Every refresh brings new copies of the same town; only a real change rebuilds the 3D world.
   const layout = useSame(given, JSON.stringify(given));
   const plots = useSame(givenPlots, givenPlots.map(p => plotKey(p.x, p.y)).join(' '));
@@ -269,6 +271,16 @@ export function TownScene({layout: given, plots: givenPlots, buildings: givenBui
         <polygon points={diamond(x, y, 0.16)} fill="rgba(255,211,107,.05)" stroke="#ffd36b" strokeOpacity={claimMode ? 1 : 0.55} strokeWidth={claimMode ? 2.4 : 1.6} strokeDasharray="6 5" />
         <circle cx={c[0]} cy={c[1]} r={9} fill="rgba(20,16,50,.75)" stroke="#ffd36b" strokeWidth={1.5} />
         <path d={`M${r(c[0] - 4)},${r(c[1])}h8M${r(c[0])},${r(c[1] - 4)}v8`} stroke="#ffd36b" strokeWidth={2} strokeLinecap="round" />
+      </g>;
+    })}
+    {/* Empty plots of yours, while picking one to build on: a pulsing gold outline and a little house. */}
+    {buildMode && order.filter(([x, y]) => kindAt(x, y).kind === 'own' && !byPlot.has(plotKey(x, y))).map(([x, y]) => {
+      const [tx, ty] = tile(x, y);
+      const c = P(tx + 1, ty + 1);
+      return <g key={`b${x},${y}`} className="tt-claim on" pointerEvents="none">
+        <polygon points={diamond(x, y, 0.16)} fill="rgba(255,211,107,.12)" stroke="#ffd36b" strokeWidth={2.4} strokeDasharray="6 5" />
+        <circle cx={c[0]} cy={c[1]} r={11} fill="rgba(20,16,50,.8)" stroke="#ffd36b" strokeWidth={1.5} />
+        <path d={`M${r(c[0] - 5)},${r(c[1] + 0.5)}L${r(c[0])},${r(c[1] - 4.5)}L${r(c[0] + 5)},${r(c[1] + 0.5)}M${r(c[0] - 3.5)},${r(c[1] - 0.5)}V${r(c[1] + 4.5)}H${r(c[0] + 3.5)}V${r(c[1] - 0.5)}`} stroke="#ffd36b" strokeWidth={1.6} fill="none" strokeLinejoin="round" strokeLinecap="round" />
       </g>;
     })}
     {selectedPlot && <polygon points={diamond(selectedPlot.x, selectedPlot.y, 0.05)} fill="rgba(255,211,107,.18)" stroke="#ffd36b" strokeWidth={3} strokeLinejoin="round" filter="url(#tt-gl)" pointerEvents="none" />}

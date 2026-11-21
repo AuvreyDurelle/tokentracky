@@ -36,6 +36,8 @@ export function TownPage({api, onMap}: {api: TownApi; onMap: () => void}) {
   const [selected, setSelected] = useState<Selection | null>(null);
   const [tab, setTab] = useState<Tab | null>(() => typeof window !== 'undefined' && window.innerWidth >= 1100 ? 'land' : null);
   const [claiming, setClaiming] = useState(false);
+  // Picking which empty plot to build on, from the dock's Build button.
+  const [placing, setPlacing] = useState(false);
   // The build menu, for a plot, or with none free to browse what there is.
   const [menu, setMenu] = useState<{x: number; y: number} | 'browse' | null>(null);
   const [toast, say] = useToast();
@@ -113,11 +115,20 @@ export function TownPage({api, onMap}: {api: TownApi; onMap: () => void}) {
       void run('claim', () => api.claim(next.x, next.y), {done: `Plot #${town.nextPlot.number} is yours`, land: true, at: next});
       return;
     }
+    if (next?.type === 'plot' && placing && plotKind(next.x, next.y, own, others).kind === 'own') {
+      setPlacing(false);
+      setSelected(null);
+      setMenu(next);
+      return;
+    }
     setClaiming(false);
+    setPlacing(false);
     setSelected(next && selected && JSON.stringify(next) === JSON.stringify(selected) ? null : next);
   };
   const empties = town.plots.filter(p => !town.buildings.some(b => b.x === p.x && b.y === p.y));
-  const openBuild = (target?: {x: number; y: number}) => { setSelected(null); setMenu(target ?? empties[0] ?? 'browse'); };
+  const openBuild = (target?: {x: number; y: number}) => { setSelected(null); setClaiming(false); setPlacing(false); setMenu(target ?? empties[0] ?? 'browse'); };
+  // With a choice of empty plots, you pick one in the town first; with one or none, the menu opens at once.
+  const startBuild = () => { if (empties.length > 1) { setSelected(null); setMenu(null); setClaiming(false); setPlacing(true); } else openBuild(); };
   const claimable = (() => {
     const free = new Set<string>();
     for (const p of town.plots) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) if (plotKind(p.x + dx, p.y + dy, own, others).kind === 'claimable') free.add(plotKey(p.x + dx, p.y + dy));
@@ -128,7 +139,7 @@ export function TownPage({api, onMap}: {api: TownApi; onMap: () => void}) {
   return <div className="tt tt-stage">
     <Sky />
     <TownScene layout={layout} plots={town.plots} buildings={town.buildings} map={map} selected={selected} claimMode={claiming}
-      harvest={harvestWaiting ? {resources: town.harvest.resources, spill} : null} onSelect={select} onCollect={collect}
+      buildMode={placing} harvest={harvestWaiting ? {resources: town.harvest.resources, spill} : null} onSelect={select} onCollect={collect}
       label={`${town.alias}'s town`} spins moment={moment} collected={collectedAt}
       popover={(place, size) => {
         if (!anchor) return null;
@@ -151,9 +162,10 @@ export function TownPage({api, onMap}: {api: TownApi; onMap: () => void}) {
     </div>
     {town.paused && <div className="tt-glass tt-banner" role="status">{town.paused}</div>}
     {claiming && <div className="tt-glass tt-banner" role="status">Pick a glowing plot next to your land. <button type="button" className="tt-link" onClick={() => setClaiming(false)}>Cancel</button></div>}
+    {placing && <div className="tt-glass tt-banner" role="status">Pick an empty plot to build on. <button type="button" className="tt-link" onClick={() => setPlacing(false)}>Cancel</button></div>}
 
     <Drawer tab={tab} onTab={setTab} badges={{land: claimable ? String(claimable) : null, harvest: harvestWaiting ? '' : null}}>
-      {tab === 'land' && <LandPane town={town} reach={reach} claimable={claimable} pending={pending} onClaim={() => { setSelected(null); setClaiming(true); }}
+      {tab === 'land' && <LandPane town={town} reach={reach} claimable={claimable} pending={pending} onClaim={() => { setSelected(null); setPlacing(false); setClaiming(true); }}
         onMove={() => void run('move', () => api.move(), {done: 'Your town moved to the frontier', land: true, at: {x: 0, y: 0}})} />}
       {tab === 'harvest' && <HarvestPane town={town} spill={spill} pending={pending} now={now} onCollect={collect}
         onTrade={bricks => void run('trade', () => api.trade(bricks), {done: 'Traded'})} />}
@@ -169,7 +181,7 @@ export function TownPage({api, onMap}: {api: TownApi; onMap: () => void}) {
         <span><b>{harvestWaiting ? 'Collect harvest' : 'Nothing to collect yet'}</b>
           <small>{harvestWaiting ? `${sinceText(town.harvest.since, now)} · ${compact(town.harvest.tokens)} tokens${town.harvest.multiplier > 1 ? ` · ×${town.harvest.multiplier.toFixed(1)} streak` : ''}` : 'New tokens arrive with each upload'}</small></span>
       </button>
-      <button type="button" className="tt-db" onClick={() => openBuild()}><BuildIcon />Build{fresh && <i className="tt-bd n">New</i>}</button>
+      <button type="button" className="tt-db" aria-pressed={placing} onClick={() => placing ? setPlacing(false) : startBuild()}><BuildIcon />Build{fresh && <i className="tt-bd n">New</i>}</button>
     </div>
     {toast}
   </div>;
