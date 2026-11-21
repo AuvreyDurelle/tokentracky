@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { TOWN_MAP_SPAN, terrainAt } from '@tokentracky/core';
 import { afterCollect, collected, compact, tweenAt, daysToAfford, duration, paceText, shortfall, tooBig } from './format.ts';
-import { cellAt, clampCell, fetchArea, fitView, screenOf, visibleArea, within, zoomAt } from './map-view.ts';
+import { cellAt, clampCell, fetchArea, fitView, screenOf, visibleArea, wheelIntent, within, zoomAt } from './map-view.ts';
 import { plotKey, plotKind, plotsBackToFront, plotTile, sceneLayout } from './layout.ts';
 import { indexMap } from './MapPage.tsx';
 import { buildingOutline, hull, momentScale, spunProjection, toStage } from './view.ts';
@@ -182,6 +182,21 @@ describe('indexing a map once per answer', () => {
     expect(byTown.get(1)).toEqual([[0, 1, UP | DOWN | LEFT | RIGHT]]);
     expect(centres.get(0)).toEqual([1, 0.5]);
     expect(owners.size).toBe(3);
+  });
+});
+
+describe('the wheel on the public map', () => {
+  const wheel = (deltaX: number, deltaY: number, more: {deltaMode?: number; ctrlKey?: boolean} = {}) => wheelIntent({deltaX, deltaY, deltaMode: 0, ctrlKey: false, ...more});
+  it('zooms on a pinch and on a mouse wheel', () => {
+    expect(wheel(0, 3.5, {ctrlKey: true})).toBe('zoom');
+    expect(wheel(0, 3, {deltaMode: 1})).toBe('zoom');
+    expect(wheel(0, -100)).toBe('zoom');
+  });
+  it('pans on two fingers sliding, in any direction', () => {
+    expect(wheel(0, 12)).toBe('pan');
+    expect(wheel(-8, 0)).toBe('pan');
+    expect(wheel(5, 140)).toBe('pan');
+    expect(wheel(0, 104.5)).toBe('pan');
   });
 });
 

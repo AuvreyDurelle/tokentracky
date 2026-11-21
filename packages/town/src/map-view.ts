@@ -48,3 +48,12 @@ export function fetchArea(view: MapView, width: number, height: number): Area {
 }
 /** True when `inner` lies inside `outer`. */
 export const within = (inner: Area, outer: Area) => inner.x0 >= outer.x0 && inner.y0 >= outer.y0 && inner.x1 <= outer.x1 && inner.y1 <= outer.y1;
+/**
+ * What a wheel event means on the map. A trackpad pinch arrives as a wheel with Ctrl held and zooms. A mouse wheel moves
+ * in lines or pages, or in whole steps of a hundred pixels or more straight up or down, and zooms too. Anything else is
+ * two fingers sliding on a trackpad, which pans.
+ */
+export function wheelIntent(event: {deltaX: number; deltaY: number; deltaMode: number; ctrlKey: boolean}): 'zoom' | 'pan' {
+  if (event.ctrlKey || event.deltaMode !== 0) return 'zoom';
+  return event.deltaX === 0 && Number.isInteger(event.deltaY) && Math.abs(event.deltaY) >= 100 ? 'zoom' : 'pan';
+}

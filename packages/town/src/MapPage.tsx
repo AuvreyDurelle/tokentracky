@@ -6,7 +6,7 @@ import { CostChips, Crest, useToast } from './Hud.tsx';
 import { CloseIcon, GlyphIcon, HeartIcon, HomeIcon, MinusIcon, MoveIcon, PlusIcon } from './icons.tsx';
 import { afterCollect, count, daysToAfford, paceText, tooBig, tweenAt } from './format.ts';
 import { EASE_MS, glide, releaseSpeed } from './spin.ts';
-import { cellAt, clampCell, fetchArea, fitView, screenOf, visibleArea, within, zoomAt, type Area, type MapView } from './map-view.ts';
+import { cellAt, clampCell, fetchArea, fitView, screenOf, visibleArea, wheelIntent, within, zoomAt, type Area, type MapView } from './map-view.ts';
 import { townColour } from './pieces.ts';
 
 const hash = (c: number, q: number) => ((Math.imul(c, 73856093) ^ Math.imul(q, 19349663)) >>> 0);
@@ -50,7 +50,7 @@ export function indexMap(data: TownMapResponse | null): MapIndex {
  * mist past the frontier. Shapes of one colour are gathered into one path and filled once: a zoomed-out map shows over
  * twelve thousand plots, and filling each on its own made panning stutter.
  */
-function draw(canvas: HTMLCanvasElement, view: MapView, data: TownMapResponse | null, index: MapIndex, me: string | null, selected: string | null) {
+function draw(canvas: HTMLCanvasElement, view: MapView, data: TownMapResponse | null, index: MapIndex, me: string | null, selected: string | null, hovered: number) {
   const ratio = window.devicePixelRatio || 1;
   const width = canvas.clientWidth, height = canvas.clientHeight;
   if (canvas.width !== Math.round(width * ratio) || canvas.height !== Math.round(height * ratio)) { canvas.width = Math.round(width * ratio); canvas.height = Math.round(height * ratio); }
@@ -66,6 +66,8 @@ function draw(canvas: HTMLCanvasElement, view: MapView, data: TownMapResponse | 
   const towns = data?.towns ?? [];
   const mine = towns.findIndex(t => t.alias !== null && t.alias === me);
   const chosen = towns.findIndex(t => t.alias !== null && t.alias === selected);
+  // The selected town and the one under the pointer both stand out.
+  const lit = (town: number) => town === chosen || town === hovered;
   const edge = data?.edge ?? 0;
   // Small plots skip the rounded corners: under 2 pixels they can't be seen, and rounding thousands of them is slow.
   const tile = (path: Path2D, x: number, y: number, w: number, h: number) => { if (cell >= 14) path.roundRect(x, y, w, h, round); else path.rect(x, y, w, h); };
@@ -108,7 +110,7 @@ function draw(canvas: HTMLCanvasElement, view: MapView, data: TownMapResponse | 
   if (cell >= 14) { ctx.strokeStyle = 'rgba(95,128,208,.45)'; ctx.lineWidth = 1.3; ctx.stroke(ripples); }
   fill(land, '#15183c'); fill(forest, '#10222c'); fill(treeA, '#1d4436'); fill(treeB, '#265a42');
   const colourOf = (town: number) => town === mine ? '#ffe39a' : townColour(towns[town]?.alias ?? null);
-  for (const [town, p] of plots) fill(p, colourOf(town), town === mine ? 0.34 : town === chosen ? 0.24 : 0.13);
+  for (const [town, p] of plots) fill(p, colourOf(town), town === mine ? 0.34 : lit(town) ? 0.24 : 0.13);
   for (const [town, p] of lights) fill(p, town === mine ? '#fff6d6' : colourOf(town));
   // Borders: each town's outline in its colour, one path a town; yours glows.
   for (const pass of ['others', 'mine'] as const) {
@@ -130,7 +132,7 @@ function draw(canvas: HTMLCanvasElement, view: MapView, data: TownMapResponse | 
       }
       if (!any) continue;
       ctx.strokeStyle = town === mine ? '#ffe9b0' : colourOf(town);
-      ctx.lineWidth = town === mine ? 3 : town === chosen ? 2.6 : 1.6;
+      ctx.lineWidth = town === mine ? 3 : lit(town) ? 2.6 : 1.6;
       ctx.stroke(path);
     }
     ctx.restore();
@@ -178,12 +180,12 @@ function draw(canvas: HTMLCanvasElement, view: MapView, data: TownMapResponse | 
   const at = (town: number) => { const [x, y] = centres.get(town)!; return screenOf(view, width, height, x, y); };
   // "You" sits just above your land so the land itself stays in view.
   if (mine >= 0 && centres.has(mine)) { const [x, y] = at(mine); label('You', x, y - Math.max(22, cell * 0.9), '#ffd36b', true); }
-  const order = [...centres.keys()].filter(t => t !== mine && towns[t]?.alias).sort((a, b) => (b === chosen ? 1 : 0) - (a === chosen ? 1 : 0) || (towns[b]!.plots - towns[a]!.plots));
+  const order = [...centres.keys()].filter(t => t !== mine && towns[t]?.alias).sort((a, b) => (lit(b) ? 1 : 0) - (lit(a) ? 1 : 0) || (towns[b]!.plots - towns[a]!.plots));
   for (const town of order) {
     const t = towns[town]!;
-    if (town !== chosen && (cell < 10 || t.plots < (cell >= 22 ? 1 : 6))) continue;
+    if (!lit(town) && (cell < 10 || t.plots < (cell >= 22 ? 1 : 6))) continue;
     const [x, y] = at(town);
-    label(`@${t.alias}${town === chosen ? ` · Lv ${t.level}` : ''}`, x, y, townColour(t.alias), false);
+    label(`@${t.alias}${lit(town) ? ` · Lv ${t.level}` : ''}`, x, y, townColour(t.alias), false);
   }
 }
 
@@ -203,6 +205,8 @@ export function MapPage({api, signedIn, feature = false, aside, onHome, onVisit}
   const [error, setError] = useState<string | null>(null);
   const [toast, say] = useToast();
   const [size, setSize] = useState({width: 0, height: 0});
+  // The named town under the pointer, by index into the map's towns, or -1.
+  const [hovered, setHovered] = useState(-1);
   const drag = useRef<{x: number; y: number; view: MapView; moved: boolean; trail: Array<[number, number, number]>} | null>(null);
   // Until the first map arrives: the featured town to open, if wanted.
   const featuring = useRef(feature);
@@ -249,7 +253,7 @@ export function MapPage({api, signedIn, feature = false, aside, onHome, onVisit}
   useEffect(() => () => { request.current++; loading.current = null; }, []);
   const index = useMemo(() => indexMap(data), [data]);
   // Drawn before the browser paints, in the same frame as the move that changed the view.
-  useLayoutEffect(() => { if (canvas.current && size.width) draw(canvas.current, view, data, index, me?.alias ?? null, selected?.alias ?? null); }, [view, data, index, me, selected, size]);
+  useLayoutEffect(() => { if (canvas.current && size.width) draw(canvas.current, view, data, index, me?.alias ?? null, selected?.alias ?? null, hovered); }, [view, data, index, me, selected, size, hovered]);
   // Pointers and wheels can report faster than the screen draws: the view moves once a frame, to the latest place.
   const nextView = useRef<MapView | null>(null), frame = useRef(0);
   const moveTo = (next: MapView) => {
@@ -301,12 +305,48 @@ export function MapPage({api, signedIn, feature = false, aside, onHome, onVisit}
     api.town(alias).then(town => setSelected(s => s?.alias === alias ? {...s, town} : s)).catch(failure => { setSelected(null); say(failure instanceof Error ? failure.message : String(failure)); });
     if (api.liked && signedIn && alias !== me?.alias) api.liked(alias).then(liked => setSelected(s => s?.alias === alias ? {...s, liked} : s)).catch(() => {});
   }, [api, signedIn, me, say]);
-  const click = (px: number, py: number) => {
-    const [x, y] = cellAt(view, size.width, size.height, px, py);
-    const hit = data?.plots.find(p => p[0] === x && p[1] === y);
-    const alias = hit ? data!.towns[hit[2]]?.alias : null;
-    if (alias) open(alias, [x + 0.5, y + 0.5]); else setSelected(null);
+  /** The named town on the plot under a point, as its index and the plot. */
+  const townAt = (px: number, py: number) => {
+    const [x, y] = cellAt(nextView.current ?? view, size.width, size.height, px, py);
+    const town = index.owners.get(cellKey(x, y));
+    return town !== undefined && data?.towns[town]?.alias ? {town, alias: data.towns[town]!.alias!, x, y} : null;
   };
+  const click = (px: number, py: number) => {
+    const hit = townAt(px, py);
+    if (hit) open(hit.alias, [hit.x + 0.5, hit.y + 0.5]); else setSelected(null);
+  };
+  // Wheels and pinches, on a listener that may cancel them, so a pinch zooms the map and never the whole page.
+  const wheel = useRef<(event: WheelEvent) => void>(() => {});
+  wheel.current = event => {
+    event.preventDefault();
+    still();
+    const base = nextView.current ?? view;
+    if (wheelIntent(event) === 'pan') { moveTo({...base, cx: base.cx + event.deltaX / base.cell, cy: base.cy + event.deltaY / base.cell}); return; }
+    const [px, py] = point(event);
+    // A pinch reports small steps; a wheel big ones.
+    moveTo(zoomAt(base, Math.exp(-event.deltaY * (event.ctrlKey ? 0.01 : 0.0015)), size.width, size.height, px, py));
+  };
+  // Safari and the app's web view report a pinch as gestures rather than wheels.
+  const pinch = useRef({scale: 1, px: 0, py: 0});
+  const gesture = useRef<(event: Event & {scale?: number; clientX?: number; clientY?: number}, start: boolean) => void>(() => {});
+  gesture.current = (event, start) => {
+    event.preventDefault();
+    const scale = event.scale ?? 1;
+    if (start) { still(); const [px, py] = point({clientX: event.clientX ?? 0, clientY: event.clientY ?? 0}); pinch.current = {scale, px, py}; return; }
+    const {px, py} = pinch.current;
+    moveTo(zoomAt(nextView.current ?? view, scale / pinch.current.scale, size.width, size.height, px, py));
+    pinch.current.scale = scale;
+  };
+  useEffect(() => {
+    const el = canvas.current;
+    if (!el) return;
+    const onWheel = (event: WheelEvent) => wheel.current(event);
+    const onStart = (event: Event) => gesture.current(event, true), onChange = (event: Event) => gesture.current(event, false);
+    el.addEventListener('wheel', onWheel, {passive: false});
+    el.addEventListener('gesturestart', onStart);
+    el.addEventListener('gesturechange', onChange);
+    return () => { el.removeEventListener('wheel', onWheel); el.removeEventListener('gesturestart', onStart); el.removeEventListener('gesturechange', onChange); };
+  }, []);
   useEffect(() => {
     if (!featuring.current || !data) return;
     featuring.current = false;
@@ -335,7 +375,11 @@ export function MapPage({api, signedIn, feature = false, aside, onHome, onVisit}
       onPointerDown={event => { still(); event.currentTarget.setPointerCapture(event.pointerId); drag.current = {x: event.clientX, y: event.clientY, view: nextView.current ?? view, moved: false, trail: []}; }}
       onPointerMove={event => {
         const d = drag.current;
-        if (!d) return;
+        if (!d) {
+          const [px, py] = point(event), hit = townAt(px, py)?.town ?? -1;
+          if (hit !== hovered) setHovered(hit);
+          return;
+        }
         const dx = event.clientX - d.x, dy = event.clientY - d.y;
         if (Math.abs(dx) + Math.abs(dy) > 4) d.moved = true;
         if (!d.moved) return;
@@ -353,7 +397,7 @@ export function MapPage({api, signedIn, feature = false, aside, onHome, onVisit}
             releaseSpeed(d.trail.map(([t, x]) => [t, x]), event.timeStamp), releaseSpeed(d.trail.map(([t, , y]) => [t, y]), event.timeStamp));
         }
       }}
-      onWheel={event => { still(); const [px, py] = point(event); moveTo(zoomAt(nextView.current ?? view, Math.exp(-event.deltaY * 0.0015), size.width, size.height, px, py)); }} />
+      onPointerLeave={() => setHovered(-1)} style={hovered >= 0 ? {cursor: 'pointer'} : undefined} />
     <div className="tt-top">
       {me && <Crest alias={me.alias} level={me.level} plots={me.plots.length} />}
       <div className="tt-glass tt-ttl"><b>Public map</b><span className="tt-mu">{data ? `${count(data.totals.towns)} towns · ${count(data.totals.plots)} plots claimed` : 'Loading…'}</span></div>
