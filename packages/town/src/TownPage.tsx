@@ -77,8 +77,9 @@ export function TownPage({api, onMap}: {api: TownApi; onMap: () => void}) {
       setTown(next);
       if (done) say(done, 'ok');
       const play = () => { if (at && kind !== 'collect' && kind !== 'trade') setMoment({kind, x: at.x, y: at.y, at: performance.now()}); };
-      // New land redraws again once the neighbours load, so its moment waits for them.
-      if (land) void loadMap(next).then(play); else play();
+      // New land redraws again once the neighbours load, so its moment waits for them, and nothing else starts meanwhile.
+      if (land) await loadMap(next);
+      play();
     } catch (failure) { undo?.(); say(failure instanceof Error ? failure.message : String(failure)); }
     finally { setPending(null); }
   };

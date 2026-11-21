@@ -88,7 +88,6 @@ export function createWorld3D(canvas: HTMLCanvasElement): World3D {
       ring.geometry.dispose(); ring.material.dispose();
       for (const {sprite} of sparks) { host.remove(sprite); sprite.material.dispose(); }
       apart?.scale.set(1, 1, 1);
-      if (kind === 'move') spin.position.y = 0;
       render();
     };
     const start = performance.now();
@@ -105,8 +104,6 @@ export function createWorld3D(canvas: HTMLCanvasElement): World3D {
         s.sprite.material.opacity = k > 0 ? 1 - k : 0;
       }
       if (apart) { const [w, h] = momentScale(kind, t); apart.scale.set(w, h, w); }
-      // A town that moves drops in from above and lands.
-      if (kind === 'move') spin.position.y = 6 * (1 - spread);
       render();
       frame = requestAnimationFrame(step);
     };

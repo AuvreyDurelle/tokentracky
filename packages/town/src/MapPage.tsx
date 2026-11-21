@@ -235,7 +235,8 @@ export function MapPage({api, signedIn, feature = false, aside, onHome, onVisit}
   useEffect(() => {
     if (!size.width) return;
     const visible = visibleArea(view, size.width, size.height);
-    if (fetched && within(visible, fetched)) return;
+    // Back inside what's loaded: a request for somewhere else is no longer wanted.
+    if (fetched && within(visible, fetched)) { if (loading.current) { request.current++; loading.current = null; } return; }
     if (loading.current && within(visible, loading.current)) return;
     const area = fetchArea(view, size.width, size.height);
     const ticket = ++request.current;

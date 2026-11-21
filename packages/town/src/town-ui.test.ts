@@ -4,7 +4,7 @@ import { afterCollect, collected, compact, tweenAt, untilDayEnds, daysToAfford, 
 import { cellAt, clampCell, fetchArea, fitView, screenOf, visibleArea, wheelIntent, within, zoomAt } from './map-view.ts';
 import { plotKey, plotKind, plotsBackToFront, plotTile, sceneLayout } from './layout.ts';
 import { indexMap } from './MapPage.tsx';
-import { buildingOutline, hull, momentScale, spunProjection, toStage } from './view.ts';
+import { buildingOutline, hull, momentScale, plotsByDepth, spunProjection, toStage } from './view.ts';
 import { levelLook, type Pt } from './art.ts';
 
 /** True when `p` lies inside the polygon. */
@@ -162,6 +162,15 @@ describe('the town scene', () => {
 describe('picking in the town', () => {
   it('wraps points in their convex hull', () => {
     expect(hull([[0, 0], [4, 0], [2, 1], [4, 4], [0, 4], [2, 2]])).toHaveLength(4);
+  });
+  it('orders plots back to front as the town now faces, so the one in front takes the clicks', () => {
+    const layout = sceneLayout([{x: 0, y: 0}, {x: 1, y: 1}]);
+    const plots = plotsBackToFront(layout);
+    expect(plotsByDepth(layout, spunProjection(layout, 0), plots)).toEqual(plots);
+    // Turned half round, the plot that was at the back is now in front.
+    const turned = plotsByDepth(layout, spunProjection(layout, Math.PI), plots);
+    expect(turned[turned.length - 1]).toEqual(plots[0]);
+    expect(turned[0]).toEqual(plots[plots.length - 1]);
   });
   it('lets a tall building take clicks over the ground of the plot it hides, and over its whole height at any angle', () => {
     const layout = sceneLayout([{x: 0, y: 0}, {x: 1, y: 1}]);

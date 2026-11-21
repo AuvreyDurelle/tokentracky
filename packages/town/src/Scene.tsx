@@ -5,7 +5,7 @@ import { compact, count } from './format.ts';
 import { plotKey, plotKind, plotTile, plotsBackToFront, type PlotKind, type SceneLayout } from './layout.ts';
 import { townColour, townPieces } from './pieces.ts';
 import { atHome, useSpin } from './spin.ts';
-import { buildingOutline, spunProjection, toStage, type Moment } from './view.ts';
+import { buildingOutline, plotsByDepth, spunProjection, toStage, type Moment } from './view.ts';
 import { ResourceIcon } from './icons.tsx';
 import type { World3D } from './world3d.ts';
 
@@ -314,9 +314,9 @@ export function TownScene({layout: given, plots: givenPlots, buildings: givenBui
         <text x={hovered.at[0]} y={hovered.at[1] + 4.5} textAnchor="middle" fill="#fff3c4" fontSize={12.5} fontWeight={700}>{hovered.name}</text>
       </g>}
     </g>}
-    {/* Plots you can act on take clicks and keys, back to front so a building in front takes the clicks over what it hides.
-        A building takes them over its whole height, not just its ground. */}
-    {onSelect && order.map(([x, y]) => {
+    {/* Plots you can act on take clicks and keys, back to front as the town now faces, so a building in front takes the
+        clicks over what it hides. A building takes them over its whole height, not just its ground. */}
+    {onSelect && plotsByDepth(layout, P, order).map(([x, y]) => {
       const kind = kindAt(x, y);
       const building = byPlot.get(plotKey(x, y));
       if (kind.kind !== 'own' && kind.kind !== 'claimable') return null;

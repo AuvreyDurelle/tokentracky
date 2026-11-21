@@ -84,3 +84,9 @@ export function momentScale(kind: Moment['kind'], t: number): [number, number] {
   }
   return [1, 1];
 }
+
+/** Plots back to front as the town now faces, so whatever is drawn later is nearer the viewer at any angle. */
+export function plotsByDepth(layout: SceneLayout, P: Project, plots: ReadonlyArray<readonly [number, number]>): Array<[number, number]> {
+  const depth = ([x, y]: readonly [number, number]) => P((x - layout.x0) * 2 + 1, (y - layout.y0) * 2 + 1)[1];
+  return plots.map(([x, y]): [number, number] => [x, y]).sort((a, b) => depth(a) - depth(b));
+}
