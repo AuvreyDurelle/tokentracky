@@ -13,7 +13,7 @@ import { MapPage, TownPage, type TownApi } from '../src/index.ts';
 const q = new URLSearchParams(location.search);
 const side = Number(q.get('side') ?? 6);
 const off: Record<string, string> = {
-  notwinkle: '.tt-twinkle{animation:none!important}',
+  notwinkle: '.tt-stars i{animation:none!important}',
   noblur: '.tt-glass{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}',
   nobob: '.tt-bubble{animation:none!important}',
   nofilter: '[filter]{filter:none!important}',

@@ -45,11 +45,12 @@
 .tt-bubble { cursor: pointer; animation: tt-bob 3.2s ease-in-out infinite; transform-box: fill-box; }
 .tt-bubble:nth-of-type(2n) { animation-delay: -1.4s; }
 .tt-claim.on { animation: tt-pulse 1.4s ease-in-out infinite; }
-.tt-twinkle { animation: tt-twinkle 4s ease-in-out infinite alternate; }
+.tt-stars { position: absolute; inset: 0; pointer-events: none; }
+.tt-stars i { position: absolute; border-radius: 50%; background: #fff; box-shadow: 0 0 4px #fff; opacity: 0.9; animation: tt-twinkle 4s ease-in-out infinite alternate; will-change: opacity; }
 @keyframes tt-bob { 50% { transform: translateY(-6px); } }
 @keyframes tt-pulse { 50% { opacity: 0.55; } }
 @keyframes tt-twinkle { to { opacity: 0.15; } }
-@media (prefers-reduced-motion: reduce) { .tt-bubble, .tt-claim.on, .tt-twinkle { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .tt-bubble, .tt-claim.on, .tt-stars i { animation: none; } }
 
 /* Glass panels. */
 .tt-glass {

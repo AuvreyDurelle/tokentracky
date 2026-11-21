@@ -27,17 +27,29 @@ function skyMarkup(): string {
   s += '<rect width="1192" height="760" fill="url(#tt-sky)"/>';
   for (let i = 0; i < 170; i++) {
     const x = rn() * 1192, y = rn() * 620, a = rn();
-    s += `<circle class="tt-twinkle" style="animation-delay:${r(a * 4)}s" cx="${r(x)}" cy="${r(y)}" r="${a > 0.94 ? 1.5 : a > 0.6 ? 0.9 : 0.6}" fill="#fff" opacity="${(0.2 + a * 0.7 * (1 - y / 800)).toFixed(2)}"/>`;
+    s += `<circle cx="${r(x)}" cy="${r(y)}" r="${a > 0.94 ? 1.5 : a > 0.6 ? 0.9 : 0.6}" fill="#fff" opacity="${(0.2 + a * 0.7 * (1 - y / 800)).toFixed(2)}"/>`;
   }
   for (const [x, y, size] of [[150, 46, 7], [700, 96, 6], [880, 64, 5], [300, 40, 4], [1040, 40, 6], [86, 420, 5], [960, 250, 5]] as const) s += spark(x, y, size);
   s += '<ellipse cx="600" cy="770" rx="780" ry="190" fill="url(#tt-horizon)"/>' + circle(980, 120, 160, 'url(#tt-moon)') + circle(980, 120, 38, '#fff0d0')
     + [[-12, -10, 8], [10, 6, 5], [3, -19, 4]].map(([a, b, size]) => circle(980 + a!, 120 + b!, size!, '#f1dcb4', 'opacity=".65"')).join('');
   return s;
 }
+/**
+ * A dozen stars that twinkle, over the still sky. Each is its own small layer, so twinkling never repaints the sky or the
+ * town; animating every star in the drawing kept the whole screen repainting.
+ */
+const TWINKLES = (() => {
+  let z = 11;
+  const rn = () => (z = z * 16807 % 2147483647) / 2147483647;
+  return Array.from({length: 12}, () => ({left: `${r(4 + rn() * 92)}%`, top: `${r(3 + rn() * 62)}%`, size: rn() > 0.6 ? 3 : 2, delay: `${r(-rn() * 4)}s`}));
+})();
 let sky: string | null = null;
 export function Sky() {
   sky ??= skyMarkup();
-  return <svg className="tt-sky" viewBox="0 0 1192 760" preserveAspectRatio="xMidYMid slice" aria-hidden="true" dangerouslySetInnerHTML={{__html: sky}} />;
+  return <>
+    <svg className="tt-sky" viewBox="0 0 1192 760" preserveAspectRatio="xMidYMid slice" aria-hidden="true" dangerouslySetInnerHTML={{__html: sky}} />
+    <div className="tt-stars" aria-hidden="true">{TWINKLES.map((star, i) => <i key={i} style={{left: star.left, top: star.top, width: star.size, height: star.size, animationDelay: star.delay}} />)}</div>
+  </>;
 }
 
 interface Props {
