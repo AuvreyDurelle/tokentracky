@@ -399,9 +399,8 @@ fn keeps_the_database_closed_when_the_service_rejected_its_wal() {
         parse_document(ToolId::Antigravity, &install.transcript(), &content, &sidecars)
     };
     assert_eq!(sum(&read(Some(String::new())).events).input, 25_000);
-    let rejected = read(None);
-    assert_eq!(rejected.diagnostics, ["database_unreadable"]);
-    assert_eq!(sum(&rejected.events).input, ascii("hello"));
+    // Read again next scan, keeping what was counted, rather than estimate over it.
+    assert_eq!(read(None).diagnostics, [PENDING]);
 }
 
 #[cfg(unix)]
@@ -412,7 +411,9 @@ fn keeps_the_database_closed_when_its_shared_memory_file_is_a_link() {
     let mut shm = install.database().into_os_string();
     shm.push("-shm");
     std::os::unix::fs::symlink(outside.path(), &shm).unwrap();
-    let result = install.read(&turns(&[("hello", "hi", "think1")]));
-    assert_eq!(result.diagnostics, ["database_unreadable"]);
-    assert_eq!(sum(&result.events).input, ascii("hello"));
+    let lines = turns(&[("hello", "hi", "think1")]);
+    assert_eq!(install.read(&lines).diagnostics, [PENDING]);
+    // Nothing was checkpointed, so the next scan reads it once the link is gone.
+    fs::remove_file(&shm).unwrap();
+    assert_eq!(sum(&install.read(&lines).events).input, 25_000);
 }
