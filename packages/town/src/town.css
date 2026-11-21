@@ -22,6 +22,10 @@
 .tt *, .tt *::before, .tt *::after { box-sizing: border-box; }
 .tt button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
 .tt button:disabled { cursor: default; }
+/* Buttons give under the finger at once, before the server answers. */
+.tt button { transition: transform 0.08s ease-out; }
+.tt button:not(:disabled):active { transform: scale(0.96); }
+.tt [aria-busy="true"] { cursor: progress; }
 .tt button:focus-visible, .tt [tabindex]:focus-visible { outline: 2px solid var(--tt-gold); outline-offset: 2px; }
 .tt b { font-weight: 700; }
 .tt-center { display: grid; place-items: center; }
@@ -29,6 +33,11 @@
 .tt-town { overflow: visible; }
 .tt-canvas { touch-action: none; cursor: grab; }
 .tt-canvas:active { cursor: grabbing; }
+/* The town fades in once it's drawn, rather than popping in. */
+.tt-in { animation: tt-fade-in 0.35s ease-out; }
+@keyframes tt-fade-in { from { opacity: 0; } }
+.tt-badge-pop { transform-box: fill-box; transform-origin: center; animation: tt-badge-pop 0.6s cubic-bezier(.3, 1.6, .5, 1) 0.15s backwards; }
+@keyframes tt-badge-pop { 0% { transform: scale(0.4); } 60% { transform: scale(1.45); } 100% { transform: scale(1); } }
 /* The 3D town sits under the flat overlay, which takes the drags and clicks. */
 .tt-world { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .tt-town.tt-spins { touch-action: none; cursor: grab; }
@@ -38,15 +47,31 @@
 .tt-reset button { padding: 8px 14px; font-weight: 700; }
 .tt-town text { font-family: inherit; font-weight: 700; }
 .tt-hit { cursor: pointer; outline: none; }
-.tt-hit:hover, .tt-hit:focus-visible { fill: rgba(255, 211, 107, 0.12); stroke: rgba(255, 211, 107, 0.7); stroke-width: 1.5; }
-.tt-bubble { cursor: pointer; animation: tt-bob 3.2s ease-in-out infinite; transform-box: fill-box; }
-.tt-bubble:nth-of-type(2n) { animation-delay: -1.4s; }
+/* Harvest bubbles float over the buildings that make them. They bob on their own layers, so bobbing repaints nothing. */
+.tt-bubbles { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+.tt-bubble { position: absolute; display: flex; flex-direction: column; align-items: center; pointer-events: auto; translate: -50% -50%; animation: tt-bob 3.2s ease-in-out infinite; will-change: transform; }
+.tt-bubble:disabled { cursor: default; }
+.tt-orb { position: relative; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; border: 2px solid var(--tt-c);
+  background: radial-gradient(circle at 38% 32%, rgba(255, 255, 255, 0.4), rgba(156, 152, 255, 0.16) 55%, rgba(21, 19, 56, 0.75));
+  box-shadow: 0 0 14px color-mix(in srgb, var(--tt-c) 55%, transparent), inset 0 0 6px rgba(255, 255, 255, 0.15); }
+.tt-orb::after { content: ''; position: absolute; left: 7px; top: 7px; width: 12px; height: 8px; border-top: 2.4px solid rgba(255, 255, 255, 0.75); border-radius: 50% 50% 0 0; rotate: -35deg; }
+.tt-amt { margin-top: -6px; min-width: 54px; padding: 1px 8px; border-radius: 10px; background: var(--tt-c); color: #1a1530; font-size: 12.5px; font-weight: 800; text-align: center; }
+.tt-flight { position: absolute; translate: -50% -50%; animation: tt-fly 0.65s cubic-bezier(0.55, 0, 0.8, 0.4) both; will-change: transform, opacity; }
+@keyframes tt-fly {
+  40% { transform: translate(calc(var(--dx) * 0.25), calc(var(--dy) * 0.25 - 28px)) scale(1.12); }
+  to { transform: translate(var(--dx), var(--dy)) scale(0.4); opacity: 0.3; }
+}
+.tt-spill { position: absolute; bottom: 100%; translate: 0 -4px; white-space: nowrap; padding: 1px 9px; border-radius: 9px; background: #ff5a4a; box-shadow: 0 0 10px rgba(255, 90, 74, 0.7); font-size: 10.5px; font-weight: 800; }
 .tt-claim.on { animation: tt-pulse 1.4s ease-in-out infinite; }
-.tt-twinkle { animation: tt-twinkle 4s ease-in-out infinite alternate; }
+.tt-stars { position: absolute; inset: 0; pointer-events: none; }
+.tt-stars i { position: absolute; border-radius: 50%; background: #fff; box-shadow: 0 0 4px #fff; opacity: 0.9; animation: tt-twinkle 4s ease-in-out infinite alternate; will-change: opacity; }
 @keyframes tt-bob { 50% { transform: translateY(-6px); } }
 @keyframes tt-pulse { 50% { opacity: 0.55; } }
 @keyframes tt-twinkle { to { opacity: 0.15; } }
-@media (prefers-reduced-motion: reduce) { .tt-bubble, .tt-claim.on, .tt-twinkle { animation: none; } }
+
+/* Cards, messages and menus ease in rather than popping up. `translate` leaves their own `transform` alone. */
+.tt-toast, .tt-pop, .tt-pane, .tt-menu, .tt-banner { animation: tt-rise 0.18s ease-out; }
+@keyframes tt-rise { from { opacity: 0; translate: 0 8px; } }
 
 /* Glass panels. */
 .tt-glass {
@@ -81,8 +106,10 @@
 .tt-rs s { text-decoration: none; color: #9895c8; font-size: 11px; margin-left: 4px; }
 .tt-meter { display: block; width: 92px; height: 3px; border-radius: 2px; background: rgba(255, 255, 255, 0.12); margin-top: 4px; overflow: hidden; }
 .tt-meter i { display: block; height: 100%; }
-.tt-rs.hot { background: rgba(255, 80, 64, 0.16); box-shadow: inset 0 0 0 1px rgba(255, 120, 100, 0.6), 0 0 20px rgba(255, 80, 64, 0.5); }
+.tt-rs.warm { background: rgba(255, 182, 72, 0.1); box-shadow: inset 0 0 0 1px rgba(255, 182, 72, 0.45); }
+.tt-rs.full { background: rgba(255, 80, 64, 0.16); box-shadow: inset 0 0 0 1px rgba(255, 120, 100, 0.6), 0 0 20px rgba(255, 80, 64, 0.5); }
 .tt-full { position: absolute; top: -9px; right: -4px; background: #ff5a4a; font-size: 10px; font-weight: 800; border-radius: 8px; padding: 1px 6px; box-shadow: 0 0 10px #ff5a4a; }
+.tt-rs.warm .tt-full { background: #ffb648; color: #2a1700; box-shadow: none; }
 .tt-clk { margin-left: auto; gap: 14px; padding-left: 12px; }
 .tt-stk { display: flex; align-items: center; gap: 6px; color: #ffc08a; font-weight: 600; white-space: nowrap; }
 .tt-stk b { font-size: 16px; color: #fff; }
@@ -106,7 +133,7 @@
 .tt-kv b { font-size: 14px; display: flex; align-items: center; gap: 5px; }
 .tt-row { padding: 4px 0; }
 .tt-pb { height: 7px; border-radius: 4px; background: rgba(255, 255, 255, 0.1); overflow: hidden; margin: 8px 0 6px; }
-.tt-pb i { display: block; height: 100%; background: linear-gradient(90deg, #b8532f, #ff9a5c); box-shadow: 0 0 10px #ff8a4c; }
+.tt-pb i { display: block; height: 100%; transition: width 0.5s ease-out; background: linear-gradient(90deg, #b8532f, #ff9a5c); box-shadow: 0 0 10px #ff8a4c; }
 .tt-btn { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 12px; font-weight: 800 !important; border-radius: 11px; padding: 8px !important; background: rgba(255, 255, 255, 0.08) !important; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14); }
 .tt-btn:not(:disabled):hover { background: rgba(255, 255, 255, 0.14) !important; }
 .tt-btn:disabled { color: #8f8cc0 !important; opacity: 0.8; }
@@ -135,7 +162,7 @@
 .tt-tn { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; flex: none; background: radial-gradient(circle at 40% 35%, #fff3c4, #d99a14); box-shadow: 0 0 16px rgba(255, 200, 60, 0.5); color: #2a1700; font-weight: 800; font-size: 18px; }
 .tt-thumb { flex: none; filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.35)); }
 .tt-pips { display: flex; gap: 3px; margin: 2px 0 8px; }
-.tt-pips i { flex: 1; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.12); }
+.tt-pips i { flex: 1; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.12); transition: background 0.3s ease-out, box-shadow 0.3s ease-out; }
 .tt-pips i.f { background: var(--tt-gold); box-shadow: 0 0 6px var(--tt-gold); }
 .tt-pips i.n { background: none; box-shadow: inset 0 0 0 1.5px var(--tt-gold); }
 .tt-desc { margin: 0 0 8px; color: #cfcdf0; font-size: 12px; line-height: 1.4; }
@@ -159,11 +186,14 @@
 .tt-dock { left: 50%; transform: translateX(-50%); bottom: 14px; display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 20px; z-index: 2; }
 .tt-db { position: relative; width: 76px; height: 58px; border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-weight: 700 !important; font-size: 12px !important; background: linear-gradient(rgba(130, 120, 255, 0.32), rgba(70, 60, 180, 0.24)) !important; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), inset 0 -3px 0 rgba(0, 0, 0, 0.25); }
 .tt-db .tt-bd { top: -7px; right: -7px; }
+.tt-db[aria-pressed="true"] { color: var(--tt-gold) !important; box-shadow: inset 0 0 0 1.5px rgba(255, 211, 107, 0.7), 0 0 14px rgba(255, 211, 107, 0.3); }
 .tt-cta { display: flex; align-items: center; gap: 12px; height: 58px; padding: 0 22px 0 9px !important; border-radius: 16px; text-align: left; background: linear-gradient(#ffe58a, #ffb21f 60%, #f0960a) !important; color: #2a1700 !important; box-shadow: inset 0 -4px 0 rgba(120, 60, 0, 0.35), inset 0 2px 0 rgba(255, 255, 255, 0.6), 0 0 30px rgba(255, 190, 60, 0.55); }
 .tt-cta b { font-size: 17px; display: block; }
 .tt-cta small { font-size: 11.5px; font-weight: 600; color: #6b4300; display: block; white-space: nowrap; }
 .tt-cta:disabled { background: rgba(255, 255, 255, 0.08) !important; color: var(--tt-ink) !important; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12); }
 .tt-cta:disabled small { color: var(--tt-mute); }
+.tt-cta-bar { display: block; height: 4px; margin-top: 5px; border-radius: 2px; background: rgba(255, 255, 255, 0.1); overflow: hidden; }
+.tt-cta-bar i { display: block; height: 100%; background: linear-gradient(90deg, #b8532f, #ff9a5c); transition: width 0.5s ease-out; }
 .tt-cta.tt-like:not(:disabled) { background: linear-gradient(#ffb3c6, #e0446a) !important; color: #fff !important; box-shadow: inset 0 -4px 0 rgba(120, 0, 40, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.5), 0 0 26px rgba(255, 90, 130, 0.5); }
 .tt-cta.tt-like:not(:disabled) small { color: #ffe6ee; }
 .tt-ci { width: 40px; height: 40px; border-radius: 12px; background: rgba(255, 255, 255, 0.4); display: grid; place-items: center; color: #8a5200; flex: none; }
@@ -241,4 +271,10 @@
   .tt-menu { bottom: 74px; max-height: calc(100% - 130px); }
   .tt-cards { grid-template-columns: 1fr; }
   .tt-chips { margin-left: 0; }
+}
+
+/* Last, so it wins: no motion for anyone who asks for none. */
+@media (prefers-reduced-motion: reduce) {
+  .tt-bubble, .tt-claim.on, .tt-stars i, .tt-in, .tt-badge-pop, .tt-toast, .tt-pop, .tt-pane, .tt-menu, .tt-banner { animation: none; }
+  .tt button, .tt-pb i, .tt-pips i { transition: none; }
 }

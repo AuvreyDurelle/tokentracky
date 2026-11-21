@@ -5,7 +5,7 @@ import { Crest, StreakClock, useNow, useToast } from './Hud.tsx';
 import { HeartIcon, HomeIcon, MapIcon } from './icons.tsx';
 import { count } from './format.ts';
 import { sceneLayout } from './layout.ts';
-import { Sky, TownScene } from './Scene.tsx';
+import { Sky, TownScene, preloadWorld } from './Scene.tsx';
 
 /** Someone else's town, to look at and like. */
 export function VisitPage({api, alias, signedIn, me, onMap, onHome}: {api: TownApi; alias: string; signedIn: boolean; me: string | null; onMap: () => void; onHome?: () => void}) {
@@ -13,9 +13,10 @@ export function VisitPage({api, alias, signedIn, me, onMap, onHome}: {api: TownA
   const [map, setMap] = useState<TownMapResponse | null>(null);
   const [liked, setLiked] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [angle, setAngle] = useState(0);
   const [toast, say] = useToast();
   const now = useNow();
+  // The 3D town's code loads alongside the town's data.
+  useEffect(() => { void preloadWorld().catch(() => {}); }, []);
   useEffect(() => {
     let live = true;
     setTown(null); setError(null);
@@ -40,7 +41,7 @@ export function VisitPage({api, alias, signedIn, me, onMap, onHome}: {api: TownA
   };
   return <div className="tt tt-stage">
     <Sky />
-    <TownScene layout={layout} plots={town.plots} buildings={town.buildings} map={map} selected={null} label={`${town.alias}'s town`} visiting angle={angle} onSpin={setAngle} />
+    <TownScene layout={layout} plots={town.plots} buildings={town.buildings} map={map} selected={null} label={`${town.alias}'s town`} visiting spins />
     <div className="tt-top">
       <Crest alias={town.alias} level={town.level} plots={town.plots.length} />
       <StreakClock streak={town.streak} now={now} />

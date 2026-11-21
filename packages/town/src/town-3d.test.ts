@@ -5,7 +5,7 @@ import { isoProjection } from './art.ts';
 import { plotKey, plotKind, sceneLayout } from './layout.ts';
 import { buildTown } from './models.ts';
 import { townPieces } from './pieces.ts';
-import { CLICK_SLOP, atHome, dragged, glide, isDrag, releaseSpeed, wrap } from './spin.ts';
+import { CLICK_SLOP, atHome, dragged, glide, homeFrom, isDrag, releaseSpeed, wrap } from './spin.ts';
 import { RISE, spunProjection } from './view.ts';
 import { placeCamera, turnTo } from './world3d.ts';
 
@@ -83,6 +83,12 @@ describe('spinning by hand', () => {
     expect(releaseSpeed([[0, 0], [16, 0.2]], 200)).toBe(0);
     expect(releaseSpeed([], 0)).toBe(0);
   });
+  it('heads home the short way round, however many turns it has made', () => {
+    expect(homeFrom(0.5)).toBeCloseTo(0);
+    expect(homeFrom(2 * Math.PI + 0.5)).toBeCloseTo(2 * Math.PI);
+    expect(homeFrom(-3 * Math.PI / 2)).toBeCloseTo(-2 * Math.PI);
+    expect(atHome(homeFrom(7.3))).toBe(true);
+  });
   it('knows when the town faces the way it started', () => {
     expect(atHome(4 * Math.PI)).toBe(true);
     expect(atHome(0.3)).toBe(false);
@@ -100,7 +106,7 @@ describe("the town's pieces", () => {
 describe('the 3D town', () => {
   it('builds every building, at every level look, without a broken point', () => {
     const plots = Array.from({length: 16}, (_, i) => ({x: i % 4, y: Math.floor(i / 4)}));
-    const buildings = BUILDING_IDS.map((kind, i) => ({kind, x: i % 4, y: Math.floor(i / 4), level: [1, 6, 10][i % 3]!}));
+    const buildings = BUILDING_IDS.map((kind, i) => ({kind, x: i % 4, y: Math.floor(i / 4), level: [1, 3, 6, 9, 10, 15][i % 6]!}));
     const land = landOf(plots);
     const town = buildTown(townPieces({...land, buildings}), land.layout);
     let triangles = 0, sprites = 0;

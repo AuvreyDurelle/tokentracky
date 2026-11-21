@@ -1,8 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import { TOWN_MAP_SPAN, terrainAt } from '@tokentracky/core';
-import { afterCollect, compact, daysToAfford, duration, paceText, shortfall, tooBig } from './format.ts';
-import { cellAt, clampCell, fetchArea, fitView, screenOf, visibleArea, within, zoomAt } from './map-view.ts';
+import { afterCollect, collected, compact, tweenAt, untilDayEnds, daysToAfford, duration, paceText, shortfall, tooBig } from './format.ts';
+import { cellAt, clampCell, fetchArea, fitView, screenOf, visibleArea, wheelIntent, within, zoomAt } from './map-view.ts';
 import { plotKey, plotKind, plotsBackToFront, plotTile, sceneLayout } from './layout.ts';
+import { indexMap } from './MapPage.tsx';
+import { buildingOutline, hull, momentScale, plotsByDepth, spunProjection, toStage } from './view.ts';
+import { levelLook, type Pt } from './art.ts';
+
+/** True when `p` lies inside the polygon. */
+const inside = (poly: Pt[], [x, y]: Pt) => {
+  let hit = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, yi] = poly[i]!, [xj, yj] = poly[j]!;
+    if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) hit = !hit;
+  }
+  return hit;
+};
 
 describe('town numbers', () => {
   it('writes token counts and waits the way the screens show them', () => {
@@ -32,6 +45,83 @@ describe('town numbers', () => {
     // 1,500 Bricks stored and 800 to collect with room for 2,000: 300 spill, so 2,000 is all there is to spend.
     expect(afterCollect({power: 10, bricks: 1500, water: 0, crystals: 0}, {power: 5, bricks: 800, water: 0, crystals: 0}, {power: 1000, bricks: 2000, water: 1000, crystals: 100}))
       .toEqual({power: 15, bricks: 2000, water: 0, crystals: 0});
+  });
+});
+
+describe('how a building looks at each level', () => {
+  it('adds something you can see at Lv 3, 6, 9, 10 and 15', () => {
+    const looks = Array.from({length: 15}, (_, i) => JSON.stringify(levelLook(i + 1)));
+    const changes = looks.flatMap((look, i) => i > 0 && look !== looks[i - 1] ? [i + 1] : []);
+    expect(changes).toEqual([3, 6, 9, 10, 15]);
+    expect(levelLook(1)).toEqual({litFrom: 2, pennant: null, lamps: false, glow: false, crown: false});
+    expect(levelLook(15)).toEqual({litFrom: 1, pennant: '#ffc23d', lamps: true, glow: true, crown: true});
+  });
+});
+
+describe('a moment in the town', () => {
+  const heights = (kind: 'build' | 'upgrade') => Array.from({length: 21}, (_, i) => momentScale(kind, i / 20)[1]);
+  it('raises a new building out of the ground, overshooting a little before it settles', () => {
+    expect(momentScale('build', 0)[1]).toBeCloseTo(0);
+    expect(Math.max(...heights('build'))).toBeGreaterThan(1.03);
+    expect(Math.max(...heights('build'))).toBeLessThan(1.15);
+    expect(momentScale('build', 1)).toEqual([1, 1]);
+  });
+  it('squashes an upgraded building, springs it up past its size and settles', () => {
+    expect(momentScale('upgrade', 0)).toEqual([1, 1]);
+    expect(momentScale('upgrade', 0.2)[1]).toBeCloseTo(0.82);
+    expect(Math.max(...heights('upgrade').slice(5))).toBeGreaterThan(1.02);
+    const [w, h] = momentScale('upgrade', 1);
+    expect(w).toBeCloseTo(1);
+    expect(h).toBeCloseTo(1);
+  });
+  it('leaves other moments and times past the end alone', () => {
+    expect(momentScale('claim', 0.5)).toEqual([1, 1]);
+    expect(momentScale('upgrade', 2)[1]).toBeCloseTo(1);
+  });
+});
+
+describe('placing things over the town', () => {
+  const layout = sceneLayout([{x: 0, y: 0}]);
+  it('centres the drawing in a wider stage and scales it to the height', () => {
+    const k = 600 / layout.height;
+    expect(toStage(layout, 2000, 600, [0, 0])).toEqual({left: (2000 - layout.width * k) / 2, top: 0});
+    expect(toStage(layout, 2000, 600, [layout.width, layout.height])).toEqual({left: (2000 + layout.width * k) / 2, top: 600});
+  });
+  it('centres it in a taller stage and scales it to the width', () => {
+    const at = toStage(layout, 400, 2000, [layout.width / 2, layout.height / 2]);
+    expect(at.left).toBeCloseTo(200);
+    expect(at.top).toBeCloseTo(1000);
+  });
+});
+
+describe('collecting at once', () => {
+  it('fills the stores as the server will, spills the rest and empties the harvest', () => {
+    const res = (power: number, bricks: number, water: number, crystals: number) => ({power, bricks, water, crystals});
+    const town = {wallet: res(90, 10, 0, 5), caps: res(100, 100, 100, 100), harvest: {resources: res(30, 20, 0, 1), tokens: 5000, since: null, streak: 2, multiplier: 1.1}};
+    const after = collected(town as unknown as Parameters<typeof collected>[0]);
+    expect(after.wallet).toEqual(res(100, 30, 0, 6));
+    expect(after.wallet).toEqual(afterCollect(town.wallet, town.harvest.resources, town.caps));
+    expect(after.harvest.resources).toEqual(res(0, 0, 0, 0));
+    expect(after.harvest.tokens).toBe(0);
+    expect(after.harvest.streak).toBe(2);
+  });
+});
+
+describe("the game's day", () => {
+  it('counts down to midnight UTC', () => {
+    expect(untilDayEnds(Date.parse('2026-11-21T17:48:00Z'))).toBe(6 * 3600 + 12 * 60);
+    expect(untilDayEnds(Date.parse('2026-11-21T00:00:00Z'))).toBe(86_400);
+    expect(duration(untilDayEnds(Date.parse('2026-11-21T23:59:30Z')))).toBe('30s');
+  });
+});
+
+describe('counting the stores up', () => {
+  it('starts and ends where it should, and gets more than halfway in the first third', () => {
+    expect(tweenAt(100, 400, 0)).toBe(100);
+    expect(tweenAt(100, 400, 1)).toBe(400);
+    expect(tweenAt(100, 400, 1 / 3)).toBeGreaterThan(250);
+    expect(tweenAt(400, 100, 0.5)).toBeLessThan(250);
+    expect(tweenAt(100, 400, 3)).toBe(400);
   });
 });
 
@@ -66,6 +156,64 @@ describe('the town scene', () => {
     let water: [number, number] | null = null;
     for (let x = 5; x < 60 && !water; x++) if (terrainAt(x, 5) === 'water') water = [x, 5];
     expect(plotKind(water![0], water![1], new Set([plotKey(water![0] - 1, 5)]), others)).toEqual({kind: 'water'});
+  });
+});
+
+describe('picking in the town', () => {
+  it('wraps points in their convex hull', () => {
+    expect(hull([[0, 0], [4, 0], [2, 1], [4, 4], [0, 4], [2, 2]])).toHaveLength(4);
+  });
+  it('orders plots back to front as the town now faces, so the one in front takes the clicks', () => {
+    const layout = sceneLayout([{x: 0, y: 0}, {x: 1, y: 1}]);
+    const plots = plotsBackToFront(layout);
+    expect(plotsByDepth(layout, spunProjection(layout, 0), plots)).toEqual(plots);
+    // Turned half round, the plot that was at the back is now in front.
+    const turned = plotsByDepth(layout, spunProjection(layout, Math.PI), plots);
+    expect(turned[turned.length - 1]).toEqual(plots[0]);
+    expect(turned[0]).toEqual(plots[plots.length - 1]);
+  });
+  it('lets a tall building take clicks over the ground of the plot it hides, and over its whole height at any angle', () => {
+    const layout = sceneLayout([{x: 0, y: 0}, {x: 1, y: 1}]);
+    for (const angle of [0, 0.4, -0.4]) {
+      const P = spunProjection(layout, angle);
+      const [fx, fy] = plotTile(layout, 1, 1), [bx, by] = plotTile(layout, 0, 0);
+      const hall = buildingOutline(P, fx, fy, 96);
+      // Facing the way it first appears, the middle of the back plot's ground sits right behind the Town Hall in front of it.
+      if (angle === 0) expect(inside(hall, P(bx + 1, by + 1))).toBe(true);
+      // Its own ground and its roof are both in the outline; the sky well above is not.
+      expect(inside(hall, P(fx + 1, fy + 1))).toBe(true);
+      expect(inside(hall, P(fx + 1, fy + 1, 90))).toBe(true);
+      expect(inside(hall, P(fx + 1, fy + 1, 160))).toBe(false);
+    }
+  });
+});
+
+describe('indexing a map once per answer', () => {
+  it('finds each town\'s outside edges and its middle', () => {
+    // Town 0 holds two plots side by side; town 1 holds the plot below the first.
+    const data = {x0: 0, y0: 0, x1: 4, y1: 4, plots: [[0, 0, 0], [1, 0, 0], [0, 1, 1]] as Array<[number, number, number]>,
+      towns: [], wonders: [], totals: {towns: 2, plots: 3}, edge: 1, featured: null};
+    const {byTown, centres, owners} = indexMap(data);
+    const UP = 1, DOWN = 2, LEFT = 4, RIGHT = 8;
+    expect(byTown.get(0)).toEqual([[0, 0, UP | DOWN | LEFT], [1, 0, UP | DOWN | RIGHT]]);
+    expect(byTown.get(1)).toEqual([[0, 1, UP | DOWN | LEFT | RIGHT]]);
+    expect(centres.get(0)).toEqual([1, 0.5]);
+    expect(owners.size).toBe(3);
+  });
+});
+
+describe('the wheel on the public map', () => {
+  const wheel = (deltaX: number, deltaY: number, more: {deltaMode?: number; ctrlKey?: boolean} = {}) => wheelIntent({deltaX, deltaY, deltaMode: 0, ctrlKey: false, ...more});
+  it('zooms on a pinch and on a mouse wheel', () => {
+    expect(wheel(0, 3.5, {ctrlKey: true})).toBe('zoom');
+    expect(wheel(0, 3, {deltaMode: 1})).toBe('zoom');
+    expect(wheel(0, -100)).toBe('zoom');
+  });
+  it('pans on two fingers sliding, in any direction', () => {
+    expect(wheel(0, 12)).toBe('pan');
+    expect(wheel(-8, 0)).toBe('pan');
+    expect(wheel(5, 140)).toBe('pan');
+    expect(wheel(0, 104.5)).toBe('pan');
   });
 });
 

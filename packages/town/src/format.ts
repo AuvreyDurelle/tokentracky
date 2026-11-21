@@ -1,4 +1,4 @@
-import { RESOURCE_IDS, type Cost, type ResourceId, type Resources } from '@tokentracky/core';
+import { RESOURCE_IDS, type Cost, type ResourceId, type Resources, type TownSelf } from '@tokentracky/core';
 
 export const count = (n: number) => Math.round(n).toLocaleString('en-US');
 /** 84.2M, 12.3K. */
@@ -18,6 +18,8 @@ export function duration(seconds: number): string {
   const d = Math.floor(h / 24);
   return h % 24 ? `${d}d ${h % 24}h` : `${d}d`;
 }
+/** Seconds from `now` (milliseconds) to the next midnight UTC, when the game's day, and a streak's chance to grow, ends. */
+export const untilDayEnds = (now: number) => (86_400_000 - (now % 86_400_000)) / 1000;
 /** What is still missing to pay `cost`, resource by resource. Empty when it is covered. */
 export function shortfall(wallet: Resources, cost: Cost): Cost {
   const out: Cost = {};
@@ -37,6 +39,13 @@ export function afterCollect(wallet: Resources, harvest: Resources, room: Resour
   for (const id of RESOURCE_IDS) out[id] = Math.max(wallet[id], Math.min(room[id], wallet[id] + harvest[id]));
   return out;
 }
+/** The town as collecting leaves it, for showing at once while the server does it: the stores take what fits and the harvest empties. */
+export function collected(town: TownSelf): TownSelf {
+  const none = Object.fromEntries(RESOURCE_IDS.map(id => [id, 0])) as Resources;
+  return {...town, wallet: afterCollect(town.wallet, town.harvest.resources, town.caps), harvest: {...town.harvest, resources: none, tokens: 0}};
+}
+/** A number `t` (0 to 1) of the way from `from` to `to`, quick at first and easing in: how the stores count up. */
+export const tweenAt = (from: number, to: number, t: number) => from + (to - from) * (1 - (1 - Math.min(1, Math.max(0, t))) ** 3);
 /** Whole days of coding at `perDay` to make up `missing`, or null with no pace yet. */
 export function daysToAfford(missing: number, perDay: number): number | null {
   if (missing <= 0) return 0;

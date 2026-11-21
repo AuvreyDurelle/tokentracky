@@ -1,11 +1,12 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type Ref } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 import { BUILDINGS, RESOURCE_IDS, terrainAt, type BuildingId, type ResourceId, type Resources, type TownMapResponse, type TownPlot } from '@tokentracky/core';
 import { BUILDING_HEIGHT, SCENE_DEFS, circle, createArt, isoProjection, r, spark } from './art.ts';
 import { compact, count } from './format.ts';
 import { plotKey, plotKind, plotTile, plotsBackToFront, type PlotKind, type SceneLayout } from './layout.ts';
 import { townColour, townPieces } from './pieces.ts';
 import { atHome, useSpin } from './spin.ts';
-import { spunProjection } from './view.ts';
+import { buildingOutline, plotsByDepth, spunProjection, toStage, type Moment } from './view.ts';
+import { ResourceIcon } from './icons.tsx';
 import type { World3D } from './world3d.ts';
 
 export interface SceneBuilding {id?: string; kind: BuildingId; x: number; y: number; level: number}
@@ -27,17 +28,39 @@ function skyMarkup(): string {
   s += '<rect width="1192" height="760" fill="url(#tt-sky)"/>';
   for (let i = 0; i < 170; i++) {
     const x = rn() * 1192, y = rn() * 620, a = rn();
-    s += `<circle class="tt-twinkle" style="animation-delay:${r(a * 4)}s" cx="${r(x)}" cy="${r(y)}" r="${a > 0.94 ? 1.5 : a > 0.6 ? 0.9 : 0.6}" fill="#fff" opacity="${(0.2 + a * 0.7 * (1 - y / 800)).toFixed(2)}"/>`;
+    s += `<circle cx="${r(x)}" cy="${r(y)}" r="${a > 0.94 ? 1.5 : a > 0.6 ? 0.9 : 0.6}" fill="#fff" opacity="${(0.2 + a * 0.7 * (1 - y / 800)).toFixed(2)}"/>`;
   }
   for (const [x, y, size] of [[150, 46, 7], [700, 96, 6], [880, 64, 5], [300, 40, 4], [1040, 40, 6], [86, 420, 5], [960, 250, 5]] as const) s += spark(x, y, size);
   s += '<ellipse cx="600" cy="770" rx="780" ry="190" fill="url(#tt-horizon)"/>' + circle(980, 120, 160, 'url(#tt-moon)') + circle(980, 120, 38, '#fff0d0')
     + [[-12, -10, 8], [10, 6, 5], [3, -19, 4]].map(([a, b, size]) => circle(980 + a!, 120 + b!, size!, '#f1dcb4', 'opacity=".65"')).join('');
   return s;
 }
+/**
+ * A dozen stars that twinkle, over the still sky. Each is its own small layer, so twinkling never repaints the sky or the
+ * town; animating every star in the drawing kept the whole screen repainting.
+ */
+const TWINKLES = (() => {
+  let z = 11;
+  const rn = () => (z = z * 16807 % 2147483647) / 2147483647;
+  return Array.from({length: 12}, () => ({left: `${r(4 + rn() * 92)}%`, top: `${r(3 + rn() * 62)}%`, size: rn() > 0.6 ? 3 : 2, delay: `${r(-rn() * 4)}s`}));
+})();
 let sky: string | null = null;
 export function Sky() {
   sky ??= skyMarkup();
-  return <svg className="tt-sky" viewBox="0 0 1192 760" preserveAspectRatio="xMidYMid slice" aria-hidden="true" dangerouslySetInnerHTML={{__html: sky}} />;
+  return <>
+    <svg className="tt-sky" viewBox="0 0 1192 760" preserveAspectRatio="xMidYMid slice" aria-hidden="true" dangerouslySetInnerHTML={{__html: sky}} />
+    <div className="tt-stars" aria-hidden="true">{TWINKLES.map((star, i) => <i key={i} style={{left: star.left, top: star.top, width: star.size, height: star.size, animationDelay: star.delay}} />)}</div>
+  </>;
+}
+
+/** Starts fetching the 3D town's code, so it is ready by the time the town's data is. */
+export const preloadWorld = () => import('./world3d.ts');
+
+/** `value` as last time when its `key` hasn't changed, so a fresh copy of the same town redraws nothing. */
+function useSame<T>(value: T, key: string): T {
+  const last = useRef<{key: string; value: T} | null>(null);
+  if (last.current?.key !== key) last.current = {key, value};
+  return last.current.value;
 }
 
 interface Props {
@@ -47,31 +70,67 @@ interface Props {
   map: TownMapResponse | null;
   selected: Selection | null;
   claimMode?: boolean;
+  /** Picking an empty plot of yours to build on: they glow. */
+  buildMode?: boolean;
   harvest?: SceneHarvest | null;
   /** What happens on a plot. Without it the scene can only be looked at. */
   onSelect?: (selection: Selection | null) => void;
   onCollect?: () => void;
   label: string;
-  svgRef?: Ref<SVGSVGElement>;
   /** Someone else's town: no claim markers, since its free plots are not yours to claim. */
   visiting?: boolean;
-  /** How far the town is turned, in radians, and what turning it does. Without `onSpin` the town stays put. */
-  angle?: number;
-  onSpin?: (angle: number) => void;
+  /** Whether the town can be turned. The scene keeps the angle, so turning redraws only the scene. */
+  spins?: boolean;
+  /** What just happened, played once when it arrives. */
+  moment?: Moment | null;
+  /** When the harvest was last collected: its bubbles fly to their stores (`data-store` elements on the stage). */
+  collected?: number;
+  /** A card over the scene, given where a point of the town (tile x, tile y, height) sits on the stage as it turns. */
+  popover?: (place: Place, stage: StageSize) => ReactNode;
 }
+export type Place = (tx: number, ty: number, z: number) => {left: number; top: number};
+export interface StageSize {width: number; height: number}
 
 /**
  * A town at night in isometric view: its plots, the neighbourhood around it, and everything happening there. The town
  * itself is drawn in 3D where the browser has WebGL, so it can turn; labels, badges and click targets are a flat overlay
  * that turns with it. Without WebGL the flat drawing stays, facing one way.
  */
-export function TownScene({layout, plots, buildings, map, selected, claimMode = false, harvest, onSelect, onCollect, label, svgRef, visiting = false, angle = 0, onSpin}: Props) {
+export function TownScene({layout: given, plots: givenPlots, buildings: givenBuildings, map, selected, claimMode = false, buildMode = false, harvest, onSelect, onCollect, label, visiting = false, spins = false, moment = null, collected = 0, popover}: Props) {
+  // Every refresh brings new copies of the same town; only a real change rebuilds the 3D world.
+  const layout = useSame(given, JSON.stringify(given));
+  const plots = useSame(givenPlots, givenPlots.map(p => plotKey(p.x, p.y)).join(' '));
+  const buildings = useSame(givenBuildings, givenBuildings.map(b => `${b.id ?? ''}:${b.kind}:${b.x},${b.y}:${b.level}`).join(' '));
   const canvas = useRef<HTMLCanvasElement>(null);
-  const [world3d, setWorld3d] = useState<World3D | null>(null);
-  const spinnable = !!onSpin && !!world3d;
+  // The 3D world once it's made, or 'flat' where the browser can't make one and the flat drawing shows instead.
+  const [made, setMade] = useState<World3D | 'flat' | null>(null);
+  const world3d = made === 'flat' ? null : made;
+  // The plot under the pointer or keyboard focus, as its key.
+  const [hover, setHover] = useState<string | null>(null);
+  const svg = useRef<SVGSVGElement>(null);
+  const [angle, setAngle] = useState(0);
+  // Pointer moves can come faster than the screen draws; the town turns once a frame, to the latest angle.
+  const frame = useRef(0), latest = useRef(0);
+  const spinTo = useCallback((to: number) => {
+    latest.current = to;
+    frame.current ||= requestAnimationFrame(() => { frame.current = 0; setAngle(latest.current); });
+  }, []);
+  useEffect(() => () => cancelAnimationFrame(frame.current), []);
+  const spinnable = spins && !!world3d;
   const turned = spinnable ? angle : 0;
   const P = useMemo(() => spunProjection(layout, turned), [layout, turned]);
-  const spin = useSpin(turned, spinnable ? onSpin : undefined);
+  const spin = useSpin(turned, spinnable ? spinTo : undefined);
+  const [size, setSize] = useState<StageSize>({width: 0, height: 0});
+  useLayoutEffect(() => {
+    const el = svg.current;
+    if (!el) return;
+    const measure = () => setSize(s => s.width === el.clientWidth && s.height === el.clientHeight ? s : {width: el.clientWidth, height: el.clientHeight});
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  const place: Place = (tx, ty, z) => toStage(layout, size.width, size.height, P(tx, ty, z));
   const own = useMemo(() => new Set(plots.map(p => plotKey(p.x, p.y))), [plots]);
   const others = useMemo(() => {
     const out = new Map<string, number>();
@@ -86,20 +145,28 @@ export function TownScene({layout, plots, buildings, map, selected, claimMode = 
   // The world: ground, borders, neighbours' homes, trees and every building, back to front. Redrawn when the town changes.
   const pieces = useMemo(() => townPieces({layout, kindAt, buildings, map}), [layout, buildings, own, others, map, visiting]);
   useEffect(() => {
-    let live = true, made: World3D | null = null;
-    import('./world3d.ts').then(({createWorld3D}) => {
+    let live = true, world: World3D | null = null;
+    preloadWorld().then(({createWorld3D}) => {
       if (!live || !canvas.current) return;
-      try { made = createWorld3D(canvas.current); } catch { return; }
-      setWorld3d(made);
-    }, () => {});
-    return () => { live = false; made?.dispose(); };
+      try { world = createWorld3D(canvas.current); } catch { setMade('flat'); return; }
+      setMade(world);
+    }, () => { if (live) setMade('flat'); });
+    return () => { live = false; world?.dispose(); };
   }, []);
-  // Before paint, so the flat drawing and the 3D town never both show or both go missing.
+  const ready = made !== null;
+  // Before paint, so the town and its overlay arrive together.
   useLayoutEffect(() => { world3d?.draw(pieces, layout); }, [world3d, pieces, layout]);
   useLayoutEffect(() => { world3d?.turn(turned); }, [world3d, turned]);
-  // The flat drawing of the same pieces, until the 3D town is ready or where it can't be.
+  // After the draw above, so the moment plays on the town as it now stands.
+  const played = useRef(0);
+  useLayoutEffect(() => {
+    if (!world3d || !moment || moment.at === played.current) return;
+    played.current = moment.at;
+    world3d.play(moment.kind, plotTile(layout, moment.x, moment.y));
+  }, [world3d, moment, layout]);
+  // The flat drawing of the same pieces, where there's no 3D town.
   const world = useMemo(() => {
-    if (world3d) return '';
+    if (made !== 'flat') return '';
     const P = isoProjection(layout.originX, layout.originY);
     const art = createArt(P, 'tts');
     const nx = layout.cols * 2, ny = layout.rows * 2;
@@ -123,7 +190,7 @@ export function TownScene({layout, plots, buildings, map, selected, claimMode = 
       }
     }
     return `${rock}${slab}${ground}<g filter="url(#tt-mg)">${edges}</g>${objects}<defs>${art.defs}</defs>`;
-  }, [layout, pieces, world3d]);
+  }, [layout, pieces, made]);
 
   const tile = (x: number, y: number) => plotTile(layout, x, y);
   const diamond = (x: number, y: number, inset = 0) => {
@@ -151,20 +218,61 @@ export function TownScene({layout, plots, buildings, map, selected, claimMode = 
   const bubbles = placed.map(({id, source}) => {
     const sharing = placed.filter(other => other.source === source);
     const [tx, ty] = tile(source.x, source.y);
-    const top = P(tx + 1, ty + 1, BUILDING_HEIGHT[source.kind] + 40);
-    const shift = (sharing.findIndex(other => other.id === id) - (sharing.length - 1) / 2) * 64;
+    const top = place(tx + 1, ty + 1, BUILDING_HEIGHT[source.kind] + 40);
+    const shift = (sharing.findIndex(other => other.id === id) - (sharing.length - 1) / 2) * 62;
     // Spill warnings alternate in height so neighbouring ones never overlap.
-    return {id, x: top[0] + shift, y: top[1], value: harvest!.resources[id], spill: harvest!.spill[id], lift: sharing.findIndex(other => other.id === id) % 2 * 20};
+    return {id, x: top.left + shift, y: top.top, value: harvest!.resources[id], spill: harvest!.spill[id], lift: sharing.findIndex(other => other.id === id) % 2 * 20};
   });
 
+  // The hovered plot's highlight, with a building's name over its roof.
+  const hovered = (() => {
+    if (!hover || !onSelect) return null;
+    const [x, y] = hover.split(',').map(Number) as [number, number];
+    const kind = kindAt(x, y).kind;
+    if (kind !== 'own' && kind !== 'claimable') return null;
+    const building = byPlot.get(hover);
+    const [tx, ty] = tile(x, y);
+    return {x, y, name: building ? `${BUILDINGS[building.kind].name} · Lv ${building.level}` : null, at: P(tx + 1, ty + 1, (building ? BUILDING_HEIGHT[building.kind] : 0) + 22)};
+  })();
+  // Collected bubbles fly from where they floated to their stores. Bubbles from the frame before the collect, since the
+  // harvest is already empty by the time this runs; so this effect comes before the one that remembers them.
+  const shown = useRef(bubbles);
+  const [flights, setFlights] = useState<Array<{id: ResourceId; x: number; y: number; dx: number; dy: number}>>([]);
+  useLayoutEffect(() => {
+    const stage = svg.current?.parentElement;
+    if (!collected || !stage || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const box = stage.getBoundingClientRect();
+    const next = shown.current.flatMap(b => {
+      const store = stage.querySelector(`[data-store="${b.id}"]`)?.getBoundingClientRect();
+      return store ? [{id: b.id, x: b.x, y: b.y, dx: store.left + store.width / 2 - box.left - b.x, dy: store.top + store.height / 2 - box.top - b.y}] : [];
+    });
+    setFlights(next);
+    const timer = window.setTimeout(() => setFlights([]), 900);
+    return () => window.clearTimeout(timer);
+  }, [collected]);
+  useLayoutEffect(() => { shown.current = bubbles; });
+
   const activate = (selection: Selection) => onSelect?.(selection);
+  const targets = !onSelect ? [] : order.flatMap(([x, y]) => {
+    const kind = kindAt(x, y);
+    if (kind.kind !== 'own' && kind.kind !== 'claimable') return [];
+    const building = byPlot.get(plotKey(x, y));
+    const selection: Selection = building?.id ? {type: 'building', id: building.id} : {type: 'plot', x, y};
+    const name = building ? `${BUILDINGS[building.kind].name}, level ${building.level}` : kind.kind === 'own' ? 'Empty plot' : 'Plot you can claim';
+    const [tx, ty] = tile(x, y);
+    const points = building ? buildingOutline(P, tx, ty, BUILDING_HEIGHT[building.kind]).map(p => `${r(p[0])},${r(p[1])}`).join(' ') : diamond(x, y);
+    const key = plotKey(x, y);
+    return [{x, y, key, selection, name, points, enter: () => setHover(key), leave: () => setHover(h => h === key ? null : h)}];
+  });
   const keyed = (selection: Selection) => (event: KeyboardEvent) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); activate(selection); } };
 
   return <>
-  <canvas ref={canvas} className="tt-world" aria-hidden="true" />
-  <svg ref={svgRef} className={spinnable ? 'tt-town tt-spins' : 'tt-town'} viewBox={`0 0 ${layout.width} ${layout.height}`} preserveAspectRatio="xMidYMid meet" role="group"
+  <canvas ref={canvas} className={ready ? 'tt-world tt-in' : 'tt-world'} aria-hidden="true" />
+  <svg ref={svg} className={`tt-town${spinnable ? ' tt-spins' : ''}${ready ? ' tt-in' : ''}`} viewBox={`0 0 ${layout.width} ${layout.height}`} preserveAspectRatio="xMidYMid meet" role="group"
     aria-label={spinnable ? `${label}. Drag or use the arrow keys to turn it.` : label} tabIndex={spinnable ? 0 : undefined} {...spin.handlers}>
     <defs dangerouslySetInnerHTML={{__html: SCENE_DEFS}} />
+    {/* The overlay waits for the town under it, so labels never float over an empty island. */}
+    {ready && <>
     <g dangerouslySetInnerHTML={{__html: world}} />
     {/* Claimable plots: a dashed gold outline and a plus. */}
     {order.filter(([x, y]) => kindAt(x, y).kind === 'claimable').map(([x, y]) => {
@@ -176,13 +284,25 @@ export function TownScene({layout, plots, buildings, map, selected, claimMode = 
         <path d={`M${r(c[0] - 4)},${r(c[1])}h8M${r(c[0])},${r(c[1] - 4)}v8`} stroke="#ffd36b" strokeWidth={2} strokeLinecap="round" />
       </g>;
     })}
+    {/* Empty plots of yours, while picking one to build on: a pulsing gold outline and a little house. */}
+    {buildMode && order.filter(([x, y]) => kindAt(x, y).kind === 'own' && !byPlot.has(plotKey(x, y))).map(([x, y]) => {
+      const [tx, ty] = tile(x, y);
+      const c = P(tx + 1, ty + 1);
+      return <g key={`b${x},${y}`} className="tt-claim on" pointerEvents="none">
+        <polygon points={diamond(x, y, 0.16)} fill="rgba(255,211,107,.12)" stroke="#ffd36b" strokeWidth={2.4} strokeDasharray="6 5" />
+        <circle cx={c[0]} cy={c[1]} r={11} fill="rgba(20,16,50,.8)" stroke="#ffd36b" strokeWidth={1.5} />
+        <path d={`M${r(c[0] - 5)},${r(c[1] + 0.5)}L${r(c[0])},${r(c[1] - 4.5)}L${r(c[0] + 5)},${r(c[1] + 0.5)}M${r(c[0] - 3.5)},${r(c[1] - 0.5)}V${r(c[1] + 4.5)}H${r(c[0] + 3.5)}V${r(c[1] - 0.5)}`} stroke="#ffd36b" strokeWidth={1.6} fill="none" strokeLinejoin="round" strokeLinecap="round" />
+      </g>;
+    })}
     {selectedPlot && <polygon points={diamond(selectedPlot.x, selectedPlot.y, 0.05)} fill="rgba(255,211,107,.18)" stroke="#ffd36b" strokeWidth={3} strokeLinejoin="round" filter="url(#tt-gl)" pointerEvents="none" />}
     {/* Level badges. */}
     {buildings.map(b => {
       const [tx, ty] = tile(b.x, b.y);
       const p = P(tx + 1.7, ty + 1.7, 30);
       const gold = selected?.type === 'building' && selected.id === b.id;
-      return <g key={`l${b.x},${b.y}`} pointerEvents="none">
+      // A badge whose building just went up a level pops; its key changes with the level so the pop replays.
+      const pops = (moment?.kind === 'upgrade' || moment?.kind === 'build') && moment.x === b.x && moment.y === b.y;
+      return <g key={`l${b.x},${b.y},${b.level}`} className={pops ? 'tt-badge-pop' : undefined} pointerEvents="none">
         <circle cx={p[0]} cy={p[1]} r={10.5} fill={gold ? '#ffd36b' : '#211e4c'} stroke={gold ? '#fff3c4' : '#bdb8ff'} strokeWidth={1.6} />
         <text x={p[0]} y={p[1] + 4} textAnchor="middle" fill={gold ? '#2a1d00' : '#fff'} fontSize={11} fontWeight={800}>{b.level}</text>
       </g>;
@@ -198,28 +318,39 @@ export function TownScene({layout, plots, buildings, map, selected, claimMode = 
         <text x={at[0] + 7} y={at[1] + 4} textAnchor="middle" fill="#f2f1ff" fontSize={11.5} fontWeight={700}>{text}</text>
       </g>;
     })}
-    {/* Plots you can act on take clicks and keys. */}
-    {onSelect && order.map(([x, y]) => {
-      const kind = kindAt(x, y);
-      const building = byPlot.get(plotKey(x, y));
-      if (kind.kind !== 'own' && kind.kind !== 'claimable') return null;
-      const selection: Selection = building?.id ? {type: 'building', id: building.id} : {type: 'plot', x, y};
-      const name = building ? `${BUILDINGS[building.kind].name}, level ${building.level}` : kind.kind === 'own' ? 'Empty plot' : 'Plot you can claim';
-      return <polygon key={`h${x},${y}`} className="tt-hit" points={diamond(x, y)} fill="transparent" role="button" tabIndex={0} aria-label={name}
-        aria-pressed={selectedPlot?.x === x && selectedPlot?.y === y} onClick={() => activate(selection)} onKeyDown={keyed(selection)} />;
+    {hovered && <g pointerEvents="none">
+      <polygon points={diamond(hovered.x, hovered.y, 0.05)} fill="rgba(255,211,107,.1)" stroke="rgba(255,211,107,.7)" strokeWidth={1.5} strokeLinejoin="round" />
+      {hovered.name && <g className="tt-tip">
+        <rect x={hovered.at[0] - hovered.name.length * 3.6 - 12} y={hovered.at[1] - 12} width={hovered.name.length * 7.2 + 24} height={24} rx={12} fill="rgba(14,12,40,.9)" stroke="rgba(255,211,107,.5)" />
+        <text x={hovered.at[0]} y={hovered.at[1] + 4.5} textAnchor="middle" fill="#fff3c4" fontSize={12.5} fontWeight={700}>{hovered.name}</text>
+      </g>}
+    </g>}
+    {/* Plots you can act on. The keyboard's targets stay in one order, so turning the town never moves the focused one
+        and loses its focus. The pointer's go back to front as the town now faces, so a building in front takes the clicks
+        over what it hides, over its whole height and not just its ground. */}
+    {targets.map(t => <polygon key={`k${t.key}`} className="tt-hit" points={t.points} fill="transparent" pointerEvents="none" role="button" tabIndex={0}
+      aria-label={t.name} aria-pressed={selectedPlot?.x === t.x && selectedPlot?.y === t.y} onClick={() => activate(t.selection)} onKeyDown={keyed(t.selection)} onFocus={t.enter} onBlur={t.leave} />)}
+    {plotsByDepth(layout, P, targets.map(t => [t.x, t.y] as const)).map(([x, y]) => {
+      const t = targets.find(target => target.x === x && target.y === y)!;
+      return <polygon key={`h${t.key}`} className="tt-hit" points={t.points} fill="transparent" aria-hidden="true"
+        onClick={() => activate(t.selection)} onPointerEnter={t.enter} onPointerLeave={t.leave} />;
     })}
-    {bubbles.map(b => <g key={b.id} className="tt-bubble" role={onCollect ? 'button' : undefined} tabIndex={onCollect ? 0 : undefined}
-      aria-label={onCollect ? `Collect ${count(b.value)} ${b.id}` : undefined} onClick={onCollect} onKeyDown={event => { if (onCollect && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); onCollect(); } }}>
-      <circle cx={b.x} cy={b.y} r={27} fill={BUBBLE[b.id]} opacity={0.2} filter="url(#tt-gl)" />
-      <circle cx={b.x} cy={b.y} r={21} fill="url(#tt-bub)" stroke={BUBBLE[b.id]} strokeWidth={2} />
-      <use href={`#tt-${b.id}`} x={b.x - 12} y={b.y - 14} width={24} height={24} />
-      <path d={`M${b.x - 13},${b.y - 6}a14,14 0 0 1 8,-9`} stroke="#fff" strokeWidth={2.4} strokeOpacity={0.75} fill="none" strokeLinecap="round" />
-      <rect x={b.x - 27} y={b.y + 12} width={54} height={19} rx={9.5} fill={BUBBLE[b.id]} />
-      <text x={b.x} y={b.y + 25.5} textAnchor="middle" fill="#1a1530" fontSize={12.5} fontWeight={800}>+{compact(b.value)}</text>
-      {b.spill > 0 && <g><rect x={b.x - (compact(b.spill).length * 6.2 + 74) / 2} y={b.y - 52 - b.lift} width={compact(b.spill).length * 6.2 + 74} height={18} rx={9} fill="#ff5a4a" filter="url(#tt-gl)" />
-        <text x={b.x} y={b.y - 39.5 - b.lift} textAnchor="middle" fill="#fff" fontSize={10.5} fontWeight={800}>{compact(b.spill)} will spill</text><title>{`${count(b.spill)} will spill: the store is full`}</title></g>}
-    </g>)}
+    </>}
   </svg>
+  {ready && bubbles.length > 0 && size.width > 0 && <div className="tt-bubbles tt-in">
+    {bubbles.map((b, i) => <button key={b.id} type="button" className="tt-bubble" disabled={!onCollect} onClick={onCollect} aria-label={`Collect ${count(b.value)} ${b.id}`}
+      style={{left: b.x, top: b.y, '--tt-c': BUBBLE[b.id], animationDelay: `${-1.4 * (i % 2)}s`} as CSSProperties}>
+      <span className="tt-orb"><ResourceIcon id={b.id} size={24} /></span>
+      <span className="tt-amt">+{compact(b.value)}</span>
+      {b.spill > 0 && <span className="tt-spill" style={{marginBottom: b.lift}} title={`${count(b.spill)} will spill: the store is full`}>{compact(b.spill)} will spill</span>}
+    </button>)}
+  </div>}
+  {flights.length > 0 && <div className="tt-bubbles" aria-hidden="true">
+    {flights.map((f, i) => <span key={f.id} className="tt-flight" style={{left: f.x, top: f.y, '--dx': `${f.dx}px`, '--dy': `${f.dy}px`, '--tt-c': BUBBLE[f.id], animationDelay: `${i * 0.06}s`} as CSSProperties}>
+      <span className="tt-orb"><ResourceIcon id={f.id} size={24} /></span>
+    </span>)}
+  </div>}
+  {popover && size.width > 0 && popover(place, size)}
   {spinnable && !atHome(angle) && <div className="tt-glass tt-reset"><button type="button" onClick={spin.home}>Reset view</button></div>}
   </>;
 }

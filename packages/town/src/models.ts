@@ -1,6 +1,6 @@
 import { BufferAttribute, BufferGeometry, Color, DataTexture, DoubleSide, Group, IcosahedronGeometry, Mesh, ShaderMaterial, ShapeUtils, Sprite, SpriteMaterial, Vector2, Vector3 } from 'three';
 import type { BuildingId } from '@tokentracky/core';
-import { BUILDING_HEIGHT, TILE_H, TILE_W, hash, shade } from './art.ts';
+import { BUILDING_HEIGHT, CORNER_LAMPS, CROWN_LIFT, TILE_H, TILE_W, hash, levelLook, shade } from './art.ts';
 import type { SceneLayout } from './layout.ts';
 import type { Piece } from './pieces.ts';
 import { RISE, UNIT } from './view.ts';
@@ -174,8 +174,8 @@ function createModels(solid: Batch, film: Batch, glows: Glow[]) {
     if (twin) face(wallX(2 * mx - xF - LIFT, y, w, z, h), c, glow);
   }
   // Lit windows follow art.ts's fixed pattern, so a town looks the same in both drawings.
-  let windows = 1;
-  const glass = () => hash(windows++, 9) % 5 > 0 ? '#ffd27a' : '#2c3058';
+  let windows = 1, litFrom = 1;
+  const glass = () => hash(windows++, 9) % 5 >= litFrom ? '#ffd27a' : '#2c3058';
   const winL = (x: number, yF: number, z: number, w = 0.2, h = 8) => fq(x, yF, w, z, h, glass(), true, true);
   const winR = (xF: number, y: number, z: number, w = 0.2, h = 8) => rq(xF, y, w, z, h, glass(), true, true);
   const door = (x: number, yF: number, w: number, h: number) => fq(x, yF, w, 0, h, '#ffbf66', true, false, 2 * LIFT);
@@ -487,24 +487,29 @@ function createModels(solid: Batch, film: Batch, glows: Glow[]) {
         dot([nx / 2 + (x - nx / 2) * 1.04, ny / 2 + (y - ny / 2) * 1.04, z + 20], 2.2, i % 2 ? '#b18cff' : '#7fe3ff');
       }
     },
-    /** A building, with its level's look: a pennant from Lv 6, and a gold glow and sparkles from Lv 10. */
+    /** A building, with its level's look (see art.ts's `levelLook`). */
     building(kind: BuildingId, ox: number, oy: number, level: number) {
+      const look = levelLook(level);
       windows = (hash(ox, oy) % 97) + 1;
+      litFrom = look.litFrom;
       mx = ox + 1; my = oy + 1;
-      if (level >= 10) pool(ox + 1, oy + 1, 58 / UNIT, '#ffd9b0', 0.55 * 0.7);
+      if (look.glow) pool(ox + 1, oy + 1, 58 / UNIT, '#ffd9b0', 0.55 * 0.7);
       B[kind](ox, oy);
       const top: V = [ox + 1, oy + 1, BUILDING_HEIGHT[kind]];
-      if (level >= 6 && kind !== 'town-hall' && kind !== 'token-tower') {
+      if (look.pennant && kind !== 'town-hall' && kind !== 'token-tower') {
         // A flagpole at the back corner of the plot, as tall as the flat drawing's pennant stands.
         const pole: V = [ox + 1.75, oy + 0.35, Math.min(BUILDING_HEIGHT[kind], 60) + 22];
         rod([pole[0], pole[1], 0], pole, 1.5, '#cfd2ee');
-        pennant(pole, level >= 10 ? '#ffc23d' : '#9a92ff');
+        pennant(pole, look.pennant);
       }
-      if (level >= 10) { sparkle(across(top, 10, 12), 7, '#fff3c4'); sparkle(across(top, -14, -4), 4, '#fff3c4', 0.7); }
+      if (look.lamps) for (const [x, y] of CORNER_LAMPS) lamp(ox + x, oy + y);
+      if (look.glow) { sparkle(across(top, 10, 12), 7, '#fff3c4'); sparkle(across(top, -14, -4), 4, '#fff3c4', 0.7); }
+      if (look.crown) { const crown: V = [ox + 1, oy + 1, BUILDING_HEIGHT[kind] + CROWN_LIFT]; halo(crown, 26, 'halo'); sparkle(crown, 10, '#ffe07a', 1, 'star'); }
     },
     /** A small home on someone else's land. The roof takes their colour. */
     house(ox: number, oy: number, roof: string, variant: number) {
       const W = '#5a5679';
+      litFrom = 1;
       mx = ox + 1; my = oy + 1;
       box(ox + 0.35, oy + 0.35, 1.3, 1.3, 20, W);
       winL(ox + 0.55, oy + 1.65, 7, 0.22, 7); winL(ox + 1.15, oy + 1.65, 7, 0.22, 7);
@@ -514,11 +519,37 @@ function createModels(solid: Batch, film: Batch, glows: Glow[]) {
   };
 }
 
-/** The whole town as 3D objects, in tiles with the back corner of the ground at the origin. */
-export function buildTown(pieces: readonly Piece[], layout: SceneLayout): Group {
+/**
+ * The whole town as 3D objects, in tiles with the back corner of the ground at the origin. With `apart`, the building on
+ * the plot whose back tile is there is built on its own, in a group named 'apart' that stands at the plot's middle, so it
+ * can be squashed and stretched on its own.
+ */
+export function buildTown(pieces: readonly Piece[], layout: SceneLayout, apart: readonly [number, number] | null = null): Group {
+  const lone = (p: Piece) => apart !== null && p.type === 'building' && p.x === apart[0] && p.y === apart[1];
+  const group = buildPieces(pieces.filter(p => !lone(p)), layout, true);
+  const single = apart ? pieces.filter(lone) : [];
+  if (apart && single.length) {
+    const pivot = new Group(), inner = buildPieces(single, layout, false);
+    pivot.name = 'apart';
+    pivot.position.set(apart[0] + 1, 0, apart[1] + 1);
+    inner.position.set(-apart[0] - 1, 0, -apart[1] - 1);
+    pivot.add(inner);
+    group.add(pivot);
+  }
+  return group;
+}
+
+/** A sparkle for a moment's effects, with its own material so it can fade. Dispose the material after. */
+export function effectSprite(colour: string): Sprite {
+  const sprite = new Sprite(new SpriteMaterial({map: texture('spark'), color: new Color(colour), transparent: true, depthWrite: false}));
+  sprite.renderOrder = 3;
+  return sprite;
+}
+
+function buildPieces(pieces: readonly Piece[], layout: SceneLayout, island: boolean): Group {
   const solid = new Batch(), film = new Batch(), glows: Glow[] = [];
   const art = createModels(solid, film, glows);
-  art.island(layout);
+  if (island) art.island(layout);
   for (const piece of pieces) {
     switch (piece.type) {
       case 'tile': art.face(art.sq(piece.x, piece.y, 1, 1), piece.colour, true); break;

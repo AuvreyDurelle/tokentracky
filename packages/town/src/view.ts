@@ -1,4 +1,4 @@
-import { TILE_W, isoProjection, type Project } from './art.ts';
+import { TILE_W, isoProjection, type Project, type Pt } from './art.ts';
 import type { SceneLayout } from './layout.ts';
 
 /**
@@ -30,4 +30,63 @@ export function cameraWindow(layout: SceneLayout, width: number, height: number)
   // The canvas's top-left corner, in drawing pixels.
   const x0 = (layout.width - width / k) / 2, y0 = (layout.height - height / k) / 2;
   return {left: (x0 - cx) / UNIT, right: (x0 + width / k - cx) / UNIT, top: (cy - y0) / UNIT, bottom: (cy - y0 - height / k) / UNIT};
+}
+
+/** The convex hull of some points, anticlockwise on screen. */
+export function hull(points: readonly Pt[]): Pt[] {
+  const sorted = [...points].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const cross = (o: Pt, a: Pt, b: Pt) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const half = (list: Pt[]) => {
+    const out: Pt[] = [];
+    for (const p of list) {
+      while (out.length >= 2 && cross(out[out.length - 2]!, out[out.length - 1]!, p) <= 0) out.pop();
+      out.push(p);
+    }
+    out.pop();
+    return out;
+  };
+  return [...half(sorted), ...half([...sorted].reverse())];
+}
+/**
+ * What a building on the plot whose back tile is (tx, ty) covers on screen: its 2×2 footprint and, `height` pixels up,
+ * the middle of the plot, since roofs and towers taper. A building in front takes clicks over the ground behind it.
+ */
+export function buildingOutline(P: Project, tx: number, ty: number, height: number): Pt[] {
+  const square = (inset: number, z: number) => [P(tx + inset, ty + inset, z), P(tx + 2 - inset, ty + inset, z), P(tx + 2 - inset, ty + 2 - inset, z), P(tx + inset, ty + 2 - inset, z)];
+  return hull([...square(0, 0), ...square(0.45, height)]);
+}
+
+/** Where a point of the drawing lands on a `width` × `height` stage, with the layout's viewBox fitted in (`xMidYMid meet`). */
+export function toStage(layout: SceneLayout, width: number, height: number, [x, y]: Pt): {left: number; top: number} {
+  const k = Math.min(width / layout.width, height / layout.height);
+  return {left: (width - layout.width * k) / 2 + x * k, top: (height - layout.height * k) / 2 + y * k};
+}
+
+/** Something that just happened in the town, to animate: where (a plot), what, and when, so each plays once. */
+export interface Moment {kind: 'upgrade' | 'build' | 'claim' | 'move'; x: number; y: number; at: number}
+/** How long a moment plays, in milliseconds. */
+export const MOMENT_MS = 900;
+const easeOut = (t: number) => 1 - (1 - t) ** 3;
+/**
+ * A building's stretch `t` (0 to 1) into its moment, as [width, height] scales: a new one rises out of the ground and
+ * overshoots a little; an upgraded one squashes, then springs up past its size and settles.
+ */
+export function momentScale(kind: Moment['kind'], t: number): [number, number] {
+  const u = Math.min(1, Math.max(0, t));
+  if (kind === 'build') {
+    const rise = 1 + 2.2 * (u - 1) ** 3 + 1.2 * (u - 1) ** 2; // ease-out-back: 0, a little over 1, then 1
+    return [0.6 + 0.4 * easeOut(u), rise];
+  }
+  if (kind === 'upgrade') {
+    if (u < 0.2) { const k = u / 0.2; return [1 + 0.1 * k, 1 - 0.18 * k]; }
+    const k = (u - 0.2) / 0.8, wobble = Math.cos(k * Math.PI * 2.5) * (1 - k) ** 2;
+    return [1 + 0.1 * wobble, 1 - 0.18 * wobble];
+  }
+  return [1, 1];
+}
+
+/** Plots back to front as the town now faces, so whatever is drawn later is nearer the viewer at any angle. */
+export function plotsByDepth(layout: SceneLayout, P: Project, plots: ReadonlyArray<readonly [number, number]>): Array<[number, number]> {
+  const depth = ([x, y]: readonly [number, number]) => P((x - layout.x0) * 2 + 1, (y - layout.y0) * 2 + 1)[1];
+  return plots.map(([x, y]): [number, number] => [x, y]).sort((a, b) => depth(a) - depth(b));
 }

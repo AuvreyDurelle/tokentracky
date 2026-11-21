@@ -1,8 +1,8 @@
-import { useEffect, useLayoutEffect, useState, type ReactNode, type RefObject } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { BUILDINGS, RESOURCE_IDS, type BuildingId, type Cost, type ResourceId, type Resources } from '@tokentracky/core';
 import { GlyphIcon, ResourceIcon } from './icons.tsx';
 import { createArt, isoProjection, SCENE_DEFS } from './art.ts';
-import { count } from './format.ts';
+import { compact, count, duration, tweenAt, untilDayEnds } from './format.ts';
 
 export const RESOURCE_NAMES: Record<ResourceId, string> = {power: 'Power', bricks: 'Bricks', water: 'Water', crystals: 'Crystals'};
 const BAR: Record<ResourceId, string> = {power: '#ffd23f', bricks: '#e0784a', water: '#4cc3f0', crystals: '#b18cff'};
@@ -16,30 +16,58 @@ export function Crest({alias, level, plots, children}: {alias: string; level: nu
   </div>;
 }
 
-/** Each store with its fill. A store 80% full warns that the next harvest may spill. */
+/** A number that counts to each new value over `ms` instead of jumping, unless motion is reduced. */
+export function useTween(value: number, ms = 700): number {
+  const [shown, setShown] = useState(value);
+  const current = useRef(shown);
+  current.current = shown;
+  useEffect(() => {
+    const from = current.current;
+    if (from === value) return;
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { setShown(value); return; }
+    const start = performance.now();
+    let frame = 0;
+    const step = (now: number) => {
+      const t = (now - start) / ms;
+      setShown(tweenAt(from, value, t));
+      if (t < 1) frame = requestAnimationFrame(step);
+    };
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [value, ms]);
+  return shown;
+}
+
+/** Each store with its fill. A store 80% full warns, in amber, that the next harvest may spill; a full one turns red. */
 export function ResourceBar({wallet, caps}: {wallet: Resources; caps: Resources}) {
   return <div className="tt-glass tt-res" role="list" aria-label="Your stores">
-    {RESOURCE_IDS.map(id => {
-      const fill = caps[id] > 0 ? Math.min(1, wallet[id] / caps[id]) : 0;
-      const hot = fill >= 0.8;
-      return <div key={id} role="listitem" className={hot ? 'tt-rs hot' : 'tt-rs'} aria-label={`${RESOURCE_NAMES[id]} ${count(wallet[id])} of ${count(caps[id])}`}>
-        <ResourceIcon id={id} size={22} />
-        <div><b>{count(wallet[id])}</b><s>/ {count(caps[id])}</s><span className="tt-meter"><i style={{width: `${fill * 100}%`, background: hot ? '#ff6b5b' : BAR[id]}} /></span></div>
-        {hot && <span className="tt-full">{Math.round(fill * 100)}% full</span>}
-      </div>;
-    })}
+    {RESOURCE_IDS.map(id => <Store key={id} id={id} have={wallet[id]} cap={caps[id]} />)}
+  </div>;
+}
+/** One store. It counts up to what it now holds, and harvest bubbles fly to it (`data-store`). */
+function Store({id, have, cap}: {id: ResourceId; have: number; cap: number}) {
+  const shown = useTween(have);
+  const fill = cap > 0 ? Math.min(1, shown / cap) : 0;
+  const level = fill >= 1 ? 'full' : fill >= 0.8 ? 'warm' : null;
+  // A store of six figures or more reads better short, both numbers alike; the whole numbers show on hover.
+  const short = (n: number) => cap >= 100_000 ? compact(n) : count(n);
+  return <div role="listitem" data-store={id} className={level ? `tt-rs ${level}` : 'tt-rs'} title={`${RESOURCE_NAMES[id]}: ${count(have)} of ${count(cap)}`} aria-label={`${RESOURCE_NAMES[id]} ${count(have)} of ${count(cap)}`}>
+    <ResourceIcon id={id} size={22} />
+    <div><b>{short(shown)}</b><s>/ {short(cap)}</s><span className="tt-meter"><i style={{width: `${fill * 100}%`, background: level === 'full' ? '#ff6b5b' : level === 'warm' ? '#ffb648' : BAR[id]}} /></span></div>
+    {level && <span className="tt-full">{level === 'full' ? 'Full' : `${Math.round(fill * 100)}% full`}</span>}
   </div>;
 }
 
-/** The streak and the UTC clock the game's days follow. */
+/** The streak, and how long is left of the game's day, which ends at midnight UTC. */
 export function StreakClock({streak, now, children}: {streak?: number; now: number; children?: ReactNode}) {
   const date = new Date(now);
-  const day = date.toLocaleDateString('en-GB', {weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC'}).replace(',', '');
   const time = date.toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit', timeZone: 'UTC'});
+  // Minutes are enough; the clock refreshes every 30 seconds.
+  const left = duration(Math.max(60, Math.floor(untilDayEnds(now) / 60) * 60));
   return <div className="tt-glass tt-clk">
     {streak !== undefined && <span className="tt-stk"><GlyphIcon id="flame" size={22} /><span><b>{streak}</b>-day streak</span></span>}
     {children}
-    <span className="tt-mu">{day} · {time} UTC</span>
+    <span className="tt-mu" title={`It's ${time} UTC. Each day in Token Town runs midnight to midnight UTC.`}>Day ends in {left}</span>
   </div>;
 }
 
@@ -61,26 +89,6 @@ export function BuildingThumb({kind, level = 1, size = 64}: {kind: BuildingId; l
     dangerouslySetInnerHTML={{__html: `<defs>${SCENE_DEFS}${art.defs}</defs>${art.poly(art.sq(0, 0, 2, 2), '#2b3d4a')}${body}`}} />;
 }
 export const buildingName = (kind: BuildingId) => BUILDINGS[kind].name;
-
-/** Where a point in the scene's drawing sits on the stage, kept up to date as the stage resizes. */
-export function usePoint(svg: RefObject<SVGSVGElement | null>, stage: RefObject<HTMLElement | null>, point: [number, number] | null): {left: number; top: number} | null {
-  const [at, setAt] = useState<{left: number; top: number} | null>(null);
-  useLayoutEffect(() => {
-    const place = () => {
-      const s = svg.current, host = stage.current;
-      const matrix = s?.getScreenCTM();
-      if (!point || !s || !host || !matrix) { setAt(null); return; }
-      const p = new DOMPoint(point[0], point[1]).matrixTransform(matrix);
-      const box = host.getBoundingClientRect();
-      setAt({left: p.x - box.left, top: p.y - box.top});
-    };
-    place();
-    const observer = new ResizeObserver(place);
-    if (stage.current) observer.observe(stage.current);
-    return () => observer.disconnect();
-  }, [svg, stage, point?.[0], point?.[1]]);
-  return at;
-}
 
 /** Shows a message for a few seconds. */
 export function useToast(): [ReactNode, (message: string, tone?: 'error' | 'ok') => void] {
