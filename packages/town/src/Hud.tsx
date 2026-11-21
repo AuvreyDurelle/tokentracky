@@ -1,8 +1,8 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { BUILDINGS, RESOURCE_IDS, type BuildingId, type Cost, type ResourceId, type Resources } from '@tokentracky/core';
 import { GlyphIcon, ResourceIcon } from './icons.tsx';
 import { createArt, isoProjection, SCENE_DEFS } from './art.ts';
-import { count } from './format.ts';
+import { count, tweenAt } from './format.ts';
 
 export const RESOURCE_NAMES: Record<ResourceId, string> = {power: 'Power', bricks: 'Bricks', water: 'Water', crystals: 'Crystals'};
 const BAR: Record<ResourceId, string> = {power: '#ffd23f', bricks: '#e0784a', water: '#4cc3f0', crystals: '#b18cff'};
@@ -16,18 +16,43 @@ export function Crest({alias, level, plots, children}: {alias: string; level: nu
   </div>;
 }
 
+/** A number that counts to each new value over `ms` instead of jumping, unless motion is reduced. */
+export function useTween(value: number, ms = 700): number {
+  const [shown, setShown] = useState(value);
+  const current = useRef(shown);
+  current.current = shown;
+  useEffect(() => {
+    const from = current.current;
+    if (from === value) return;
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { setShown(value); return; }
+    const start = performance.now();
+    let frame = 0;
+    const step = (now: number) => {
+      const t = (now - start) / ms;
+      setShown(tweenAt(from, value, t));
+      if (t < 1) frame = requestAnimationFrame(step);
+    };
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [value, ms]);
+  return shown;
+}
+
 /** Each store with its fill. A store 80% full warns that the next harvest may spill. */
 export function ResourceBar({wallet, caps}: {wallet: Resources; caps: Resources}) {
   return <div className="tt-glass tt-res" role="list" aria-label="Your stores">
-    {RESOURCE_IDS.map(id => {
-      const fill = caps[id] > 0 ? Math.min(1, wallet[id] / caps[id]) : 0;
-      const hot = fill >= 0.8;
-      return <div key={id} role="listitem" className={hot ? 'tt-rs hot' : 'tt-rs'} aria-label={`${RESOURCE_NAMES[id]} ${count(wallet[id])} of ${count(caps[id])}`}>
-        <ResourceIcon id={id} size={22} />
-        <div><b>{count(wallet[id])}</b><s>/ {count(caps[id])}</s><span className="tt-meter"><i style={{width: `${fill * 100}%`, background: hot ? '#ff6b5b' : BAR[id]}} /></span></div>
-        {hot && <span className="tt-full">{Math.round(fill * 100)}% full</span>}
-      </div>;
-    })}
+    {RESOURCE_IDS.map(id => <Store key={id} id={id} have={wallet[id]} cap={caps[id]} />)}
+  </div>;
+}
+/** One store. It counts up to what it now holds, and harvest bubbles fly to it (`data-store`). */
+function Store({id, have, cap}: {id: ResourceId; have: number; cap: number}) {
+  const shown = useTween(have);
+  const fill = cap > 0 ? Math.min(1, shown / cap) : 0;
+  const hot = fill >= 0.8;
+  return <div role="listitem" data-store={id} className={hot ? 'tt-rs hot' : 'tt-rs'} aria-label={`${RESOURCE_NAMES[id]} ${count(have)} of ${count(cap)}`}>
+    <ResourceIcon id={id} size={22} />
+    <div><b>{count(shown)}</b><s>/ {count(cap)}</s><span className="tt-meter"><i style={{width: `${fill * 100}%`, background: hot ? '#ff6b5b' : BAR[id]}} /></span></div>
+    {hot && <span className="tt-full">{Math.round(fill * 100)}% full</span>}
   </div>;
 }
 

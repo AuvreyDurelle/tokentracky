@@ -81,6 +81,8 @@ interface Props {
   spins?: boolean;
   /** What just happened, played once when it arrives. */
   moment?: Moment | null;
+  /** When the harvest was last collected: its bubbles fly to their stores (`data-store` elements on the stage). */
+  collected?: number;
   /** A card over the scene, given where a point of the town (tile x, tile y, height) sits on the stage as it turns. */
   popover?: (place: Place, stage: StageSize) => ReactNode;
 }
@@ -92,7 +94,7 @@ export interface StageSize {width: number; height: number}
  * itself is drawn in 3D where the browser has WebGL, so it can turn; labels, badges and click targets are a flat overlay
  * that turns with it. Without WebGL the flat drawing stays, facing one way.
  */
-export function TownScene({layout: given, plots: givenPlots, buildings: givenBuildings, map, selected, claimMode = false, harvest, onSelect, onCollect, label, visiting = false, spins = false, moment = null, popover}: Props) {
+export function TownScene({layout: given, plots: givenPlots, buildings: givenBuildings, map, selected, claimMode = false, harvest, onSelect, onCollect, label, visiting = false, spins = false, moment = null, collected = 0, popover}: Props) {
   // Every refresh brings new copies of the same town; only a real change rebuilds the 3D world.
   const layout = useSame(given, JSON.stringify(given));
   const plots = useSame(givenPlots, givenPlots.map(p => plotKey(p.x, p.y)).join(' '));
@@ -230,6 +232,24 @@ export function TownScene({layout: given, plots: givenPlots, buildings: givenBui
     const [tx, ty] = tile(x, y);
     return {x, y, name: building ? `${BUILDINGS[building.kind].name} · Lv ${building.level}` : null, at: P(tx + 1, ty + 1, (building ? BUILDING_HEIGHT[building.kind] : 0) + 22)};
   })();
+  // Collected bubbles fly from where they floated to their stores. Bubbles from the frame before the collect, since the
+  // harvest is already empty by the time this runs; so this effect comes before the one that remembers them.
+  const shown = useRef(bubbles);
+  const [flights, setFlights] = useState<Array<{id: ResourceId; x: number; y: number; dx: number; dy: number}>>([]);
+  useLayoutEffect(() => {
+    const stage = svg.current?.parentElement;
+    if (!collected || !stage || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const box = stage.getBoundingClientRect();
+    const next = shown.current.flatMap(b => {
+      const store = stage.querySelector(`[data-store="${b.id}"]`)?.getBoundingClientRect();
+      return store ? [{id: b.id, x: b.x, y: b.y, dx: store.left + store.width / 2 - box.left - b.x, dy: store.top + store.height / 2 - box.top - b.y}] : [];
+    });
+    setFlights(next);
+    const timer = window.setTimeout(() => setFlights([]), 900);
+    return () => window.clearTimeout(timer);
+  }, [collected]);
+  useLayoutEffect(() => { shown.current = bubbles; });
+
   const activate = (selection: Selection) => onSelect?.(selection);
   const keyed = (selection: Selection) => (event: KeyboardEvent) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); activate(selection); } };
 
@@ -307,6 +327,11 @@ export function TownScene({layout: given, plots: givenPlots, buildings: givenBui
       <span className="tt-amt">+{compact(b.value)}</span>
       {b.spill > 0 && <span className="tt-spill" style={{marginBottom: b.lift}} title={`${count(b.spill)} will spill: the store is full`}>{compact(b.spill)} will spill</span>}
     </button>)}
+  </div>}
+  {flights.length > 0 && <div className="tt-bubbles" aria-hidden="true">
+    {flights.map((f, i) => <span key={f.id} className="tt-flight" style={{left: f.x, top: f.y, '--dx': `${f.dx}px`, '--dy': `${f.dy}px`, '--tt-c': BUBBLE[f.id], animationDelay: `${i * 0.06}s`} as CSSProperties}>
+      <span className="tt-orb"><ResourceIcon id={f.id} size={24} /></span>
+    </span>)}
   </div>}
   {popover && size.width > 0 && popover(place, size)}
   {spinnable && !atHome(angle) && <div className="tt-glass tt-reset"><button type="button" onClick={spin.home}>Reset view</button></div>}

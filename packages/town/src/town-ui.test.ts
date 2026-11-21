@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { TOWN_MAP_SPAN, terrainAt } from '@tokentracky/core';
-import { afterCollect, collected, compact, daysToAfford, duration, paceText, shortfall, tooBig } from './format.ts';
+import { afterCollect, collected, compact, tweenAt, daysToAfford, duration, paceText, shortfall, tooBig } from './format.ts';
 import { cellAt, clampCell, fetchArea, fitView, screenOf, visibleArea, within, zoomAt } from './map-view.ts';
 import { plotKey, plotKind, plotsBackToFront, plotTile, sceneLayout } from './layout.ts';
 import { indexMap } from './MapPage.tsx';
@@ -104,6 +104,16 @@ describe('collecting at once', () => {
     expect(after.harvest.resources).toEqual(res(0, 0, 0, 0));
     expect(after.harvest.tokens).toBe(0);
     expect(after.harvest.streak).toBe(2);
+  });
+});
+
+describe('counting the stores up', () => {
+  it('starts and ends where it should, and gets more than halfway in the first third', () => {
+    expect(tweenAt(100, 400, 0)).toBe(100);
+    expect(tweenAt(100, 400, 1)).toBe(400);
+    expect(tweenAt(100, 400, 1 / 3)).toBeGreaterThan(250);
+    expect(tweenAt(400, 100, 0.5)).toBeLessThan(250);
+    expect(tweenAt(100, 400, 3)).toBe(400);
   });
 });
 

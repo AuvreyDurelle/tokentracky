@@ -66,6 +66,7 @@ export function TownPage({api, onMap}: {api: TownApi; onMap: () => void}) {
 
   // What just happened, for the scene to play once.
   const [moment, setMoment] = useState<Moment | null>(null);
+  const [collectedAt, setCollectedAt] = useState(0);
   const run = async (kind: Pending, action: () => Promise<TownSelf>, {done, land = false, undo, at}: {done?: string; land?: boolean; undo?: () => void; at?: {x: number; y: number}} = {}) => {
     if (busy) return;
     setPending(kind);
@@ -84,6 +85,7 @@ export function TownPage({api, onMap}: {api: TownApi; onMap: () => void}) {
     if (busy || !town) return;
     const before = town;
     setTown(collected(town));
+    setCollectedAt(performance.now());
     void run('collect', () => api.collect(), {done: 'Harvest collected', undo: () => setTown(before)});
   };
 
@@ -127,7 +129,7 @@ export function TownPage({api, onMap}: {api: TownApi; onMap: () => void}) {
     <Sky />
     <TownScene layout={layout} plots={town.plots} buildings={town.buildings} map={map} selected={selected} claimMode={claiming}
       harvest={harvestWaiting ? {resources: town.harvest.resources, spill} : null} onSelect={select} onCollect={collect}
-      label={`${town.alias}'s town`} spins moment={moment}
+      label={`${town.alias}'s town`} spins moment={moment} collected={collectedAt}
       popover={(place, size) => {
         if (!anchor) return null;
         const at = place(...anchor);

@@ -42,6 +42,8 @@ export function collected(town: TownSelf): TownSelf {
   const none = Object.fromEntries(RESOURCE_IDS.map(id => [id, 0])) as Resources;
   return {...town, wallet: afterCollect(town.wallet, town.harvest.resources, town.caps), harvest: {...town.harvest, resources: none, tokens: 0}};
 }
+/** A number `t` (0 to 1) of the way from `from` to `to`, quick at first and easing in: how the stores count up. */
+export const tweenAt = (from: number, to: number, t: number) => from + (to - from) * (1 - (1 - Math.min(1, Math.max(0, t))) ** 3);
 /** Whole days of coding at `perDay` to make up `missing`, or null with no pace yet. */
 export function daysToAfford(missing: number, perDay: number): number | null {
   if (missing <= 0) return 0;

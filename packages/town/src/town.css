@@ -56,6 +56,11 @@
   box-shadow: 0 0 14px color-mix(in srgb, var(--tt-c) 55%, transparent), inset 0 0 6px rgba(255, 255, 255, 0.15); }
 .tt-orb::after { content: ''; position: absolute; left: 7px; top: 7px; width: 12px; height: 8px; border-top: 2.4px solid rgba(255, 255, 255, 0.75); border-radius: 50% 50% 0 0; rotate: -35deg; }
 .tt-amt { margin-top: -6px; min-width: 54px; padding: 1px 8px; border-radius: 10px; background: var(--tt-c); color: #1a1530; font-size: 12.5px; font-weight: 800; text-align: center; }
+.tt-flight { position: absolute; translate: -50% -50%; animation: tt-fly 0.65s cubic-bezier(0.55, 0, 0.8, 0.4) both; will-change: transform, opacity; }
+@keyframes tt-fly {
+  40% { transform: translate(calc(var(--dx) * 0.25), calc(var(--dy) * 0.25 - 28px)) scale(1.12); }
+  to { transform: translate(var(--dx), var(--dy)) scale(0.4); opacity: 0.3; }
+}
 .tt-spill { position: absolute; bottom: 100%; translate: 0 -4px; white-space: nowrap; padding: 1px 9px; border-radius: 9px; background: #ff5a4a; box-shadow: 0 0 10px rgba(255, 90, 74, 0.7); font-size: 10.5px; font-weight: 800; }
 .tt-claim.on { animation: tt-pulse 1.4s ease-in-out infinite; }
 .tt-stars { position: absolute; inset: 0; pointer-events: none; }
