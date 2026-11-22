@@ -18,6 +18,10 @@ export interface Today { tokens: number; costMicrousd: number | null; spark: num
 const TITLES: Partial<Record<Page, string>> = { leaderboard: 'Leaderboard', tokens: 'Tokens', you: 'Tokens', achievements: 'Achievements', settings: 'Settings', profile: 'Leaderboard', join: 'How it works', missing: 'Page not found',
   town: 'Town', 'town-map': 'Town map', 'town-visit': 'Town', clubs: 'Clubs', club: 'Clubs' };
 
+/** Sent after joining or leaving a club anywhere in the app, so the sidebar lists your clubs again. */
+export const CLUBS_CHANGED = 'tokentracky:clubs-changed';
+export const clubsChanged = () => window.dispatchEvent(new Event(CLUBS_CHANGED));
+
 /** Where a page's controls go: the window toolbar, before the jump button. */
 const ToolbarSlot = createContext<HTMLElement | null>(null);
 
@@ -39,12 +43,18 @@ export function MacShell({ api, status, me, page, path, go, onPalette, children 
   const [today, setToday] = useState<Today | null>(null);
   // Your clubs under Clubs in the sidebar, read again when you join or leave one (the address changes) and after each sync.
   const [clubs, setClubs] = useState<ClubRef[]>([]);
+  const [joined, setJoined] = useState(0);
+  useEffect(() => {
+    const changed = () => setJoined((value) => value + 1);
+    window.addEventListener(CLUBS_CHANGED, changed);
+    return () => window.removeEventListener(CLUBS_CHANGED, changed);
+  }, []);
   useEffect(() => {
     if (!me) { setClubs([]); return; }
     let live = true;
     api.myClubs().then((value) => { if (live) setClubs(value.clubs.map((entry) => entry.club)); }).catch(() => {});
     return () => { live = false; };
-  }, [api, me, path, status?.lastSyncAt]);
+  }, [api, me, path, status?.lastSyncAt, joined]);
   const rank = useRank(api, me);
   const week = useWeek(api, me, status?.lastSyncAt ?? null);
   const content = useRef<HTMLDivElement>(null);

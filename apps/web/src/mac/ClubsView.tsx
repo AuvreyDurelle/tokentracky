@@ -10,7 +10,7 @@ import { Avatar, Empty, Loading, Notice, SearchIcon, ToolIcon } from '../ui';
 import { Board, ToolShare, TrendArea } from './LeaderboardView';
 import { useLoad } from './load';
 import { ProfileDialog } from './ProfileModal';
-import { ToolbarActions } from './Shell';
+import { ToolbarActions, clubsChanged } from './Shell';
 
 type Go = (route: Route) => void;
 const PERIODS: Array<{ value: LeaderboardPeriod; label: string }> = [{ value: '24h', label: '24h' }, { value: 'week', label: 'Week' }, { value: 'month', label: 'Month' }, { value: 'all', label: 'All time' }];
@@ -131,7 +131,7 @@ function Discover({ api, go, onJoin }: { api: ApiClient; go: Go; onJoin: () => v
   const query = search.trim();
   const list = useLoad(() => api.clubList(query, category, 'members', 1, 60), [api, query, category], query ? 250 : 0);
   const [error, setError] = useState<string | null>(null);
-  const join = (slug: string) => { setError(null); api.joinClub(slug).then(() => go({ page: 'club', slug, tab: 'board' }), (reason: unknown) => setError(errorText(reason))); };
+  const join = (slug: string) => { setError(null); api.joinClub(slug).then(() => { clubsChanged(); go({ page: 'club', slug, tab: 'board' }); }, (reason: unknown) => setError(errorText(reason))); };
   return <>
     <div className="page-head"><div><h1 className="m-page-title">Discover</h1><p className="m-page-sub">Public clubs, biggest first. Private clubs are never listed.</p></div>
       <label className="lb-search"><SearchIcon /><span className="sr-only">Search clubs</span><input type="search" placeholder="Search clubs" value={search} maxLength={30} onChange={(event) => setSearch(event.target.value)} /></label></div>
@@ -213,7 +213,8 @@ export function ClubView({ api, me, slug, tab, go, site, onProfile, onJoin }: { 
   const page = useLoad(() => api.club(slug, { period, page: number, pageSize: 12 }), [api, slug, period, number, round]);
   const value = page.value;
   const member = value?.membership ?? null;
-  const join = () => { api.joinClub(slug).then(() => setRound((n) => n + 1), () => {}); };
+  const [error, setError] = useState<string | null>(null);
+  const join = () => { setError(null); api.joinClub(slug).then(() => { setRound((n) => n + 1); clubsChanged(); }, (reason: unknown) => setError(errorText(reason))); };
   return <div className="m-page m-lb mc-club">
     <ToolbarActions>
       <Seg label={value?.club.name ?? 'Club'} value={tab} options={[['board', 'Board'], ['challenge', 'Challenge'], ...(member ? [['members', 'Members'] as [ClubTab, string]] : [])]} onChange={(next) => go({ page: 'club', slug, tab: next })} />
@@ -222,6 +223,7 @@ export function ClubView({ api, me, slug, tab, go, site, onProfile, onJoin }: { 
     </ToolbarActions>
     {page.error !== null && !value && (page.error instanceof ApiError && page.error.status === 404 ? <section className="m-card"><Empty title="This club does not exist" action={<button type="button" className="m-btn" onClick={() => go({ page: 'clubs', tab: 'mine' })}>Your clubs</button>}>It may have been deleted, or its address changed.</Empty></section> : <NotLinked error={page.error} onJoin={onJoin} />)}
     {!value && page.error === null && <Loading>Loading the club…</Loading>}
+    {error && <Notice tone="error">{error}</Notice>}
     {value && <>
       <div className="page-head"><div className="mc-head"><ClubMark mark={value.club.mark} size="lg" /><div><h1 className="m-page-title">{value.club.name}</h1>
         <p className="m-page-sub">{[visibilityName(value.club.visibility), plural(value.club.members, 'member'), value.standing?.rank ? `#${value.standing.rank} in the ${divisionName(value.standing.division)} league` : null].filter(Boolean).join(' · ')}</p></div></div>
@@ -255,12 +257,12 @@ function ClubBoard({ page, me, period, number, loading, onPage, onProfile }: { p
       </>} />
     {mine && <section className="you-strip" aria-label="Your position">
       <Avatar alias={mine.alias} />
-      <div className="you-id"><div className="lb-you-rank">#{formatExact(mine.rank)} <span className="m-badge accent">You</span></div><div className="you-sub">{mine.alias} · {week.tokens ? `${Math.round((mine.tokens / week.tokens) * 100)}% of the club’s tokens` : 'no club tokens yet'}</div></div>
+      <div className="you-id"><div className="lb-you-rank">#{formatExact(mine.rank)} <span className="m-badge accent">You</span></div><div className="you-sub">{mine.alias}{period === 'week' && week.tokens ? ` · ${Math.round((mine.tokens / week.tokens) * 100)}% of the club’s tokens` : ''}</div></div>
       <div className="you-vsep" />
       <div className="you-stat"><div className="m-label">{period === 'week' ? 'This week' : 'Tokens'}</div><div className="v" title={tokensTitle(mine.tokens)}>{formatCompact(mine.tokens)}</div></div>
       <div className="you-stat"><div className="m-label">Est. cost</div><div className="v">{mine.costMicrousd == null ? '—' : formatCostCompact(mine.costMicrousd)}</div></div>
       <div className="you-vsep" />
-      <div className="you-chase"><div className="row"><span>{ahead ? <><b>{formatCompact(ahead.tokens - mine.tokens)}</b> behind #{ahead.rank} {ahead.alias}</> : 'You lead the club'}</span></div></div>
+      {(ahead || mine.rank === 1) && <div className="you-chase"><div className="row"><span>{ahead ? <><b>{formatCompact(ahead.tokens - mine.tokens)}</b> behind #{ahead.rank} {ahead.alias}</> : 'You lead the club'}</span></div></div>}
     </section>}
     <section className="m-card lb-board">
       <Board period={period} windowStart={board!.windowStart} rows={board!.items} neighbours={[]} me={me} rival={ahead?.alias ?? null} total={board!.total} page={number} pageSize={board!.pageSize} loading={loading} onPage={onPage} onProfile={onProfile} />
@@ -307,6 +309,8 @@ function ClubMembersView({ api, me, page, site }: { api: ApiClient; me: string |
   const data = useLoad(() => api.clubMembers(page.club.slug), [api, page.club.slug, round]);
   const [code, setCode] = useState(page.invite);
   const [copied, setCopied] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const fail = (reason: unknown) => setError(errorText(reason));
   const admin = page.membership?.role === 'owner' || page.membership?.role === 'admin';
   const link = code && site ? `${site}/c/${page.club.slug}?invite=${code}` : null;
   const copy = () => { if (link) void navigator.clipboard?.writeText(link).then(() => { setCopied(true); window.setTimeout(() => setCopied(false), 1600); }).catch(() => {}); };
@@ -315,18 +319,20 @@ function ClubMembersView({ api, me, page, site }: { api: ApiClient; me: string |
       <div className="lb-head"><h2>Invite</h2>{page.club.visibility === 'private' && <span className="lb-reset">{formatExact(Math.max(0, CLUB_PRIVATE_LIMIT - page.club.members))} of {CLUB_PRIVATE_LIMIT} spots left</span>}</div>
       <div className="mc-invite-row"><code>{link ?? code}</code>{link && <button type="button" className="m-btn" onClick={copy}>{copied ? 'Copied' : 'Copy link'}</button>}
         {page.club.visibility === 'private' && <span className="m-pill">Code <b>{code}</b></span>}
-        {admin && page.club.visibility === 'private' && <button type="button" className="m-btn" onClick={() => { if (window.confirm('Reset the invite link? The old link and code stop working.')) api.resetClubInvite(page.club.slug).then((value) => setCode(value.invite), () => {}); }}>Reset</button>}</div>
+        {admin && page.club.visibility === 'private' && <button type="button" className="m-btn" onClick={() => { if (window.confirm('Reset the invite link? The old link and code stop working.')) api.resetClubInvite(page.club.slug).then((value) => setCode(value.invite), fail); }}>Reset</button>}</div>
     </section>}
+    {error && <Notice tone="error">{error}</Notice>}
     <section className="m-card">
       <div className="lb-head"><h2>Members</h2><span className="m-badge lb-count">{formatExact(page.club.members)}</span></div>
-      {!data.value ? <Loading>Loading members…</Loading> : <table className="m-table lb-table">
+      {data.error !== null && !data.value && <Notice tone="error">Could not load members: {errorText(data.error)}</Notice>}
+      {!data.value ? data.error === null && <Loading>Loading members…</Loading> : <table className="m-table lb-table">
         <thead><tr><th scope="col" className="l">Member</th><th scope="col">This week</th><th scope="col">Last synced</th>{admin && <th scope="col" aria-label="Actions" />}</tr></thead>
         <tbody>{data.value.items.map((member) => <tr key={member.alias} className={member.alias === me ? 'you' : undefined}>
           <td className="l"><div className="lb-user"><Avatar alias={member.alias} /><span className="lb-name">{member.alias}{member.alias === me && <span className="m-badge accent">You</span>}{member.role !== 'member' && <span className="m-badge">{member.role === 'owner' ? 'Owner' : 'Admin'}</span>}</span>
             <span className="lb-meta">{member.toolTokens && <span className="lb-tools">{toolsOf(member.toolTokens).map((id) => <ToolIcon key={id} id={id} />)}</span>}</span></div></td>
           <td className="lb-total" title={tokensTitle(member.tokens)}>{formatCompact(member.tokens)}</td>
           <td>{timeAgo(member.lastSyncedAt)}</td>
-          {admin && <td>{member.alias !== me && member.role === 'member' && <button type="button" className="m-btn" onClick={() => { if (window.confirm(`Remove ${member.alias} from ${page.club.name}?`)) api.removeClubMember(page.club.slug, member.alias).then(() => setRound((n) => n + 1), () => {}); }}>Remove</button>}</td>}
+          {admin && <td>{member.alias !== me && member.role === 'member' && <button type="button" className="m-btn" onClick={() => { if (window.confirm(`Remove ${member.alias} from ${page.club.name}?`)) api.removeClubMember(page.club.slug, member.alias).then(() => setRound((n) => n + 1), fail); }}>Remove</button>}</td>}
         </tr>)}</tbody>
       </table>}
     </section>
@@ -346,7 +352,7 @@ function NewClub({ api, me, go, onClose }: { api: ApiClient; me: string | null; 
   const valid = CLUB_NAME_PATTERN.test(trimmed) && /[\p{L}\p{N}]$/u.test(trimmed);
   const create = async () => {
     setBusy(true); setError(null);
-    try { const club = await api.createClub({ name: trimmed, description: '', mark, visibility, category: null, league: visibility === 'public' || league, challenge }); onClose(); go({ page: 'club', slug: club.slug, tab: 'members' }); }
+    try { const club = await api.createClub({ name: trimmed, description: '', mark, visibility, category: null, league: visibility === 'public' || league, challenge }); clubsChanged(); onClose(); go({ page: 'club', slug: club.slug, tab: 'members' }); }
     catch (reason) { setError(errorText(reason)); setBusy(false); }
   };
   return <ProfileDialog labelledBy="mc-new-title" onClose={onClose}>
@@ -374,7 +380,7 @@ function JoinCode({ api, go, onClose }: { api: ApiClient; go: Go; onClose: () =>
     const code = inviteCode(value);
     if (!code) { setError('Paste an invite link or a code like NIGHT-7K2Q.'); return; }
     setBusy(true); setError(null);
-    try { const club = await api.joinClubByCode(code); onClose(); go({ page: 'club', slug: club.slug, tab: 'board' }); }
+    try { const club = await api.joinClubByCode(code); clubsChanged(); onClose(); go({ page: 'club', slug: club.slug, tab: 'board' }); }
     catch (reason) { setError(errorText(reason)); setBusy(false); }
   };
   return <ProfileDialog labelledBy="mc-join-title" onClose={onClose}>

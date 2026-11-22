@@ -423,6 +423,10 @@ async fn club_member(
     uri: Uri,
     JsonBody(body): JsonBody,
 ) -> Result<Response, LocalError> {
+    // GET routes answer HEAD too; the hosted clubs routes have no HEAD of their own.
+    if method == Method::HEAD {
+        return Err(LocalError::not_found());
+    }
     let rest = uri
         .path()
         .strip_prefix("/api/local/clubs")
