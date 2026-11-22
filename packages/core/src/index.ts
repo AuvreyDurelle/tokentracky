@@ -16,3 +16,4 @@ export { windowActivity, fitFacts, wrapRange, wrapLabel, adjacentWrap, heatLevel
 export { milestones, nextMilestone, type Milestone } from './milestones.ts';
 export { BADGE_TIERS, badgeInputs, badgeProgress, type BadgeInputs } from './badges.ts';
 export * from './town.ts';
+export * from './clubs.ts';
