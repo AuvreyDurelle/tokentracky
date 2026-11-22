@@ -74,3 +74,18 @@ export const TARGET = icon(<><circle cx="12" cy="12" r="8.5" /><circle cx="12" c
 export const STACK = icon(<><path d="m12 3 9 4.5-9 4.5-9-4.5z" /><path d="m3 12 9 4.5 9-4.5M3 16.5 12 21l9-4.5" /></>);
 /** Each challenge's emblem and colour. */
 export const CHALLENGE_ICON: Record<ChallengeKind, ReactNode> = { tokens: STACK, streak: FLAME, 'big-day': BOLT, cache: TARGET };
+
+export interface PodiumPlace { key: string; name: string; value: string; title?: string; sub?: ReactNode; face: ReactNode; you?: boolean; onOpen?: () => void }
+/** The top three on steps, first in the middle with the crown; read in rank order, drawn second, first, third. */
+export function Podium({ places, label }: { places: readonly PodiumPlace[]; label: string }) {
+  return <ol className="mc-podium" aria-label={label}>{places.slice(0, 3).map((entry, index) => {
+    const body = <>
+      <span className="mc-step-face">{index === 0 && <span className="mc-crown">{CROWN}</span>}{entry.face}</span>
+      <span className="mc-step-name"><span>{entry.name}</span>{entry.you && <span className="m-badge accent">You</span>}</span>
+      <b className="mc-step-val" title={entry.title}>{entry.value}</b>
+      {entry.sub && <span className="mc-step-sub">{entry.sub}</span>}
+      <span className="mc-step-block" aria-hidden="true">{index + 1}</span>
+    </>;
+    return <li key={entry.key} className={`mc-step s${index + 1}${entry.you ? ' you' : ''}`}>{entry.onOpen ? <button type="button" onClick={entry.onOpen}>{body}</button> : <div>{body}</div>}</li>;
+  })}</ol>;
+}

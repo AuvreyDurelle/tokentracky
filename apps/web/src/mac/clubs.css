@@ -80,9 +80,6 @@
 .mac .mc-league tbody tr { cursor: pointer; }
 .mac .mc-pending { color: var(--text-4); font-size: 11.5px; }
 
-/* Members: the invite link and code above the roster. */
-.mac .mc-invite-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 0 18px 16px; }
-.mac .mc-invite-row code { flex: 1 1 260px; overflow: hidden; padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2); color: var(--text-2); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Sheets: New club and Join with a code. */
 .mac .mc-sheet { display: grid; gap: 16px; width: min(520px, 90vw); padding: 22px 24px; }
@@ -223,6 +220,66 @@
 .mac .mc-battle-foot span { display: inline-flex; align-items: center; gap: 6px; }
 .mac .mc-battle-foot b { color: var(--text-2); font-weight: 650; }
 
+/* ---------- a club's pages ---------- */
+/* The banner: the club's mark, name and standing, washed in its colour, with the week's clock. */
+.mac .mc-banner { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 20px; margin-bottom: 16px; padding: 22px 24px; border: 1px solid hsl(var(--h) 60% 55% / 0.32); border-radius: var(--radius); background: radial-gradient(80% 200% at 0% 0%, hsl(var(--h) 75% 45% / 0.3), transparent 55%), linear-gradient(180deg, hsl(var(--h) 40% 20% / 0.22), transparent), var(--surface); }
+.mac .mc-banner .m-page-title { font-size: 28px; }
+.mac .mc-banner-desc { max-width: 64ch; margin-top: 6px; color: var(--text-2); font-size: 13px; line-height: 1.5; }
+.mac .mc-chips-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.mac .mc-chip { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 11px; border: 0; border-radius: 13px; background: rgba(255, 255, 255, 0.06); box-shadow: inset 0 0 0 1px var(--border-2); color: var(--text-2); font: inherit; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.mac button.mc-chip { cursor: pointer; }
+.mac button.mc-chip:hover { background: rgba(255, 255, 255, 0.1); }
+.mac .mc-chip .move { margin-left: 0; }
+.mac .mc-chip.p1 { background: rgba(232, 182, 76, 0.12); box-shadow: inset 0 0 0 1px rgba(232, 182, 76, 0.4); text-shadow: none; }
+.mac .mc-ping.live { color: var(--green); }
+.mac .mc-banner-side { display: grid; gap: 10px; justify-items: end; }
+.mac .mc-club .rival-strip .ys-side .ys-k:empty, .mac .mc-club .rival-strip .ys-pills:empty { display: none; }
+.mac .mc-club .rival-strip, .mac .mc-club > .mc-podium { margin-bottom: 16px; }
+/* The podium: second, first, third on steps, first crowned. */
+.mac .mc-podium { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; gap: 14px; margin: 0 0 16px; padding: 30px 28px 0; overflow: hidden; list-style: none; border: 1px solid var(--border); border-radius: var(--radius); background: radial-gradient(50% 100% at 50% 0%, rgba(232, 182, 76, 0.16), transparent 75%), var(--surface); }
+.mac .mc-step { --c: var(--gold); min-width: 0; }
+.mac .mc-step.s1 { order: 2; }
+.mac .mc-step.s2 { --c: var(--silver); order: 1; }
+.mac .mc-step.s3 { --c: var(--bronze); order: 3; }
+.mac .mc-step > button, .mac .mc-step > div { display: grid; justify-items: center; gap: 3px; width: 100%; padding: 0; border: 0; background: none; color: inherit; font: inherit; }
+.mac .mc-step > button { cursor: pointer; }
+.mac .mc-step > button:hover .mc-step-name span { text-decoration: underline; text-decoration-color: var(--text-3); text-underline-offset: 3px; }
+.mac .mc-step-face { position: relative; display: grid; place-items: center; }
+.mac .mc-step-face .avatar { width: 52px; height: 52px; font-size: 17px; box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--c); }
+.mac .mc-step.s1 .mc-step-face .avatar { width: 66px; height: 66px; font-size: 21px; box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--c), 0 0 34px 2px rgba(232, 182, 76, 0.45); }
+.mac .mc-step-face .club-mark.xl { width: 56px; height: 56px; }
+.mac .mc-step.s1 .mc-step-face .club-mark.xl { width: 68px; height: 68px; }
+.mac .mc-crown { position: absolute; top: -24px; color: var(--gold); filter: drop-shadow(0 0 8px rgba(232, 182, 76, 0.8)); animation: mc-bob 2.8s ease-in-out infinite; }
+.mac .mc-crown .mc-ic { width: 24px; height: 24px; }
+@keyframes mc-bob { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-3px) rotate(4deg); } }
+.mac .mc-step-name { display: flex; align-items: center; gap: 6px; max-width: 100%; margin-top: 10px; font-size: 13.5px; font-weight: 600; }
+.mac .mc-step-name span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mac .mc-step-val { color: var(--c); font-size: 22px; font-weight: 780; letter-spacing: -0.025em; font-variant-numeric: tabular-nums; }
+.mac .mc-step-sub { color: var(--text-3); font-size: 11.5px; }
+.mac .mc-step-block { display: grid; place-items: start center; width: 100%; height: 50px; margin-top: 12px; padding-top: 8px; border-radius: 10px 10px 0 0; background: linear-gradient(180deg, rgba(185, 192, 203, 0.24), rgba(185, 192, 203, 0.04)); box-shadow: inset 0 1px 0 rgba(185, 192, 203, 0.55); color: var(--c); font-size: 24px; font-weight: 850; }
+.mac .mc-step.s1 .mc-step-block { height: 82px; background: linear-gradient(180deg, rgba(232, 182, 76, 0.3), rgba(232, 182, 76, 0.05)); box-shadow: inset 0 1px 0 rgba(232, 182, 76, 0.7); font-size: 30px; }
+.mac .mc-step.s3 .mc-step-block { height: 34px; background: linear-gradient(180deg, rgba(201, 138, 91, 0.26), rgba(201, 138, 91, 0.04)); box-shadow: inset 0 1px 0 rgba(201, 138, 91, 0.6); font-size: 20px; }
+.mac .mc-step.you .mc-step-name { color: var(--accent-text); }
+/* Members: the invite as big tiles, the spots left, then the roster. */
+.mac .mc-invite { display: grid; gap: 14px; padding: 20px 22px; border-color: hsl(var(--h) 60% 55% / 0.32); background: linear-gradient(110deg, hsl(var(--h) 70% 45% / 0.16), transparent 60%), var(--surface); }
+.mac .mc-invite-main { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 20px; }
+.mac .mc-invite h2 { font-size: 16px; font-weight: 650; }
+.mac .mc-invite p { max-width: 50ch; margin-top: 4px; color: var(--text-3); font-size: 12.5px; line-height: 1.5; }
+.mac .mc-code-tiles { display: flex; gap: 4px; }
+.mac .mc-code-tiles span { display: grid; place-items: center; width: 28px; height: 38px; border-radius: 7px; background: var(--surface-3); box-shadow: inset 0 0 0 1px hsl(var(--h) 70% 60% / 0.4), 0 6px 16px -10px hsl(var(--h) 80% 55%); color: var(--text); font: 700 17px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.mac .mc-code-tiles span.dash { width: 12px; background: none; box-shadow: none; color: var(--text-4); }
+.mac .mc-invite > code { overflow: hidden; padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2); color: var(--text-3); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.mac .mc-spots { display: flex; align-items: center; gap: 12px; color: var(--text-3); font-size: 12px; }
+.mac .mc-spots b { color: var(--text); }
+.mac .mc-spots .mc-meter { width: 220px; }
+/* Club rows carry badges after the name: the name never gives way to the tools beside it. */
+.mac .mc-clubs .lb-user, .mac .mc-club .lb-user { grid-template-columns: auto max-content minmax(0, 1fr); }
+.mac .mc-clubs .lb-meta, .mac .mc-club .lb-meta { overflow: hidden; }
+.mac .mc-roster thead th:first-child { width: 44%; }
+.mac .mc-roster .mc-bars { width: 84px; height: 22px; }
+.mac .mc-mvp { display: inline-flex; align-items: center; gap: 3px; }
+.mac .mc-mvp .mc-ic { width: 11px; height: 11px; }
+
 @media (max-width: 1080px) {
   .mac .mc-battle-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); }
   .mac .mc-pair { grid-column: 1 / -1; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--border); }
@@ -232,5 +289,5 @@
   .mac .mc-incoming-act { grid-column: 1 / -1; grid-template-columns: 1fr auto; align-items: center; text-align: left; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .mac .mc-ping::after, .mac .mc-rope b, .mac .mc-meter i { animation: none; }
+  .mac .mc-ping::after, .mac .mc-rope b, .mac .mc-meter i, .mac .mc-crown { animation: none; }
 }

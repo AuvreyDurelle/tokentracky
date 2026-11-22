@@ -1,15 +1,15 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { CHALLENGES, CHALLENGE_KINDS, CLUB_CATEGORIES, CLUB_MARK_IDS, CLUB_MARKS, CLUB_NAME_PATTERN, CLUB_PRIVATE_LIMIT, LEAGUE_MIN_ACTIVE, LEAGUE_SMALL_MAX, challengeUnit,
   clubWeek, inviteCode, type ChallengeKind, type ClubCategory, type ClubDivision, type ClubMark as ClubMarkId, type ClubPage, type ClubStanding, type ClubVisibility,
-  type ClubRef, type ClubWeek, type LeaderboardPeriod, type MatchupRequest, type MyClub, type ToolId } from '@tokentracky/core';
+  type ClubMember, type ClubRef, type ClubWeek, type LeaderboardPeriod, type MatchupRequest, type MyClub, type ToolId } from '@tokentracky/core';
 import { ApiError, type ApiClient } from '../api';
 import { ClubMark, MarkShape } from '../ClubMark';
 import { errorText, formatCompact, formatCost, formatCostCompact, formatExact, shortDay, topPercent } from '../format';
 import type { ClubsTab, ClubTab, Route } from '../route';
 import { Avatar, Empty, Loading, Notice, SearchIcon, ToolIcon } from '../ui';
-import { Board, ToolShare, TrendArea } from './LeaderboardView';
+import { Board, RivalStrip, ToolShare, TrendArea } from './LeaderboardView';
 import { useLoad } from './load';
-import { Bars, CHALLENGE_ICON, CROWN, DayPips, Meter, Rope, SWORDS, Verdict, WeekClock, hue, place } from './ClubParts';
+import { Bars, CHALLENGE_ICON, CROWN, DayPips, Meter, Podium, Rope, SWORDS, TROPHY, Verdict, WeekClock, hue, place } from './ClubParts';
 import { ProfileDialog } from './ProfileModal';
 import { ToolbarActions, clubsChanged } from './Shell';
 
@@ -275,7 +275,7 @@ function Matchups({ api, go, onJoin }: { api: ApiClient; go: Go; onJoin: () => v
   </>;
 }
 
-/** A club in the app: its week, your place, and its board, challenge or members. */
+/** A club in the app: its banner, then its board, challenge or members, all in the club's colour. */
 export function ClubView({ api, me, slug, tab, go, site, onProfile, onJoin }: { api: ApiClient; me: string | null; slug: string; tab: ClubTab; go: Go; site: string | null; onProfile: (alias: string) => void; onJoin: () => void }) {
   const [period, setPeriod] = useState<LeaderboardPeriod>('week');
   const [number, setNumber] = useState(1);
@@ -285,7 +285,7 @@ export function ClubView({ api, me, slug, tab, go, site, onProfile, onJoin }: { 
   const member = value?.membership ?? null;
   const [error, setError] = useState<string | null>(null);
   const join = () => { setError(null); api.joinClub(slug).then(() => { setRound((n) => n + 1); clubsChanged(); }, (reason: unknown) => setError(errorText(reason))); };
-  return <div className="m-page m-lb mc-club">
+  return <div className="m-page m-lb mc-club" style={hue(slug)}>
     <ToolbarActions>
       <Seg label={value?.club.name ?? 'Club'} value={tab} options={[['board', 'Board'], ['challenge', 'Challenge'], ...(member ? [['members', 'Members'] as [ClubTab, string]] : [])]} onChange={(next) => go({ page: 'club', slug, tab: next })} />
       {tab === 'board' && <div className="m-seg" role="group" aria-label="Period">{PERIODS.map((option) => <button key={option.value} type="button" className={option.value === period ? 'on' : undefined} aria-pressed={option.value === period} onClick={() => { setPeriod(option.value); setNumber(1); }}>{option.label}</button>)}</div>}
@@ -295,23 +295,41 @@ export function ClubView({ api, me, slug, tab, go, site, onProfile, onJoin }: { 
     {!value && page.error === null && <Loading>Loading the club…</Loading>}
     {error && <Notice tone="error">{error}</Notice>}
     {value && <>
-      <div className="page-head"><div className="mc-head"><ClubMark mark={value.club.mark} slug={value.club.slug} size="lg" /><div><h1 className="m-page-title">{value.club.name}</h1>
-        <p className="m-page-sub">{[visibilityName(value.club.visibility), plural(value.club.members, 'member'), value.standing?.rank ? `#${value.standing.rank} in the ${divisionName(value.standing.division)} league` : null].filter(Boolean).join(' · ')}</p></div></div>
-        {site && <a className="m-btn" href={`${site}/c/${slug}${tab === 'board' ? '' : `/${tab}`}`} target="_blank" rel="noopener noreferrer">Open on the web</a>}</div>
+      <header className="mc-banner">
+        <ClubMark mark={value.club.mark} slug={value.club.slug} size="xl" />
+        <div className="mc-banner-id">
+          <h1 className="m-page-title">{value.club.name}</h1>
+          <p className="m-page-sub">{[visibilityName(value.club.visibility), plural(value.club.members, 'member'), value.club.category ? CLUB_CATEGORIES[value.club.category] : null].filter(Boolean).join(' · ')}</p>
+          {value.club.description && <p className="mc-banner-desc">{value.club.description}</p>}
+          <div className="mc-chips-row">
+            {value.standing && <span className={`mc-chip${place(value.standing.rank)}`}>{TROPHY}{value.standing.rank ? `#${formatExact(value.standing.rank)} ${divisionName(value.standing.division)} league` : `${divisionName(value.standing.division)} league · unranked`}<Move rank={value.standing.rank} previous={value.standing.previousRank} /></span>}
+            <button type="button" className={`mc-chip k-${value.challenge.kind}`} onClick={() => go({ page: 'club', slug, tab: 'challenge' })}>{CHALLENGE_ICON[value.challenge.kind]}{CHALLENGES[value.challenge.kind].name}</button>
+            <span className="mc-chip"><span className="mc-ping live" />{formatExact(value.week.activeToday)} of {formatExact(value.club.members)} active today</span>
+          </div>
+        </div>
+        <div className="mc-banner-side"><WeekClock />{site && <a className="m-btn" href={`${site}/c/${slug}${tab === 'board' ? '' : `/${tab}`}`} target="_blank" rel="noopener noreferrer">Open on the web</a>}</div>
+      </header>
       {!value.board && <section className="m-card"><Empty title="A private club">Only members see who’s in it. Ask a member for an invite link or code.</Empty></section>}
-      {value.board && tab === 'board' && <ClubBoard page={value} me={me} period={period} number={number} loading={page.loading} onPage={setNumber} onProfile={onProfile} />}
+      {value.board && tab === 'board' && <ClubBoard page={value} me={me} period={period} number={number} loading={page.loading} site={site} onPage={setNumber} onProfile={onProfile} />}
       {tab === 'challenge' && <ClubChallengeView api={api} me={me} slug={slug} />}
       {tab === 'members' && member && <ClubMembersView api={api} me={me} page={value} site={site} onChange={() => setRound((n) => n + 1)} />}
     </>}
   </div>;
 }
 
-function ClubBoard({ page, me, period, number, loading, onPage, onProfile }: { page: ClubPage; me: string | null; period: LeaderboardPeriod; number: number; loading: boolean; onPage: (page: number) => void; onProfile: (alias: string) => void }) {
+function ClubBoard({ page, me, period, number, loading, site, onPage, onProfile }: { page: ClubPage; me: string | null; period: LeaderboardPeriod; number: number; loading: boolean; site: string | null; onPage: (page: number) => void; onProfile: (alias: string) => void }) {
   const { club, week, board } = page;
   const delta = change(week);
   const mine = board!.items.find((row) => row.alias === me) ?? null;
   const ahead = mine ? board!.items.find((row) => row.rank === mine.rank - 1) ?? null : null;
+  const top = number === 1 ? board!.items.filter((row) => row.rank <= 3) : [];
   return <>
+    {top.length > 0 && <Podium label={`Top ${top.length} of ${club.name}`} places={top.map((row) => ({ key: row.alias, name: row.alias, value: formatCompact(row.tokens), title: tokensTitle(row.tokens), face: <Avatar alias={row.alias} size="lg" />, you: row.alias === me,
+      sub: period === 'week' && board!.period === 'week' && week.tokens ? `${Math.round((row.tokens / week.tokens) * 100)}% of the club` : 'tokens', onOpen: () => onProfile(row.alias) }))} />}
+    {mine && <RivalStrip period={period} mine={mine} rows={board!.items} builders={board!.builders} ranks={[]} site={site} onProfile={onProfile} />}
+    <section className="m-card lb-board">
+      <Board period={period} windowStart={board!.windowStart} rows={board!.items} neighbours={[]} me={me} rival={ahead?.alias ?? null} total={board!.total} page={number} pageSize={board!.pageSize} loading={loading} onPage={onPage} onProfile={onProfile} />
+    </section>
     <ClubHero week={week}
       eyebrow={<div className="m-eyebrow"><span className="live-dot" />{club.name} · This week</div>}
       figures={<>
@@ -325,18 +343,6 @@ function ClubBoard({ page, me, period, number, loading, onPage, onProfile }: { p
         <div><div className="m-label">Per active member</div><div className="m-stat-value" title={tokensTitle(week.perMember)}>{formatCompact(week.perMember)}</div><div className="sub">median {formatCompact(week.median)}</div></div>
         <div><div className="m-label">Busiest hour</div><div className="m-stat-value">{week.busiestHour === null ? '—' : `${String(week.busiestHour).padStart(2, '0')}:00`}</div><div className="sub">UTC, this week</div></div>
       </>} />
-    {mine && <section className="you-strip" aria-label="Your position">
-      <Avatar alias={mine.alias} />
-      <div className="you-id"><div className="lb-you-rank">#{formatExact(mine.rank)} <span className="m-badge accent">You</span></div><div className="you-sub">{mine.alias}{period === 'week' && board!.period === 'week' && week.tokens ? ` · ${Math.round((mine.tokens / week.tokens) * 100)}% of the club’s tokens` : ''}</div></div>
-      <div className="you-vsep" />
-      <div className="you-stat"><div className="m-label">{period === 'week' ? 'This week' : 'Tokens'}</div><div className="v" title={tokensTitle(mine.tokens)}>{formatCompact(mine.tokens)}</div></div>
-      <div className="you-stat"><div className="m-label">Est. cost</div><div className="v">{mine.costMicrousd == null ? '—' : formatCostCompact(mine.costMicrousd)}</div></div>
-      <div className="you-vsep" />
-      {(ahead || mine.rank === 1) && <div className="you-chase"><div className="row"><span>{ahead ? <><b>{formatCompact(ahead.tokens - mine.tokens)}</b> behind #{ahead.rank} {ahead.alias}</> : 'You lead the club'}</span></div></div>}
-    </section>}
-    <section className="m-card lb-board">
-      <Board period={period} windowStart={board!.windowStart} rows={board!.items} neighbours={[]} me={me} rival={ahead?.alias ?? null} total={board!.total} page={number} pageSize={board!.pageSize} loading={loading} onPage={onPage} onProfile={onProfile} />
-    </section>
   </>;
 }
 
@@ -388,23 +394,30 @@ function ClubMembersView({ api, me, page, site, onChange }: { api: ApiClient; me
   const admin = page.membership?.role === 'owner' || page.membership?.role === 'admin';
   const link = code && site ? `${site}/c/${page.club.slug}?invite=${code}` : null;
   const copy = () => { if (link) void navigator.clipboard?.writeText(link).then(() => { setCopied(true); window.setTimeout(() => setCopied(false), 1600); }).catch(() => {}); };
+  const full = page.club.visibility === 'private' ? Math.max(0, CLUB_PRIVATE_LIMIT - page.club.members) : null;
+  const mvp = data.value?.items.reduce<ClubMember | null>((best, row) => row.tokens > (best?.tokens ?? 0) ? row : best, null) ?? null;
   return <>
     {code && <section className="m-card mc-invite">
-      <div className="lb-head"><h2>Invite</h2>{page.club.visibility === 'private' && <span className="lb-reset">{formatExact(Math.max(0, CLUB_PRIVATE_LIMIT - page.club.members))} of {CLUB_PRIVATE_LIMIT} spots left</span>}</div>
-      <div className="mc-invite-row"><code>{link ?? code}</code>{link && <button type="button" className="m-btn" onClick={copy}>{copied ? 'Copied' : 'Copy link'}</button>}
-        {page.club.visibility === 'private' && <span className="m-pill">Code <b>{code}</b></span>}
-        {admin && page.club.visibility === 'private' && <button type="button" className="m-btn" disabled={resetting} onClick={() => { if (!resetting && window.confirm('Reset the invite link? The old link and code stop working.')) { setError(null); setResetting(true); api.resetClubInvite(page.club.slug).then((value) => { setFresh(value.invite); onChange(); }, fail).finally(() => setResetting(false)); } }}>Reset</button>}</div>
+      <div className="mc-invite-main">
+        <div><h2>Bring your crew</h2><p>More members, more firepower: the league ranks clubs by tokens per active member, so every active coder counts.</p></div>
+        <div className="mc-code-tiles" aria-label={`Invite code ${code}`}>{[...code].map((char, index) => <span key={index} className={char === '-' ? 'dash' : undefined}>{char}</span>)}</div>
+        <div className="mc-actions">{link && <button type="button" className="m-btn primary" onClick={copy}>{copied ? 'Copied' : 'Copy invite link'}</button>}
+          {admin && page.club.visibility === 'private' && <button type="button" className="m-btn" disabled={resetting} onClick={() => { if (!resetting && window.confirm('Reset the invite link? The old link and code stop working.')) { setError(null); setResetting(true); api.resetClubInvite(page.club.slug).then((value) => { setFresh(value.invite); onChange(); }, fail).finally(() => setResetting(false)); } }}>Reset</button>}</div>
+      </div>
+      {link && <code>{link}</code>}
+      {full !== null && <div className="mc-spots"><span><b>{formatExact(full)}</b> of {CLUB_PRIVATE_LIMIT} spots left</span><Meter value={page.club.members} of={CLUB_PRIVATE_LIMIT} tone="hue" /></div>}
     </section>}
     {error && <Notice tone="error">{error}</Notice>}
     <section className="m-card">
       <div className="lb-head"><h2>Members</h2><span className="m-badge lb-count">{formatExact(page.club.members)}</span></div>
       {data.error !== null && <Notice tone="error">Could not load members: {errorText(data.error)}</Notice>}
-      {!data.value ? data.error === null && <Loading>Loading members…</Loading> : <table className="m-table lb-table">
-        <thead><tr><th scope="col" className="l">Member</th><th scope="col">Joined</th><th scope="col">This week</th>{admin && <th scope="col" aria-label="Actions" />}</tr></thead>
+      {!data.value ? data.error === null && <Loading>Loading members…</Loading> : <table className="m-table lb-table mc-roster">
+        <thead><tr><th scope="col" className="l">Member</th><th scope="col">Joined</th><th scope="col">Last 7 days</th><th scope="col">This week</th>{admin && <th scope="col" aria-label="Actions" />}</tr></thead>
         <tbody>{data.value.items.map((member) => <tr key={member.alias} className={member.alias === me ? 'you' : undefined}>
-          <td className="l"><div className="lb-user"><Avatar alias={member.alias} /><span className="lb-name">{member.alias}{member.alias === me && <span className="m-badge accent">You</span>}{member.role !== 'member' && <span className="m-badge">{member.role === 'owner' ? 'Owner' : 'Admin'}</span>}</span>
+          <td className="l"><div className="lb-user"><Avatar alias={member.alias} /><span className="lb-name">{member.alias}{member.alias === me && <span className="m-badge accent">You</span>}{member.role !== 'member' && <span className="m-badge">{member.role === 'owner' ? 'Owner' : 'Admin'}</span>}{member === mvp && <span className="m-badge gold mc-mvp" title="Most tokens in the club this week">{CROWN}MVP</span>}</span>
             <span className="lb-meta">{member.toolTokens && <span className="lb-tools">{toolsOf(member.toolTokens).map((id) => <ToolIcon key={id} id={id} />)}</span>}</span></div></td>
           <td>{shortDay(member.joinedAt.slice(0, 10))}</td>
+          <td><Bars values={member.daily.slice(-7)} label={`${member.alias}’s tokens per UTC day, last 7 days`} /></td>
           <td className="lb-total" title={tokensTitle(member.tokens)}>{formatCompact(member.tokens)}</td>
           {admin && <td>{member.alias !== me && member.role === 'member' && <button type="button" className="m-btn" onClick={() => { if (window.confirm(`Remove ${member.alias} from ${page.club.name}?`)) { setError(null); api.removeClubMember(page.club.slug, member.alias).then(() => setRound((n) => n + 1), fail); } }}>Remove</button>}</td>}
         </tr>)}</tbody>
