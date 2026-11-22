@@ -471,7 +471,7 @@ export function ClubView({ api, me, slug, tab, go, site, onProfile, onJoin }: { 
   </div>;
 }
 
-function ClubBoard({ page, me, period, number, loading, site, onPage, onProfile }: { page: ClubPage; me: string | null; period: LeaderboardPeriod; number: number; loading: boolean; site: string | null; onPage: (page: number) => void; onProfile: (alias: string) => void }) {
+export function ClubBoard({ page, me, period, number, loading, site, onPage, onProfile }: { page: ClubPage; me: string | null; period: LeaderboardPeriod; number: number; loading: boolean; site: string | null; onPage: (page: number) => void; onProfile: (alias: string) => void }) {
   const { club, week, board } = page;
   const delta = change(week);
   const mine = board!.items.find((row) => row.alias === me) ?? null;
@@ -480,7 +480,8 @@ function ClubBoard({ page, me, period, number, loading, site, onPage, onProfile 
   return <>
     {top.length > 0 && <Podium label={`Top ${top.length} of ${club.name}`} places={top.map((row) => ({ key: row.alias, name: row.alias, value: formatCompact(row.tokens), title: tokensTitle(row.tokens), face: <Avatar alias={row.alias} size="lg" />, you: row.alias === me,
       sub: period === 'week' && board!.period === 'week' && week.tokens ? `${Math.round((row.tokens / week.tokens) * 100)}% of the club` : 'tokens', onOpen: () => onProfile(row.alias) }))} />}
-    {mine && <RivalStrip period={period} mine={mine} rows={board!.items} builders={board!.builders} ranks={[]} site={site} onProfile={onProfile} />}
+    {/* The builder above you may sit on the page before; without them the strip would claim the lead. */}
+    {mine && (ahead || mine.rank === 1) && <RivalStrip period={period} mine={mine} rows={board!.items} builders={board!.builders} ranks={[]} site={site} onProfile={onProfile} />}
     <section className="m-card lb-board">
       <Board period={period} windowStart={board!.windowStart} rows={board!.items} neighbours={[]} me={me} rival={ahead?.alias ?? null} total={board!.total} page={number} pageSize={board!.pageSize} loading={loading} onPage={onPage} onProfile={onProfile} />
     </section>
