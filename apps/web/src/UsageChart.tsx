@@ -49,6 +49,19 @@ export function UsageChart({ points, label, value, tick, axis, tip, average, bes
   // A touch reading outlives a switch to fewer points (daily to weekly); past the end it shows nothing.
   const at = active !== null && active <= last ? active : null;
   const ax = at === null ? 0 : x(at);
+  // An x label (about 6px a character) that would come within 8px of the one before it is dropped; the last always
+  // shows, so a label it would crowd goes instead.
+  const labels: Array<{ index: number; text: string; right: number }> = [];
+  points.forEach((_, index) => {
+    const text = axis(index);
+    if (!text) return;
+    const w = text.length * 6;
+    const left = index === 0 ? x(index) : index === last ? x(index) - w : x(index) - w / 2;
+    const crowds = () => labels.length > 0 && labels.at(-1)!.right + 8 > left;
+    if (index < last && crowds()) return;
+    while (index === last && crowds()) labels.pop();
+    labels.push({ index, text, right: left + w });
+  });
   return <figure className="uc" aria-label={label}>
     <div className="uc-plot" ref={box} tabIndex={0} aria-label={`${label}. Use arrow keys to read each point.`}
       onPointerDown={pick} onPointerMove={pick} onPointerLeave={leave} onKeyDown={key} onFocus={() => setActive((current) => current ?? last)} onBlur={() => setActive(null)}>
@@ -65,7 +78,7 @@ export function UsageChart({ points, label, value, tick, axis, tip, average, bes
         {partial && points.length > 2 && <path d={monotonePath(xy.slice(-2))} className="uc-partial" />}
         {partial && <circle cx={xy[last]![0]} cy={xy[last]![1]} r="3" className="uc-now" />}
         {best && points[best.index] && <Best x={x(best.index)} y={y(points[best.index]!.value)} text={best.text} min={LEFT} max={RIGHT} />}
-        {points.map((_, index) => { const text = axis(index); return text && <text key={index} x={x(index)} y={H - 10} textAnchor={index === 0 ? 'start' : index === last ? 'end' : 'middle'} className={`uc-ax${index === active ? ' on' : ''}`}>{text}</text>; })}
+        {labels.map(({ index, text }) => <text key={index} x={x(index)} y={H - 10} textAnchor={index === 0 ? 'start' : index === last ? 'end' : 'middle'} className={`uc-ax${index === active ? ' on' : ''}`}>{text}</text>)}
         {at !== null && <>
           <line x1={ax} x2={ax} y1={TOP} y2={BASE} className="uc-cross" />
           <circle cx={ax} cy={y(points[at]!.value)} r="9" className="uc-halo" />
