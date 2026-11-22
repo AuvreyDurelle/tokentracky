@@ -90,6 +90,7 @@ function YourClubs({ api, me, go, onJoin, onCode, onNew }: { api: ApiClient; me:
   const mine = useLoad(() => api.myClubs(), [api, me, round]);
   const [error, setError] = useState<string | null>(null);
   const answer = (id: string, value: 'accept' | 'decline') => { setError(null); api.answerMatchup(id, value).then(() => setRound((n) => n + 1), (reason: unknown) => setError(errorText(reason))); };
+  const [open, setOpen] = useState<[string, string] | null>(null);
   const fights = mine.value?.clubs.flatMap((entry) => entry.matchup ? [entry.matchup] : []) ?? [];
   const leading = fights.filter((fight) => fight.perMember > fight.opponentPerMember).length;
   return <>
@@ -100,14 +101,15 @@ function YourClubs({ api, me, go, onJoin, onCode, onNew }: { api: ApiClient; me:
     {mine.error !== null && !mine.value && <NotLinked error={mine.error} onJoin={onJoin} />}
     {!mine.value && mine.error === null && <Loading>Loading your clubs…</Loading>}
     {error && <Notice tone="error">{error}</Notice>}
-    {mine.value && mine.value.requests.length > 0 && <section className="mc-stack" aria-label="Challenges waiting on you">{mine.value.requests.map((request) => <Incoming key={request.id} request={request} onAnswer={answer} />)}</section>}
+    {mine.value && mine.value.requests.length > 0 && <section className="mc-stack" aria-label="Challenges waiting on you">{mine.value.requests.map((request) => <Incoming key={request.id} request={request} busy={mine.loading} onAnswer={answer} onScout={() => setOpen([request.to.slug, request.from.slug])} />)}</section>}
     {mine.value?.clubs.length === 0 && <section className="m-card mc-empty"><Empty title="No club, no rivals" action={<span className="mc-actions"><button type="button" className="m-btn primary" onClick={onNew}>Start a club</button><button type="button" className="m-btn" onClick={() => go({ page: 'clubs', tab: 'discover' })}>Discover clubs</button></span>}>Start a private club for your team or friends, or join a public one. Every week your club climbs the league, takes on another club and plays a challenge.</Empty></section>}
     {mine.value?.clubs.map((entry) => <BattleCard key={entry.club.slug} entry={entry} go={go} />)}
+    {open && <HeadToHead api={api} a={open[0]} b={open[1]} mine={mine.value} go={go} onClose={() => setOpen(null)} onChanged={() => setRound((n) => n + 1)} />}
   </>;
 }
 
 /** A challenge for next week waiting on your answer: both clubs face to face, with this week's pace. */
-function Incoming({ request, onAnswer }: { request: MatchupRequest; onAnswer: (id: string, value: 'accept' | 'decline') => void }) {
+function Incoming({ request, busy, onAnswer, onScout }: { request: MatchupRequest; busy: boolean; onAnswer: (id: string, value: 'accept' | 'decline') => void; onScout: () => void }) {
   const gap = request.toPerMember - request.fromPerMember;
   return <section className="m-card mc-incoming">
     <div className="mc-incoming-k"><span className="mc-ping" />{SWORDS}<b>{request.from.name}</b> wants a matchup for the week of {shortDay(request.week)}</div>
@@ -117,7 +119,7 @@ function Incoming({ request, onAnswer }: { request: MatchupRequest; onAnswer: (i
       <VersusSide club={request.to} note="Your club" value={request.toPerMember} ahead={gap > 0} />
       <div className="mc-incoming-act">
         <p>{gap > 0 ? <>You’re <b className="up">{formatCompact(gap)}</b> per member ahead on this week’s pace. Favourites.</> : gap < 0 ? <>They’re <b className="down">{formatCompact(-gap)}</b> per member ahead on this week’s pace. Fancy an upset?</> : 'Dead level on this week’s pace.'}</p>
-        <span className="mc-actions"><button type="button" className="m-btn" onClick={() => onAnswer(request.id, 'decline')}>Decline</button><button type="button" className="m-btn primary mc-fight-btn" onClick={() => onAnswer(request.id, 'accept')}>{SWORDS}Accept</button></span>
+        <span className="mc-actions"><button type="button" className="m-btn" onClick={onScout}>Tale of the tape</button><button type="button" className="m-btn" disabled={busy} onClick={() => onAnswer(request.id, 'decline')}>Decline</button><button type="button" className="m-btn primary mc-fight-btn" disabled={busy} onClick={() => onAnswer(request.id, 'accept')}>{SWORDS}Accept</button></span>
       </div>
     </div>
   </section>;
@@ -371,6 +373,8 @@ function HeadToHead({ api, a, b, mine, go, onClose, onChanged }: { api: ApiClien
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const value = data.value;
+  // Until the comparison reloads after an action, its buttons would offer the same action again.
+  const locked = busy || data.loading;
   const act = (action: () => Promise<unknown>) => { setBusy(true); setError(null); action().then(() => { setRound((n) => n + 1); onChanged(); }, (reason: unknown) => setError(errorText(reason))).finally(() => setBusy(false)); };
   const role = (slug: string) => mine?.clubs.find((entry) => entry.club.slug === slug)?.role ?? null;
   const admin = (slug: string) => { const value = role(slug); return value === 'owner' || value === 'admin'; };
@@ -412,13 +416,14 @@ function HeadToHead({ api, a, b, mine, go, onClose, onChanged }: { api: ApiClien
         <LineRace label={`Tokens per active member so far this week: ${value.a.club.name} against ${value.b.club.name}`} days={DAYS.slice(0, Math.max(value.a.daily.length, value.b.daily.length))} zero format={(tick) => formatCompact(Math.round(tick))}
           lines={[{ key: 'a', label: value.a.club.name, hue: clubHue(value.a.club.slug), values: cumulative(value.a.daily) }, { key: 'b', label: value.b.club.name, hue: clubHue(value.b.club.slug), values: cumulative(value.b.daily) }]} />
         {error && <Notice tone="error">{error}</Notice>}
+        {data.error !== null && <Notice tone="error">Could not refresh the matchup: {errorText(data.error)}</Notice>}
         <footer className="mc-h2h-foot">
           {value.matchup?.status === 'accepted' ? <span className="mc-verdict lead">Matchup on</span>
             : value.matchup && request ? <><span>{request.from.name} challenged {request.to.name} for the week of {shortDay(request.week)}.</span>
-              <span className="mc-actions"><button type="button" className="m-btn" disabled={busy} onClick={() => act(() => api.answerMatchup(request.id, 'decline'))}>Decline</button><button type="button" className="m-btn mc-fight-btn" disabled={busy} onClick={() => act(() => api.answerMatchup(request.id, 'accept'))}>{SWORDS}Accept</button></span></>
-            : value.matchup ? <><span><span className="mc-ping" /> Challenge sent. Waiting on the other club’s admins.</span>{challenger && <button type="button" className="m-btn" disabled={busy} onClick={() => act(() => api.answerMatchup(value.matchup!.id, 'withdraw'))}>Withdraw</button>}</>
+              <span className="mc-actions"><button type="button" className="m-btn" disabled={locked} onClick={() => act(() => api.answerMatchup(request.id, 'decline'))}>Decline</button><button type="button" className="m-btn mc-fight-btn" disabled={locked} onClick={() => act(() => api.answerMatchup(request.id, 'accept'))}>{SWORDS}Accept</button></span></>
+            : value.matchup ? <><span><span className="mc-ping" /> Challenge sent. Waiting on the other club’s admins.</span>{challenger && <button type="button" className="m-btn" disabled={locked} onClick={() => act(() => api.answerMatchup(value.matchup!.id, 'withdraw'))}>Withdraw</button>}</>
             : challenger ? <><span>Next week, {challenger === a ? value.a.club.name : value.b.club.name} against {challenger === a ? value.b.club.name : value.a.club.name}. Their admins have to accept.</span>
-              <button type="button" className="m-btn mc-fight-btn" disabled={busy} onClick={() => act(() => api.challengeClub(challenger, challenger === a ? b : a))}>{SWORDS}{busy ? 'Sending…' : 'Challenge for next week'}</button></>
+              <button type="button" className="m-btn mc-fight-btn" disabled={locked} onClick={() => act(() => api.challengeClub(challenger, challenger === a ? b : a))}>{SWORDS}{busy ? 'Sending…' : 'Challenge for next week'}</button></>
             : <span className="faint">Admins of a league club can challenge another club for next week.</span>}
           {value.a.club.visibility === 'public' && <button type="button" className="m-btn" onClick={() => { onClose(); go({ page: 'club', slug: value.a.club.slug, tab: 'board' }); }}>Open {value.a.club.name}</button>}
         </footer>
