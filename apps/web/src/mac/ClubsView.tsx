@@ -1,14 +1,15 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { CHALLENGES, CHALLENGE_KINDS, CLUB_CATEGORIES, CLUB_MARK_IDS, CLUB_MARKS, CLUB_NAME_PATTERN, CLUB_PRIVATE_LIMIT, LEAGUE_MIN_ACTIVE, LEAGUE_SMALL_MAX, challengeUnit,
   clubWeek, inviteCode, type ChallengeKind, type ClubCategory, type ClubDivision, type ClubMark as ClubMarkId, type ClubPage, type ClubStanding, type ClubVisibility,
-  type ClubWeek, type LeaderboardPeriod, type MyClub, type ToolId } from '@tokentracky/core';
+  type ClubRef, type ClubWeek, type LeaderboardPeriod, type MatchupRequest, type MyClub, type ToolId } from '@tokentracky/core';
 import { ApiError, type ApiClient } from '../api';
 import { ClubMark, MarkShape } from '../ClubMark';
-import { errorText, formatCompact, formatCost, formatCostCompact, formatExact, shortDay } from '../format';
+import { errorText, formatCompact, formatCost, formatCostCompact, formatExact, shortDay, topPercent } from '../format';
 import type { ClubsTab, ClubTab, Route } from '../route';
 import { Avatar, Empty, Loading, Notice, SearchIcon, ToolIcon } from '../ui';
 import { Board, ToolShare, TrendArea } from './LeaderboardView';
 import { useLoad } from './load';
+import { Bars, CHALLENGE_ICON, CROWN, DayPips, Meter, Rope, SWORDS, Verdict, WeekClock, hue, place } from './ClubParts';
 import { ProfileDialog } from './ProfileModal';
 import { ToolbarActions, clubsChanged } from './Shell';
 
@@ -74,7 +75,7 @@ export function ClubsView({ api, me, tab, go, onJoin }: { api: ApiClient; me: st
       <Seg label="Clubs" value={tab} options={[['mine', 'Your clubs'], ['discover', 'Discover'], ['league', 'League'], ['matchups', 'Matchups']]} onChange={(next) => go({ page: 'clubs', tab: next })} />
       <button type="button" className="m-btn primary" onClick={() => setSheet('new')}>New club</button>
     </ToolbarActions>
-    {tab === 'mine' && <YourClubs api={api} me={me} go={go} onJoin={onJoin} onCode={() => setSheet('join')} />}
+    {tab === 'mine' && <YourClubs api={api} me={me} go={go} onJoin={onJoin} onCode={() => setSheet('join')} onNew={() => setSheet('new')} />}
     {tab === 'discover' && <Discover api={api} go={go} onJoin={onJoin} />}
     {tab === 'league' && <League api={api} go={go} onJoin={onJoin} />}
     {tab === 'matchups' && <Matchups api={api} go={go} onJoin={onJoin} />}
@@ -83,46 +84,102 @@ export function ClubsView({ api, me, tab, go, onJoin }: { api: ApiClient; me: st
   </div>;
 }
 
-function YourClubs({ api, me, go, onJoin, onCode }: { api: ApiClient; me: string | null; go: Go; onJoin: () => void; onCode: () => void }) {
+function YourClubs({ api, me, go, onJoin, onCode, onNew }: { api: ApiClient; me: string | null; go: Go; onJoin: () => void; onCode: () => void; onNew: () => void }) {
   const [round, setRound] = useState(0);
   const mine = useLoad(() => api.myClubs(), [api, me, round]);
   const [error, setError] = useState<string | null>(null);
   const answer = (id: string, value: 'accept' | 'decline') => { setError(null); api.answerMatchup(id, value).then(() => setRound((n) => n + 1), (reason: unknown) => setError(errorText(reason))); };
+  const fights = mine.value?.clubs.flatMap((entry) => entry.matchup ? [entry.matchup] : []) ?? [];
+  const leading = fights.filter((fight) => fight.perMember > fight.opponentPerMember).length;
   return <>
-    <div className="page-head"><div><h1 className="m-page-title">Your clubs</h1><p className="m-page-sub">Week of {shortDay(clubWeek(new Date()).start.slice(0, 10))}<span className="sep" />Resets in {weekLeft()}</p></div>
-      <button type="button" className="m-btn" onClick={onCode}>Join with a code</button></div>
+    <div className="page-head mc-page-head"><div><h1 className="m-page-title">Your clubs</h1><p className="m-page-sub">Week of {shortDay(clubWeek(new Date()).start.slice(0, 10))}
+      {fights.length > 0 && <><span className="sep" />Leading {formatExact(leading)} of {plural(fights.length, 'matchup')}</>}</p>
+      <button type="button" className="m-btn mc-code" onClick={onCode}>Join with a code</button></div>
+      <WeekClock /></div>
     {mine.error !== null && !mine.value && <NotLinked error={mine.error} onJoin={onJoin} />}
     {!mine.value && mine.error === null && <Loading>Loading your clubs…</Loading>}
     {error && <Notice tone="error">{error}</Notice>}
-    {mine.value?.clubs.length === 0 && <section className="m-card"><Empty title="You’re not in a club yet" action={<button type="button" className="m-btn" onClick={() => go({ page: 'clubs', tab: 'discover' })}>Discover clubs</button>}>Start a private club for your team or friends with New club, or join a public one.</Empty></section>}
-    {mine.value?.clubs.map((entry) => <MyClubHero key={entry.club.slug} entry={entry} go={go} />)}
-    {mine.value && mine.value.requests.length > 0 && <section className="m-card mc-requests" aria-label="Challenges waiting on you">
-      <div className="lb-head"><h2>Challenges</h2><span className="m-badge lb-count">{formatExact(mine.value.requests.length)}</span></div>
-      <ul className="club-list">{mine.value.requests.map((request) => <li key={request.id} className="club-row mc-request">
-        <ClubMark mark={request.from.mark} slug={request.from.slug} /><span className="club-name"><strong>{request.from.name} challenged {request.to.name}</strong><small>Week of {shortDay(request.week)} · {formatCompact(request.fromPerMember)} per member to your {formatCompact(request.toPerMember)}</small></span>
-        <span className="mc-actions"><button type="button" className="m-btn" onClick={() => answer(request.id, 'decline')}>Decline</button><button type="button" className="m-btn primary" onClick={() => answer(request.id, 'accept')}>Accept</button></span>
-      </li>)}</ul>
-    </section>}
+    {mine.value && mine.value.requests.length > 0 && <section className="mc-stack" aria-label="Challenges waiting on you">{mine.value.requests.map((request) => <Incoming key={request.id} request={request} onAnswer={answer} />)}</section>}
+    {mine.value?.clubs.length === 0 && <section className="m-card mc-empty"><Empty title="No club, no rivals" action={<span className="mc-actions"><button type="button" className="m-btn primary" onClick={onNew}>Start a club</button><button type="button" className="m-btn" onClick={() => go({ page: 'clubs', tab: 'discover' })}>Discover clubs</button></span>}>Start a private club for your team or friends, or join a public one. Every week your club climbs the league, takes on another club and plays a challenge.</Empty></section>}
+    {mine.value?.clubs.map((entry) => <BattleCard key={entry.club.slug} entry={entry} go={go} />)}
   </>;
 }
 
-function MyClubHero({ entry, go }: { entry: MyClub; go: Go }) {
-  const { club, week, you, standing, challenge, matchup } = entry;
+/** A challenge for next week waiting on your answer: both clubs face to face, with this week's pace. */
+function Incoming({ request, onAnswer }: { request: MatchupRequest; onAnswer: (id: string, value: 'accept' | 'decline') => void }) {
+  const gap = request.toPerMember - request.fromPerMember;
+  return <section className="m-card mc-incoming">
+    <div className="mc-incoming-k"><span className="mc-ping" />{SWORDS}<b>{request.from.name}</b> wants a matchup for the week of {shortDay(request.week)}</div>
+    <div className="mc-versus">
+      <VersusSide club={request.from} note={standingText(request.fromStanding)} value={request.fromPerMember} ahead={gap < 0} />
+      <span className="mc-vs">VS</span>
+      <VersusSide club={request.to} note="Your club" value={request.toPerMember} ahead={gap > 0} />
+      <div className="mc-incoming-act">
+        <p>{gap > 0 ? <>You’re <b className="up">{formatCompact(gap)}</b> per member ahead on this week’s pace. Favourites.</> : gap < 0 ? <>They’re <b className="down">{formatCompact(-gap)}</b> per member ahead on this week’s pace. Fancy an upset?</> : 'Dead level on this week’s pace.'}</p>
+        <span className="mc-actions"><button type="button" className="m-btn" onClick={() => onAnswer(request.id, 'decline')}>Decline</button><button type="button" className="m-btn primary mc-fight-btn" onClick={() => onAnswer(request.id, 'accept')}>{SWORDS}Accept</button></span>
+      </div>
+    </div>
+  </section>;
+}
+function VersusSide({ club, note, value, ahead }: { club: ClubRef; note: string; value: number; ahead: boolean }) {
+  return <div className={`mc-vside${ahead ? ' ahead' : ''}`} style={hue(club.slug)}>
+    <ClubMark mark={club.mark} slug={club.slug} size="lg" />
+    <span className="club-name"><strong>{club.name}</strong><small>{note}</small></span>
+    <span className="mc-vfig"><b title={tokensTitle(value)}>{formatCompact(value)}</b><small>per member</small></span>
+  </div>;
+}
+
+/** One of your clubs this week: your place, the matchup, the league and the challenge. */
+function BattleCard({ entry, go }: { entry: MyClub; go: Go }) {
+  const { club, role, week, you, standing, challenge, matchup } = entry;
   const delta = change(week);
+  const top = you.rank ? topPercent(you.rank, you.ranked) : null;
+  const open = (tab: ClubTab) => go({ page: 'club', slug: club.slug, tab });
   const lead = matchup ? matchup.perMember - matchup.opponentPerMember : 0;
-  return <ClubHero week={week}
-    eyebrow={<button type="button" className="m-eyebrow mc-club-link" onClick={() => go({ page: 'club', slug: club.slug, tab: 'board' })}><ClubMark mark={club.mark} slug={club.slug} />{club.name} · {visibilityName(club.visibility)} · {plural(club.members, 'member')}</button>}
-    figures={<>
-      <div><div className="hero-num mc-you">{you.rank ? `#${formatExact(you.rank)}` : '—'}</div><div className="hero-cap">{you.rank ? <>of {formatExact(you.ranked)} this week <Move rank={you.rank} previous={you.previousRank} /></> : 'no tokens from you yet'}</div></div>
-      <div className="hero-divider" />
-      <div><div className="hero-num second" title={tokensTitle(week.tokens)}>{formatCompact(week.tokens)}</div><div className="hero-cap">club tokens this week{delta !== null && <><br /><span className={`tk-delta sm${delta < 0 ? ' neg' : ''}`}>{delta >= 0 ? '+' : '−'}{Math.round(Math.abs(delta) * 100)}%</span> on the same days last week</>}</div></div>
-    </>}
-    stats={<>
-      <div><div className="m-label">{standing ? `${divisionName(standing.division)} league` : 'League'}</div><div className="m-stat-value">{standing?.rank ? `#${standing.rank}` : '—'}</div><div className="sub"><Move rank={standing?.rank ?? null} previous={standing?.previousRank ?? null} /> {formatCompact(week.perMember)} per member</div></div>
-      <div><div className="m-label">Active this week</div><div className="m-stat-value">{formatExact(week.active)} of {formatExact(club.members)}</div><div className="sub">{formatCompact(week.last24hTokens)} in the last 24 hours</div></div>
-      <div><div className="m-label">{CHALLENGES[challenge.kind].name}</div><div className="m-stat-value">{challenge.you.rank ? `#${challenge.you.rank}` : '—'}</div><div className="sub">{challengeText(challenge.kind, challenge.you.value)}{challenge.leader && challenge.you.rank !== 1 ? ` · led by ${challenge.leader.alias}` : ''}</div></div>
-      <div><div className="m-label">Matchup</div><div className="m-stat-value mc-word">{matchup ? lead > 0 ? 'Leading' : lead < 0 ? 'Trailing' : 'Level' : '—'}</div><div className="sub">{matchup ? `${matchup.opponent.name}, by ${formatCompact(Math.abs(lead))}` : 'None this week'}</div></div>
-    </>} />;
+  const info = CHALLENGES[challenge.kind];
+  return <section className="m-card mc-battle" style={hue(club.slug)}>
+    <header className="mc-battle-head">
+      <ClubMark mark={club.mark} slug={club.slug} size="lg" />
+      <button type="button" className="club-name mc-open" onClick={() => open('board')}><strong>{club.name}</strong><small>{visibilityName(club.visibility)} · {plural(club.members, 'member')}{role !== 'member' && ` · ${role === 'owner' ? 'Owner' : 'Admin'}`}</small></button>
+      <span className="mc-battle-week"><Bars values={week.daily} label={`Club tokens per UTC day, last ${week.daily.length} days`} /><span><b title={tokensTitle(week.tokens)}>{formatCompact(week.tokens)}</b>{delta !== null && <span className={`mc-delta${delta < 0 ? ' neg' : ''}`}>{delta >= 0 ? '▲' : '▼'}{Math.round(Math.abs(delta) * 100)}%</span>}<small>club tokens this week</small></span></span>
+    </header>
+    <div className="mc-battle-body">
+      <button type="button" className="mc-tile mc-rank" onClick={() => open('board')}>
+        <span className="m-label">Your rank</span>
+        <span className={`mc-big${place(you.rank)}`}>{you.rank === 1 && CROWN}{you.rank ? `#${formatExact(you.rank)}` : '—'}</span>
+        <span className="sub">{you.rank ? <>of {formatExact(you.ranked)}{top && ` · ${top.toLowerCase()}`}<Move rank={you.rank} previous={you.previousRank} /></> : 'No tokens from you yet'}</span>
+      </button>
+      <div className="mc-tile mc-fight">
+        {matchup ? <>
+          <div className="mc-fight-head"><span className="m-label">Matchup · vs {matchup.opponent.name}</span><Verdict us={matchup.perMember} them={matchup.opponentPerMember} /></div>
+          <div className="mc-fight-row">
+            <b className={lead >= 0 ? 'ahead' : undefined} title={`${tokensTitle(matchup.perMember)} per active member`}>{formatCompact(matchup.perMember)}</b>
+            <Rope a={club.slug} b={matchup.opponent.slug} aValue={matchup.perMember} bValue={matchup.opponentPerMember} label={`${club.name} ${formatCompact(matchup.perMember)} to ${matchup.opponent.name} ${formatCompact(matchup.opponentPerMember)} per member`} />
+            <b className={lead <= 0 ? 'ahead' : undefined} title={`${tokensTitle(matchup.opponentPerMember)} per active member`}>{formatCompact(matchup.opponentPerMember)}</b>
+          </div>
+          <div className="mc-fight-foot"><span>{lead === 0 ? 'Dead level' : <>{lead > 0 ? 'Up' : 'Down'} <b>{formatCompact(Math.abs(lead))}</b> per member</>}</span><span className="mc-led">Led {formatExact(matchup.daysLed)} of {plural(matchup.days, 'day')}<DayPips led={matchup.daysLed} days={matchup.days} /></span></div>
+        </> : <div className="mc-fight-none"><span className="m-label">Matchup</span><p>No matchup this week.{role !== 'member' && standing ? ' Pick a rival from the league for next week.' : ''}</p>
+          {role !== 'member' && standing && <button type="button" className="m-btn" onClick={() => go({ page: 'clubs', tab: 'league' })}>{SWORDS}Find a rival</button>}</div>}
+      </div>
+      <div className="mc-tile mc-pair">
+        <button type="button" onClick={() => go({ page: 'clubs', tab: 'league' })}>
+          <span className="m-label">{standing ? `${divisionName(standing.division)} league` : 'League'}</span>
+          <span className={`mc-mid${place(standing?.rank)}`}>{standing?.rank ? `#${formatExact(standing.rank)}` : '—'}<Move rank={standing?.rank ?? null} previous={standing?.previousRank ?? null} /></span>
+          <span className="sub">{standing?.rank ? `${formatCompact(week.perMember)} per member` : standing ? `${LEAGUE_MIN_ACTIVE} active members to rank` : 'Not in the league'}</span>
+        </button>
+        <button type="button" onClick={() => open('challenge')}>
+          <span className={`m-label mc-kind k-${challenge.kind}`}>{CHALLENGE_ICON[challenge.kind]}{info.name}</span>
+          <span className={`mc-mid${place(challenge.you.rank)}`}>{challenge.you.rank ? `#${formatExact(challenge.you.rank)}` : '—'}<small>{challengeText(challenge.kind, challenge.you.value)}</small></span>
+          <span className="sub">{challenge.you.rank === 1 ? 'You lead the challenge' : challenge.leader ? `${challenge.leader.alias} leads · ${challengeText(challenge.kind, challenge.leader.value)}` : 'No one has qualified yet'}</span>
+        </button>
+      </div>
+    </div>
+    <footer className="mc-battle-foot">
+      <span><b>{formatExact(week.active)}</b> of {formatExact(club.members)} active<Meter value={week.active} of={club.members} tone="hue" /></span>
+      <span><b title={tokensTitle(week.last24hTokens)}>{formatCompact(week.last24hTokens)}</b> in the last 24 hours</span>
+      <span><b title={tokensTitle(week.perMember)}>{formatCompact(week.perMember)}</b> per active member</span>
+    </footer>
+  </section>;
 }
 
 function Discover({ api, go, onJoin }: { api: ApiClient; go: Go; onJoin: () => void }) {
