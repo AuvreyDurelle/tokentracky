@@ -4,7 +4,7 @@ import { CHALLENGES, CHALLENGE_KINDS, CLUB_CATEGORIES, CLUB_MARK_IDS, CLUB_MARKS
   type ClubWeek, type LeaderboardPeriod, type MyClub, type ToolId } from '@tokentracky/core';
 import { ApiError, type ApiClient } from '../api';
 import { ClubMark, MarkShape } from '../ClubMark';
-import { errorText, formatCompact, formatCost, formatCostCompact, formatExact, shortDay, timeAgo } from '../format';
+import { errorText, formatCompact, formatCost, formatCostCompact, formatExact, shortDay } from '../format';
 import type { ClubsTab, ClubTab, Route } from '../route';
 import { Avatar, Empty, Loading, Notice, SearchIcon, ToolIcon } from '../ui';
 import { Board, ToolShare, TrendArea } from './LeaderboardView';
@@ -257,7 +257,7 @@ function ClubBoard({ page, me, period, number, loading, onPage, onProfile }: { p
       </>} />
     {mine && <section className="you-strip" aria-label="Your position">
       <Avatar alias={mine.alias} />
-      <div className="you-id"><div className="lb-you-rank">#{formatExact(mine.rank)} <span className="m-badge accent">You</span></div><div className="you-sub">{mine.alias}{period === 'week' && week.tokens ? ` · ${Math.round((mine.tokens / week.tokens) * 100)}% of the club’s tokens` : ''}</div></div>
+      <div className="you-id"><div className="lb-you-rank">#{formatExact(mine.rank)} <span className="m-badge accent">You</span></div><div className="you-sub">{mine.alias}{period === 'week' && board!.period === 'week' && week.tokens ? ` · ${Math.round((mine.tokens / week.tokens) * 100)}% of the club’s tokens` : ''}</div></div>
       <div className="you-vsep" />
       <div className="you-stat"><div className="m-label">{period === 'week' ? 'This week' : 'Tokens'}</div><div className="v" title={tokensTitle(mine.tokens)}>{formatCompact(mine.tokens)}</div></div>
       <div className="you-stat"><div className="m-label">Est. cost</div><div className="v">{mine.costMicrousd == null ? '—' : formatCostCompact(mine.costMicrousd)}</div></div>
@@ -319,20 +319,20 @@ function ClubMembersView({ api, me, page, site }: { api: ApiClient; me: string |
       <div className="lb-head"><h2>Invite</h2>{page.club.visibility === 'private' && <span className="lb-reset">{formatExact(Math.max(0, CLUB_PRIVATE_LIMIT - page.club.members))} of {CLUB_PRIVATE_LIMIT} spots left</span>}</div>
       <div className="mc-invite-row"><code>{link ?? code}</code>{link && <button type="button" className="m-btn" onClick={copy}>{copied ? 'Copied' : 'Copy link'}</button>}
         {page.club.visibility === 'private' && <span className="m-pill">Code <b>{code}</b></span>}
-        {admin && page.club.visibility === 'private' && <button type="button" className="m-btn" onClick={() => { if (window.confirm('Reset the invite link? The old link and code stop working.')) api.resetClubInvite(page.club.slug).then((value) => setCode(value.invite), fail); }}>Reset</button>}</div>
+        {admin && page.club.visibility === 'private' && <button type="button" className="m-btn" onClick={() => { if (window.confirm('Reset the invite link? The old link and code stop working.')) { setError(null); api.resetClubInvite(page.club.slug).then((value) => setCode(value.invite), fail); } }}>Reset</button>}</div>
     </section>}
     {error && <Notice tone="error">{error}</Notice>}
     <section className="m-card">
       <div className="lb-head"><h2>Members</h2><span className="m-badge lb-count">{formatExact(page.club.members)}</span></div>
-      {data.error !== null && !data.value && <Notice tone="error">Could not load members: {errorText(data.error)}</Notice>}
+      {data.error !== null && <Notice tone="error">Could not load members: {errorText(data.error)}</Notice>}
       {!data.value ? data.error === null && <Loading>Loading members…</Loading> : <table className="m-table lb-table">
-        <thead><tr><th scope="col" className="l">Member</th><th scope="col">This week</th><th scope="col">Last synced</th>{admin && <th scope="col" aria-label="Actions" />}</tr></thead>
+        <thead><tr><th scope="col" className="l">Member</th><th scope="col">Joined</th><th scope="col">This week</th>{admin && <th scope="col" aria-label="Actions" />}</tr></thead>
         <tbody>{data.value.items.map((member) => <tr key={member.alias} className={member.alias === me ? 'you' : undefined}>
           <td className="l"><div className="lb-user"><Avatar alias={member.alias} /><span className="lb-name">{member.alias}{member.alias === me && <span className="m-badge accent">You</span>}{member.role !== 'member' && <span className="m-badge">{member.role === 'owner' ? 'Owner' : 'Admin'}</span>}</span>
             <span className="lb-meta">{member.toolTokens && <span className="lb-tools">{toolsOf(member.toolTokens).map((id) => <ToolIcon key={id} id={id} />)}</span>}</span></div></td>
+          <td>{shortDay(member.joinedAt.slice(0, 10))}</td>
           <td className="lb-total" title={tokensTitle(member.tokens)}>{formatCompact(member.tokens)}</td>
-          <td>{timeAgo(member.lastSyncedAt)}</td>
-          {admin && <td>{member.alias !== me && member.role === 'member' && <button type="button" className="m-btn" onClick={() => { if (window.confirm(`Remove ${member.alias} from ${page.club.name}?`)) api.removeClubMember(page.club.slug, member.alias).then(() => setRound((n) => n + 1), fail); }}>Remove</button>}</td>}
+          {admin && <td>{member.alias !== me && member.role === 'member' && <button type="button" className="m-btn" onClick={() => { if (window.confirm(`Remove ${member.alias} from ${page.club.name}?`)) { setError(null); api.removeClubMember(page.club.slug, member.alias).then(() => setRound((n) => n + 1), fail); } }}>Remove</button>}</td>}
         </tr>)}</tbody>
       </table>}
     </section>

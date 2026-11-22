@@ -198,7 +198,7 @@ export interface ChallengeStanding {alias: string; rank: number | null; value: n
 
 /** `GET /api/clubs/:slug/members`: the roster, owner and admins first, then by join date. */
 export interface ClubMembers {items: ClubMember[]; limit: number | null}
-export interface ClubMember {alias: string; role: ClubRole; joinedAt: string; lastSyncedAt: string | null; tokens: number; daily: number[];
+export interface ClubMember {alias: string; role: ClubRole; joinedAt: string; tokens: number; daily: number[];
   toolTokens?: Partial<Record<ToolId, number>>; hidden: boolean}
 
 /** `GET /api/profiles/:alias/clubs`: the clubs a member shows on their profile. Private clubs are named only to their members. */

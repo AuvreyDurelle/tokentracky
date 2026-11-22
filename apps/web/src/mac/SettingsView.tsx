@@ -182,7 +182,7 @@ function Clubs({ api, me, busy, act }: { api: ApiClient; me: string; busy: strin
   };
   return <Section id="clubs" title="Clubs" note="Boards for you and the people you code with. Clubs see the same totals as the public board.">
     <div className="st-group">
-      {mine.error !== null && !mine.value && <Notice tone="error">Your clubs could not load: {errorText(mine.error)}</Notice>}
+      {mine.error !== null && <Notice tone="error">Your clubs could not load: {errorText(mine.error)}</Notice>}
       {!mine.value && mine.error === null && <Loading>Loading your clubs…</Loading>}
       {mine.value?.clubs.length === 0 && <Row label="No clubs yet" desc="Start one from Clubs in the sidebar, or join with an invite below." />}
       {mine.value?.clubs.map(({ club, you, hidden, onProfile }) => <Row key={club.slug} lead={<ClubMark mark={club.mark} />} label={<>{club.name} <span className="m-badge">{club.visibility === 'private' ? 'Private' : 'Public'}</span></>}
