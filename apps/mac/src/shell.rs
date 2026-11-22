@@ -27,7 +27,7 @@ pub enum ShellRequest {
 }
 
 /// The dashboard pages a page may open.
-const PAGES: [&str; 5] = ["/", "/tokens", "/achievements", "/settings", "/leaderboard"];
+const PAGES: [&str; 6] = ["/", "/tokens", "/achievements", "/settings", "/leaderboard", "/clubs"];
 /// The largest body a shell request may carry, as `PUT /api/local/cloud` allows.
 pub const BODY_LIMIT: usize = 4096;
 
@@ -161,6 +161,10 @@ mod tests {
         assert_eq!(
             parse("POST", "/api/shell/open-dashboard", br#"{"page":"/settings"}"#),
             Some(Ok(ShellRequest::OpenDashboard("/settings")))
+        );
+        assert_eq!(
+            parse("POST", "/api/shell/open-dashboard", br#"{"page":"/clubs"}"#),
+            Some(Ok(ShellRequest::OpenDashboard("/clubs")))
         );
         assert_eq!(
             parse("POST", "/api/shell/check-updates", b""),

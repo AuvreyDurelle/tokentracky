@@ -19,6 +19,20 @@ import type {
   UsageBreakdownRow,
   UsageSummary,
   UsageWindow,
+  ClubCategory,
+  ClubChallenge,
+  ClubDivision,
+  ClubIdentity,
+  ClubInput,
+  ClubListResponse,
+  ClubMembers,
+  ClubPage,
+  ClubRef,
+  ClubRole,
+  ClubSort,
+  LeagueResponse,
+  MatchupsResponse,
+  MyClubs,
 } from '@tokentracky/core';
 
 export interface Health {
@@ -140,6 +154,24 @@ export class ApiClient {
   /** The milestone ids the app's popover has shown; its window keeps no storage between openings. */
   milestonesSeen() { return this.request<{ seen: string[] | null }>('/api/local/milestones'); }
   setMilestonesSeen(seen: string[]) { return this.request<{ seen: string[] }>('/api/local/milestones', { method: 'PUT', body: JSON.stringify({ seen }) }); }
+  /** Clubs go through the linked device's credential, which marks the member's own clubs and opens their private ones. */
+  myClubs() { return this.request<MyClubs>('/api/local/clubs/mine'); }
+  clubList(q: string, category: ClubCategory | null, sort: ClubSort, page = 1, pageSize = 24) { return this.request<ClubListResponse>(`/api/local/clubs?${query({ q, category: category ?? undefined, sort: sort === 'members' ? undefined : sort, page, pageSize })}`); }
+  league(division: ClubDivision, page = 1, pageSize = 50) { return this.request<LeagueResponse>(`/api/local/clubs/league?${query({ division, page, pageSize })}`); }
+  matchups() { return this.request<MatchupsResponse>('/api/local/clubs/matchups'); }
+  club(slug: string, board: { period?: LeaderboardPeriod; q?: string; page?: number; pageSize?: number } = {}) {
+    return this.request<ClubPage>(`/api/local/clubs/${encodeURIComponent(slug)}?${query({ period: board.period, q: board.q, page: board.page, pageSize: board.pageSize })}`);
+  }
+  clubChallenge(slug: string) { return this.request<ClubChallenge>(`/api/local/clubs/${encodeURIComponent(slug)}/challenge`); }
+  clubMembers(slug: string) { return this.request<ClubMembers>(`/api/local/clubs/${encodeURIComponent(slug)}/members`); }
+  createClub(input: ClubInput) { return this.request<ClubIdentity>('/api/local/clubs', { method: 'POST', body: JSON.stringify(input) }); }
+  joinClub(slug: string) { return this.request<ClubRef>(`/api/local/clubs/${encodeURIComponent(slug)}/join`, { method: 'POST', body: JSON.stringify({}) }); }
+  joinClubByCode(code: string) { return this.request<ClubRef>('/api/local/clubs/join', { method: 'POST', body: JSON.stringify({ code }) }); }
+  /** Leaving, when `alias` is your own; otherwise an owner or admin removing someone. */
+  removeClubMember(slug: string, alias: string) { return this.request<void>(`/api/local/clubs/${encodeURIComponent(slug)}/members/${encodeURIComponent(alias)}`, { method: 'DELETE' }); }
+  updateClubMember(slug: string, alias: string, value: { role?: ClubRole; hidden?: boolean; onProfile?: boolean }) { return this.request<void>(`/api/local/clubs/${encodeURIComponent(slug)}/members/${encodeURIComponent(alias)}`, { method: 'PUT', body: JSON.stringify(value) }); }
+  resetClubInvite(slug: string) { return this.request<{ invite: string }>(`/api/local/clubs/${encodeURIComponent(slug)}/invite`, { method: 'POST' }); }
+  answerMatchup(id: string, answer: 'accept' | 'decline' | 'withdraw') { return this.request<void>(`/api/local/clubs/matchups/${encodeURIComponent(id)}`, { method: 'POST', body: JSON.stringify({ answer }) }); }
   /** Likes go through the linked device's credential, never an account token. */
   likeStatus(alias: string) { return this.request<{ liked: boolean }>(`/api/local/likes/${encodeURIComponent(alias)}`); }
   like(alias: string) { return this.request<void>(`/api/local/likes/${encodeURIComponent(alias)}`, { method: 'PUT' }); }
@@ -165,7 +197,7 @@ export class ApiClient {
     }
   }
   setLaunchAtLogin(enabled: boolean) { return this.request<ShellState>('/api/shell/launch-at-login', { method: 'PUT', body: JSON.stringify({ enabled }) }); }
-  openDashboard(page: '/' | '/tokens' | '/achievements' | '/settings' | '/leaderboard') { return this.request<void>('/api/shell/open-dashboard', { method: 'POST', body: JSON.stringify({ page }) }); }
+  openDashboard(page: '/' | '/tokens' | '/achievements' | '/settings' | '/leaderboard' | '/clubs') { return this.request<void>('/api/shell/open-dashboard', { method: 'POST', body: JSON.stringify({ page }) }); }
   checkForUpdates() { return this.request<ShellState>('/api/shell/check-updates', { method: 'POST' }); }
   gearMenu() { return this.request<void>('/api/shell/menu', { method: 'POST' }); }
   quitApp() { return this.request<void>('/api/shell/quit', { method: 'POST' }); }

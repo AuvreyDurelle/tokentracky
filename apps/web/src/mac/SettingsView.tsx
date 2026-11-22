@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import type { LocalSettings, MenuBarPeriod, MenuBarShows, MenuOverview, ProfileStats, SourceStatus, ToolId } from '@tokentracky/core';
+import { inviteCode, type LocalSettings, type MenuBarPeriod, type MenuBarShows, type MenuOverview, type ProfileStats, type SourceStatus, type ToolId } from '@tokentracky/core';
+import { ClubMark } from '../ClubMark';
 import type { ApiClient, DetectedTool, Health, LocalStatus, ShellState } from '../api';
 import { TOOLS, errorText, formatCompact, formatCost, formatExact, timeAgo, timeUntil } from '../format';
 import { utcToday } from '../ranges';
@@ -85,6 +86,7 @@ const SECTIONS = [
   { id: 'general', label: 'General', icon: ICONS.gear, shell: true },
   { id: 'sources', label: 'Sources', icon: ICONS.folder },
   { id: 'privacy', label: 'Leaderboard & privacy', icon: ICONS.shield },
+  { id: 'clubs', label: 'Clubs', icon: ICONS.stack, linked: true },
   { id: 'menubar', label: 'Menu bar', icon: ICONS.panelTop, shell: true },
   { id: 'pricing', label: 'Pricing & data', icon: ICONS.database },
   { id: 'updates', label: 'Updates', icon: ICONS.refresh, shell: true },
@@ -140,6 +142,7 @@ export function SettingsPage({ api, health, status, refresh, shell, onShell, det
       <Section id="privacy" title="Leaderboard & privacy" note="Ranks are client-reported usage, not verified spending.">
         <Leaderboard api={api} health={health} status={status} profile={profile.value} refresh={refresh} busy={busy} act={act} />
       </Section>
+      {linked && status?.alias && <Clubs api={api} me={status.alias} busy={busy} act={act} />}
       {shell && settings && <MenuBar settings={settings} overview={overview} busy={busy} change={(next) => void act('menubar', async () => onSettings(await api.setLocalSettings(next)))} />}
       <Section id="pricing" title="Pricing & data" note="Costs are estimates from a public price table. Models without a known price show as unknown, never $0.">
         <div className="st-group">
@@ -164,6 +167,34 @@ export function SettingsPage({ api, health, status, refresh, shell, onShell, det
       {linked && <Account health={health} status={status!} profile={profile.value} busy={busy} unlink={() => { if (window.confirm(UNLINK)) void act('unlink', async () => { await api.unlinkCloud(); await refresh(); }); }} />}
     </div>
   </div>;
+}
+
+/** Your clubs, each with its two visibility choices and Leave, and joining another with an invite. */
+function Clubs({ api, me, busy, act }: { api: ApiClient; me: string; busy: string | null; act: (name: string, action: () => Promise<unknown>) => Promise<void> }) {
+  const [round, setRound] = useState(0);
+  const mine = useLoad(() => api.myClubs(), [api, me, round]);
+  const [code, setCode] = useState('');
+  const change = (name: string, action: () => Promise<unknown>) => void act(name, async () => { await action(); setRound((value) => value + 1); });
+  const join = () => {
+    const found = inviteCode(code);
+    change('club-join', async () => { if (!found) throw new Error('Paste an invite link or a code like NIGHT-7K2Q.'); await api.joinClubByCode(found); setCode(''); });
+  };
+  return <Section id="clubs" title="Clubs" note="Boards for you and the people you code with. Clubs see the same totals as the public board.">
+    <div className="st-group">
+      {!mine.value && <Loading>Loading your clubs…</Loading>}
+      {mine.value?.clubs.length === 0 && <Row label="No clubs yet" desc="Start one from Clubs in the sidebar, or join with an invite below." />}
+      {mine.value?.clubs.map(({ club, you, hidden, onProfile }) => <Row key={club.slug} lead={<ClubMark mark={club.mark} />} label={<>{club.name} <span className="m-badge">{club.visibility === 'private' ? 'Private' : 'Public'}</span></>}
+        desc={you.rank ? `#${you.rank} of ${you.ranked} this week` : 'Not ranked this week'}
+        meta={<span className="mc-setting-opts"><label><Toggle label={`Show me on ${club.name}’s board`} on={!hidden} disabled={busy !== null} onChange={() => change('club', () => api.updateClubMember(club.slug, me, { hidden: !hidden }))} />On its board</label>
+          <label><Toggle label={`Show ${club.name} on my profile`} on={onProfile} disabled={busy !== null} onChange={() => change('club', () => api.updateClubMember(club.slug, me, { onProfile: !onProfile }))} />On my profile</label></span>}>
+        <button type="button" className="m-btn st-sm" disabled={busy !== null} onClick={() => { if (window.confirm(`Leave ${club.name}?`)) change('club', () => api.removeClubMember(club.slug, me)); }}>Leave</button>
+      </Row>)}
+      <Row label="Join with a code" desc="Paste an invite link or code from a member.">
+        <form className="mc-join-inline" onSubmit={(event) => { event.preventDefault(); join(); }}><input className="m-input" value={code} onChange={(event) => setCode(event.target.value)} placeholder="NIGHT-7K2Q" aria-label="Invite link or code" />
+          <button type="submit" className="m-btn st-sm" disabled={busy !== null}>Join</button></form>
+      </Row>
+    </div>
+  </Section>;
 }
 
 function Section({ id, title, note, children }: { id: string; title: string; note?: string; children: ReactNode }) {

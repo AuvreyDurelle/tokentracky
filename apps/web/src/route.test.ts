@@ -15,4 +15,13 @@ describe('routes', () => {
     expect(routePath({ page: 'town-map' })).toBe('/town/map');
     expect(routePath({ page: 'town-visit', alias: 'cache-money' })).toBe('/u/cache-money/town');
   });
+  it('gives clubs and a club’s pages their own addresses in the app', () => {
+    expect(parseRoute('/clubs')).toEqual({ page: 'clubs', tab: 'mine' });
+    expect(parseRoute('/clubs/league')).toEqual({ page: 'clubs', tab: 'league' });
+    expect(parseRoute('/clubs/new')).toEqual({ page: 'missing' });
+    expect(parseRoute('/c/Night-Shift')).toEqual({ page: 'club', slug: 'night-shift', tab: 'board' });
+    expect(parseRoute('/c/night-shift/members')).toEqual({ page: 'club', slug: 'night-shift', tab: 'members' });
+    expect(parseRoute('/c/night-shift/settings')).toEqual({ page: 'missing' });
+    for (const route of [{ page: 'clubs', tab: 'mine' }, { page: 'clubs', tab: 'matchups' }, { page: 'club', slug: 'night-shift', tab: 'board' }, { page: 'club', slug: 'night-shift', tab: 'challenge' }] as const) expect(parseRoute(routePath(route))).toEqual(route);
+  });
 });
