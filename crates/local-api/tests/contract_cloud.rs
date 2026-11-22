@@ -740,6 +740,99 @@ async fn town_through_the_device_token() {
     assert!(replies.iter().all(|reply| !reply.text.contains(TOKEN)));
 }
 
+/// Rust only, for the app's clubs pages: every club request goes to the linked service as this device, with its query
+/// and JSON body, and the answer comes back as it is. Paths outside a club's slugs, aliases and ids go nowhere.
+#[tokio::test]
+async fn clubs_through_the_device_token() {
+    let stub = Stub::start().await;
+    let server = Server::start(Some(&stub.url), true).await;
+    let mut replies = Vec::new();
+
+    // Nothing linked: 409 CLOUD_NOT_LINKED, without asking the hosted service.
+    let reply = server.request("/api/local/clubs/mine", Init::method("GET")).await;
+    expect_error(&reply, 409, "CLOUD_NOT_LINKED");
+    assert!(stub.calls().is_empty());
+
+    stub.answer(
+        "GET /api/device-policy",
+        Answer::json(json!({"publication": publication(json!({}))})),
+    );
+    let link =
+        json!({"url": stub.url, "deviceToken": TOKEN, "historyStart": null, "shareTools": false, "shareCost": false});
+    assert_eq!(server.request("/api/local/cloud", put(link)).await.status, 200);
+
+    // Reads carry the token and the query.
+    let mine = json!({"clubs": [], "requests": []});
+    stub.answer("GET /api/clubs/mine", Answer::json(mine.clone()));
+    stub.answer("GET /api/clubs/league", Answer::json(json!({"items": []})));
+    let reply = server.request("/api/local/clubs/mine", Init::method("GET")).await;
+    assert_eq!((reply.status, reply.json()), (200, mine));
+    replies.push(reply);
+    let reply = server
+        .request("/api/local/clubs/league?division=large&page=2", Init::method("GET"))
+        .await;
+    assert_eq!(reply.status, 200);
+    let league = &stub.to("GET /api/clubs/league")[0];
+    assert_eq!(league.header("authorization"), Some(bearer(TOKEN).as_str()));
+    assert_eq!(league.query.get("division").map(String::as_str), Some("large"));
+    assert_eq!(league.query.get("page").map(String::as_str), Some("2"));
+
+    // Changes carry the body; a 204 stays a 204.
+    stub.answer(
+        "POST /api/clubs",
+        Answer::json(json!({"slug": "night-shift"})).with_status(201),
+    );
+    stub.answer(
+        "DELETE /api/clubs/night-shift/members/stub-builder",
+        Answer::status(204),
+    );
+    let reply = server
+        .request(
+            "/api/local/clubs",
+            Init::method("POST").json(json!({"name": "Night Shift"})),
+        )
+        .await;
+    assert_eq!((reply.status, reply.json()), (201, json!({"slug": "night-shift"})));
+    replies.push(reply);
+    let created = &stub.to("POST /api/clubs")[0];
+    assert_eq!(created.body, Some(json!({"name": "Night Shift"})));
+    assert_eq!(created.header("authorization"), Some(bearer(TOKEN).as_str()));
+    let reply = server
+        .request(
+            "/api/local/clubs/night-shift/members/stub-builder",
+            Init::method("DELETE"),
+        )
+        .await;
+    assert_eq!(reply.status, 204);
+
+    // Hosted refusals keep their status and body.
+    let full = json!({"error": {"code": "CLUB_FULL", "message": "Full."}});
+    stub.answer("POST /api/clubs/join", Answer::json(full.clone()).with_status(409));
+    let reply = server
+        .request(
+            "/api/local/clubs/join",
+            Init::method("POST").json(json!({"code": "NIGHT-7K2Q"})),
+        )
+        .await;
+    assert_eq!((reply.status, reply.json()), (409, full));
+    replies.push(reply);
+
+    // Only slugs, aliases, ids and words: nothing else of the hosted API is reachable.
+    let calls = stub.calls().len();
+    for path in [
+        "/api/local/clubs/../ingest",
+        "/api/local/clubs/%2e%2e/ingest",
+        "/api/local/clubs/a//b",
+        "/api/local/clubs/a.b",
+    ] {
+        let reply = server.request(path, Init::method("GET")).await;
+        assert_eq!(reply.status, 404, "{path}");
+    }
+    assert_eq!(stub.calls().len(), calls);
+    // The token is never echoed.
+    assert!(replies.iter().all(|reply| !reply.text.contains(TOKEN)));
+}
+
 #[tokio::test]
 async fn device_connection_through_browser_approval() {
     let stub = Stub::start().await;

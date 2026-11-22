@@ -117,7 +117,7 @@ function LastDay({ stats }: { stats: CommunityStats }) {
 
 const ExternalIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 17 17 7" /><path d="M8 7h9v9" /></svg>;
 
-function ToolShare({ totals }: { totals: Partial<Record<ToolId, bigint>> }) {
+export function ToolShare({ totals }: { totals: Partial<Record<ToolId, bigint>> }) {
   const parts = [...MAIN_TOOLS.map((id) => ({ id: id as ToolId | null, label: toolLabel(id), tokens: totals[id] ?? 0n })), { id: null, label: 'Other', tokens: sumCounts(Object.entries(totals).filter(([tool]) => !(MAIN_TOOLS as readonly string[]).includes(tool)).map(([, tokens]) => tokens ?? 0n)) }].filter((part) => part.tokens > 0n);
   const sum = sumCounts(parts.map(part => part.tokens));
   if (!sum) return null;
@@ -133,7 +133,7 @@ function ToolShare({ totals }: { totals: Partial<Record<ToolId, bigint>> }) {
 // The hero chart's frame (viewBox units, one per pixel): the plot runs from x 4 to 8 short of the chart's width and from y 18 down to the baseline at 158.
 const H = 188, LEFT = 4, TOP = 18, BASE = 158;
 /** An area over evenly spaced points, with `labels` at fractional point positions under it. Drawn at the width the window gives it, so its labels keep their size. */
-function TrendArea({ points: values, title, note, labels, aria }: { points: bigint[]; title: string; note: string; labels: Array<{ at: number; text: string }>; aria: string }) {
+export function TrendArea({ points: values, title, note, labels, aria }: { points: bigint[]; title: string; note: string; labels: Array<{ at: number; text: string }>; aria: string }) {
   const [box, W] = useWidth(520);
   if (values.length < 2) return <div className="hero-chart" ref={box} />;
   const RIGHT = W - 8;

@@ -45,11 +45,12 @@ describe('SettingsPage', () => {
     expect(text(html)).toContain('Unlink this Mac');
     expect(text(html)).not.toMatch(/Leave the leaderboard/i);
   });
-  it("names its sections as the mockup does, with Account only for a linked Mac", () => {
+  it("names its sections as the mockup does, with Clubs and Account only for a linked Mac", () => {
     const nav = (html: string) => [...html.matchAll(/<button type="button" class="st-nav-item[^"]*"[^>]*><svg[\s\S]*?<\/svg>([^<]+)/g)].map((match) => match[1]!.replaceAll('&amp;', '&'));
-    expect(nav(page())).toEqual(['General', 'Sources', 'Leaderboard & privacy', 'Menu bar', 'Pricing & data', 'Updates', 'Account']);
+    expect(nav(page())).toEqual(['General', 'Sources', 'Leaderboard & privacy', 'Clubs', 'Menu bar', 'Pricing & data', 'Updates', 'Account']);
     expect(nav(page({ status: { ...f.status, cloudLinked: false, alias: null } }))).not.toContain('Account');
-    expect(nav(page({ shell: null }))).toEqual(['Sources', 'Leaderboard & privacy', 'Pricing & data', 'Account']);
+    expect(nav(page({ status: { ...f.status, cloudLinked: false, alias: null } }))).not.toContain('Clubs');
+    expect(nav(page({ shell: null }))).toEqual(['Sources', 'Leaderboard & privacy', 'Clubs', 'Pricing & data', 'Account']);
   });
   it('names the price table it prices with', () => {
     expect(text(page())).toContain('Price table');

@@ -15,11 +15,13 @@ import { TokensView } from './mac/TokensView';
 import { SettingsView } from './mac/SettingsView';
 import { Popover } from './mac/Popover';
 import { TownView } from './mac/TownView';
+import { ClubView, ClubsView } from './mac/ClubsView';
 import { JoinPrompt, askToJoin } from './mac/JoinPrompt';
 import '@fontsource-variable/inter/opsz.css';
 import './styles.css';
 import './mac/mac.css';
 import './mac/community.css';
+import './mac/clubs.css';
 
 function App() {
   const api = useMemo(() => new ApiClient(), []);
@@ -66,7 +68,7 @@ function App() {
   // `/` is the leaderboard; the website's own pages exist only on the website.
   const page: Route['page'] = route.page === 'home' ? 'leaderboard' : route.page === 'join' || route.page === 'wrapped' || route.page === 'vs' ? 'missing' : route.page;
   // The Mac app's own pages bring their layout (.m-page); the rest keep the site's column.
-  const ported = (['leaderboard', 'profile', 'achievements', 'tokens', 'you', 'settings', 'popover', 'town', 'town-map', 'town-visit'] as const).some((mac) => mac === page);
+  const ported = (['leaderboard', 'profile', 'achievements', 'tokens', 'you', 'settings', 'popover', 'town', 'town-map', 'town-visit', 'clubs', 'club'] as const).some((mac) => mac === page);
   const body = <main className={ported ? undefined : 'page'}>
       {healthError && <Notice tone="error">{healthError}</Notice>}
       {(page === 'leaderboard' || page === 'profile') && <LeaderboardView api={api} me={me} canJoin={canJoin} syncedAt={localStatus?.lastSyncAt ?? null} site={health.cloudUrl} onProfile={(alias) => navigate({ page: 'profile', alias })} onJoin={() => navigate({ page: 'settings' })} />}
@@ -77,6 +79,8 @@ function App() {
       {page === 'settings' && <SettingsView api={api} health={health} status={localStatus} refresh={refreshLocal} />}
       {page === 'popover' && <Popover api={api} status={localStatus} site={health.cloudUrl} />}
       {(page === 'town' || page === 'town-map' || page === 'town-visit') && <TownView api={api} route={route} me={me} go={navigate} />}
+      {route.page === 'clubs' && <ClubsView key={route.tab} api={api} me={me} tab={route.tab} go={navigate} onJoin={() => navigate({ page: 'settings' })} />}
+      {route.page === 'club' && <ClubView key={route.slug} api={api} me={me} slug={route.slug} tab={route.tab} go={navigate} site={health.cloudUrl} onProfile={(alias) => navigate({ page: 'profile', alias })} onJoin={() => navigate({ page: 'settings' })} />}
     </main>;
   const commands = palette && <CommandPalette api={api} local onClose={() => setPalette(false)}
       onProject={() => navigate({ page: 'tokens' })}
@@ -84,6 +88,8 @@ function App() {
         { id: 'leaderboard', label: 'Leaderboard', hint: 'Page', run: leaderboard },
         { id: 'you', label: 'Tokens', hint: 'Page', run: () => navigate({ page: 'you' }) },
         { id: 'achievements', label: 'Achievements', hint: 'Page', run: () => navigate({ page: 'achievements' }) },
+        { id: 'clubs', label: 'Clubs', hint: 'Page', run: () => navigate({ page: 'clubs', tab: 'mine' }) },
+        { id: 'league', label: 'Club league', hint: 'Page', run: () => navigate({ page: 'clubs', tab: 'league' }) },
         { id: 'town', label: 'Town', hint: 'Page', run: () => navigate({ page: 'town' }) },
         { id: 'town-map', label: 'Town map', hint: 'Page', run: () => navigate({ page: 'town-map' }) },
         { id: 'settings', label: 'Settings', hint: 'Page', run: () => navigate({ page: 'settings' }) },

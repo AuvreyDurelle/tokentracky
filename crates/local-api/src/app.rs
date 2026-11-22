@@ -54,9 +54,15 @@ const TOWN_NOT_LINKED: LocalError = LocalError::new(
     "Join the leaderboard from Settings to start your town.",
 );
 const TOWN_UNAVAILABLE: LocalError = LocalError::new(502, "CLOUD_UNAVAILABLE", "Token Town could not be reached.");
+const CLUBS_NOT_LINKED: LocalError = LocalError::new(
+    409,
+    "CLOUD_NOT_LINKED",
+    "Join the leaderboard from Settings to join clubs.",
+);
+const CLUBS_UNAVAILABLE: LocalError = LocalError::new(502, "CLOUD_UNAVAILABLE", "Clubs could not be reached.");
 /// Pages the web app renders at their own addresses (`SPA_PAGES`; the website's `vercel.json`, in tokentracky-web,
-/// rewrites the first six). The last six are the Mac app's local-only pages and are not in that file.
-const SPA_PAGES: [&str; 12] = [
+/// rewrites the first six). The rest are the Mac app's local-only pages and are not in that file.
+const SPA_PAGES: [&str; 13] = [
     "/privacy",
     "/terms",
     "/support",
@@ -69,6 +75,7 @@ const SPA_PAGES: [&str; 12] = [
     "/popover",
     "/town",
     "/town/map",
+    "/clubs",
 ];
 
 /// Everything the routes share. Cheap to clone.
@@ -185,6 +192,12 @@ pub fn base_router(
         .route("/api/local/town/jobs", post(town_member))
         .route("/api/local/town/move", post(town_member))
         .route("/api/local/town/trade", post(town_member))
+        // Clubs, all as this device, so the answers know which clubs are the member's.
+        .route("/api/local/clubs", get(club_member).post(club_member))
+        .route(
+            "/api/local/clubs/{*path}",
+            get(club_member).post(club_member).put(club_member).delete(club_member),
+        )
         .route(
             "/api/local/cloud",
             put(link).layer(DefaultBodyLimit::max(4096)).delete(unlink),
@@ -201,6 +214,10 @@ pub fn base_router(
             let root = root.clone();
             get(move |Path(alias): Path<String>, request: Request| public_profile(root.clone(), alias, request))
         })
+        // The clubs pages and a club's tabs; the web app shows its own not-found state for unknown ones.
+        .route("/clubs/{page}", get(page(root.clone())))
+        .route("/c/{slug}", get(page(root.clone())))
+        .route("/c/{slug}/{tab}", get(page(root.clone())))
         .route(
             "/assets/{*path}",
             get(move |Path(path): Path<String>, request: Request| asset(root.clone(), path, request)),
@@ -390,6 +407,64 @@ async fn town_member(
     let response = state.client.send(request).await.map_err(|_| TOWN_UNAVAILABLE)?;
     if response.status.is_redirection() || serde_json::from_slice::<serde::de::IgnoredAny>(&response.body).is_err() {
         return Err(TOWN_UNAVAILABLE);
+    }
+    let mut reply = (response.status, [(header::CONTENT_TYPE, JSON)], response.body).into_response();
+    reply.extensions_mut().insert(Relayed);
+    Ok(reply)
+}
+
+/// The member's clubs on the linked service, as this device: `/api/local/clubs/…?…` goes to `/api/clubs/…?…` with the
+/// device token and the request's JSON body, and the answer comes back as it is. Each path segment is a slug, an alias,
+/// an id or a word, so nothing else of the hosted API can be reached through it. As with likes, the token goes only to
+/// the service that issued it and never into an answer.
+async fn club_member(
+    State(state): State<LocalState>,
+    method: Method,
+    uri: Uri,
+    JsonBody(body): JsonBody,
+) -> Result<Response, LocalError> {
+    // GET routes answer HEAD too; the hosted clubs routes have no HEAD of their own.
+    if method == Method::HEAD {
+        return Err(LocalError::not_found());
+    }
+    let rest = uri
+        .path()
+        .strip_prefix("/api/local/clubs")
+        .ok_or_else(LocalError::not_found)?;
+    let safe = |segment: &str| {
+        (1..=100).contains(&segment.len())
+            && segment
+                .bytes()
+                .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-' || byte == b'_')
+    };
+    if !rest.is_empty() && !rest.strip_prefix('/').is_some_and(|path| path.split('/').all(safe)) {
+        return Err(LocalError::not_found());
+    }
+    let link = state
+        .sync
+        .secrets()
+        .get()
+        .await
+        .ok()
+        .flatten()
+        .ok_or(CLUBS_NOT_LINKED)?;
+    let query = forwarded(uri.query());
+    let mut target = format!("{}/api/clubs{rest}", link.url);
+    if !query.is_empty() {
+        target = format!("{target}?{query}");
+    }
+    let mut request = HttpRequest::new(method, target, PROXY_TIMEOUT)
+        .header(header::ACCEPT, "application/json")
+        .header(header::AUTHORIZATION, bearer(&link.device_token));
+    if let Some(body) = body {
+        request = request.header(header::CONTENT_TYPE, JSON).json(body.to_string());
+    }
+    let response = state.client.send(request).await.map_err(|_| CLUBS_UNAVAILABLE)?;
+    if response.status == StatusCode::NO_CONTENT {
+        return Ok(StatusCode::NO_CONTENT.into_response());
+    }
+    if response.status.is_redirection() || serde_json::from_slice::<serde::de::IgnoredAny>(&response.body).is_err() {
+        return Err(CLUBS_UNAVAILABLE);
     }
     let mut reply = (response.status, [(header::CONTENT_TYPE, JSON)], response.body).into_response();
     reply.extensions_mut().insert(Relayed);

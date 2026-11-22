@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { heatLevels, type HourBreakdownRow, type MenuOverview, type ProfileStats, type SessionSummary, type UsageSummary } from '@tokentracky/core';
+import { heatLevels, type HourBreakdownRow, type MenuOverview, type MyClub, type ProfileStats, type SessionSummary, type UsageSummary } from '@tokentracky/core';
+import { ClubMark } from '../ClubMark';
 import type { ApiClient, LocalStatus } from '../api';
 import { errorText, formatCompact, formatCost, formatExact, formatShare, shortDay, timeAgo, toolLabel } from '../format';
 import { addDays, fillRange, hourList, utcToday } from '../ranges';
@@ -61,6 +62,7 @@ export function Popover({ api, status, site }: { api: ApiClient; status: LocalSt
   const [error, setError] = useState<string | null>(null);
   const [reloads, setReloads] = useState(0);
   const [stats, setStats] = useState<ProfileStats | null>(null);
+  const [clubs, setClubs] = useState<MyClub[] | null>(null);
   // The popover's window is private and closes for good, so the ids shown are kept by the app.
   const seenStore = useMemo<SeenStore>(() => ({ read: () => api.milestonesSeen().then((value) => value.seen), write: (seen) => api.setMilestonesSeen(seen) }), [api]);
   const today = utcToday();
@@ -94,6 +96,13 @@ export function Popover({ api, status, site }: { api: ApiClient; status: LocalSt
     api.profileStats(alias).then((value) => { if (live) setStats(value); }, () => {});
     return () => { live = false; };
   }, [api, alias, site, revision, reloads]);
+  // Your clubs this week, read through the app like the profile.
+  useEffect(() => {
+    if (!alias || !site) { setClubs(null); return; }
+    let live = true;
+    api.myClubs().then((value) => { if (live) setClubs(value.clubs); }, () => {});
+    return () => { live = false; };
+  }, [api, alias, site, revision, reloads]);
   const act = async (name: 'refresh' | 'pause', action: () => Promise<unknown>) => {
     setBusy(name); setError(null);
     try { await action(); } catch (value) { setError(errorText(value)); } finally { setBusy(null); }
@@ -101,15 +110,16 @@ export function Popover({ api, status, site }: { api: ApiClient; status: LocalSt
   const fail = (action: () => Promise<unknown>) => () => { action().catch((value: unknown) => setError(errorText(value))); };
   return <PopoverPanel overview={overview} recent={recent} month={month} sessions={sessions} hours={hours} yesterday={yesterday} status={status} today={today} now={Date.now()} busy={busy} error={error} site={site}
     milestone={stats && site ? <MilestoneBanner stats={stats} site={site} mac store={seenStore} /> : null}
+    clubs={clubs} onClubs={fail(() => api.openDashboard('/clubs'))}
     onGear={fail(() => api.gearMenu())} onOpen={fail(() => api.openDashboard('/'))} onSessions={fail(() => api.openDashboard('/tokens'))}
     onRefresh={() => void act('refresh', async () => { await api.refresh(); setReloads((value) => value + 1); })}
     onPause={() => void act('pause', async () => { if (!overview) return; const { paused } = await api.setCollectionPaused(!overview.paused); setOverview({ ...overview, paused }); })} />;
 }
 
-export function PopoverPanel({ overview, recent, month, sessions, hours, yesterday, status, today, now, busy, error, site = null, milestone = null, onGear, onOpen, onSessions, onRefresh, onPause }: {
+export function PopoverPanel({ overview, recent, month, sessions, hours, yesterday, status, today, now, busy, error, site = null, milestone = null, clubs = null, onClubs = () => {}, onGear, onOpen, onSessions, onRefresh, onPause }: {
   overview: MenuOverview | null; recent: UsageSummary | null; month: UsageSummary | null; sessions: SessionSummary[] | null;
   hours: HourBreakdownRow[] | null; yesterday: number | null; status: LocalStatus | null; today: string; now: number;
-  busy: 'refresh' | 'pause' | null; error: string | null; site?: string | null; milestone?: ReactNode; onGear: () => void; onOpen: () => void; onSessions: () => void; onRefresh: () => void; onPause: () => void;
+  busy: 'refresh' | 'pause' | null; error: string | null; site?: string | null; milestone?: ReactNode; clubs?: MyClub[] | null; onClubs?: () => void; onGear: () => void; onOpen: () => void; onSessions: () => void; onRefresh: () => void; onPause: () => void;
 }) {
   const [sharing, setSharing] = useState(false);
   const alias = overview?.alias ?? status?.alias ?? null;
@@ -169,6 +179,17 @@ export function PopoverPanel({ overview, recent, month, sessions, hours, yesterd
               {tools.map((item) => <span key={item.tool} style={{ ['--c' as string]: `var(--tool-${item.tool})`, width: `${(item.tokens / monthTotal) * 100}%` }} />)}
             </div>
             <div className="po-legend" aria-hidden="true">{tools.map((item) => <span key={item.tool}><ToolIcon id={item.tool} />{toolLabel(item.tool)} <em>{formatShare(item.tokens, monthTotal)}</em></span>)}</div>
+          </div>
+        </>}
+        {clubs && clubs.length > 0 && <>
+          <div className="po-sep" />
+          <div className="po-sessions po-clubs">
+            <div className="po-sec-head"><span>Clubs this week</span><button type="button" onClick={onClubs}>View all{ICONS.chevronRight}</button></div>
+            {clubs.slice(0, 3).map((entry) => <div key={entry.club.slug} className="po-session">
+              <span className="po-tile"><ClubMark mark={entry.club.mark} /></span>
+              <div className="po-txt"><b>{entry.club.name}</b><span>{entry.you.rank ? `#${formatExact(entry.you.rank)} of ${formatExact(entry.you.ranked)}` : 'Not ranked yet'}{entry.standing?.rank ? ` · #${entry.standing.rank} ${entry.standing.division === 'small' ? 'Small' : 'Large'} league` : ''}</span></div>
+              <span className="po-tok" title={`${formatExact(entry.week.tokens)} club tokens this week`}>{formatCompact(entry.week.tokens)}</span>
+            </div>)}
           </div>
         </>}
         {streak && <>
