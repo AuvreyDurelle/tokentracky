@@ -1,13 +1,14 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { CACHE_CHALLENGE_MINIMUM, CHALLENGES, CHALLENGE_KINDS, CLUB_CATEGORIES, CLUB_MARK_IDS, CLUB_MARKS, CLUB_NAME_PATTERN, CLUB_PRIVATE_LIMIT, LEAGUE_MIN_ACTIVE, LEAGUE_SMALL_MAX, challengeUnit,
   clubWeek, inviteCode, type ChallengeKind, type ClubCategory, type ClubDivision, type ClubIdentity, type ClubMark as ClubMarkId, type ClubPage, type ClubStanding, type ClubVisibility,
-  type ClubMember, type ClubRef, type ClubWeek, type LeaderboardPeriod, type MatchupRequest, type MyClub, type ToolId } from '@tokentracky/core';
+  type ClubMember, type ClubRef, type ClubWeek, type LeaderboardPeriod, type MatchupRequest, type MatchupSide, type MyClub, type MyClubs, type ToolId } from '@tokentracky/core';
 import { ApiError, type ApiClient } from '../api';
-import { ClubMark, MarkShape } from '../ClubMark';
-import { errorText, formatCompact, formatCost, formatCostCompact, formatExact, shortDay, topPercent } from '../format';
+import { ClubMark, MarkShape, clubHue } from '../ClubMark';
+import { errorText, formatCompact, formatCost, formatCostCompact, formatExact, shortDay, toolLabel, topPercent } from '../format';
 import type { ClubsTab, ClubTab, Route } from '../route';
 import { Avatar, Empty, Loading, Notice, SearchIcon, ToolIcon, avatarHue } from '../ui';
 import { Board, RivalStrip, ToolShare, TrendArea } from './LeaderboardView';
+import { cumulative, edge, leadByDay, type Side } from './clubs-model';
 import { useLoad } from './load';
 import { Bars, CHALLENGE_ICON, CROWN, DAYS, DayPips, LineRace, Meter, Podium, Rope, SWORDS, TROPHY, Verdict, WeekClock, hue, place } from './ClubParts';
 import { ProfileDialog } from './ProfileModal';
@@ -255,25 +256,136 @@ function League({ api, go, onJoin }: { api: ApiClient; go: Go; onJoin: () => voi
 }
 
 function Matchups({ api, go, onJoin }: { api: ApiClient; go: Go; onJoin: () => void }) {
-  const list = useLoad(() => api.matchups(), [api]);
+  const [round, setRound] = useState(0);
+  const list = useLoad(() => api.matchups(), [api, round]);
+  const mine = useLoad(() => api.myClubs(), [api, round]);
+  const [open, setOpen] = useState<[string, string] | null>(null);
+  const ours = new Set(mine.value?.clubs.map((entry) => entry.club.slug) ?? []);
+  const yours = list.value?.items.filter((row) => row.mine) ?? [];
+  const others = list.value?.items.filter((row) => !row.mine) ?? [];
   return <>
-    <div className="page-head"><div><h1 className="m-page-title">Matchups</h1><p className="m-page-sub">Club against club, by tokens per active member<span className="sep" />Ends in {weekLeft()}</p></div></div>
+    <div className="page-head mc-page-head"><div><h1 className="m-page-title">Matchups</h1><p className="m-page-sub">Club against club, by tokens per active member. The week’s total decides it.</p></div><WeekClock label="Matchups end in" /></div>
     {list.error !== null && !list.value && <NotLinked error={list.error} onJoin={onJoin} />}
     {!list.value && list.error === null && <Loading>Loading matchups…</Loading>}
-    {list.value?.items.length === 0 && <section className="m-card"><Empty title="No matchups this week">Admins challenge another league club for next week on the website; the other club’s admins accept.</Empty></section>}
-    {list.value && list.value.items.length > 0 && <section className="m-card"><ul className="club-list">{list.value.items.map((row) => {
-      const ahead = row.a.perMember >= row.b.perMember;
-      return <li key={row.id} className={`mc-matchup${row.mine ? ' mine' : ''}`}>
-        <button type="button" className="mc-side" onClick={() => go({ page: 'club', slug: row.a.club.slug, tab: 'board' })}><ClubMark mark={row.a.club.mark} slug={row.a.club.slug} /><span className="club-name"><strong>{row.a.club.name}</strong><small>{standingText(row.a.standing)}</small></span></button>
-        <b className={ahead ? 'ahead' : undefined}>{formatCompact(row.a.perMember)}</b>
-        <span className="mc-tug"><span className="tug"><i className={`${ahead ? 'ahead' : ''}${row.mine ? ' mine' : ''}`} style={{ flex: row.a.perMember || 1 }} /><i className={!ahead ? 'ahead' : undefined} style={{ flex: row.b.perMember || 1 }} /></span>
-          <small>{row.a.perMember === row.b.perMember ? 'Level' : `${ahead ? row.a.club.name : row.b.club.name} by ${formatCompact(Math.abs(row.a.perMember - row.b.perMember))}`}</small></span>
-        <b className={!ahead ? 'ahead' : undefined}>{formatCompact(row.b.perMember)}</b>
-        <span className="mc-side b"><ClubMark mark={row.b.club.mark} slug={row.b.club.slug} /><span className="club-name"><strong>{row.b.club.name}</strong><small>{standingText(row.b.standing)}</small></span></span>
-      </li>;
-    })}</ul></section>}
+    {list.value?.items.length === 0 && <section className="m-card"><Empty title="No matchups this week" action={<button type="button" className="m-btn" onClick={() => go({ page: 'clubs', tab: 'league' })}>{SWORDS}Find a rival in the league</button>}>Admins challenge another league club for next week from the League; the other club’s admins accept.</Empty></section>}
+    {yours.map((row) => {
+      // Your club on the left, whichever side the server put it.
+      const [us, them] = ours.has(row.b.club.slug) && !ours.has(row.a.club.slug) ? [row.b, row.a] : [row.a, row.b];
+      return <MatchupCard key={row.id} us={us} them={them} go={go} onTape={() => setOpen([us.club.slug, them.club.slug])} />;
+    })}
+    {others.length > 0 && <section className="m-card mc-others"><div className="lb-head"><h2>Around the league</h2><span className="m-badge lb-count">{formatExact(others.length)}</span></div>
+      <ul className="club-list">{others.map((row) => {
+        const lead = edge(row.a.perMember, row.b.perMember);
+        return <li key={row.id}><button type="button" className="mc-matchup" onClick={() => setOpen([row.a.club.slug, row.b.club.slug])} aria-label={`${row.a.club.name} against ${row.b.club.name}: tale of the tape`}>
+          <span className="mc-side"><ClubMark mark={row.a.club.mark} slug={row.a.club.slug} /><span className="club-name"><strong>{row.a.club.name}</strong><small>{standingText(row.a.standing)} · {row.a.record.won}W–{row.a.record.lost}L</small></span></span>
+          <b className={lead === 'a' ? 'ahead' : undefined}>{formatCompact(row.a.perMember)}</b>
+          <span className="mc-tug"><Rope a={row.a.club.slug} b={row.b.club.slug} aValue={row.a.perMember} bValue={row.b.perMember} label={`${row.a.club.name} ${formatCompact(row.a.perMember)} to ${row.b.club.name} ${formatCompact(row.b.perMember)} per member`} />
+            <small>{lead === null ? 'Level' : `${lead === 'a' ? row.a.club.name : row.b.club.name} by ${formatCompact(Math.abs(row.a.perMember - row.b.perMember))}`}</small></span>
+          <b className={lead === 'b' ? 'ahead' : undefined}>{formatCompact(row.b.perMember)}</b>
+          <span className="mc-side b"><ClubMark mark={row.b.club.mark} slug={row.b.club.slug} /><span className="club-name"><strong>{row.b.club.name}</strong><small>{standingText(row.b.standing)} · {row.b.record.won}W–{row.b.record.lost}L</small></span></span>
+        </button></li>;
+      })}</ul></section>}
+    {open && <HeadToHead api={api} a={open[0]} b={open[1]} mine={mine.value} go={go} onClose={() => setOpen(null)} onChanged={() => setRound((n) => n + 1)} />}
   </>;
 }
+
+/** Your matchup as a scoreboard: both clubs, the rope, who led after each day, the race so far and last week's results. */
+function MatchupCard({ us, them, go, onTape }: { us: MatchupSide; them: MatchupSide; go: Go; onTape: () => void }) {
+  const led = leadByDay(us.daily, them.daily);
+  const lead = us.perMember - them.perMember;
+  const last = [us, them].filter((side) => side.last);
+  return <section className="m-card mc-score" style={{ '--ha': clubHue(us.club.slug), '--hb': clubHue(them.club.slug) } as CSSProperties}>
+    <div className="mc-score-top">
+      <ScoreSide side={us} go={go} ahead={lead > 0} open />
+      <div className="mc-score-mid"><span className="mc-vs">VS</span><Verdict us={us.perMember} them={them.perMember} /><small>{lead === 0 ? 'Dead level' : `by ${formatCompact(Math.abs(lead))} per member`}</small></div>
+      <ScoreSide side={them} go={go} ahead={lead < 0} open={them.club.visibility === 'public'} right />
+    </div>
+    <Rope a={us.club.slug} b={them.club.slug} aValue={us.perMember} bValue={them.perMember} label={`${us.club.name} ${formatCompact(us.perMember)} to ${them.club.name} ${formatCompact(them.perMember)} per member`} />
+    <div className="mc-score-days" aria-label="Who led after each day">{led.map((side, index) => <span key={index} className={side === 'a' ? 'a' : side === 'b' ? 'b' : undefined} title={`${DAYS[index]}: ${side === 'a' ? us.club.name : side === 'b' ? them.club.name : 'level'}`}><i />{DAYS[index]}</span>)}</div>
+    <LineRace label={`Tokens per active member so far this week: ${us.club.name} against ${them.club.name}`} days={DAYS.slice(0, Math.max(us.daily.length, them.daily.length))} zero format={(tick) => formatCompact(Math.round(tick))}
+      lines={[{ key: 'us', label: us.club.name, hue: clubHue(us.club.slug), values: cumulative(us.daily), you: true }, { key: 'them', label: them.club.name, hue: clubHue(them.club.slug), values: cumulative(them.daily) }]} />
+    <footer className="mc-score-foot">
+      <span>{last.length ? last.map((side) => <span key={side.club.slug} className={side.last!.won ? 'won' : 'lost'}>{side.last!.won ? TROPHY : null}<b>{side.club.name}</b> {side.last!.won ? 'beat' : 'lost to'} {side.last!.opponent.name} {formatCompact(side.last!.perMember)}–{formatCompact(side.last!.opponentPerMember)} last week</span>) : 'Neither club played last week.'}</span>
+      <button type="button" className="m-btn" onClick={onTape}>Tale of the tape</button>
+    </footer>
+  </section>;
+}
+function ScoreSide({ side, go, ahead, open, right = false }: { side: MatchupSide; go: Go; ahead: boolean; open: boolean; right?: boolean }) {
+  return <div className={`mc-score-side${right ? ' right' : ''}${ahead ? ' ahead' : ''}`}>
+    <ClubMark mark={side.club.mark} slug={side.club.slug} size="xl" />
+    <div className="mc-score-id">
+      {open ? <button type="button" className="mc-open" onClick={() => go({ page: 'club', slug: side.club.slug, tab: 'board' })}><strong>{side.club.name}</strong></button> : <strong>{side.club.name}</strong>}
+      <small>{standingText(side.standing)} · <b>{side.record.won}W–{side.record.lost}L</b></small>
+      <span className="mc-score-num" title={`${tokensTitle(side.perMember)} per active member`}>{formatCompact(side.perMember)}</span>
+      <small>per member · {formatExact(side.active)} active</small>
+    </div>
+  </div>;
+}
+
+/** Two clubs side by side, every category scored, and the way to start, withdraw or answer a matchup between them. */
+function HeadToHead({ api, a, b, mine, go, onClose, onChanged }: { api: ApiClient; a: string; b: string; mine: MyClubs | null; go: Go; onClose: () => void; onChanged: () => void }) {
+  const [round, setRound] = useState(0);
+  const data = useLoad(() => api.clubCompare(a, b), [api, a, b, round]);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const value = data.value;
+  const act = (action: () => Promise<unknown>) => { setBusy(true); setError(null); action().then(() => { setRound((n) => n + 1); onChanged(); }, (reason: unknown) => setError(errorText(reason))).finally(() => setBusy(false)); };
+  const role = (slug: string) => mine?.clubs.find((entry) => entry.club.slug === slug)?.role ?? null;
+  const admin = (slug: string) => { const value = role(slug); return value === 'owner' || value === 'admin'; };
+  // You challenge from your side; with both clubs yours, there's no one to challenge.
+  const challenger = admin(a) && role(b) === null ? a : admin(b) && role(a) === null ? b : null;
+  const request = value?.matchup ? mine?.requests.find((entry) => entry.id === value.matchup!.id) ?? null : null;
+  const rows: Array<{ label: string; a: ReactNode; b: ReactNode; edge: Side | null }> = value ? [
+    { label: 'Per member', a: formatCompact(value.a.perMember), b: formatCompact(value.b.perMember), edge: edge(value.a.perMember, value.b.perMember) },
+    { label: 'Tokens', a: formatCompact(value.a.tokens), b: formatCompact(value.b.tokens), edge: edge(value.a.tokens, value.b.tokens) },
+    { label: 'Active', a: `${formatExact(value.a.active)} of ${formatExact(value.a.members)}`, b: `${formatExact(value.b.active)} of ${formatExact(value.b.members)}`, edge: edge(value.a.active / Math.max(1, value.a.members), value.b.active / Math.max(1, value.b.members)) },
+    { label: 'League', a: value.a.standing?.rank ? `#${formatExact(value.a.standing.rank)} ${divisionName(value.a.standing.division)}` : '—', b: value.b.standing?.rank ? `#${formatExact(value.b.standing.rank)} ${divisionName(value.b.standing.division)}` : '—',
+      edge: value.a.standing?.division === value.b.standing?.division ? edge(value.a.standing?.rank, value.b.standing?.rank, true) : null },
+    { label: 'Best day', a: value.a.bestDay ? `${formatCompact(value.a.bestDay.perMember)} · ${weekday(value.a.bestDay.day)}` : '—', b: value.b.bestDay ? `${formatCompact(value.b.bestDay.perMember)} · ${weekday(value.b.bestDay.day)}` : '—', edge: edge(value.a.bestDay?.perMember, value.b.bestDay?.perMember) },
+    { label: 'Matchups won', a: formatExact(value.a.matchupsWon), b: formatExact(value.b.matchupsWon), edge: edge(value.a.matchupsWon, value.b.matchupsWon) },
+    { label: 'Top tool', a: value.a.topTool ? <><ToolIcon id={value.a.topTool} />{toolLabel(value.a.topTool)}</> : '—', b: value.b.topTool ? <><ToolIcon id={value.b.topTool} />{toolLabel(value.b.topTool)}</> : '—', edge: null },
+  ] : [];
+  const wins = { a: rows.filter((row) => row.edge === 'a').length, b: rows.filter((row) => row.edge === 'b').length };
+  return <ProfileDialog labelledBy="mc-h2h-title" onClose={onClose}>
+    <div className="mc-h2h" style={value ? { '--ha': clubHue(value.a.club.slug), '--hb': clubHue(value.b.club.slug) } as CSSProperties : undefined}>
+      <button type="button" className="mc-close" aria-label="Close" onClick={onClose}>×</button>
+      <h2 id="mc-h2h-title" className="sr-only">Tale of the tape</h2>
+      {data.error !== null && !value && <Notice tone="error">Could not compare the clubs: {errorText(data.error)}</Notice>}
+      {!value && data.error === null && <Loading>Sizing them up…</Loading>}
+      {value && <>
+        <div className="mc-h2h-top">
+          {[value.a, value.b].map((side, index) => <div key={side.club.slug} className={`mc-h2h-side${index ? ' right' : ''}`} style={hue(side.club.slug)}>
+            <ClubMark mark={side.club.mark} slug={side.club.slug} size="xl" />
+            <strong>{side.club.name}</strong><small>{side.record.won}W–{side.record.lost}L all time</small>
+            <span className={`mc-h2h-score${(index ? wins.b > wins.a : wins.a > wins.b) ? ' ahead' : ''}`}>{index ? wins.b : wins.a}</span>
+          </div>)}
+          <span className="mc-vs">VS</span>
+        </div>
+        <p className="mc-h2h-k">Tale of the tape · this week</p>
+        <table className="mc-tape"><tbody>{rows.map((row) => <tr key={row.label}>
+          <td className={row.edge === 'a' ? 'win' : undefined}>{row.edge === 'a' && <i aria-label="Edge" />}{row.a}</td>
+          <th scope="row">{row.label}</th>
+          <td className={row.edge === 'b' ? 'win' : undefined}>{row.b}{row.edge === 'b' && <i aria-label="Edge" />}</td>
+        </tr>)}</tbody></table>
+        <LineRace label={`Tokens per active member so far this week: ${value.a.club.name} against ${value.b.club.name}`} days={DAYS.slice(0, Math.max(value.a.daily.length, value.b.daily.length))} zero format={(tick) => formatCompact(Math.round(tick))}
+          lines={[{ key: 'a', label: value.a.club.name, hue: clubHue(value.a.club.slug), values: cumulative(value.a.daily) }, { key: 'b', label: value.b.club.name, hue: clubHue(value.b.club.slug), values: cumulative(value.b.daily) }]} />
+        {error && <Notice tone="error">{error}</Notice>}
+        <footer className="mc-h2h-foot">
+          {value.matchup?.status === 'accepted' ? <span className="mc-verdict lead">Matchup on</span>
+            : value.matchup && request ? <><span>{request.from.name} challenged {request.to.name} for the week of {shortDay(request.week)}.</span>
+              <span className="mc-actions"><button type="button" className="m-btn" disabled={busy} onClick={() => act(() => api.answerMatchup(request.id, 'decline'))}>Decline</button><button type="button" className="m-btn mc-fight-btn" disabled={busy} onClick={() => act(() => api.answerMatchup(request.id, 'accept'))}>{SWORDS}Accept</button></span></>
+            : value.matchup ? <><span><span className="mc-ping" /> Challenge sent. Waiting on the other club’s admins.</span>{challenger && <button type="button" className="m-btn" disabled={busy} onClick={() => act(() => api.answerMatchup(value.matchup!.id, 'withdraw'))}>Withdraw</button>}</>
+            : challenger ? <><span>Next week, {challenger === a ? value.a.club.name : value.b.club.name} against {challenger === a ? value.b.club.name : value.a.club.name}. Their admins have to accept.</span>
+              <button type="button" className="m-btn mc-fight-btn" disabled={busy} onClick={() => act(() => api.challengeClub(challenger, challenger === a ? b : a))}>{SWORDS}{busy ? 'Sending…' : 'Challenge for next week'}</button></>
+            : <span className="faint">Admins of a league club can challenge another club for next week.</span>}
+          {value.a.club.visibility === 'public' && <button type="button" className="m-btn" onClick={() => { onClose(); go({ page: 'club', slug: value.a.club.slug, tab: 'board' }); }}>Open {value.a.club.name}</button>}
+        </footer>
+      </>}
+    </div>
+  </ProfileDialog>;
+}
+const WEEKDAY = new Intl.DateTimeFormat(undefined, { weekday: 'short', timeZone: 'UTC' });
+const weekday = (day: string) => WEEKDAY.format(new Date(`${day}T00:00:00Z`));
 
 /** A club in the app: its banner, then its board, challenge or members, all in the club's colour. */
 export function ClubView({ api, me, slug, tab, go, site, onProfile, onJoin }: { api: ApiClient; me: string | null; slug: string; tab: ClubTab; go: Go; site: string | null; onProfile: (alias: string) => void; onJoin: () => void }) {

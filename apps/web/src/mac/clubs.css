@@ -167,7 +167,7 @@
 .mac .m-btn.mc-fight-btn:disabled { filter: grayscale(0.6); opacity: 0.6; }
 
 /* ---------- Your clubs ---------- */
-.mac .mc-page-head { align-items: flex-start; }
+.mac .m-lb .page-head.mc-page-head { align-items: center; }
 .mac .mc-code { margin-top: 14px; }
 .mac .mc-stack { display: grid; gap: 12px; margin-bottom: 16px; }
 .mac .mc-empty .mc-actions { justify-content: center; }
@@ -320,6 +320,61 @@
 .mac .mc-cup-v { color: var(--gold); font-size: 17px; font-weight: 750; letter-spacing: -0.02em; }
 .mac .none .mc-cup-v { color: var(--text-4); }
 .mac .m-badge .mc-ic { width: 11px; height: 11px; margin-right: 3px; vertical-align: -1px; }
+
+/* ---------- Matchups and head to head ---------- */
+.mac .mc-score { display: grid; gap: 16px; margin-bottom: 16px; padding: 22px 24px 0; overflow: hidden; border-color: var(--border-2); background: linear-gradient(90deg, hsl(var(--ha) 70% 45% / 0.18), transparent 32%, transparent 68%, hsl(var(--hb) 70% 45% / 0.18)), var(--surface); }
+.mac .mc-score-top { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 16px; }
+.mac .mc-score-side { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.mac .mc-score-side.right { flex-direction: row-reverse; text-align: right; }
+.mac .mc-score-id { display: grid; gap: 1px; min-width: 0; }
+.mac .mc-score-id strong { overflow: hidden; font-size: 17px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.mac .mc-score-id .mc-open { text-align: inherit; }
+.mac .mc-score-id small { color: var(--text-3); font-size: 12px; }
+.mac .mc-score-id small b { color: var(--text-2); }
+.mac .mc-score-num { margin: 6px 0 0; color: var(--text-3); font-size: 40px; font-weight: 800; letter-spacing: -0.045em; line-height: 1; font-variant-numeric: tabular-nums; }
+.mac .mc-score-side.ahead .mc-score-num { color: #fff; text-shadow: 0 0 28px rgba(255, 255, 255, 0.35); }
+.mac .mc-score-mid { display: grid; gap: 8px; justify-items: center; }
+.mac .mc-score-mid small { color: var(--text-3); font-size: 11.5px; }
+.mac .mc-score .mc-rope { height: 12px; }
+.mac .mc-score-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.mac .mc-score-days span { display: grid; gap: 5px; justify-items: center; color: var(--text-4); font-size: 10.5px; font-weight: 600; }
+.mac .mc-score-days i { width: 100%; height: 6px; border-radius: 3px; background: var(--surface-3); }
+.mac .mc-score-days .a { color: var(--text-2); }
+.mac .mc-score-days .a i { background: hsl(var(--ha) 85% 62%); box-shadow: 0 0 10px -2px hsl(var(--ha) 85% 60%); }
+.mac .mc-score-days .b i { background: hsl(var(--hb) 85% 62%); }
+.mac .mc-score .mc-race { margin: 0 -6px; padding: 0; border: 0; }
+.mac .mc-score-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 -24px; padding: 12px 24px; border-top: 1px solid var(--border); background: rgba(0, 0, 0, 0.2); color: var(--text-3); font-size: 12.5px; }
+.mac .mc-score-foot > span { display: grid; gap: 4px; }
+.mac .mc-score-foot .won { color: var(--text-2); }
+.mac .mc-score-foot .won .mc-ic { margin-right: 6px; color: var(--gold); vertical-align: -2px; }
+.mac .mc-score-foot b { color: var(--text); font-weight: 600; }
+.mac .mc-others button.mc-matchup { width: 100%; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.mac .mc-others button.mc-matchup:hover { background: var(--hover); }
+.mac .mc-others .mc-side { cursor: inherit; }
+/* Head to head: the dialog. */
+.mac .mc-h2h { position: relative; display: grid; gap: 16px; padding: 26px 28px 22px; }
+.mac .mc-close { position: absolute; top: 12px; right: 14px; z-index: 2; width: 28px; height: 28px; border: 0; border-radius: 50%; background: var(--surface-3); color: var(--text-2); font-size: 18px; line-height: 1; cursor: pointer; }
+.mac .mc-h2h-top { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.mac .mc-h2h-top > .mc-vs { position: absolute; top: 50%; left: 50%; width: 46px; height: 46px; font-size: 14px; transform: translate(-50%, -50%); }
+.mac .mc-h2h-side { display: grid; gap: 4px; justify-items: center; padding: 22px 16px 16px; border-radius: var(--radius-md); background: linear-gradient(180deg, hsl(var(--h) 70% 45% / 0.22), hsl(var(--h) 60% 30% / 0.05)); box-shadow: inset 0 0 0 1px hsl(var(--h) 70% 60% / 0.25); text-align: center; }
+.mac .mc-h2h-side strong { margin-top: 8px; font-size: 16px; font-weight: 650; }
+.mac .mc-h2h-side small { color: var(--text-3); font-size: 12px; }
+.mac .mc-h2h-score { margin-top: 6px; color: var(--text-3); font-size: 34px; font-weight: 850; letter-spacing: -0.04em; line-height: 1; }
+.mac .mc-h2h-score.ahead { color: var(--gold); text-shadow: 0 0 24px rgba(232, 182, 76, 0.5); }
+.mac .mc-h2h-k { color: var(--text-3); font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; text-align: center; text-transform: uppercase; }
+.mac .mc-tape { width: 100%; border-collapse: collapse; }
+.mac .mc-tape tr + tr { border-top: 1px solid var(--border); }
+.mac .mc-tape th { width: 130px; padding: 9px 8px; color: var(--text-3); font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-align: center; text-transform: uppercase; }
+.mac .mc-tape td { width: 50%; padding: 9px 8px; color: var(--text-3); font-size: 14.5px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.mac .mc-tape td:first-child { text-align: right; }
+.mac .mc-tape td .tool-ic { width: 13px; height: 13px; margin-right: 6px; vertical-align: -2px; }
+.mac .mc-tape td.win { color: var(--text); }
+.mac .mc-tape td i { display: inline-block; width: 0; height: 0; margin: 0 8px; border-top: 5px solid transparent; border-bottom: 5px solid transparent; vertical-align: 1px; }
+.mac .mc-tape td:first-child i { border-left: 7px solid var(--gold); }
+.mac .mc-tape td:last-child i { border-right: 7px solid var(--gold); }
+.mac .mc-h2h .mc-race { padding: 0; border: 0; }
+.mac .mc-h2h-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding-top: 14px; border-top: 1px solid var(--border); color: var(--text-3); font-size: 12.5px; }
+.mac .mc-h2h-foot > span:first-child { flex: 1 1 260px; display: inline-flex; align-items: center; gap: 8px; }
 
 @media (max-width: 1080px) {
   .mac .mc-battle-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); }
