@@ -17,6 +17,11 @@ export function useNow(every = 1000): number {
   return now;
 }
 
+/** The club week's start, read again each minute: a page keyed or loaded by it starts over when the week turns. */
+export function useWeekStart(): string {
+  return clubWeek(new Date(useNow(60_000))).start;
+}
+
 /** A club's colour as the `--h` its styles read. */
 export const hue = (slug: string) => ({ '--h': clubHue(slug) }) as CSSProperties;
 /** Gold, silver and bronze for the top three places. */

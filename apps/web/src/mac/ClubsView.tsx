@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import { Fragment, useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { CACHE_CHALLENGE_MINIMUM, CHALLENGES, CHALLENGE_KINDS, CLUB_CATEGORIES, CLUB_DESCRIPTION_MAX, CLUB_MARK_IDS, CLUB_MARKS, CLUB_NAME_PATTERN, CLUB_PRIVATE_LIMIT, LEAGUE_MIN_ACTIVE, LEAGUE_SMALL_MAX, challengeUnit,
   clubWeek, inviteCode, type ChallengeKind, type ClubCategory, type ClubDivision, type ClubIdentity, type ClubMark as ClubMarkId, type ClubPage, type ClubStanding, type ClubVisibility,
   type ClubMember, type ClubRef, type ClubSort, type LeagueRow, type ClubWeek, type LeaderboardPeriod, type MatchupRequest, type MatchupSide, type MyClub, type MyClubs, type ToolId } from '@tokentracky/core';
@@ -10,7 +10,7 @@ import { Avatar, Empty, Loading, Notice, SearchIcon, ToolIcon, avatarHue } from 
 import { Board, RivalStrip, ToolShare, TrendArea } from './LeaderboardView';
 import { cumulative, edge, isHot, leadByDay, slugOf, type Side } from './clubs-model';
 import { useLoad } from './load';
-import { Bars, CHALLENGE_ICON, CROWN, DAYS, DayPips, FLAME, LineRace, Meter, Podium, Rope, SWORDS, TROPHY, Verdict, WeekClock, hue, place } from './ClubParts';
+import { Bars, CHALLENGE_ICON, CROWN, DAYS, DayPips, FLAME, LineRace, Meter, Podium, Rope, SWORDS, TROPHY, Verdict, WeekClock, hue, place, useWeekStart } from './ClubParts';
 import { ProfileDialog } from './ProfileModal';
 import { ToolbarActions, clubsChanged } from './Shell';
 
@@ -71,15 +71,19 @@ const standingText = (standing: ClubStanding | null) => standing?.rank ? `#${sta
 /** Clubs: your clubs, Discover, the league and matchups, switched from the toolbar. */
 export function ClubsView({ api, me, tab, go, onJoin }: { api: ApiClient; me: string | null; tab: ClubsTab; go: Go; onJoin: () => void }) {
   const [sheet, setSheet] = useState<'new' | 'join' | null>(null);
+  // A new week loads each tab afresh; an open sheet stays as it is.
+  const week = useWeekStart();
   return <div className="m-page m-lb mc-clubs">
     <ToolbarActions>
       <Seg label="Clubs" value={tab} options={[['mine', 'Your clubs'], ['discover', 'Discover'], ['league', 'League'], ['matchups', 'Matchups']]} onChange={(next) => go({ page: 'clubs', tab: next })} />
       <button type="button" className="m-btn primary" onClick={() => setSheet('new')}>New club</button>
     </ToolbarActions>
-    {tab === 'mine' && <YourClubs api={api} me={me} go={go} onJoin={onJoin} onCode={() => setSheet('join')} onNew={() => setSheet('new')} />}
-    {tab === 'discover' && <Discover api={api} go={go} onJoin={onJoin} />}
-    {tab === 'league' && <League api={api} go={go} onJoin={onJoin} />}
-    {tab === 'matchups' && <Matchups api={api} go={go} onJoin={onJoin} />}
+    <Fragment key={week}>
+      {tab === 'mine' && <YourClubs api={api} me={me} go={go} onJoin={onJoin} onCode={() => setSheet('join')} onNew={() => setSheet('new')} />}
+      {tab === 'discover' && <Discover api={api} go={go} onJoin={onJoin} />}
+      {tab === 'league' && <League api={api} go={go} onJoin={onJoin} />}
+      {tab === 'matchups' && <Matchups api={api} go={go} onJoin={onJoin} />}
+    </Fragment>
     {sheet === 'new' && <NewClub api={api} me={me} go={go} onClose={() => setSheet(null)} />}
     {sheet === 'join' && <JoinCode api={api} go={go} onClose={() => setSheet(null)} />}
   </div>;
@@ -89,7 +93,10 @@ function YourClubs({ api, me, go, onJoin, onCode, onNew }: { api: ApiClient; me:
   const [round, setRound] = useState(0);
   const mine = useLoad(() => api.myClubs(), [api, me, round]);
   const [error, setError] = useState<string | null>(null);
-  const answer = (id: string, value: 'accept' | 'decline') => { setError(null); api.answerMatchup(id, value).then(() => setRound((n) => n + 1), (reason: unknown) => setError(errorText(reason))); };
+  // From an answer until the list has reloaded, none of the challenges can be answered again.
+  const [answering, setAnswering] = useState(false);
+  useEffect(() => { setAnswering(false); }, [mine.value]);
+  const answer = (id: string, value: 'accept' | 'decline') => { setError(null); setAnswering(true); api.answerMatchup(id, value).then(() => setRound((n) => n + 1), (reason: unknown) => { setError(errorText(reason)); setAnswering(false); }); };
   const [open, setOpen] = useState<[string, string] | null>(null);
   const fights = mine.value?.clubs.flatMap((entry) => entry.matchup ? [entry.matchup] : []) ?? [];
   const leading = fights.filter((fight) => fight.perMember > fight.opponentPerMember).length;
@@ -101,7 +108,7 @@ function YourClubs({ api, me, go, onJoin, onCode, onNew }: { api: ApiClient; me:
     {mine.error !== null && !mine.value && <NotLinked error={mine.error} onJoin={onJoin} />}
     {!mine.value && mine.error === null && <Loading>Loading your clubs…</Loading>}
     {error && <Notice tone="error">{error}</Notice>}
-    {mine.value && mine.value.requests.length > 0 && <section className="mc-stack" aria-label="Challenges waiting on you">{mine.value.requests.map((request) => <Incoming key={request.id} request={request} busy={mine.loading} onAnswer={answer} onScout={() => setOpen([request.to.slug, request.from.slug])} />)}</section>}
+    {mine.value && mine.value.requests.length > 0 && <section className="mc-stack" aria-label="Challenges waiting on you">{mine.value.requests.map((request) => <Incoming key={request.id} request={request} busy={answering || mine.loading} onAnswer={answer} onScout={() => setOpen([request.to.slug, request.from.slug])} />)}</section>}
     {mine.value?.clubs.length === 0 && <section className="m-card mc-empty"><Empty title="No club, no rivals" action={<span className="mc-actions"><button type="button" className="m-btn primary" onClick={onNew}>Start a club</button><button type="button" className="m-btn" onClick={() => go({ page: 'clubs', tab: 'discover' })}>Discover clubs</button></span>}>Start a private club for your team or friends, or join a public one. Every week your club climbs the league, takes on another club and plays a challenge.</Empty></section>}
     {mine.value?.clubs.map((entry) => <BattleCard key={entry.club.slug} entry={entry} go={go} />)}
     {open && <HeadToHead api={api} a={open[0]} b={open[1]} mine={mine.value} go={go} onClose={() => setOpen(null)} onChanged={() => setRound((n) => n + 1)} />}
@@ -373,9 +380,10 @@ function HeadToHead({ api, a, b, mine, go, onClose, onChanged }: { api: ApiClien
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const value = data.value;
-  // Until the comparison reloads after an action, its buttons would offer the same action again.
-  const locked = busy || data.loading;
-  const act = (action: () => Promise<unknown>) => { setBusy(true); setError(null); action().then(() => { setRound((n) => n + 1); onChanged(); }, (reason: unknown) => setError(errorText(reason))).finally(() => setBusy(false)); };
+  // From an action until the refreshed comparison arrives, the buttons would offer the same action again.
+  useEffect(() => { setBusy(false); }, [value]);
+  const locked = busy || data.loading || data.error !== null;
+  const act = (action: () => Promise<unknown>) => { setBusy(true); setError(null); action().then(() => { setRound((n) => n + 1); onChanged(); }, (reason: unknown) => { setError(errorText(reason)); setBusy(false); }); };
   const role = (slug: string) => mine?.clubs.find((entry) => entry.club.slug === slug)?.role ?? null;
   const admin = (slug: string) => { const value = role(slug); return value === 'owner' || value === 'admin'; };
   // You challenge from your side; with both clubs yours, there's no one to challenge.
@@ -416,7 +424,7 @@ function HeadToHead({ api, a, b, mine, go, onClose, onChanged }: { api: ApiClien
         <LineRace label={`Tokens per active member so far this week: ${value.a.club.name} against ${value.b.club.name}`} days={DAYS.slice(0, Math.max(value.a.daily.length, value.b.daily.length))} zero format={(tick) => formatCompact(Math.round(tick))}
           lines={[{ key: 'a', label: value.a.club.name, hue: clubHue(value.a.club.slug), values: cumulative(value.a.daily) }, { key: 'b', label: value.b.club.name, hue: clubHue(value.b.club.slug), values: cumulative(value.b.daily) }]} />
         {error && <Notice tone="error">{error}</Notice>}
-        {data.error !== null && <Notice tone="error">Could not refresh the matchup: {errorText(data.error)}</Notice>}
+        {data.error !== null && <Notice tone="error">Could not refresh the matchup: {errorText(data.error)} <button type="button" className="m-btn st-sm" onClick={() => setRound((n) => n + 1)}>Retry</button></Notice>}
         <footer className="mc-h2h-foot">
           {value.matchup?.status === 'accepted' ? <span className="mc-verdict lead">Matchup on</span>
             : value.matchup && request ? <><span>{request.from.name} challenged {request.to.name} for the week of {shortDay(request.week)}.</span>
@@ -439,7 +447,8 @@ export function ClubView({ api, me, slug, tab, go, site, onProfile, onJoin }: { 
   const [period, setPeriod] = useState<LeaderboardPeriod>('week');
   const [number, setNumber] = useState(1);
   const [round, setRound] = useState(0);
-  const page = useLoad(() => api.club(slug, { period, page: number, pageSize: 12 }), [api, slug, period, number, round]);
+  const week = useWeekStart();
+  const page = useLoad(() => api.club(slug, { period, page: number, pageSize: 12 }), [api, slug, period, number, round, week]);
   const value = page.value;
   const member = value?.membership ?? null;
   const [error, setError] = useState<string | null>(null);
@@ -469,9 +478,11 @@ export function ClubView({ api, me, slug, tab, go, site, onProfile, onJoin }: { 
         <div className="mc-banner-side"><WeekClock />{site && <a className="m-btn" href={`${site}/c/${slug}${tab === 'board' ? '' : `/${tab}`}`} target="_blank" rel="noopener noreferrer">Open on the web</a>}</div>
       </header>
       {!value.board && <section className="m-card"><Empty title="A private club">Only members see who’s in it. Ask a member for an invite link or code.</Empty></section>}
+      <Fragment key={week}>
       {value.board && tab === 'board' && <ClubBoard page={value} me={me} period={period} number={number} loading={page.loading} site={site} onPage={setNumber} onProfile={onProfile} />}
       {tab === 'challenge' && <ClubChallengeView api={api} me={me} club={value.club} admin={member?.role === 'owner' || member?.role === 'admin'} />}
       {tab === 'members' && member && <ClubMembersView api={api} me={me} page={value} site={site} onChange={() => setRound((n) => n + 1)} />}
+      </Fragment>
     </>}
   </div>;
 }
