@@ -74,6 +74,14 @@ describe('ProfileCard', () => {
     expect(html.match(/class="uc-band"/g)).toHaveLength(1);
     expect(html).toContain('>Today<');
   });
+  it('drops an x label that would overlap the last one', () => {
+    // 42 weeks labelled every fifth and on the last, as the all-time chart does: weeks 40 and 41 sit 16px apart.
+    const points = Array.from({ length: 42 }, (_, index) => ({ at: String(index), value: 1e9 }));
+    const html = markup(<UsageChart points={points} label="Tokens per week" value={String} tick={String} axis={(index) => index % 5 === 0 || index === 41 ? `Week ${index}` : null} tip={() => null} />);
+    expect(html).toContain('>Week 35<');
+    expect(html).toContain('>Week 41<');
+    expect(html).not.toContain('>Week 40<');
+  });
   it('splits all-time tokens by type with shares, reasoning inside output, only when every day carries types', () => {
     const html = card({ stats: { ...stats, breakdown: { input: 100, output: 50, cacheRead: 800, cacheWrite: 50, reasoning: 30 } } });
     expect(html).toContain('All time · share of 1,000 tokens');
