@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import type { ClubRef, PublicProfile, UsageSummary } from '@tokentracky/core';
+import type { MyClub, PublicProfile, UsageSummary } from '@tokentracky/core';
 import { ClubMark } from '../ClubMark';
 import type { ApiClient, LocalStatus } from '../api';
 import { formatCompact, formatCost, formatExact, timeAgo } from '../format';
@@ -42,7 +42,7 @@ export function todayOf(daily: UsageSummary['daily'], now = new Date()): Today {
 export function MacShell({ api, status, me, page, path, go, onPalette, children }: { api: ApiClient; status: LocalStatus | null; me: string | null; page: Page; path: string; go: (route: Route) => void; onPalette: () => void; children: ReactNode }) {
   const [today, setToday] = useState<Today | null>(null);
   // Your clubs under Clubs in the sidebar, read again when you join or leave one (the address changes) and after each sync.
-  const [clubs, setClubs] = useState<ClubRef[]>([]);
+  const [clubs, setClubs] = useState<MyClub[]>([]);
   const [joined, setJoined] = useState(0);
   useEffect(() => {
     const changed = () => setJoined((value) => value + 1);
@@ -52,7 +52,7 @@ export function MacShell({ api, status, me, page, path, go, onPalette, children 
   useEffect(() => {
     if (!me) { setClubs([]); return; }
     let live = true;
-    api.myClubs().then((value) => { if (live) setClubs(value.clubs.map((entry) => entry.club)); }).catch(() => {});
+    api.myClubs().then((value) => { if (live) setClubs(value.clubs); }).catch(() => {});
     return () => { live = false; };
   }, [api, me, path, status?.lastSyncAt, joined]);
   const rank = useRank(api, me);
@@ -99,7 +99,7 @@ const NAV = [
 ] as const;
 const SETTINGS_ICON = icon(<><path d="M20 7h-9" /><path d="M14 17H5" /><circle cx="17" cy="17" r="3" /><circle cx="7" cy="7" r="3" /></>);
 
-export function Sidebar({ page, path = '', go, today, week = null, tracking, syncedAt, me, rank, clubs = [] }: { page: Page; path?: string; go: (route: Route) => void; today: Today | null; week?: PublicProfile[] | null; tracking: Tracking; syncedAt: string | null; me: string | null; rank: number | null; clubs?: ClubRef[] }) {
+export function Sidebar({ page, path = '', go, today, week = null, tracking, syncedAt, me, rank, clubs = [] }: { page: Page; path?: string; go: (route: Route) => void; today: Today | null; week?: PublicProfile[] | null; tracking: Tracking; syncedAt: string | null; me: string | null; rank: number | null; clubs?: MyClub[] }) {
   // `/you` is the Tokens page under its older address; a profile sits over the leaderboard.
   const current = (target: Page) => page === target || (target === 'tokens' && page === 'you') || (target === 'leaderboard' && page === 'profile')
     || (target === 'town' && (page === 'town-map' || page === 'town-visit')) ? 'page' : undefined;
@@ -108,8 +108,10 @@ export function Sidebar({ page, path = '', go, today, week = null, tracking, syn
     <nav className="nav" aria-label="Primary">
       {NAV.map((item) => <div key={item.page} className="nav-group">
         <button type="button" className="nav-item" aria-current={item.page === 'clubs' ? page === 'clubs' ? 'page' : undefined : current(item.page)} onClick={() => go(item.page === 'clubs' ? { page: 'clubs', tab: 'mine' } : { page: item.page })}>{item.icon}{item.label}</button>
-        {item.page === 'clubs' && clubs.length > 0 && <div className="nav-clubs">{clubs.map((club) => <button key={club.slug} type="button" className="nav-item nav-club"
-          aria-current={page === 'club' && (path === `/c/${club.slug}` || path.startsWith(`/c/${club.slug}/`)) ? 'page' : undefined} onClick={() => go({ page: 'club', slug: club.slug, tab: 'board' })}><ClubMark mark={club.mark} slug={club.slug} /><span>{club.name}</span></button>)}</div>}
+        {item.page === 'clubs' && clubs.length > 0 && <div className="nav-clubs">{clubs.map(({ club, you, matchup }) => <button key={club.slug} type="button" className="nav-item nav-club"
+          aria-current={page === 'club' && (path === `/c/${club.slug}` || path.startsWith(`/c/${club.slug}/`)) ? 'page' : undefined} onClick={() => go({ page: 'club', slug: club.slug, tab: 'board' })}><ClubMark mark={club.mark} slug={club.slug} /><span>{club.name}</span>
+          {matchup && <i className={`nav-club-fight ${matchup.perMember > matchup.opponentPerMember ? 'lead' : matchup.perMember < matchup.opponentPerMember ? 'trail' : 'level'}`} title={`${matchup.perMember > matchup.opponentPerMember ? 'Leading' : matchup.perMember < matchup.opponentPerMember ? 'Trailing' : 'Level with'} ${matchup.opponent.name}`} />}
+          {you.rank && <span className={`nav-club-rank${you.rank <= 3 ? ` p${you.rank}` : ''}`} title={`#${formatExact(you.rank)} of ${formatExact(you.ranked)} this week`}>#{formatExact(you.rank)}</span>}</button>)}</div>}
       </div>)}
     </nav>
     <div className="sidebar-spacer" />

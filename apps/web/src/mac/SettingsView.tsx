@@ -185,8 +185,8 @@ function Clubs({ api, me, busy, act }: { api: ApiClient; me: string; busy: strin
       {mine.error !== null && <Notice tone="error">Your clubs could not load: {errorText(mine.error)}</Notice>}
       {!mine.value && mine.error === null && <Loading>Loading your clubs…</Loading>}
       {mine.value?.clubs.length === 0 && <Row label="No clubs yet" desc="Start one from Clubs in the sidebar, or join with an invite below." />}
-      {mine.value?.clubs.map(({ club, you, hidden, onProfile }) => <Row key={club.slug} lead={<ClubMark mark={club.mark} slug={club.slug} />} label={<>{club.name} <span className="m-badge">{club.visibility === 'private' ? 'Private' : 'Public'}</span></>}
-        desc={you.rank ? `#${you.rank} of ${you.ranked} this week` : 'Not ranked this week'}
+      {mine.value?.clubs.map(({ club, role, you, standing, hidden, onProfile }) => <Row key={club.slug} lead={<ClubMark mark={club.mark} slug={club.slug} />} label={<>{club.name} <span className="m-badge">{club.visibility === 'private' ? 'Private' : 'Public'}</span>{role !== 'member' && <span className="m-badge accent">{role === 'owner' ? 'Owner' : 'Admin'}</span>}</>}
+        desc={[you.rank ? `#${formatExact(you.rank)} of ${formatExact(you.ranked)} this week` : 'Not ranked this week', standing?.rank ? `#${formatExact(standing.rank)} in the ${standing.division === 'small' ? 'Small' : 'Large'} league` : null].filter(Boolean).join(' · ')}
         meta={<span className="mc-setting-opts"><label><Toggle label={`Show me on ${club.name}’s board`} on={!hidden} disabled={busy !== null} onChange={() => change('club', () => api.updateClubMember(club.slug, me, { hidden: !hidden }))} />On its board</label>
           <label><Toggle label={`Show ${club.name} on my profile`} on={onProfile} disabled={busy !== null} onChange={() => change('club', () => api.updateClubMember(club.slug, me, { onProfile: !onProfile }))} />On my profile</label></span>}>
         <button type="button" className="m-btn st-sm" disabled={busy !== null} onClick={() => { if (window.confirm(`Leave ${club.name}?`)) change('club', () => api.removeClubMember(club.slug, me)); }}>Leave</button>
