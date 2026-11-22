@@ -99,7 +99,7 @@ function YourClubs({ api, me, go, onJoin, onCode }: { api: ApiClient; me: string
     {mine.value && mine.value.requests.length > 0 && <section className="m-card mc-requests" aria-label="Challenges waiting on you">
       <div className="lb-head"><h2>Challenges</h2><span className="m-badge lb-count">{formatExact(mine.value.requests.length)}</span></div>
       <ul className="club-list">{mine.value.requests.map((request) => <li key={request.id} className="club-row mc-request">
-        <ClubMark mark={request.from.mark} /><span className="club-name"><strong>{request.from.name} challenged {request.to.name}</strong><small>Week of {shortDay(request.week)} · {formatCompact(request.fromPerMember)} per member to your {formatCompact(request.toPerMember)}</small></span>
+        <ClubMark mark={request.from.mark} slug={request.from.slug} /><span className="club-name"><strong>{request.from.name} challenged {request.to.name}</strong><small>Week of {shortDay(request.week)} · {formatCompact(request.fromPerMember)} per member to your {formatCompact(request.toPerMember)}</small></span>
         <span className="mc-actions"><button type="button" className="m-btn" onClick={() => answer(request.id, 'decline')}>Decline</button><button type="button" className="m-btn primary" onClick={() => answer(request.id, 'accept')}>Accept</button></span>
       </li>)}</ul>
     </section>}
@@ -111,7 +111,7 @@ function MyClubHero({ entry, go }: { entry: MyClub; go: Go }) {
   const delta = change(week);
   const lead = matchup ? matchup.perMember - matchup.opponentPerMember : 0;
   return <ClubHero week={week}
-    eyebrow={<button type="button" className="m-eyebrow mc-club-link" onClick={() => go({ page: 'club', slug: club.slug, tab: 'board' })}><ClubMark mark={club.mark} />{club.name} · {visibilityName(club.visibility)} · {plural(club.members, 'member')}</button>}
+    eyebrow={<button type="button" className="m-eyebrow mc-club-link" onClick={() => go({ page: 'club', slug: club.slug, tab: 'board' })}><ClubMark mark={club.mark} slug={club.slug} />{club.name} · {visibilityName(club.visibility)} · {plural(club.members, 'member')}</button>}
     figures={<>
       <div><div className="hero-num mc-you">{you.rank ? `#${formatExact(you.rank)}` : '—'}</div><div className="hero-cap">{you.rank ? <>of {formatExact(you.ranked)} this week <Move rank={you.rank} previous={you.previousRank} /></> : 'no tokens from you yet'}</div></div>
       <div className="hero-divider" />
@@ -147,7 +147,7 @@ function Discover({ api, go, onJoin }: { api: ApiClient; go: Go; onJoin: () => v
     {!list.value && list.error === null && <Loading>Loading clubs…</Loading>}
     {list.value?.items.length === 0 && <section className="m-card"><Empty title={query || category ? 'No clubs match' : 'No public clubs yet'}>{query || category ? 'Try another search or category.' : 'Start the first one with New club.'}</Empty></section>}
     {list.value && list.value.items.length > 0 && <div className="mc-grid">{list.value.items.map((club) => <section key={club.slug} className="m-card mc-card">
-      <header><ClubMark mark={club.mark} /><button type="button" className="club-name mc-open" onClick={() => go({ page: 'club', slug: club.slug, tab: 'board' })}><strong>{club.name}</strong><small>{club.category ? CLUB_CATEGORIES[club.category] : 'Public club'}</small></button>
+      <header><ClubMark mark={club.mark} slug={club.slug} /><button type="button" className="club-name mc-open" onClick={() => go({ page: 'club', slug: club.slug, tab: 'board' })}><strong>{club.name}</strong><small>{club.category ? CLUB_CATEGORIES[club.category] : 'Public club'}</small></button>
         <span className="lb-tools">{toolsOf(club.week.toolTokens).map((id) => <ToolIcon key={id} id={id} />)}</span></header>
       <p>{club.description || 'No description yet.'}</p>
       <div className="mc-fig"><b title={tokensTitle(club.week.tokens)}>{formatCompact(club.week.tokens)}</b><small>tokens this week</small></div>
@@ -183,7 +183,7 @@ function League({ api, go, onJoin }: { api: ApiClient; go: Go; onJoin: () => voi
         <thead><tr><th scope="col" className="l">Rank</th><th scope="col" className="l">Club</th><th scope="col">Active</th><th scope="col" className="sorted" aria-sort="descending">Per member</th><th scope="col">Tokens</th><th scope="col">Est. cost</th><th scope="col">24h</th></tr></thead>
         <tbody>{value.items.map((row) => <tr key={row.club.slug} className={row.mine ? 'you' : undefined} onClick={() => (row.club.visibility === 'public' || row.mine) && go({ page: 'club', slug: row.club.slug, tab: 'board' })}>
           <td className="l"><span className="lb-rk"><span className={`rank${row.rank <= 3 ? ` medal g${row.rank}` : ''}`}>{formatExact(row.rank)}</span><Move rank={row.rank} previous={row.previousRank} /></span></td>
-          <td className="l"><div className="lb-user"><ClubMark mark={row.club.mark} /><span className="lb-name">{row.club.name}{row.mine && <span className="m-badge accent">Yours</span>}{row.club.visibility === 'private' && <span className="m-badge">Private</span>}</span>
+          <td className="l"><div className="lb-user"><ClubMark mark={row.club.mark} slug={row.club.slug} /><span className="lb-name">{row.club.name}{row.mine && <span className="m-badge accent">Yours</span>}{row.club.visibility === 'private' && <span className="m-badge">Private</span>}</span>
             <span className="lb-meta">{row.toolTokens && <span className="lb-tools">{toolsOf(row.toolTokens).map((id) => <ToolIcon key={id} id={id} />)}</span>}</span></div></td>
           <td>{formatExact(row.active)} of {formatExact(row.club.members)}</td>
           <td className="lb-total" title={`${formatExact(row.perMember)} tokens per active member`}>{formatCompact(row.perMember)}</td>
@@ -207,12 +207,12 @@ function Matchups({ api, go, onJoin }: { api: ApiClient; go: Go; onJoin: () => v
     {list.value && list.value.items.length > 0 && <section className="m-card"><ul className="club-list">{list.value.items.map((row) => {
       const ahead = row.a.perMember >= row.b.perMember;
       return <li key={row.id} className={`mc-matchup${row.mine ? ' mine' : ''}`}>
-        <button type="button" className="mc-side" onClick={() => go({ page: 'club', slug: row.a.club.slug, tab: 'board' })}><ClubMark mark={row.a.club.mark} /><span className="club-name"><strong>{row.a.club.name}</strong><small>{standingText(row.a.standing)}</small></span></button>
+        <button type="button" className="mc-side" onClick={() => go({ page: 'club', slug: row.a.club.slug, tab: 'board' })}><ClubMark mark={row.a.club.mark} slug={row.a.club.slug} /><span className="club-name"><strong>{row.a.club.name}</strong><small>{standingText(row.a.standing)}</small></span></button>
         <b className={ahead ? 'ahead' : undefined}>{formatCompact(row.a.perMember)}</b>
         <span className="mc-tug"><span className="tug"><i className={`${ahead ? 'ahead' : ''}${row.mine ? ' mine' : ''}`} style={{ flex: row.a.perMember || 1 }} /><i className={!ahead ? 'ahead' : undefined} style={{ flex: row.b.perMember || 1 }} /></span>
           <small>{row.a.perMember === row.b.perMember ? 'Level' : `${ahead ? row.a.club.name : row.b.club.name} by ${formatCompact(Math.abs(row.a.perMember - row.b.perMember))}`}</small></span>
         <b className={!ahead ? 'ahead' : undefined}>{formatCompact(row.b.perMember)}</b>
-        <span className="mc-side b"><ClubMark mark={row.b.club.mark} /><span className="club-name"><strong>{row.b.club.name}</strong><small>{standingText(row.b.standing)}</small></span></span>
+        <span className="mc-side b"><ClubMark mark={row.b.club.mark} slug={row.b.club.slug} /><span className="club-name"><strong>{row.b.club.name}</strong><small>{standingText(row.b.standing)}</small></span></span>
       </li>;
     })}</ul></section>}
   </>;
@@ -238,7 +238,7 @@ export function ClubView({ api, me, slug, tab, go, site, onProfile, onJoin }: { 
     {!value && page.error === null && <Loading>Loading the club…</Loading>}
     {error && <Notice tone="error">{error}</Notice>}
     {value && <>
-      <div className="page-head"><div className="mc-head"><ClubMark mark={value.club.mark} size="lg" /><div><h1 className="m-page-title">{value.club.name}</h1>
+      <div className="page-head"><div className="mc-head"><ClubMark mark={value.club.mark} slug={value.club.slug} size="lg" /><div><h1 className="m-page-title">{value.club.name}</h1>
         <p className="m-page-sub">{[visibilityName(value.club.visibility), plural(value.club.members, 'member'), value.standing?.rank ? `#${value.standing.rank} in the ${divisionName(value.standing.division)} league` : null].filter(Boolean).join(' · ')}</p></div></div>
         {site && <a className="m-btn" href={`${site}/c/${slug}${tab === 'board' ? '' : `/${tab}`}`} target="_blank" rel="noopener noreferrer">Open on the web</a>}</div>
       {!value.board && <section className="m-card"><Empty title="A private club">Only members see who’s in it. Ask a member for an invite link or code.</Empty></section>}

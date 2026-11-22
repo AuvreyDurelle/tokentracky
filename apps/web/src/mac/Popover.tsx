@@ -186,7 +186,7 @@ export function PopoverPanel({ overview, recent, month, sessions, hours, yesterd
           <div className="po-sessions po-clubs">
             <div className="po-sec-head"><span>Clubs this week</span><button type="button" onClick={onClubs}>View all{ICONS.chevronRight}</button></div>
             {clubs.slice(0, 3).map((entry) => <div key={entry.club.slug} className="po-session">
-              <span className="po-tile"><ClubMark mark={entry.club.mark} /></span>
+              <span className="po-tile"><ClubMark mark={entry.club.mark} slug={entry.club.slug} /></span>
               <div className="po-txt"><b>{entry.club.name}</b><span>{entry.you.rank ? `#${formatExact(entry.you.rank)} of ${formatExact(entry.you.ranked)}` : 'Not ranked yet'}{entry.standing?.rank ? ` · #${entry.standing.rank} ${entry.standing.division === 'small' ? 'Small' : 'Large'} league` : ''}</span></div>
               <span className="po-tok" title={`${formatExact(entry.week.tokens)} club tokens this week`}>{formatCompact(entry.week.tokens)}</span>
             </div>)}

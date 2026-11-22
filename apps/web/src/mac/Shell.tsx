@@ -109,7 +109,7 @@ export function Sidebar({ page, path = '', go, today, week = null, tracking, syn
       {NAV.map((item) => <div key={item.page} className="nav-group">
         <button type="button" className="nav-item" aria-current={item.page === 'clubs' ? page === 'clubs' ? 'page' : undefined : current(item.page)} onClick={() => go(item.page === 'clubs' ? { page: 'clubs', tab: 'mine' } : { page: item.page })}>{item.icon}{item.label}</button>
         {item.page === 'clubs' && clubs.length > 0 && <div className="nav-clubs">{clubs.map((club) => <button key={club.slug} type="button" className="nav-item nav-club"
-          aria-current={page === 'club' && (path === `/c/${club.slug}` || path.startsWith(`/c/${club.slug}/`)) ? 'page' : undefined} onClick={() => go({ page: 'club', slug: club.slug, tab: 'board' })}><ClubMark mark={club.mark} /><span>{club.name}</span></button>)}</div>}
+          aria-current={page === 'club' && (path === `/c/${club.slug}` || path.startsWith(`/c/${club.slug}/`)) ? 'page' : undefined} onClick={() => go({ page: 'club', slug: club.slug, tab: 'board' })}><ClubMark mark={club.mark} slug={club.slug} /><span>{club.name}</span></button>)}</div>}
       </div>)}
     </nav>
     <div className="sidebar-spacer" />
