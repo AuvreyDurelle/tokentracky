@@ -1,16 +1,16 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
-import { CACHE_CHALLENGE_MINIMUM, CHALLENGES, CHALLENGE_KINDS, CLUB_CATEGORIES, CLUB_MARK_IDS, CLUB_MARKS, CLUB_NAME_PATTERN, CLUB_PRIVATE_LIMIT, LEAGUE_MIN_ACTIVE, LEAGUE_SMALL_MAX, challengeUnit,
+import { CACHE_CHALLENGE_MINIMUM, CHALLENGES, CHALLENGE_KINDS, CLUB_CATEGORIES, CLUB_DESCRIPTION_MAX, CLUB_MARK_IDS, CLUB_MARKS, CLUB_NAME_PATTERN, CLUB_PRIVATE_LIMIT, LEAGUE_MIN_ACTIVE, LEAGUE_SMALL_MAX, challengeUnit,
   clubWeek, inviteCode, type ChallengeKind, type ClubCategory, type ClubDivision, type ClubIdentity, type ClubMark as ClubMarkId, type ClubPage, type ClubStanding, type ClubVisibility,
-  type ClubMember, type ClubRef, type ClubWeek, type LeaderboardPeriod, type MatchupRequest, type MatchupSide, type MyClub, type MyClubs, type ToolId } from '@tokentracky/core';
+  type ClubMember, type ClubRef, type ClubSort, type LeagueRow, type ClubWeek, type LeaderboardPeriod, type MatchupRequest, type MatchupSide, type MyClub, type MyClubs, type ToolId } from '@tokentracky/core';
 import { ApiError, type ApiClient } from '../api';
 import { ClubMark, MarkShape, clubHue } from '../ClubMark';
 import { errorText, formatCompact, formatCost, formatCostCompact, formatExact, shortDay, toolLabel, topPercent } from '../format';
 import type { ClubsTab, ClubTab, Route } from '../route';
 import { Avatar, Empty, Loading, Notice, SearchIcon, ToolIcon, avatarHue } from '../ui';
 import { Board, RivalStrip, ToolShare, TrendArea } from './LeaderboardView';
-import { cumulative, edge, leadByDay, type Side } from './clubs-model';
+import { cumulative, edge, isHot, leadByDay, slugOf, type Side } from './clubs-model';
 import { useLoad } from './load';
-import { Bars, CHALLENGE_ICON, CROWN, DAYS, DayPips, LineRace, Meter, Podium, Rope, SWORDS, TROPHY, Verdict, WeekClock, hue, place } from './ClubParts';
+import { Bars, CHALLENGE_ICON, CROWN, DAYS, DayPips, FLAME, LineRace, Meter, Podium, Rope, SWORDS, TROPHY, Verdict, WeekClock, hue, place } from './ClubParts';
 import { ProfileDialog } from './ProfileModal';
 import { ToolbarActions, clubsChanged } from './Shell';
 
@@ -183,33 +183,37 @@ function BattleCard({ entry, go }: { entry: MyClub; go: Go }) {
   </section>;
 }
 
+const SORTS: Array<[ClubSort, string]> = [['members', 'Biggest'], ['active', 'Most active'], ['newest', 'Newest']];
 function Discover({ api, go, onJoin }: { api: ApiClient; go: Go; onJoin: () => void }) {
   const [category, setCategory] = useState<ClubCategory | null>(null);
+  const [sort, setSort] = useState<ClubSort>('members');
   const [search, setSearch] = useState('');
   const query = search.trim();
-  // Pages of 60, the next loaded on demand; a new search or category starts over.
+  // Pages of 60, the next loaded on demand; a new search, category or order starts over.
   const [pages, setPages] = useState(1);
-  useEffect(() => { setPages(1); }, [query, category]);
+  useEffect(() => { setPages(1); }, [query, category, sort]);
   const list = useLoad(async () => {
-    const loaded = await Promise.all(Array.from({ length: pages }, (_, index) => api.clubList(query, category, 'members', index + 1, 60)));
+    const loaded = await Promise.all(Array.from({ length: pages }, (_, index) => api.clubList(query, category, sort, index + 1, 60)));
     return { ...loaded[0]!, items: loaded.flatMap((page) => page.items) };
-  }, [api, query, category, pages], query ? 250 : 0);
+  }, [api, query, category, sort, pages], query ? 250 : 0);
   const [error, setError] = useState<string | null>(null);
   const join = (slug: string) => { setError(null); api.joinClub(slug).then(() => { clubsChanged(); go({ page: 'club', slug, tab: 'board' }); }, (reason: unknown) => setError(errorText(reason))); };
   return <>
-    <div className="page-head"><div><h1 className="m-page-title">Discover</h1><p className="m-page-sub">Public clubs, biggest first. Private clubs are never listed.</p></div>
+    <div className="page-head"><div><h1 className="m-page-title">Discover</h1><p className="m-page-sub">Public clubs to join. Private clubs are never listed.</p></div>
       <label className="lb-search"><SearchIcon /><span className="sr-only">Search clubs</span><input type="search" placeholder="Search clubs" value={search} maxLength={30} onChange={(event) => setSearch(event.target.value)} /></label></div>
-    <div className="mc-chips"><Seg<string> label="Category" value={category ?? 'all'} options={[['all', 'All'], ...(Object.entries(CLUB_CATEGORIES) as Array<[string, string]>)]} onChange={(value) => setCategory(value === 'all' ? null : value as ClubCategory)} /></div>
+    <div className="mc-chips"><Seg<string> label="Category" value={category ?? 'all'} options={[['all', 'All'], ...(Object.entries(CLUB_CATEGORIES) as Array<[string, string]>)]} onChange={(value) => setCategory(value === 'all' ? null : value as ClubCategory)} />
+      <Seg label="Order" value={sort} options={SORTS} onChange={setSort} /></div>
     {list.error !== null && !list.value && <NotLinked error={list.error} onJoin={onJoin} />}
     {error && <Notice tone="error">{error}</Notice>}
     {!list.value && list.error === null && <Loading>Loading clubs…</Loading>}
     {list.value?.items.length === 0 && <section className="m-card"><Empty title={query || category ? 'No clubs match' : 'No public clubs yet'}>{query || category ? 'Try another search or category.' : 'Start the first one with New club.'}</Empty></section>}
-    {list.value && list.value.items.length > 0 && <div className="mc-grid">{list.value.items.map((club) => <section key={club.slug} className="m-card mc-card">
-      <header><ClubMark mark={club.mark} slug={club.slug} /><button type="button" className="club-name mc-open" onClick={() => go({ page: 'club', slug: club.slug, tab: 'board' })}><strong>{club.name}</strong><small>{club.category ? CLUB_CATEGORIES[club.category] : 'Public club'}</small></button>
-        <span className="lb-tools">{toolsOf(club.week.toolTokens).map((id) => <ToolIcon key={id} id={id} />)}</span></header>
+    {list.value && list.value.items.length > 0 && <div className="mc-grid">{list.value.items.map((club) => <section key={club.slug} className="m-card mc-card" style={hue(club.slug)}>
+      <header><ClubMark mark={club.mark} slug={club.slug} size="lg" /><button type="button" className="club-name mc-open" onClick={() => go({ page: 'club', slug: club.slug, tab: 'board' })}><strong>{club.name}</strong><small>{club.category ? CLUB_CATEGORIES[club.category] : 'Public club'}</small></button>
+        {isHot(club.week.active, club.members) && <span className="mc-hot" title="Most of its members are active this week">{FLAME}Hot</span>}</header>
       <p>{club.description || 'No description yet.'}</p>
-      <div className="mc-fig"><b title={tokensTitle(club.week.tokens)}>{formatCompact(club.week.tokens)}</b><small>tokens this week</small></div>
-      <footer><span>{plural(club.members, 'member')} · {formatExact(club.week.active)} active</span>{club.joined ? <span className="m-badge">Joined</span> : <button type="button" className="m-btn" onClick={() => join(club.slug)}>Join</button>}</footer>
+      <div className="mc-card-fig"><span><b title={tokensTitle(club.week.tokens)}>{formatCompact(club.week.tokens)}</b><small>tokens this week</small></span><Bars values={club.week.daily} label={`${club.name}: tokens per UTC day, last ${club.week.daily.length} days`} /></div>
+      <div className="mc-card-active"><span><b>{formatExact(club.week.active)}</b> of {plural(club.members, 'member')} active</span><Meter value={club.week.active} of={club.members} tone="hue" /></div>
+      <footer><span className="lb-tools">{toolsOf(club.week.toolTokens).map((id) => <ToolIcon key={id} id={id} />)}</span>{club.joined ? <span className="m-badge accent">Joined</span> : <button type="button" className="m-btn primary" onClick={() => join(club.slug)}>Join</button>}</footer>
     </section>)}</div>}
     {list.value && list.value.items.length < list.value.total && <div className="mc-more"><button type="button" className="m-btn" onClick={() => setPages((value) => value + 1)}>Load more clubs</button></div>}
   </>;
@@ -219,39 +223,77 @@ const toolsOf = (toolTokens: Partial<Record<ToolId, number>>) => (Object.entries
 function League({ api, go, onJoin }: { api: ApiClient; go: Go; onJoin: () => void }) {
   const [division, setDivision] = useState<ClubDivision>('small');
   const [pages, setPages] = useState(1);
+  const [round, setRound] = useState(0);
   useEffect(() => { setPages(1); }, [division]);
   const league = useLoad(async () => {
     const loaded = await Promise.all(Array.from({ length: pages }, (_, index) => api.league(division, index + 1, 100)));
     return { ...loaded[0]!, items: loaded.flatMap((page) => page.items) };
   }, [api, division, pages]);
+  const mine = useLoad(() => api.myClubs(), [api, round]);
+  const [open, setOpen] = useState<[string, string] | null>(null);
   const value = league.value;
+  // The club you'd challenge from: one you run in this division, ranked if you have one.
+  const runs = mine.value?.clubs.filter((entry) => entry.standing?.division === division && entry.role !== 'member') ?? [];
+  const challenger = runs.find((entry) => entry.standing?.rank) ?? runs[0] ?? null;
+  const ours = new Set(mine.value?.clubs.map((entry) => entry.club.slug) ?? []);
+  const reachable = (row: LeagueRow) => row.club.visibility === 'public' || row.mine;
+  const top = value?.items.filter((row) => row.rank <= 3) ?? [];
   return <>
-    <div className="page-head"><div><h1 className="m-page-title">League</h1><p className="m-page-sub">Ranked weekly by tokens per active member<span className="sep" />Resets in {weekLeft()}</p></div>
-      <Seg label="Division" value={division} options={[['small', `Small · up to ${LEAGUE_SMALL_MAX}`], ['large', `Large · ${LEAGUE_SMALL_MAX}+`]]} onChange={setDivision} /></div>
+    <div className="page-head mc-page-head"><div><h1 className="m-page-title">League</h1><p className="m-page-sub">Ranked weekly by tokens per active member. {LEAGUE_MIN_ACTIVE} active members to rank.</p>
+      <div className="mc-code"><Seg label="Division" value={division} options={[['small', `Small · up to ${LEAGUE_SMALL_MAX}`], ['large', `Large · ${LEAGUE_SMALL_MAX}+`]]} onChange={setDivision} /></div></div>
+      <WeekClock label="League week ends in" /></div>
     {league.error !== null && !value && <NotLinked error={league.error} onJoin={onJoin} />}
     {!value && league.error === null && <Loading>Loading the league…</Loading>}
-    {value && <section className="m-card">
-      <div className="m-stat-strip mc-overview">
-        <div><div className="m-label">Clubs ranked</div><div className="m-stat-value">{formatExact(value.total)}</div><div className="sub">{LEAGUE_MIN_ACTIVE} active members to rank</div></div>
-        <div><div className="m-label">Active members</div><div className="m-stat-value">{formatExact(value.activeMembers)}</div><div className="sub">synced this week</div></div>
-        <div><div className="m-label">Tokens this week</div><div className="m-stat-value" title={tokensTitle(value.tokens)}>{formatCompact(value.tokens)}</div><div className="sub">{value.activeMembers ? `${formatCompact(Math.round(value.tokens / value.activeMembers))} per active member` : 'no one active yet'}</div></div>
-        <div><div className="m-label">Last week’s winner</div><div className="m-stat-value mc-word">{value.lastWinner?.name ?? '—'}</div><div className="sub">{divisionName(division)} division</div></div>
-      </div>
-      {value.items.length === 0 ? <Empty title="No clubs ranked yet">A club ranks once {LEAGUE_MIN_ACTIVE} of its members are active in the week.</Empty> : <table className="m-table lb-table mc-league">
-        <thead><tr><th scope="col" className="l">Rank</th><th scope="col" className="l">Club</th><th scope="col">Active</th><th scope="col" className="sorted" aria-sort="descending">Per member</th><th scope="col">Tokens</th><th scope="col">Est. cost</th><th scope="col">24h</th></tr></thead>
-        <tbody>{value.items.map((row) => <tr key={row.club.slug} className={row.mine ? 'you' : undefined} onClick={() => (row.club.visibility === 'public' || row.mine) && go({ page: 'club', slug: row.club.slug, tab: 'board' })}>
-          <td className="l"><span className="lb-rk"><span className={`rank${row.rank <= 3 ? ` medal g${row.rank}` : ''}`}>{formatExact(row.rank)}</span><Move rank={row.rank} previous={row.previousRank} /></span></td>
-          <td className="l"><div className="lb-user"><ClubMark mark={row.club.mark} slug={row.club.slug} /><span className="lb-name">{row.club.name}{row.mine && <span className="m-badge accent">Yours</span>}{row.club.visibility === 'private' && <span className="m-badge">Private</span>}</span>
-            <span className="lb-meta">{row.toolTokens && <span className="lb-tools">{toolsOf(row.toolTokens).map((id) => <ToolIcon key={id} id={id} />)}</span>}</span></div></td>
-          <td>{formatExact(row.active)} of {formatExact(row.club.members)}</td>
-          <td className="lb-total" title={`${formatExact(row.perMember)} tokens per active member`}>{formatCompact(row.perMember)}</td>
-          <td title={tokensTitle(row.tokens)}>{formatCompact(row.tokens)}</td>
-          <td className="lb-cost">{row.toolTokens === undefined ? <span className="zero" title="Not shared">—</span> : row.costMicrousd == null ? <span className="zero" title="Pricing unknown">—</span> : <span title={formatCost(row.costMicrousd)}>{formatCostCompact(row.costMicrousd)}</span>}</td>
-          <td>{row.last24hTokens === undefined ? <span className="zero" title="Not shared">—</span> : formatCompact(row.last24hTokens)}</td>
-        </tr>)}</tbody>
-      </table>}
-      {value.items.length < value.total && <div className="mc-more"><button type="button" className="m-btn" onClick={() => setPages((count) => count + 1)}>Load more clubs</button></div>}
-    </section>}
+    {value && <>
+      {value.lastWinner && <section className="mc-champ" style={hue(value.lastWinner.slug)}>
+        <span className="mc-champ-cup">{TROPHY}</span>
+        <span className="mc-champ-k">Last week’s {divisionName(division)} champion</span>
+        <ClubMark mark={value.lastWinner.mark} slug={value.lastWinner.slug} />
+        {value.lastWinner.visibility === 'public' || ours.has(value.lastWinner.slug) ? <button type="button" className="mc-open" onClick={() => go({ page: 'club', slug: value.lastWinner!.slug, tab: 'board' })}><strong>{value.lastWinner.name}</strong></button> : <strong>{value.lastWinner.name}</strong>}
+      </section>}
+      {top.length > 0 && <Podium label={`${divisionName(division)} league top ${top.length}`} places={top.map((row) => ({ key: row.club.slug, name: row.club.name, value: formatCompact(row.perMember), title: `${tokensTitle(row.perMember)} per active member`, face: <ClubMark mark={row.club.mark} slug={row.club.slug} size="xl" />,
+        you: row.mine, sub: `per member · ${formatExact(row.active)} of ${formatExact(row.club.members)} active`, onOpen: reachable(row) ? () => go({ page: 'club', slug: row.club.slug, tab: 'board' }) : undefined }))} />}
+      {value.items.filter((row) => row.mine).map((row) => {
+        const above = value.items.find((other) => other.rank === row.rank - 1) ?? null;
+        const below = value.items.find((other) => other.rank === row.rank + 1) ?? null;
+        const runsIt = runs.some((entry) => entry.club.slug === row.club.slug);
+        return <section key={row.club.slug} className="m-card mc-chase" style={hue(row.club.slug)}>
+          <ClubMark mark={row.club.mark} slug={row.club.slug} size="lg" />
+          <div className="mc-chase-id"><span className="m-label">Your club</span><strong><span className={place(row.rank)}>#{formatExact(row.rank)}</span> {row.club.name}<Move rank={row.rank} previous={row.previousRank} /></strong></div>
+          <div className="mc-chase-gap">
+            <span>{above ? <><b>{formatCompact(above.perMember - row.perMember)}</b> per member to pass <b>{above.club.name}</b> for #{formatExact(above.rank)}</> : <>{CROWN}<b>Top of the {divisionName(division)} league</b></>}</span>
+            <Meter value={row.perMember} of={above?.perMember ?? row.perMember} tone="hue" />
+            {below && <small>{formatCompact(row.perMember - below.perMember)} per member ahead of {below.club.name}</small>}
+          </div>
+          {runsIt && above && !above.mine && <button type="button" className="m-btn mc-fight-btn" onClick={() => setOpen([row.club.slug, above.club.slug])}>{SWORDS}Challenge {above.club.name}</button>}
+        </section>;
+      })}
+      <section className="m-card">
+        <div className="m-stat-strip mc-overview">
+          <div><div className="m-label">Clubs ranked</div><div className="m-stat-value">{formatExact(value.total)}</div><div className="sub">{LEAGUE_MIN_ACTIVE} active members to rank</div></div>
+          <div><div className="m-label">Active members</div><div className="m-stat-value">{formatExact(value.activeMembers)}</div><div className="sub">synced this week</div></div>
+          <div><div className="m-label">Tokens this week</div><div className="m-stat-value" title={tokensTitle(value.tokens)}>{formatCompact(value.tokens)}</div><div className="sub">{value.activeMembers ? `${formatCompact(Math.round(value.tokens / value.activeMembers))} per active member` : 'no one active yet'}</div></div>
+          <div><div className="m-label">Last week’s winner</div><div className="m-stat-value mc-word">{value.lastWinner?.name ?? '—'}</div><div className="sub">{divisionName(division)} division</div></div>
+        </div>
+        {value.items.length === 0 ? <Empty title="No clubs ranked yet">A club ranks once {LEAGUE_MIN_ACTIVE} of its members are active in the week.</Empty> : <table className="m-table lb-table mc-league">
+          <colgroup><col className="mcl-rank" /><col /><col className="mcl-active" /><col className="mcl-per" /><col className="mcl-days" /><col className="mcl-num" /><col className="mcl-num" /><col className="mcl-num" />{challenger && <col className="mcl-act" />}</colgroup>
+          <thead><tr><th scope="col" className="l">Rank</th><th scope="col" className="l">Club</th><th scope="col">Active</th><th scope="col" className="sorted" aria-sort="descending">Per member</th><th scope="col">7 days</th><th scope="col">Tokens</th><th scope="col">Est. cost</th><th scope="col">24h</th>{challenger && <th scope="col" aria-label="Challenge" />}</tr></thead>
+          <tbody>{value.items.map((row) => <tr key={row.club.slug} className={`${row.mine ? 'you' : ''}${reachable(row) ? '' : ' mc-locked'}`} onClick={() => reachable(row) && go({ page: 'club', slug: row.club.slug, tab: 'board' })}>
+            <td className="l"><span className="lb-rk"><span className={`rank${row.rank <= 3 ? ` medal g${row.rank}` : ''}`}>{formatExact(row.rank)}</span><Move rank={row.rank} previous={row.previousRank} /></span></td>
+            <td className="l"><div className="lb-user"><ClubMark mark={row.club.mark} slug={row.club.slug} /><span className="lb-name">{row.club.name}{row.mine && <span className="m-badge accent">Yours</span>}{row.club.visibility === 'private' && <span className="m-badge">Private</span>}</span></div></td>
+            <td><span className="mc-active-cell">{formatExact(row.active)} of {formatExact(row.club.members)}<Meter value={row.active} of={row.club.members} /></span></td>
+            <td className="lb-total" title={`${formatExact(row.perMember)} tokens per active member`}>{formatCompact(row.perMember)}</td>
+            <td style={hue(row.club.slug)}><Bars values={row.daily} label={`${row.club.name}: tokens per active member per UTC day, last ${row.daily.length} days`} /></td>
+            <td title={tokensTitle(row.tokens)}>{formatCompact(row.tokens)}</td>
+            <td className="lb-cost">{row.toolTokens === undefined ? <span className="zero" title="Not shared">—</span> : row.costMicrousd == null ? <span className="zero" title="Pricing unknown">—</span> : <span title={formatCost(row.costMicrousd)}>{formatCostCompact(row.costMicrousd)}</span>}</td>
+            <td>{row.last24hTokens === undefined ? <span className="zero" title="Not shared">—</span> : formatCompact(row.last24hTokens)}</td>
+            {challenger && <td>{!row.mine && !ours.has(row.club.slug) && <button type="button" className="m-btn mc-fight-sm" title={`${challenger.club.name} against ${row.club.name}`} onClick={(event) => { event.stopPropagation(); setOpen([challenger.club.slug, row.club.slug]); }}>{SWORDS}Challenge</button>}</td>}
+          </tr>)}</tbody>
+        </table>}
+        {value.items.length < value.total && <div className="mc-more"><button type="button" className="m-btn" onClick={() => setPages((count) => count + 1)}>Load more clubs</button></div>}
+      </section>
+    </>}
+    {open && <HeadToHead api={api} a={open[0]} b={open[1]} mine={mine.value} go={go} onClose={() => setOpen(null)} onChanged={() => setRound((n) => n + 1)} />}
   </>;
 }
 
@@ -577,32 +619,42 @@ function ClubMembersView({ api, me, page, site, onChange }: { api: ApiClient; me
   </>;
 }
 
-/** The New club sheet: name, mark, who can join, the first week's challenge and the league. */
+/** The New club sheet: a preview in the club's colour, then name, mark, who can join, the first week's challenge and the league. */
 function NewClub({ api, me, go, onClose }: { api: ApiClient; me: string | null; go: Go; onClose: () => void }) {
   const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
   const [mark, setMark] = useState<ClubMarkId>('moon');
   const [visibility, setVisibility] = useState<ClubVisibility>('private');
+  const [category, setCategory] = useState<ClubCategory | null>(null);
   const [challenge, setChallenge] = useState<ChallengeKind>('tokens');
   const [league, setLeague] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const trimmed = name.trim().replace(/\s+/g, ' ');
   const valid = CLUB_NAME_PATTERN.test(trimmed) && /[\p{L}\p{N}]$/u.test(trimmed);
+  const preview = slugOf(trimmed) || 'your-club';
   const create = async () => {
     setBusy(true); setError(null);
-    try { const club = await api.createClub({ name: trimmed, description: '', mark, visibility, category: null, league: visibility === 'public' || league, challenge }); clubsChanged(); onClose(); go({ page: 'club', slug: club.slug, tab: 'members' }); }
+    try { const club = await api.createClub({ name: trimmed, description: description.trim(), mark, visibility, category: visibility === 'public' ? category : null, league: visibility === 'public' || league, challenge }); clubsChanged(); onClose(); go({ page: 'club', slug: club.slug, tab: 'members' }); }
     catch (reason) { setError(errorText(reason)); setBusy(false); }
   };
   return <ProfileDialog labelledBy="mc-new-title" onClose={onClose}>
     <form className="mc-sheet" onSubmit={(event) => { event.preventDefault(); if (valid) void create(); }}>
       <h2 id="mc-new-title">New club</h2>
+      <div className="mc-preview" style={hue(preview)} aria-hidden="true">
+        <ClubMark mark={mark} slug={preview} size="xl" />
+        <span className="club-name"><strong>{trimmed || 'Your club'}</strong><small>{visibilityName(visibility)} · 1 member{visibility === 'public' || league ? ` · ${divisionName('small')} league` : ''}</small></span>
+        <span className={`mc-chip k-${challenge}`}>{CHALLENGE_ICON[challenge]}{CHALLENGES[challenge].name}</span>
+      </div>
       {!me && <Notice>Join the leaderboard from Settings first: clubs rank the totals members publish.</Notice>}
       <label className="mc-field">Name<input className="m-input" value={name} onChange={(event) => setName(event.target.value)} maxLength={40} autoFocus /></label>
-      <div className="mc-field" role="group" aria-label="Mark">Mark<div className="mc-pick">{CLUB_MARK_IDS.map((id) => <button key={id} type="button" className="club-mark" aria-pressed={mark === id} aria-label={CLUB_MARKS[id].name} onClick={() => setMark(id)}><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{CLUB_MARKS[id].shapes.map((shape, index) => <MarkShape key={index} shape={shape} />)}</svg></button>)}</div></div>
+      <label className="mc-field">Description <small>Optional. What the club is about.</small><input className="m-input" value={description} onChange={(event) => setDescription(event.target.value)} maxLength={CLUB_DESCRIPTION_MAX} /></label>
+      <div className="mc-field" role="group" aria-label="Mark">Mark<div className="mc-pick" style={hue(preview)}>{CLUB_MARK_IDS.map((id) => <button key={id} type="button" className="club-mark hued" aria-pressed={mark === id} aria-label={CLUB_MARKS[id].name} onClick={() => setMark(id)}><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{CLUB_MARKS[id].shapes.map((shape, index) => <MarkShape key={index} shape={shape} />)}</svg></button>)}</div></div>
       <div className="mc-field">Who can join<Seg label="Who can join" value={visibility} options={[['private', 'Private · invite'], ['public', 'Public · anyone']]} onChange={setVisibility} />
-        <small>{visibility === 'private' ? `Up to ${CLUB_PRIVATE_LIMIT} members. Never listed or searchable.` : 'Listed in Discover. Anyone on the leaderboard can join.'}</small></div>
+        <small>{visibility === 'private' ? `Up to ${CLUB_PRIVATE_LIMIT} members. Never listed or searchable.` : 'Listed in Discover. Anyone on the leaderboard can join, and it plays in the league.'}</small></div>
+      {visibility === 'public' && <div className="mc-field">Category<Seg<string> label="Category" value={category ?? 'none'} options={[['none', 'None'], ...(Object.entries(CLUB_CATEGORIES) as Array<[string, string]>)]} onChange={(value) => setCategory(value === 'none' ? null : value as ClubCategory)} /></div>}
       <div className="mc-field">This week’s challenge<Seg label="Challenge" value={challenge} options={CHALLENGE_KINDS.map((kind) => [kind, CHALLENGES[kind].option] as [ChallengeKind, string])} onChange={setChallenge} /></div>
-      {visibility === 'private' && <label className="mc-switch"><span>Enter the league<small>Other clubs see name, size and totals.</small></span><input type="checkbox" className="switch" checked={league} onChange={(event) => setLeague(event.target.checked)} /></label>}
+      {visibility === 'private' && <label className="mc-switch"><span>Enter the league<small>Other clubs see name, size and totals, and can challenge you.</small></span><input type="checkbox" className="switch" checked={league} onChange={(event) => setLeague(event.target.checked)} /></label>}
       {error && <Notice tone="error">{error}</Notice>}
       <div className="mc-sheet-foot"><button type="button" className="m-btn" onClick={onClose}>Cancel</button><button type="submit" className="m-btn primary" disabled={!valid || busy || !me}>{busy ? 'Creating…' : 'Create club'}</button></div>
     </form>

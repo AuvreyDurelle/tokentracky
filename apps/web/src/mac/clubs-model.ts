@@ -33,9 +33,9 @@ export function weekProgress(now: Date): { done: number; day: number } {
   return { done: (now.getTime() - from) / (to - from), day: Math.floor((now.getTime() - from) / 86_400_000) };
 }
 
-/** A club busy enough to call hot: at least 3 members and 60% of them active this week. */
+/** A club busy enough to call hot: at least 3 members and three in four of them active this week. */
 export function isHot(active: number, members: number): boolean {
-  return members >= 3 && active / members >= 0.6;
+  return members >= 3 && active / members >= 0.75;
 }
 
 /** The address a name will likely get, lowercase words joined by hyphens, so a new club's preview wears its colour. */

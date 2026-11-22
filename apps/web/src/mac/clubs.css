@@ -61,19 +61,29 @@
 .mac .tug i.ahead { background: var(--text); }
 .mac .tug i.mine { background: var(--accent); }
 
-/* Discover: a grid of club cards. */
-.mac .mc-chips { margin-bottom: 14px; }
-.mac .mc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
-.mac .mc-card { display: grid; grid-template-rows: auto 1fr auto auto; gap: 10px; padding: 16px; }
-.mac .mc-card > header { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.mac .mc-card > header .lb-tools { margin-left: auto; }
+/* Discover: a grid of club cards, each in its colour. */
+.mac .mc-clubs .page-head .lb-search { display: flex; align-items: center; gap: 8px; min-width: 240px; height: 32px; padding: 0 10px; border: 1px solid var(--border-2); border-radius: var(--radius-sm); background: var(--surface); color: var(--text-4); }
+.mac .mc-clubs .page-head .lb-search:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.mac .mc-clubs .page-head .lb-search svg { width: 14px; height: 14px; }
+.mac .mc-clubs .page-head .lb-search input { flex: 1; min-width: 0; padding: 0; border: 0; outline: none; background: none; color: var(--text); font-size: 13px; }
+.mac .mc-chips { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+.mac .mc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 12px; }
+.mac .mc-card { display: grid; grid-template-rows: auto 1fr auto auto auto; gap: 12px; padding: 16px; border-color: hsl(var(--h) 60% 55% / 0.24); background: radial-gradient(120% 70% at 0% 0%, hsl(var(--h) 70% 45% / 0.16), transparent 60%), var(--surface); transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.mac .mc-card:hover { box-shadow: 0 14px 36px -22px hsl(var(--h) 80% 55% / 0.9); transform: translateY(-2px); }
+.mac .mc-card > header { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .mac .mc-open { padding: 0; border: 0; background: none; color: inherit; cursor: pointer; }
 .mac .mc-open:hover strong { text-decoration: underline; text-decoration-color: var(--text-3); text-underline-offset: 3px; }
 .mac .mc-card > p { color: var(--text-3); font-size: 12.5px; line-height: 1.5; }
-.mac .mc-fig { display: grid; gap: 1px; }
-.mac .mc-fig b { font-size: 17px; font-weight: 600; letter-spacing: -0.02em; }
-.mac .mc-fig small { color: var(--text-3); font-size: 12px; }
-.mac .mc-card > footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 10px; border-top: 1px solid var(--border); color: var(--text-3); font-size: 12px; }
+.mac .mc-hot { display: inline-flex; flex: none; align-items: center; gap: 4px; margin-left: auto; padding: 3px 8px; border-radius: 10px; background: rgba(255, 138, 61, 0.14); box-shadow: inset 0 0 0 1px rgba(255, 138, 61, 0.35); color: #ffb37a; font-size: 11px; font-weight: 700; }
+.mac .mc-hot .mc-ic { width: 11px; height: 11px; }
+.mac .mc-card-fig { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
+.mac .mc-card-fig > span:first-child { display: grid; gap: 1px; }
+.mac .mc-card-fig b { font-size: 20px; font-weight: 750; letter-spacing: -0.02em; }
+.mac .mc-card-fig small { color: var(--text-3); font-size: 12px; }
+.mac .mc-card-active { display: grid; gap: 6px; color: var(--text-3); font-size: 12px; }
+.mac .mc-card-active b { color: var(--text-2); }
+.mac .mc-card-active .mc-meter { width: 100%; }
+.mac .mc-card > footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 12px; border-top: 1px solid var(--border); color: var(--text-3); font-size: 12px; }
 
 /* The league's and a challenge's figures above their table. */
 .mac .mc-overview { border-bottom: 1px solid var(--border); }
@@ -91,7 +101,9 @@
 .mac .m-input:focus { outline: 2px solid var(--accent); outline-offset: 0; }
 .mac .mc-pick { display: flex; flex-wrap: wrap; gap: 8px; }
 .mac .mc-pick .club-mark { width: 32px; height: 32px; padding: 0; border: 0; cursor: pointer; }
-.mac .mc-pick .club-mark[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 2px; color: var(--text); }
+.mac .mc-pick .club-mark { opacity: 0.55; }
+.mac .mc-pick .club-mark:hover { opacity: 0.85; }
+.mac .mc-pick .club-mark[aria-pressed="true"] { outline: 2px solid hsl(var(--h) 90% 70%); outline-offset: 2px; opacity: 1; }
 .mac .mc-switch { display: flex; align-items: center; justify-content: space-between; gap: 16px; color: var(--text-2); font-size: 12.5px; }
 .mac .mc-switch > span { display: grid; gap: 3px; }
 .mac .mc-sheet-foot { display: flex; justify-content: flex-end; gap: 8px; }
@@ -376,6 +388,43 @@
 .mac .mc-h2h-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding-top: 14px; border-top: 1px solid var(--border); color: var(--text-3); font-size: 12.5px; }
 .mac .mc-h2h-foot > span:first-child { flex: 1 1 260px; display: inline-flex; align-items: center; gap: 8px; }
 
+/* ---------- League ---------- */
+.mac .mc-champ { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding: 12px 18px; border: 1px solid rgba(232, 182, 76, 0.35); border-radius: var(--radius); background: linear-gradient(90deg, rgba(232, 182, 76, 0.14), transparent 60%), var(--surface); }
+.mac .mc-champ-cup { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; background: rgba(232, 182, 76, 0.16); color: var(--gold); filter: drop-shadow(0 0 10px rgba(232, 182, 76, 0.5)); }
+.mac .mc-champ-cup .mc-ic { width: 17px; height: 17px; }
+.mac .mc-champ-k { color: var(--gold); font-size: 11px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; }
+.mac .mc-champ strong { font-size: 14px; font-weight: 650; }
+.mac .mc-chase { display: grid; grid-template-columns: auto minmax(150px, auto) minmax(0, 1fr) auto; align-items: center; gap: 18px; margin-bottom: 16px; padding: 16px 20px; border-color: hsl(var(--h) 60% 55% / 0.35); background: linear-gradient(90deg, hsl(var(--h) 70% 45% / 0.16), transparent 50%), var(--surface); }
+.mac .mc-chase-id { display: grid; gap: 2px; }
+.mac .mc-chase-id strong { display: flex; align-items: baseline; gap: 6px; font-size: 18px; font-weight: 700; letter-spacing: -0.015em; }
+.mac .mc-chase-gap { display: grid; gap: 6px; color: var(--text-3); font-size: 12.5px; }
+.mac .mc-chase-gap > span { display: flex; align-items: center; gap: 6px; }
+.mac .mc-chase-gap b { color: var(--text); }
+.mac .mc-chase-gap .mc-ic { color: var(--gold); }
+.mac .mc-chase-gap .mc-meter { width: 100%; height: 6px; }
+.mac .mc-chase-gap small { font-size: 11.5px; }
+.mac .mc-league .mcl-rank { width: 84px; }
+.mac .mc-league .mcl-active { width: 120px; }
+.mac .mc-league .mcl-per { width: 110px; }
+.mac .mc-league .mcl-days { width: 112px; }
+.mac .mc-league .mcl-num { width: 84px; }
+.mac .mc-league .mcl-act { width: 118px; }
+.mac .mc-league .lb-name { overflow: hidden; }
+.mac .mc-active-cell { display: inline-grid; gap: 4px; justify-items: end; }
+.mac .mc-active-cell .mc-meter { width: 64px; height: 4px; }
+.mac .mc-league .mc-bars { width: 84px; height: 22px; }
+.mac .mc-league tr.mc-locked { cursor: default; }
+.mac .m-btn.mc-fight-sm { height: 26px; padding: 0 9px; border-color: rgba(255, 138, 61, 0.45); background: rgba(255, 138, 61, 0.1); color: #ffb37a; font-size: 12px; }
+.mac .m-btn.mc-fight-sm:hover { background: rgba(255, 138, 61, 0.2); color: #fff; }
+.mac .m-btn.mc-fight-sm .mc-ic { width: 12px; height: 12px; margin-right: 4px; }
+.mac .mc-league .mc-fight-sm { opacity: 0.45; }
+.mac .mc-league tr:hover .mc-fight-sm, .mac .mc-league .mc-fight-sm:focus-visible { opacity: 1; }
+/* New club: the preview. */
+.mac .mc-preview { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 14px; border-radius: var(--radius-md); background: radial-gradient(100% 160% at 0% 0%, hsl(var(--h) 70% 45% / 0.25), transparent 60%), var(--surface-2); box-shadow: inset 0 0 0 1px hsl(var(--h) 70% 60% / 0.3); }
+.mac .mc-preview .club-name strong { font-size: 16px; font-weight: 650; }
+.mac .m-pf .pf-panel:has(> .mc-sheet) { width: min(568px, 100%); }
+.mac .mc-sheet { width: auto; }
+
 @media (max-width: 1080px) {
   .mac .mc-battle-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); }
   .mac .mc-pair { grid-column: 1 / -1; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--border); }
@@ -383,6 +432,8 @@
   .mac .mc-pair > button + button { border-top: 0; border-left: 1px solid var(--border); }
   .mac .mc-versus { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
   .mac .mc-incoming-act { grid-column: 1 / -1; grid-template-columns: 1fr auto; align-items: center; text-align: left; }
+  .mac .mc-chase { grid-template-columns: auto minmax(0, 1fr); }
+  .mac .mc-chase-gap, .mac .mc-chase > .m-btn { grid-column: 1 / -1; justify-self: start; }
 }
 @media (prefers-reduced-motion: reduce) {
   .mac .mc-ping::after, .mac .mc-rope b, .mac .mc-meter i, .mac .mc-crown { animation: none; }

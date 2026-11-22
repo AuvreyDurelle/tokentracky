@@ -48,9 +48,9 @@ describe('weekProgress', () => {
 });
 
 describe('isHot', () => {
-  it('needs three members and 60% of them active', () => {
-    expect(isHot(6, 10)).toBe(true);
-    expect(isHot(5, 10)).toBe(false);
+  it('needs three members and three in four of them active', () => {
+    expect(isHot(75, 100)).toBe(true);
+    expect(isHot(74, 100)).toBe(false);
     expect(isHot(2, 2)).toBe(false);
   });
 });
