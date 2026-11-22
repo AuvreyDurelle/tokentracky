@@ -42,3 +42,11 @@ export function isHot(active: number, members: number): boolean {
 export function slugOf(name: string): string {
   return name.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
+
+/** The y range a race chart draws: from zero, or snug around the values with room above and below. Never empty. */
+export function raceDomain(values: readonly number[], zero: boolean): [number, number] {
+  if (values.length === 0) return [0, 1];
+  const max = Math.max(...values), min = zero ? 0 : Math.min(...values);
+  const pad = zero ? max * 0.08 : (max - min) * 0.15 || Math.abs(max) * 0.05 || 1;
+  return [zero ? 0 : min - pad, max + pad || 1];
+}

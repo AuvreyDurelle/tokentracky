@@ -1,15 +1,15 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { CHALLENGES, CHALLENGE_KINDS, CLUB_CATEGORIES, CLUB_MARK_IDS, CLUB_MARKS, CLUB_NAME_PATTERN, CLUB_PRIVATE_LIMIT, LEAGUE_MIN_ACTIVE, LEAGUE_SMALL_MAX, challengeUnit,
-  clubWeek, inviteCode, type ChallengeKind, type ClubCategory, type ClubDivision, type ClubMark as ClubMarkId, type ClubPage, type ClubStanding, type ClubVisibility,
+import { CACHE_CHALLENGE_MINIMUM, CHALLENGES, CHALLENGE_KINDS, CLUB_CATEGORIES, CLUB_MARK_IDS, CLUB_MARKS, CLUB_NAME_PATTERN, CLUB_PRIVATE_LIMIT, LEAGUE_MIN_ACTIVE, LEAGUE_SMALL_MAX, challengeUnit,
+  clubWeek, inviteCode, type ChallengeKind, type ClubCategory, type ClubDivision, type ClubIdentity, type ClubMark as ClubMarkId, type ClubPage, type ClubStanding, type ClubVisibility,
   type ClubMember, type ClubRef, type ClubWeek, type LeaderboardPeriod, type MatchupRequest, type MyClub, type ToolId } from '@tokentracky/core';
 import { ApiError, type ApiClient } from '../api';
 import { ClubMark, MarkShape } from '../ClubMark';
 import { errorText, formatCompact, formatCost, formatCostCompact, formatExact, shortDay, topPercent } from '../format';
 import type { ClubsTab, ClubTab, Route } from '../route';
-import { Avatar, Empty, Loading, Notice, SearchIcon, ToolIcon } from '../ui';
+import { Avatar, Empty, Loading, Notice, SearchIcon, ToolIcon, avatarHue } from '../ui';
 import { Board, RivalStrip, ToolShare, TrendArea } from './LeaderboardView';
 import { useLoad } from './load';
-import { Bars, CHALLENGE_ICON, CROWN, DayPips, Meter, Podium, Rope, SWORDS, TROPHY, Verdict, WeekClock, hue, place } from './ClubParts';
+import { Bars, CHALLENGE_ICON, CROWN, DAYS, DayPips, LineRace, Meter, Podium, Rope, SWORDS, TROPHY, Verdict, WeekClock, hue, place } from './ClubParts';
 import { ProfileDialog } from './ProfileModal';
 import { ToolbarActions, clubsChanged } from './Shell';
 
@@ -311,7 +311,7 @@ export function ClubView({ api, me, slug, tab, go, site, onProfile, onJoin }: { 
       </header>
       {!value.board && <section className="m-card"><Empty title="A private club">Only members see who’s in it. Ask a member for an invite link or code.</Empty></section>}
       {value.board && tab === 'board' && <ClubBoard page={value} me={me} period={period} number={number} loading={page.loading} site={site} onPage={setNumber} onProfile={onProfile} />}
-      {tab === 'challenge' && <ClubChallengeView api={api} me={me} slug={slug} />}
+      {tab === 'challenge' && <ClubChallengeView api={api} me={me} club={value.club} admin={member?.role === 'owner' || member?.role === 'admin'} />}
       {tab === 'members' && member && <ClubMembersView api={api} me={me} page={value} site={site} onChange={() => setRound((n) => n + 1)} />}
     </>}
   </div>;
@@ -346,37 +346,76 @@ function ClubBoard({ page, me, period, number, loading, site, onPage, onProfile 
   </>;
 }
 
-function ClubChallengeView({ api, me, slug }: { api: ApiClient; me: string | null; slug: string }) {
-  const data = useLoad(() => api.clubChallenge(slug), [api, slug]);
+/** How far one challenge value is behind another: points of hit rate, days, or tokens. */
+function gapText(kind: ChallengeKind, gap: number): string {
+  const unit = challengeUnit(kind);
+  return unit === 'percent' ? `${Number((gap / 100).toFixed(1))} pts` : unit === 'days' ? `${gap} ${gap === 1 ? 'day' : 'days'}` : formatCompact(gap);
+}
+
+/** This week's challenge as a game: your place and the gap, the podium, the leaders' race, the table, past winners; admins pick next week's. */
+function ClubChallengeView({ api, me, club, admin }: { api: ApiClient; me: string | null; club: ClubIdentity; admin: boolean }) {
+  const [round, setRound] = useState(0);
+  const data = useLoad(() => api.clubChallenge(club.slug), [api, club.slug, round]);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const value = data.value;
   if (data.error !== null && !value) return <Notice tone="error">Could not load the challenge: {errorText(data.error)}</Notice>;
   if (!value) return <Loading>Loading the challenge…</Loading>;
   const info = CHALLENGES[value.kind];
+  const qualified = value.standings.filter((row) => row.qualified);
   const mine = value.standings.find((row) => row.alias === me) ?? null;
-  const leader = value.standings[0]?.qualified ? value.standings[0] : null;
+  const above = mine?.rank ? value.standings.find((row) => row.rank === mine.rank! - 1) ?? null : null;
+  const trophies = value.past.filter((row) => row.winner !== null && row.winner === me).length;
+  const pick = (next: ChallengeKind) => {
+    setBusy(true); setError(null);
+    api.updateClub(club.slug, { name: club.name, description: club.description, mark: club.mark, visibility: club.visibility, category: club.category, league: club.league, challenge: next })
+      .then(() => setRound((n) => n + 1), (reason: unknown) => setError(errorText(reason))).finally(() => setBusy(false));
+  };
   return <>
-    <section className="m-card">
-      <div className="lb-head"><h2>{info.name}</h2><span className="lb-reset">{info.rule} · ends in <b>{weekLeft()}</b></span></div>
-      <div className="m-stat-strip mc-overview">
-        <div><div className="m-label">You</div><div className="m-stat-value mc-you">{challengeText(value.kind, mine?.value ?? null)}</div><div className="sub">week to date</div></div>
-        <div><div className="m-label">Your place</div><div className="m-stat-value">{mine?.rank ? `#${mine.rank}` : '—'}</div><div className="sub">of {formatExact(value.standings.filter((row) => row.qualified).length)} qualified</div></div>
-        <div><div className="m-label">Leading</div><div className="m-stat-value mc-word">{leader?.alias ?? '—'}</div><div className="sub">{leader ? challengeText(value.kind, leader.value) : 'no one qualified yet'}</div></div>
-        <div><div className="m-label">Next week</div><div className="m-stat-value mc-word">{CHALLENGES[value.next].name}</div><div className="sub">from Monday 00:00 UTC</div></div>
+    <section className={`m-card mc-challenge k-${value.kind}`}>
+      <div className="mc-challenge-badge">{CHALLENGE_ICON[value.kind]}</div>
+      <div className="mc-challenge-id">
+        <span className="m-label">This week’s challenge</span>
+        <h2>{info.name}</h2>
+        <p>{info.rule}{value.kind === 'cache' && ` · ${formatCompact(CACHE_CHALLENGE_MINIMUM)} tokens to qualify`}</p>
       </div>
-      <table className="m-table lb-table">
+      <div className="mc-challenge-you">
+        <span className="m-label">You</span>
+        <span className={`mc-big${place(mine?.rank)}`}>{mine?.rank === 1 && CROWN}{mine?.rank ? `#${formatExact(mine.rank)}` : '—'}</span>
+        <span className="sub">{!mine ? 'Not on this challenge' : !mine.qualified ? 'Not qualified yet' : mine.rank === 1 ? <>In front with <b>{challengeText(value.kind, mine.value)}</b>. Hold on.</> : above ? <><b>{gapText(value.kind, (above.value ?? 0) - (mine.value ?? 0))}</b> behind {above.alias} for #{formatExact(above.rank!)}</> : challengeText(value.kind, mine.value)}</span>
+        {mine && !mine.qualified && value.kind === 'cache' && <span className="mc-qualify"><Meter value={mine.tokens} of={CACHE_CHALLENGE_MINIMUM} tone="gold" />{formatCompact(mine.tokens)} of {formatCompact(CACHE_CHALLENGE_MINIMUM)}</span>}
+      </div>
+    </section>
+    {qualified.length > 0 && <Podium label={`${info.name} leaders`} places={qualified.slice(0, 3).map((row) => ({ key: row.alias, name: row.alias, value: challengeText(value.kind, row.value), face: <Avatar alias={row.alias} size="lg" />, you: row.alias === me, sub: `${formatCompact(row.tokens)} tokens` }))} />}
+    <section className="m-card">
+      <div className="lb-head"><h2>Standings</h2><span className="m-badge lb-count">{formatExact(qualified.length)} qualified</span><span className="lb-reset">ends in <b>{weekLeft()}</b></span></div>
+      {value.leaders.length > 0 && <LineRace label={`${info.name}: the leaders day by day`} days={DAYS.slice(0, Math.max(...value.leaders.map((row) => row.daily.length)))} zero={challengeUnit(value.kind) !== 'percent'}
+        format={(tick) => challengeText(value.kind, Math.round(tick))} lines={value.leaders.map((row) => ({ key: row.alias, label: row.alias, hue: avatarHue(row.alias), values: row.daily, you: row.alias === me }))} />}
+      <table className="m-table lb-table mc-standings">
         <thead><tr><th scope="col" className="l">Rank</th><th scope="col" className="l">Builder</th><th scope="col" className="sorted">{value.kind === 'cache' ? 'Hit rate' : info.name}</th><th scope="col">Tokens</th></tr></thead>
         <tbody>{value.standings.map((row) => <tr key={row.alias} className={row.alias === me ? 'you' : undefined}>
           <td className="l"><span className="lb-rk"><span className={`rank${row.rank && row.rank <= 3 ? ` medal g${row.rank}` : ''}`}>{row.rank ? formatExact(row.rank) : '–'}</span></span></td>
-          <td className="l"><div className="lb-user"><Avatar alias={row.alias} /><span className="lb-name">{row.alias}{row.alias === me && <span className="m-badge accent">You</span>}</span>{!row.qualified && <span className="lb-meta mc-pending">not qualified yet</span>}</div></td>
+          <td className="l"><div className="lb-user"><Avatar alias={row.alias} /><span className="lb-name">{row.alias}{row.alias === me && <span className="m-badge accent">You</span>}</span>{!row.qualified && <span className="lb-meta mc-pending">{value.kind === 'cache' ? `${formatCompact(row.tokens)} of ${formatCompact(CACHE_CHALLENGE_MINIMUM)} to qualify` : 'not qualified yet'}</span>}</div></td>
           <td className="lb-total">{row.qualified ? challengeText(value.kind, row.value) : <span className="zero">—</span>}</td>
           <td title={tokensTitle(row.tokens)}>{formatCompact(row.tokens)}</td>
         </tr>)}</tbody>
       </table>
     </section>
-    <section className="m-card"><div className="lb-head"><h2>Past challenges</h2></div>
-      <table className="m-table lb-table"><thead><tr><th scope="col" className="l">Challenge</th><th scope="col" className="l">Week of</th><th scope="col" className="l">Winner</th><th scope="col">Result</th></tr></thead>
-        <tbody>{value.past.map((row) => <tr key={row.week}><td className="l">{CHALLENGES[row.kind].name}</td><td className="l">{shortDay(row.week)}</td><td className="l">{row.winner ?? 'No winner'}</td><td>{row.value === null ? '—' : challengeText(row.kind, row.value)}</td></tr>)}</tbody></table>
+    <section className="m-card mc-next">
+      <div><span className="m-label">Next week · from Monday 00:00 UTC</span><h2 className={`mc-kind k-${value.next}`}>{CHALLENGE_ICON[value.next]}{CHALLENGES[value.next].name}</h2><p>{CHALLENGES[value.next].rule}.</p></div>
+      {admin ? <div className="mc-next-pick"><Seg label="Next week’s challenge" value={value.next} options={CHALLENGE_KINDS.map((kind) => [kind, CHALLENGES[kind].option] as [ChallengeKind, string])} onChange={(next) => { if (!busy && next !== value.next) pick(next); }} /><small>{busy ? 'Saving…' : 'Admins can change it until Monday.'}</small></div>
+        : <small className="faint">Admins choose next week’s challenge.</small>}
+      {error && <Notice tone="error">{error}</Notice>}
     </section>
+    {value.past.length > 0 && <section className="m-card mc-trophies">
+      <div className="lb-head"><h2>Trophy wall</h2>{trophies > 0 && <span className="m-badge gold">{TROPHY}{trophies} yours</span>}</div>
+      <ul>{value.past.map((row) => <li key={row.week} className={`${row.winner ? 'won' : 'none'}${row.winner && row.winner === me ? ' you' : ''}`}>
+        <span className="mc-cup">{row.winner ? TROPHY : CHALLENGE_ICON[row.kind]}</span>
+        <span className="mc-cup-k">{CHALLENGES[row.kind].name} · week of {shortDay(row.week)}</span>
+        {row.winner ? <span className="mc-cup-who"><Avatar alias={row.winner} /><b>{row.winner}</b>{row.winner === me && <span className="m-badge accent">You</span>}</span> : <span className="mc-cup-who faint">No winner</span>}
+        <span className="mc-cup-v">{row.value === null ? '—' : challengeText(row.kind, row.value)}</span>
+      </li>)}</ul>
+    </section>}
   </>;
 }
 

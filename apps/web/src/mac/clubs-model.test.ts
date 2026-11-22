@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cumulative, edge, isHot, leadByDay, slugOf, timeLeft, weekProgress } from './clubs-model';
+import { cumulative, edge, isHot, leadByDay, raceDomain, slugOf, timeLeft, weekProgress } from './clubs-model';
 
 describe('cumulative', () => {
   it('adds each day to the days before it', () => {
@@ -59,5 +59,21 @@ describe('slugOf', () => {
   it('lowercases words and joins them with single hyphens', () => {
     expect(slugOf('Night Shift')).toBe('night-shift');
     expect(slugOf("  Rock & Roll's Café ")).toBe('rock-roll-s-cafe');
+  });
+});
+
+describe('raceDomain', () => {
+  it('starts at zero with room above when asked to', () => {
+    expect(raceDomain([50, 100], true)).toEqual([0, 108]);
+    expect(raceDomain([0, 0], true)).toEqual([0, 1]);
+  });
+  it('otherwise hugs the values, so close rates still part', () => {
+    const [low, high] = raceDomain([8690, 9190], false);
+    expect(low).toBeCloseTo(8615);
+    expect(high).toBeCloseTo(9265);
+  });
+  it('opens a flat line and an empty chart', () => {
+    expect(raceDomain([7, 7], false)).toEqual([6.65, 7.35]);
+    expect(raceDomain([], false)).toEqual([0, 1]);
   });
 });

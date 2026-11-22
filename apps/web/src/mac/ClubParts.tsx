@@ -3,7 +3,9 @@ import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { clubWeek, type ChallengeKind } from '@tokentracky/core';
 import { clubHue } from '../ClubMark';
 import { formatCompact, formatExact } from '../format';
-import { timeLeft, weekProgress } from './clubs-model';
+import { monotonePath } from './chart';
+import { raceDomain, timeLeft, weekProgress } from './clubs-model';
+import { useWidth } from './LeaderboardView';
 
 /** The time now, read again every `every` ms while mounted. */
 export function useNow(every = 1000): number {
@@ -21,7 +23,7 @@ export const hue = (slug: string) => ({ '--h': clubHue(slug) }) as CSSProperties
 export const place = (rank: number | null | undefined) => rank && rank <= 3 ? ` p${rank}` : '';
 
 const pad = (value: number) => String(value).padStart(2, '0');
-const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+export const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 /** The week's clock: the time to Monday 00:00 UTC, ticking each second, red on the last day, over the days gone. */
 export function WeekClock({ label = 'Week ends in' }: { label?: string }) {
   const now = useNow();
@@ -88,4 +90,41 @@ export function Podium({ places, label }: { places: readonly PodiumPlace[]; labe
     </>;
     return <li key={entry.key} className={`mc-step s${index + 1}${entry.you ? ' you' : ''}`}>{entry.onOpen ? <button type="button" onClick={entry.onOpen}>{body}</button> : <div>{body}</div>}</li>;
   })}</ol>;
+}
+
+export interface RaceLine { key: string; label: string; hue: number; values: ReadonlyArray<number | null>; you?: boolean }
+const CHART_H = 216, CHART_TOP = 16, CHART_BASE = 184;
+/** Lines racing across the week, one per contender in its colour, each named where it ends; from zero, or zoomed in on close values. */
+export function LineRace({ lines, days, zero = false, format, label }: { lines: readonly RaceLine[]; days: readonly string[]; zero?: boolean; format: (value: number) => string; label: string }) {
+  const [box, width] = useWidth(640);
+  const right = width - 118;
+  const values = lines.flatMap((line) => line.values.filter((value): value is number => value !== null));
+  const [low, high] = raceDomain(values, zero);
+  const x = (index: number) => days.length > 1 ? 10 + (index / (days.length - 1)) * (right - 10) : right / 2;
+  const y = (value: number) => CHART_BASE - ((value - low) / (high - low)) * (CHART_BASE - CHART_TOP);
+  const ticks = [0, 1, 2, 3].map((step) => low + ((high - low) * step) / 3);
+  // Each line's end, its name nudged down until it clears the one above.
+  const ends = lines.flatMap((line) => {
+    const at = line.values.reduce<number>((last, value, index) => value === null ? last : index, -1);
+    return at < 0 ? [] : [{ line, cx: x(at), cy: y(line.values[at]!), ly: y(line.values[at]!) }];
+  }).sort((a, b) => a.cy - b.cy);
+  ends.forEach((end, index) => { if (index > 0) end.ly = Math.max(end.ly, ends[index - 1]!.ly + 15); });
+  return <div className="mc-race" ref={box}>
+    <svg viewBox={`0 0 ${width} ${CHART_H}`} role="img" aria-label={label}>
+      {ticks.map((tick, index) => <g key={index}><line x1="0" x2={right} y1={y(tick)} y2={y(tick)} stroke="rgba(255,255,255,.06)" />{index > 0 && <text className="axis" x="0" y={y(tick) - 5}>{format(tick)}</text>}</g>)}
+      {lines.map((line) => {
+        // A day without a value breaks the line.
+        const runs: Array<Array<[number, number]>> = [[]];
+        line.values.forEach((value, index) => value === null ? runs.push([]) : runs.at(-1)!.push([x(index), y(value)]));
+        const stroke = `hsl(${line.hue} 85% 66%)`;
+        return <g key={line.key} className={line.you ? 'you' : undefined}>{runs.filter((run) => run.length > 1).map((run, index) => <path key={index} d={monotonePath(run)} fill="none" stroke={stroke} strokeWidth={line.you ? 3 : 1.8} strokeLinecap="round" opacity={line.you ? 1 : 0.85} />)}</g>;
+      })}
+      {ends.map(({ line, cx, cy, ly }) => <g key={line.key}>
+        <circle cx={cx} cy={cy} r={line.you ? 9 : 7} fill={`hsl(${line.hue} 85% 66%)`} opacity=".16" />
+        <circle cx={cx} cy={cy} r="3.5" fill={`hsl(${line.hue} 85% 70%)`} stroke="#0f1011" strokeWidth="1.5" />
+        <text className={`mc-race-name${line.you ? ' you' : ''}`} x={right + 14} y={ly + 4} fill={`hsl(${line.hue} 85% 74%)`}>{line.label}</text>
+      </g>)}
+      {days.map((day, index) => <text key={day} className="axis" x={x(index)} y={CHART_H - 8} textAnchor={days.length > 1 && index === 0 ? 'start' : days.length > 1 && index === days.length - 1 ? 'end' : 'middle'}>{day}</text>)}
+    </svg>
+  </div>;
 }

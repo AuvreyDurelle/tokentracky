@@ -280,6 +280,47 @@
 .mac .mc-mvp { display: inline-flex; align-items: center; gap: 3px; }
 .mac .mc-mvp .mc-ic { width: 11px; height: 11px; }
 
+/* Challenge: the kind's emblem in its colour, your place and the gap; the leaders' race; next week; the trophy wall. */
+.mac .mc-challenge { --k: var(--accent); --k-rgb: 123, 127, 246; display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(220px, auto); align-items: center; gap: 22px; margin-bottom: 16px; padding: 22px 24px; border-color: rgba(var(--k-rgb), 0.4); background: radial-gradient(70% 160% at 0% 50%, rgba(var(--k-rgb), 0.2), transparent 60%), var(--surface); }
+.mac .mc-challenge.k-streak { --k: #ff8a3d; --k-rgb: 255, 138, 61; }
+.mac .mc-challenge.k-big-day { --k: var(--gold); --k-rgb: 232, 182, 76; }
+.mac .mc-challenge.k-cache { --k: #2dd4bf; --k-rgb: 45, 212, 191; }
+.mac .mc-challenge-badge { display: grid; place-items: center; width: 68px; height: 68px; border-radius: 18px; background: linear-gradient(140deg, rgba(var(--k-rgb), 0.4), rgba(var(--k-rgb), 0.1)); box-shadow: inset 0 0 0 1px rgba(var(--k-rgb), 0.55), 0 10px 34px -10px rgba(var(--k-rgb), 0.9); color: var(--k); }
+.mac .mc-challenge-badge .mc-ic { width: 34px; height: 34px; }
+.mac .mc-challenge-id h2 { margin: 2px 0 4px; font-size: 26px; font-weight: 750; letter-spacing: -0.025em; }
+.mac .mc-challenge-id p { color: var(--text-3); font-size: 13px; }
+.mac .mc-challenge-you { display: grid; gap: 2px; padding-left: 22px; border-left: 1px solid var(--border); }
+.mac .mc-challenge-you .sub { color: var(--text-3); font-size: 12.5px; }
+.mac .mc-challenge-you .sub b { color: var(--text); }
+.mac .mc-challenge-you .mc-big { margin: 4px 0; font-size: 40px; }
+.mac .mc-qualify { display: flex; align-items: center; gap: 8px; margin-top: 4px; color: var(--text-3); font-size: 11.5px; }
+.mac .mc-race { padding: 4px 18px 6px; border-bottom: 1px solid var(--border); }
+.mac .mc-race svg { display: block; width: 100%; height: auto; overflow: visible; }
+.mac .mc-race .axis { fill: var(--text-4); font-size: 10.5px; }
+.mac .mc-race-name { font-size: 12px; font-weight: 600; }
+.mac .mc-race-name.you { font-weight: 800; }
+.mac .mc-standings thead th:nth-child(2) { width: 46%; }
+.mac .mc-next { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px 20px; margin-bottom: 16px; padding: 18px 22px; }
+.mac .mc-next h2 { display: flex; margin: 4px 0 2px; font-size: 18px; font-weight: 700; }
+.mac .mc-next h2 .mc-ic { width: 17px; height: 17px; }
+.mac .mc-next p { color: var(--text-3); font-size: 12.5px; }
+.mac .mc-next-pick { display: grid; gap: 6px; justify-items: end; }
+.mac .mc-next-pick small { color: var(--text-3); font-size: 11.5px; }
+.mac .mc-next .notice { grid-column: 1 / -1; }
+.mac .mc-trophies ul { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin: 0; padding: 0 18px 18px; list-style: none; }
+.mac .mc-trophies li { display: grid; gap: 8px; justify-items: start; padding: 14px; border-radius: var(--radius-md); background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--border); }
+.mac .mc-trophies li.won { background: linear-gradient(160deg, rgba(232, 182, 76, 0.14), transparent 70%), var(--surface-2); box-shadow: inset 0 0 0 1px rgba(232, 182, 76, 0.3); }
+.mac .mc-trophies li.you { box-shadow: inset 0 0 0 1px rgba(123, 127, 246, 0.6), 0 0 24px -10px var(--accent); }
+.mac .mc-cup { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: var(--surface-3); color: var(--text-4); }
+.mac .won .mc-cup { background: rgba(232, 182, 76, 0.16); color: var(--gold); filter: drop-shadow(0 0 10px rgba(232, 182, 76, 0.45)); }
+.mac .mc-cup .mc-ic { width: 18px; height: 18px; }
+.mac .mc-cup-k { color: var(--text-3); font-size: 11.5px; }
+.mac .mc-cup-who { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.mac .mc-cup-who .avatar { width: 22px; height: 22px; font-size: 9px; }
+.mac .mc-cup-v { color: var(--gold); font-size: 17px; font-weight: 750; letter-spacing: -0.02em; }
+.mac .none .mc-cup-v { color: var(--text-4); }
+.mac .m-badge .mc-ic { width: 11px; height: 11px; margin-right: 3px; vertical-align: -1px; }
+
 @media (max-width: 1080px) {
   .mac .mc-battle-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); }
   .mac .mc-pair { grid-column: 1 / -1; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--border); }
