@@ -102,6 +102,9 @@ export interface ClubWeekSpan {start: string; end: string}
 export interface MyClub {
   club: ClubIdentity;
   role: ClubRole;
+  /** Off the club's board; the club on their profile. */
+  hidden: boolean;
+  onProfile: boolean;
   /** The member's place on the club's board this week; null when they have no tokens or hide from the board. */
   you: {rank: number | null; previousRank: number | null; ranked: number};
   week: ClubWeek;
