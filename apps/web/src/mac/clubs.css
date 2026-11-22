@@ -421,7 +421,10 @@
 .mac .mc-league .mcl-days { width: 112px; }
 .mac .mc-league .mcl-num { width: 84px; }
 .mac .mc-league .mcl-act { width: 118px; }
+.mac .mc-clubs .mc-league .lb-user { grid-template-columns: auto minmax(0, 1fr); }
 .mac .mc-league .lb-name { overflow: hidden; }
+.mac .mc-league .lb-name .m-badge { flex: none; }
+.mac .mc-league .mc-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mac .mc-active-cell { display: inline-grid; gap: 4px; justify-items: end; }
 .mac .mc-active-cell .mc-meter { width: 64px; height: 4px; }
 .mac .mc-league .mc-bars { width: 84px; height: 22px; }
@@ -445,7 +448,23 @@
   .mac .mc-versus { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
   .mac .mc-incoming-act { grid-column: 1 / -1; grid-template-columns: 1fr auto; align-items: center; text-align: left; }
   .mac .mc-chase { grid-template-columns: auto minmax(0, 1fr); }
+  .mac .mc-invite-main { grid-template-columns: auto minmax(0, 1fr); }
+  .mac .mc-invite-main > div:first-child { grid-column: 1 / -1; }
   .mac .mc-chase-gap, .mac .mc-chase > .m-btn { grid-column: 1 / -1; justify-self: start; }
+}
+/* The shared board hides its 4th and 5th cells as the window narrows; club tables keep theirs and choose their own:
+   the league gives up cost and 24h, then tokens, the week and the Challenge label. */
+@media (max-width: 1239px) {
+  .mac .m-lb .lb-table.mc-league tr > :nth-child(5), .mac .m-lb .lb-table.mc-standings tr > :nth-child(5), .mac .m-lb .lb-table.mc-roster tr > :nth-child(5) { display: table-cell; }
+  .mac .m-lb .lb-table.mc-league .x1, .mac .m-lb .lb-table.mc-league tr > .x1 { display: none; }
+}
+@media (max-width: 1039px) {
+  .mac .m-lb .lb-table.mc-league tr > :nth-child(4), .mac .m-lb .lb-table.mc-standings tr > :nth-child(4), .mac .m-lb .lb-table.mc-roster tr > :nth-child(4) { display: table-cell; }
+}
+@media (max-width: 1080px) {
+  .mac .m-lb .lb-table.mc-league .x2, .mac .m-lb .lb-table.mc-league tr > .x2, .mac .m-lb .lb-table.mc-league .mc-fight-sm span { display: none; }
+  .mac .mc-league .mcl-act { width: 50px; }
+  .mac .m-btn.mc-fight-sm .mc-ic { margin-right: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   .mac .mc-ping::after, .mac .mc-rope b, .mac .mc-meter i, .mac .mc-crown { animation: none; }
