@@ -185,11 +185,15 @@ export function PopoverPanel({ overview, recent, month, sessions, hours, yesterd
           <div className="po-sep" />
           <div className="po-sessions po-clubs">
             <div className="po-sec-head"><span>Clubs this week</span><button type="button" onClick={onClubs}>View all{ICONS.chevronRight}</button></div>
-            {clubs.slice(0, 3).map((entry) => <div key={entry.club.slug} className="po-session">
-              <span className="po-tile"><ClubMark mark={entry.club.mark} /></span>
-              <div className="po-txt"><b>{entry.club.name}</b><span>{entry.you.rank ? `#${formatExact(entry.you.rank)} of ${formatExact(entry.you.ranked)}` : 'Not ranked yet'}{entry.standing?.rank ? ` · #${entry.standing.rank} ${entry.standing.division === 'small' ? 'Small' : 'Large'} league` : ''}</span></div>
-              <span className="po-tok" title={`${formatExact(entry.week.tokens)} club tokens this week`}>{formatCompact(entry.week.tokens)}</span>
-            </div>)}
+            {clubs.slice(0, 3).map(({ club, you, standing, matchup }) => {
+              const lead = matchup ? matchup.perMember - matchup.opponentPerMember : 0;
+              return <div key={club.slug} className="po-session po-club">
+                <span className="po-tile"><ClubMark mark={club.mark} slug={club.slug} /></span>
+                <div className="po-txt"><b>{club.name}</b>{matchup ? <span className={lead > 0 ? 'po-lead' : lead < 0 ? 'po-trail' : undefined}>{lead > 0 ? 'Leading' : lead < 0 ? 'Trailing' : 'Level with'} {matchup.opponent.name}{lead !== 0 && ` by ${formatCompact(Math.abs(lead))}`}</span>
+                  : <span>{standing?.rank ? `#${standing.rank} ${standing.division === 'small' ? 'Small' : 'Large'} league` : `${formatCompact(club.members)} members`}</span>}</div>
+                <span className={`po-rank${you.rank && you.rank <= 3 ? ` p${you.rank}` : ''}`} title={you.rank ? `#${formatExact(you.rank)} of ${formatExact(you.ranked)} this week` : 'Not ranked yet'}>{you.rank ? `#${formatExact(you.rank)}` : '—'}<small>of {formatExact(you.ranked)}</small></span>
+              </div>;
+            })}
           </div>
         </>}
         {streak && <>

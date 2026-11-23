@@ -21,6 +21,7 @@ import type {
   UsageWindow,
   ClubCategory,
   ClubChallenge,
+  ClubCompare,
   ClubDivision,
   ClubIdentity,
   ClubInput,
@@ -171,6 +172,12 @@ export class ApiClient {
   removeClubMember(slug: string, alias: string) { return this.request<void>(`/api/local/clubs/${encodeURIComponent(slug)}/members/${encodeURIComponent(alias)}`, { method: 'DELETE' }); }
   updateClubMember(slug: string, alias: string, value: { role?: ClubRole; hidden?: boolean; onProfile?: boolean }) { return this.request<void>(`/api/local/clubs/${encodeURIComponent(slug)}/members/${encodeURIComponent(alias)}`, { method: 'PUT', body: JSON.stringify(value) }); }
   resetClubInvite(slug: string) { return this.request<{ invite: string }>(`/api/local/clubs/${encodeURIComponent(slug)}/invite`, { method: 'POST' }); }
+  /** Two clubs side by side this week, and the matchup between them if there is one. */
+  clubCompare(a: string, b: string) { return this.request<ClubCompare>(`/api/local/clubs/vs/${encodeURIComponent(a)}/${encodeURIComponent(b)}`); }
+  /** An admin of `slug` challenges `opponent` (a slug) to next week's matchup; the other club's admins accept. */
+  challengeClub(slug: string, opponent: string) { return this.request<void>(`/api/local/clubs/${encodeURIComponent(slug)}/matchups`, { method: 'POST', body: JSON.stringify({ opponent }) }); }
+  /** Admins only: the club's settings, with next week's challenge. */
+  updateClub(slug: string, input: ClubInput) { return this.request<ClubIdentity>(`/api/local/clubs/${encodeURIComponent(slug)}`, { method: 'PUT', body: JSON.stringify(input) }); }
   answerMatchup(id: string, answer: 'accept' | 'decline' | 'withdraw') { return this.request<void>(`/api/local/clubs/matchups/${encodeURIComponent(id)}`, { method: 'POST', body: JSON.stringify({ answer }) }); }
   /** Likes go through the linked device's credential, never an account token. */
   likeStatus(alias: string) { return this.request<{ liked: boolean }>(`/api/local/likes/${encodeURIComponent(alias)}`); }

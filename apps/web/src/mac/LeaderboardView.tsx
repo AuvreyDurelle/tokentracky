@@ -165,7 +165,7 @@ export function TrendArea({ points: values, title, note, labels, aria }: { point
 }
 
 /** An element's width in CSS pixels, kept current as the window resizes; `initial` until it is first measured. */
-function useWidth(initial: number) {
+export function useWidth(initial: number) {
   const ref = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(initial);
   useEffect(() => {
