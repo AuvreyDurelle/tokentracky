@@ -112,7 +112,7 @@ function YourClubs({ api, me, go, onJoin, onCode, onNew }: { api: ApiClient; me:
     {mine.value && mine.value.requests.length > 0 && <section className="mc-stack" aria-label="Challenges waiting on you">{mine.value.requests.map((request) => <Incoming key={request.id} request={request} busy={answering || mine.loading} onAnswer={answer} onScout={() => setOpen([request.to.slug, request.from.slug])} />)}</section>}
     {mine.value?.clubs.length === 0 && <section className="m-card mc-empty"><Empty title="No club, no rivals" action={<span className="mc-actions"><button type="button" className="m-btn primary" onClick={onNew}>Start a club</button><button type="button" className="m-btn" onClick={() => go({ page: 'clubs', tab: 'discover' })}>Discover clubs</button></span>}>Start a private club for your team or friends, or join a public one. Every week your club climbs the league, takes on another club and plays a challenge.</Empty></section>}
     {mine.value?.clubs.map((entry) => <BattleCard key={entry.club.slug} entry={entry} go={go} />)}
-    {open && <HeadToHead api={api} a={open[0]} b={open[1]} mine={mine.value} go={go} onClose={() => setOpen(null)} onChanged={() => setRound((n) => n + 1)} onBusy={setAnswering} />}
+    {open && <HeadToHead api={api} a={open[0]} b={open[1]} mine={mine.value} go={go} onClose={() => setOpen(null)} onChanged={() => setRound((n) => n + 1)} onBusy={setAnswering} hold={answering} />}
   </>;
 }
 
@@ -375,9 +375,11 @@ function ScoreSide({ side, go, ahead, open, right = false }: { side: MatchupSide
 }
 
 /** Two clubs side by side, every category scored, and the way to start, withdraw or answer a matchup between them. */
-function HeadToHead({ api, a, b, mine, go, onClose, onChanged, onBusy }: { api: ApiClient; a: string; b: string; mine: MyClubs | null; go: Go; onClose: () => void; onChanged: () => void;
+function HeadToHead({ api, a, b, mine, go, onClose, onChanged, onBusy, hold = false }: { api: ApiClient; a: string; b: string; mine: MyClubs | null; go: Go; onClose: () => void; onChanged: () => void;
   /** Told when an action starts, and when one fails: the page behind shares the lock, so closing the dialog can't answer twice. */
-  onBusy?: (busy: boolean) => void }) {
+  onBusy?: (busy: boolean) => void;
+  /** The page behind still waits for its list after an answer: no action until it has it. */
+  hold?: boolean }) {
   const [round, setRound] = useState(0);
   const data = useLoad(() => api.clubCompare(a, b), [api, a, b, round]);
   const [busy, setBusy] = useState(false);
@@ -385,7 +387,7 @@ function HeadToHead({ api, a, b, mine, go, onClose, onChanged, onBusy }: { api: 
   const value = data.value;
   // From an action until the refreshed comparison arrives, the buttons would offer the same action again.
   useEffect(() => { setBusy(false); }, [value]);
-  const locked = busy || data.loading || data.error !== null;
+  const locked = busy || hold || data.loading || data.error !== null;
   const act = (action: () => Promise<unknown>) => { setBusy(true); setError(null); onBusy?.(true); action().then(() => { setRound((n) => n + 1); onChanged(); }, (reason: unknown) => { setError(errorText(reason)); setBusy(false); onBusy?.(false); }); };
   const role = (slug: string) => mine?.clubs.find((entry) => entry.club.slug === slug)?.role ?? null;
   const admin = (slug: string) => { const value = role(slug); return value === 'owner' || value === 'admin'; };
