@@ -107,6 +107,7 @@ function YourClubs({ api, me, go, onJoin, onCode, onNew }: { api: ApiClient; me:
       <WeekClock /></div>
     {mine.error !== null && !mine.value && <NotLinked error={mine.error} onJoin={onJoin} />}
     {!mine.value && mine.error === null && <Loading>Loading your clubs…</Loading>}
+    {mine.error !== null && mine.value && <Notice tone="error">Could not refresh your clubs: {errorText(mine.error)} <button type="button" className="m-btn st-sm" onClick={() => setRound((n) => n + 1)}>Retry</button></Notice>}
     {error && <Notice tone="error">{error}</Notice>}
     {mine.value && mine.value.requests.length > 0 && <section className="mc-stack" aria-label="Challenges waiting on you">{mine.value.requests.map((request) => <Incoming key={request.id} request={request} busy={answering || mine.loading} onAnswer={answer} onScout={() => setOpen([request.to.slug, request.from.slug])} />)}</section>}
     {mine.value?.clubs.length === 0 && <section className="m-card mc-empty"><Empty title="No club, no rivals" action={<span className="mc-actions"><button type="button" className="m-btn primary" onClick={onNew}>Start a club</button><button type="button" className="m-btn" onClick={() => go({ page: 'clubs', tab: 'discover' })}>Discover clubs</button></span>}>Start a private club for your team or friends, or join a public one. Every week your club climbs the league, takes on another club and plays a challenge.</Empty></section>}
@@ -126,7 +127,7 @@ function Incoming({ request, busy, onAnswer, onScout }: { request: MatchupReques
       <VersusSide club={request.to} note="Your club" value={request.toPerMember} ahead={gap > 0} />
       <div className="mc-incoming-act">
         <p>{gap > 0 ? <>You’re <b className="up">{formatCompact(gap)}</b> per member ahead on this week’s pace. Favourites.</> : gap < 0 ? <>They’re <b className="down">{formatCompact(-gap)}</b> per member ahead on this week’s pace. Fancy an upset?</> : 'Dead level on this week’s pace.'}</p>
-        <span className="mc-actions"><button type="button" className="m-btn" onClick={onScout}>Tale of the tape</button><button type="button" className="m-btn" disabled={busy} onClick={() => onAnswer(request.id, 'decline')}>Decline</button><button type="button" className="m-btn primary mc-fight-btn" disabled={busy} onClick={() => onAnswer(request.id, 'accept')}>{SWORDS}Accept</button></span>
+        <span className="mc-actions"><button type="button" className="m-btn" disabled={busy} onClick={onScout}>Tale of the tape</button><button type="button" className="m-btn" disabled={busy} onClick={() => onAnswer(request.id, 'decline')}>Decline</button><button type="button" className="m-btn primary mc-fight-btn" disabled={busy} onClick={() => onAnswer(request.id, 'accept')}>{SWORDS}Accept</button></span>
       </div>
     </div>
   </section>;
@@ -461,6 +462,7 @@ export function ClubView({ api, me, slug, tab, go, site, onProfile, onJoin }: { 
     </ToolbarActions>
     {page.error !== null && !value && (page.error instanceof ApiError && page.error.status === 404 ? <section className="m-card"><Empty title="This club does not exist" action={<button type="button" className="m-btn" onClick={() => go({ page: 'clubs', tab: 'mine' })}>Your clubs</button>}>It may have been deleted, or its address changed.</Empty></section> : <NotLinked error={page.error} onJoin={onJoin} />)}
     {!value && page.error === null && <Loading>Loading the club…</Loading>}
+    {page.error !== null && value && <Notice tone="error">Could not refresh the club, so this may be out of date: {errorText(page.error)} <button type="button" className="m-btn st-sm" onClick={() => setRound((n) => n + 1)}>Retry</button></Notice>}
     {error && <Notice tone="error">{error}</Notice>}
     {value && <>
       <header className="mc-banner">
