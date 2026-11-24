@@ -1,0 +1,148 @@
+# TEMPORARY: proof that the desktop app runs on Windows. Removed before merge.
+name: Windows proof
+
+on:
+  push:
+    branches: [desktop-windows-linux-app]
+
+permissions: {}
+
+jobs:
+  proof:
+    runs-on: windows-2022
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    env:
+      CARGO_INCREMENTAL: '0'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: '1.99.0'
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: false
+      - run: npm ci
+      - run: npm run build --workspace=@tokentracky/web
+      - run: cargo build -p tokentracky-mac
+      - name: Run the app and capture it
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Continue'
+          Add-Type -AssemblyName System.Windows.Forms, System.Drawing, UIAutomationClient, UIAutomationTypes
+          Add-Type @'
+          using System; using System.Runtime.InteropServices;
+          public static class Mouse {
+            [DllImport("user32.dll")] public static extern bool SetCursorPos(int x, int y);
+            [DllImport("user32.dll")] public static extern void mouse_event(uint f, uint x, uint y, uint d, UIntPtr e);
+            public static void Click(int x, int y) {
+              SetCursorPos(x, y); mouse_event(2, 0, 0, 0, UIntPtr.Zero);
+              System.Threading.Thread.Sleep(80); mouse_event(4, 0, 0, 0, UIntPtr.Zero);
+            }
+          }
+          '@
+          $out = Join-Path $env:RUNNER_TEMP 'proof'
+          New-Item -ItemType Directory -Force $out | Out-Null
+          $env:TOKENTRACKY_HOME = (New-Item -ItemType Directory -Force (Join-Path $env:RUNNER_TEMP 'tt-home')).FullName
+          $env:TOKENTRACKY_PRICING_REFRESH = '0'
+          $exe = (Resolve-Path 'target\debug\tokentracky-mac.exe').Path
+          $log = Join-Path $out 'app.log'
+          function LogText($path = $log) {
+            try {
+              $fs = [System.IO.File]::Open($path, 'Open', 'Read', 'ReadWrite')
+              $sr = New-Object System.IO.StreamReader $fs; $t = $sr.ReadToEnd(); $sr.Close(); $t
+            } catch { '' }
+          }
+          function Count($pattern, $path = $log) { ([regex]::Matches((LogText $path), [regex]::Escape($pattern))).Count }
+          function WaitCount($pattern, $n, $seconds, $path = $log) {
+            for ($i = 0; $i -lt $seconds * 4; $i++) { if ((Count $pattern $path) -ge $n) { return $true }; Start-Sleep -Milliseconds 250 }
+            Write-Output "timeout waiting for $n x '$pattern'"; return $false
+          }
+          function Shot($name) {
+            $b = [System.Windows.Forms.SystemInformation]::VirtualScreen
+            $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
+            $g = [System.Drawing.Graphics]::FromImage($bmp)
+            $g.CopyFromScreen($b.Left, $b.Top, 0, 0, $bmp.Size)
+            $bmp.Save((Join-Path $out "$name.png")); $g.Dispose(); $bmp.Dispose()
+            Write-Output "screenshot $name ($($b.Width)x$($b.Height))"
+          }
+          function Second($arg, $name) {
+            Start-Process -FilePath $exe -ArgumentList $arg -NoNewWindow -Wait -RedirectStandardError (Join-Path $out "$name.log")
+          }
+
+          # 1. The dashboard.
+          $app = Start-Process -FilePath $exe -ArgumentList '--open-dashboard' -NoNewWindow -PassThru -RedirectStandardError $log -RedirectStandardOutput (Join-Path $out 'stdout.log')
+          WaitCount 'page-load finished path=/' 1 180 | Out-Null
+          Start-Sleep 5
+          Shot '1-dashboard'
+
+          # 2. A second launch opens the popover at the tray icon's place.
+          Second '--open-popover' 'second-popover'
+          WaitCount 'popover visible' 1 60 | Out-Null
+          Start-Sleep 3
+          Shot '2-popover-flag'
+          $wa = [System.Windows.Forms.Screen]::PrimaryScreen.WorkingArea
+          [Mouse]::Click([int]($wa.Width / 4), [int]($wa.Height / 2))
+          Start-Sleep 2
+          Write-Output "after a click on the dashboard: destroyed=$(Count 'window destroyed')"
+
+          # 3. Real clicks on the tray icon (UI Automation finds its button by the tooltip).
+          $root = [System.Windows.Automation.AutomationElement]::RootElement
+          $any = [System.Windows.Automation.Condition]::TrueCondition
+          $found = $null
+          foreach ($class in 'Shell_TrayWnd', 'NotifyIconOverflowWindow') {
+            $cond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ClassNameProperty, $class)
+            $bar = $root.FindFirst([System.Windows.Automation.TreeScope]::Children, $cond)
+            if (-not $bar) { Write-Output "$class not found"; continue }
+            foreach ($e in $bar.FindAll([System.Windows.Automation.TreeScope]::Descendants, $any)) {
+              $c = $e.Current
+              Write-Output "  $class > $($c.ClassName) '$($c.Name)' $($c.BoundingRectangle)"
+              if (-not $found -and $c.Name -like 'Tokentracky*') { $found = $e }
+            }
+          }
+          if ($found) {
+            $r = $found.Current.BoundingRectangle
+            $x = [int]($r.X + $r.Width / 2); $y = [int]($r.Y + $r.Height / 2)
+            Write-Output "tray button '$($found.Current.Name)' at $x,$y"
+            $before = Count 'popover visible'
+            [Mouse]::Click($x, $y)
+            WaitCount 'popover visible' ($before + 1) 30 | Out-Null
+            Start-Sleep 3
+            Shot '3-popover-click'
+            $shown = Count 'popover visible'; $gone = Count 'window destroyed'
+            [Mouse]::Click($x, $y)
+            Start-Sleep 4
+            Write-Output "second click: popover visible $shown -> $(Count 'popover visible'), destroyed $gone -> $(Count 'window destroyed')"
+            Shot '4-after-second-click'
+          } else {
+            Write-Output 'tray button not found'
+          }
+
+          # 4. A startup alert does not hold the app up: an invalid leaderboard origin, and the dashboard still loads.
+          Second '--quit' 'second-quit'
+          $app.WaitForExit(30000) | Out-Null
+          Write-Output "first instance exited: $($app.HasExited)"
+          $env:TOKENTRACKY_CLOUD_URL = 'http://example.invalid'
+          $log2 = Join-Path $out 'app-alert.log'
+          $app2 = Start-Process -FilePath $exe -ArgumentList '--open-dashboard' -NoNewWindow -PassThru -RedirectStandardError $log2
+          WaitCount 'page-load finished path=/' 1 120 $log2 | Out-Null
+          Start-Sleep 5
+          Shot '5-alert-and-dashboard'
+          Stop-Process -Id $app2.Id -Force -ErrorAction SilentlyContinue
+
+          # The value launch at login wrote.
+          Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' | Format-List | Out-String | Write-Output
+          Get-ChildItem $out | Format-Table Name, Length | Out-String | Write-Output
+          foreach ($f in Get-ChildItem $out -Filter *.log) { Write-Output "==== $($f.Name)"; LogText $f.FullName }
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: windows-proof
+          path: ${{ runner.temp }}/proof
