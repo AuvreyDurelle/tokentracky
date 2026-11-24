@@ -1,12 +1,12 @@
 # CLI and Mac distribution
 
-Linux and Windows CLI releases: [Linux and Windows CLI releases](MAC_RELEASE.md#linux-and-windows-cli-releases).
+Linux and Windows CLI releases: [Linux and Windows CLI releases](MAC_RELEASE.md#linux-and-windows-cli-releases). The Windows and Linux app: [Windows and Linux app releases](MAC_RELEASE.md#windows-and-linux-app-releases).
 
 The Rust CLI is `crates/cli` (`tokentracky`), currently version `0.1.0`. The separate `packaging/` npm package owns the eventual public `tokentracky` npm name and must be published at the exact Cargo CLI version.
 
 ## Supported targets
 
-The Mac app and its CLI target macOS 13+ (Ventura) on Apple Silicon (`darwin-arm64`). The CLI is also built for Linux on x86_64 and aarch64, as one static (musl) binary per architecture that runs on any distribution, and for Windows on x86_64. npm users need Node 18+ to run the small launcher; after download, the Rust executable runs without Node. The launcher rejects other systems and architectures, Intel macOS and older macOS with a platform-specific message.
+The Mac app and its CLI target macOS 13+ (Ventura) on Apple Silicon (`darwin-arm64`). The same app is built for Windows x86_64 (a per-user NSIS installer) and Linux x86_64 (an AppImage and a .deb, built on Ubuntu 22.04). The CLI is also built for Linux on x86_64 and aarch64, as one static (musl) binary per architecture that runs on any distribution, and for Windows on x86_64. npm users need Node 18+ to run the small launcher; after download, the Rust executable runs without Node. The launcher rejects other systems and architectures, Intel macOS and older macOS with a platform-specific message.
 
 ## Release asset interface
 
@@ -18,6 +18,10 @@ The native release pipeline builds the Rust executable from the same versioned c
 | Static Linux CLI executables | `tokentracky-<VERSION>-linux-x86_64`, `tokentracky-<VERSION>-linux-aarch64` | npm launcher and direct download |
 | Windows CLI executable (unsigned) | `tokentracky-<VERSION>-windows-x86_64.exe` | npm launcher and direct download |
 | Signed Mac disk image | `tokentracky-<VERSION>-macos-arm64.dmg` | Homebrew cask |
+| Windows app installer (not code-signed) and its updater signature | `tokentracky-<VERSION>-windows-x86_64-setup.exe`, `….exe.sig` | Direct download; the app's updater |
+| Linux AppImage and its updater signature | `tokentracky-<VERSION>-linux-x86_64.AppImage`, `….AppImage.sig` | Direct download; the app's updater |
+| Linux Debian package | `tokentracky-<VERSION>-linux-x86_64.deb` | `apt install` on Debian and Ubuntu |
+| Updater feed | `<channel>.json` (`stable.json`) | Every app's updater: `darwin-aarch64`, `windows-x86_64`, `linux-x86_64-appimage` |
 | The same disk image, fixed name | `Tokentracky.dmg` | Website download through `releases/latest/download/Tokentracky.dmg` |
 | Release manifest | `verified-candidate-manifest.json` | Every platform's checksums, below; the npm package embeds it |
 | Release checksums | `SHA256SUMS` | Auditable checksums for every published artifact |

@@ -1,10 +1,12 @@
 # macOS releases
 
-This runbook describes the Rust/Tauri Mac release path, and the Linux and Windows CLIs released beside it ([below](#linux-and-windows-cli-releases)). The **Release** workflow (`release-macos.yml`) builds a GitHub draft and checks every uploaded byte. Unless `publish` is false, it then publishes the release as latest, publishes npm and updates the Homebrew tap. The first releases are **ad-hoc signed** (`signing: adhoc`): not notarized, so users click Open Anyway once ([README](../README.md#install-on-a-mac)). Once a Developer ID certificate exists, `signing: developer-id` signs and notarizes instead. The first supported release target is Apple Silicon (`aarch64`) on macOS 13 or newer. Intel artifacts need their own signed build and validation before they are advertised.
+This runbook describes the Rust/Tauri Mac release path, and the Linux and Windows CLIs ([below](#linux-and-windows-cli-releases)) and apps ([below](#windows-and-linux-app-releases)) released beside it. The **Release** workflow (`release-macos.yml`) builds a GitHub draft and checks every uploaded byte. Unless `publish` is false, it then publishes the release as latest, publishes npm and updates the Homebrew tap. The first releases are **ad-hoc signed** (`signing: adhoc`): not notarized, so users click Open Anyway once ([README](../README.md#install-on-a-mac)). Once a Developer ID certificate exists, `signing: developer-id` signs and notarizes instead. The first supported release target is Apple Silicon (`aarch64`) on macOS 13 or newer. Intel artifacts need their own signed build and validation before they are advertised.
 
 ## Native gate
 
 `native-macos` in CI runs on `macos-15` and builds the React resources, the Tauri application and the Rust CLI from the same checked-out commit. It also bundles and extracts an unsigned native app, verifies CLI version/arm64 architecture and bundled web resources, and runs the Mac crate's tests, clippy, formatting and packaging harnesses. This is additional to, not a replacement for, the Linux Rust and HTTP contract gates.
+
+`native-desktop` does the same for the Windows and Linux app on `windows-2022` and `ubuntu-22.04`, on pull requests that touch the app or what it is built from. `scripts/install-desktop-tools.sh` installs the prebuilt Tauri CLI 2.11.5 and seeds the bundler's tool cache with the tools it would otherwise download unpinned (linuxdeploy, its plugins and AppRun on Linux; NSIS 3.11 and `nsis_tauri_utils` on Windows), each checked against its SHA-256. `scripts/check-desktop-package.sh` then builds the unsigned bundles without the updater (the per-user NSIS installer; the AppImage and the .deb), checks the .deb's version, program and web resources, and runs them as users get them against a throwaway data folder. On Windows, `scripts/smoke-desktop-windows.ps1` installs silently for the user, starts the app, waits for `[tokentracky] page-load finished path=/` on its stderr, quits it and uninstalls it, checking that neither the program nor its launch at login is left. On Linux, `scripts/smoke-desktop-linux.sh` runs the AppImage under Xvfb (which must also record its path for the CLI) and installs the .deb with its dependencies in a clean `ubuntu:22.04` container, where it must load its dashboard too.
 
 The CLI is built with `--features embed-web`; release builds cannot omit the dashboard bundle. Both the native package gate and candidate script test the actual raw executable copied outside the checkout with `apps/web/dist` temporarily hidden, isolated home/data and test credential namespace. The check requires complete HTML and JS/CSS delivery, correct MIME types, SPA/API/session/traversal behavior and graceful quit. The signed candidate's exact raw bytes are checked before notarization; npm/Homebrew keep the same single executable interface. See `DISTRIBUTION.md` for the standalone check command and restoration behavior.
 
@@ -37,7 +39,7 @@ Configure a protected GitHub environment named `macos-release`, with required re
 | `GH_TOKEN` | workflow token | Read CI workflow runs for the exact tagged commit; the workflow grants `actions: read`. |
 | `HOMEBREW_TAP_TOKEN` | secret | Fine-grained token with contents write on `AuvreyDurelle/homebrew-tokentracky` only. Without it, publishing warns and skips the tap. |
 
-npm needs no stored token. The `publish-npm` job runs after the release is published, in the same environment. A publishing run asks for approval four times: `build-macos`, `publish`, `homebrew` and `publish-npm` (a run with `publish: false` twice: `build-macos` and `publish`). npm accepts that job's GitHub identity token (trusted publishing, with provenance) only if the package has a matching trusted publisher, which must already exist on npm, so the first version is published by hand from `packaging/` with that release's `verified-candidate-manifest.json` as `release-manifest.json`. Within two days before the first release that publishes from the workflow, an owner with npm 2FA runs this with npm 11.15 or later; npm expires a configuration that no publish has used within two days:
+npm needs no stored token. The `publish-npm` job runs after the release is published, in the same environment. A publishing run asks for approval four times: `build-macos` with the two `build-app` jobs, which wait together, then `publish`, `homebrew` and `publish-npm` (a run with `publish: false` twice: the builds and `publish`). npm accepts that job's GitHub identity token (trusted publishing, with provenance) only if the package has a matching trusted publisher, which must already exist on npm, so the first version is published by hand from `packaging/` with that release's `verified-candidate-manifest.json` as `release-manifest.json`. Within two days before the first release that publishes from the workflow, an owner with npm 2FA runs this with npm 11.15 or later; npm expires a configuration that no publish has used within two days:
 
 ```sh
 npm trust github tokentracky --repo AuvreyDurelle/tokentracky --file release-macos.yml --env macos-release --allow-publish
@@ -65,11 +67,23 @@ The `publish` job merges the macOS manifest and the three fragments with `node s
 
 The workflow keeps its file name, `release-macos.yml`, because npm trusted publishing is pinned to it; rename it only together with a new `npm trust` configuration.
 
-Outside macOS there is no menu bar app to keep collecting: users keep `tokentracky serve` running, or run `tokentracky refresh` on a schedule. On Windows the credential file has no mode bits; the user profile's access list keeps it the owner's. DPAPI or the Credential Manager is a follow-up.
+Without the app, the CLI keeps collecting on Linux and Windows through `login`'s background job, or `tokentracky serve` in a terminal. On Windows the credential file has no mode bits; the user profile's access list keeps it the owner's. DPAPI or the Credential Manager is a follow-up.
+
+## Windows and Linux app releases
+
+The same run builds the app for Windows x86_64 (`windows-2022`) and Linux x86_64 (`ubuntu-22.04`, the oldest glibc and WebKitGTK it links) in the `build-app` matrix. These jobs sign the updater artifacts with the Mac app's updater key, so they run in the `macos-release` environment. Each installs the pinned tools (`scripts/install-desktop-tools.sh`) and runs `scripts/prepare-desktop-release.sh`, which refuses a dirty tree or a commit other than the exact version tag, writes the release Tauri config with `macos-release.mjs config`, builds the web bundle and the app with `TOKENTRACKY_RELEASE_UPDATER=1` in a fresh target folder, and bundles it with `createUpdaterArtifacts`, so Tauri CLI 2.11.5 signs the installer that updates itself with `TAURI_SIGNING_PRIVATE_KEY`. It then runs the candidate's own files through the smoke run above, and writes them to `dist/app-release/<platform>` with `SHA256SUMS`, `source-provenance.txt` and `feed.json`, a feed for that platform alone:
+
+| Asset | Updater target | Notes |
+| --- | --- | --- |
+| `tokentracky-<VERSION>-windows-x86_64-setup.exe` and `.sig` | `windows-x86_64` | Per-user NSIS installer: no administrator prompt; WebView2 through Microsoft's bootstrapper if missing. Not code-signed, so SmartScreen asks once (More info → Run anyway). Updates install it again, passively. |
+| `tokentracky-<VERSION>-linux-x86_64.AppImage` and `.sig` | `linux-x86_64-appimage` | Updates replace the AppImage where it is. |
+| `tokentracky-<VERSION>-linux-x86_64.deb` | none | Installed with `apt`, which brings WebKitGTK, GTK, the AppIndicator library and `xdg-utils`; users install each new release the same way. The feed names the AppImage's installer type, so a .deb install finds no update rather than an AppImage it could not install. |
+
+`publish` verifies both `.sig` files with `minisign` against `TOKENTRACKY_UPDATER_PUBLIC_KEY` before anything is uploaded, refuses to continue unless all five assets are there, and replaces the Mac candidate's `<channel>.json` with one feed for all three platforms: `node scripts/macos-release.mjs merge-feeds` adds the two platform feeds to the Mac one, refusing feeds of different versions and any target twice. Installed Mac apps read their `darwin-aarch64` entry as before. The release notes gain install paragraphs for the Windows and Linux apps. The app is not in `verified-candidate-manifest.json`: the npm launcher downloads only the CLI there (and the Mac app on macOS).
 
 ## Feed and verification
 
-`scripts/macos-release.mjs` generates the release-only Tauri config and validates a channel feed. The feed (`stable.json`), the signed updater archive and its `.sig` are uploaded with the release. Installed apps read the feed through `releases/latest/download/stable.json`, so they see a release only once it is published. Do not point a public endpoint at a draft or a locally generated feed.
+`scripts/macos-release.mjs` generates the release-only Tauri config and validates a channel feed. The feed (`stable.json`), with an entry for each platform's app, the signed updater artifacts and their `.sig` files are uploaded with the release. Installed apps read the feed through `releases/latest/download/stable.json`, so they see a release only once it is published. Do not point a public endpoint at a draft or a locally generated feed.
 
 Before announcing the app, publish two versions `N` and `N+1` signed with the same updater key. On a clean supported Mac, install `N`, then:
 
@@ -89,9 +103,9 @@ The embedded public key is an update trust root. A new private key cannot update
 ## Local validation commands
 
 ```sh
-node --test scripts/macos-release*.test.mjs packaging/test/*.test.mjs
+node --test scripts/macos-release*.test.mjs scripts/cli-release*.test.mjs scripts/desktop-release*.test.mjs packaging/test/*.test.mjs
 npm run test:harness --prefix packaging
-shellcheck scripts/prepare-macos-release.sh scripts/check-native-package.sh
+shellcheck scripts/prepare-macos-release.sh scripts/prepare-cli-release.sh scripts/prepare-desktop-release.sh scripts/check-native-package.sh scripts/check-desktop-package.sh scripts/install-desktop-tools.sh scripts/smoke-desktop-linux.sh
 actionlint .github/workflows/*.yml
 cargo fmt --all --check
 cargo clippy -p tokentracky-mac --all-targets -- -D warnings
