@@ -77,17 +77,37 @@ jobs:
             Start-Process -FilePath $exe -ArgumentList $arg -NoNewWindow -Wait -RedirectStandardError (Join-Path $out "$name.log")
           }
 
-          # 1. The dashboard.
-          $app = Start-Process -FilePath $exe -ArgumentList '--open-dashboard' -NoNewWindow -PassThru -RedirectStandardError $log -RedirectStandardOutput (Join-Path $out 'stdout.log')
-          WaitCount 'page-load finished path=/' 1 180 | Out-Null
-          Start-Sleep 5
-          Shot '1-dashboard'
+          # Every tray icon in the taskbar, none in the overflow, so a click can reach it.
+          Set-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer' -Name EnableAutoTray -Value 0
+          Stop-Process -Name explorer -Force; Start-Sleep 6
+          if (-not (Get-Process explorer -ErrorAction SilentlyContinue)) { Start-Process explorer; Start-Sleep 6 }
+          function Windows() {
+            $root = [System.Windows.Automation.AutomationElement]::RootElement
+            foreach ($w in $root.FindAll([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::TrueCondition)) {
+              $c = $w.Current; if ($c.ProcessId -eq $app.Id) { Write-Output "  window '$($c.Name)' class=$($c.ClassName) $($c.BoundingRectangle) offscreen=$($c.IsOffscreen)" }
+            }
+          }
 
-          # 2. A second launch opens the popover at the tray icon's place.
-          Second '--open-popover' 'second-popover'
-          WaitCount 'popover visible' 1 60 | Out-Null
+          # 1. Hidden start, then the popover as the only web view.
+          $app = Start-Process -FilePath $exe -ArgumentList '--hidden' -NoNewWindow -PassThru -RedirectStandardError $log -RedirectStandardOutput (Join-Path $out 'stdout.log')
+          WaitCount 'title-set' 1 120 | Out-Null
           Start-Sleep 3
-          Shot '2-popover-flag'
+          Second '--open-popover' 'second-popover-1'
+          WaitCount 'popover visible' 1 30 | Out-Null
+          Start-Sleep 3
+          Windows
+          Shot '1-popover-alone'
+
+          # 2. The dashboard, then the popover beside it.
+          Second '--open-dashboard' 'second-dashboard'
+          WaitCount 'page-load finished path=/' 1 120 | Out-Null
+          Start-Sleep 4
+          Shot '2-dashboard'
+          Second '--open-popover' 'second-popover-2'
+          WaitCount 'popover visible' 2 30 | Out-Null
+          Start-Sleep 3
+          Windows
+          Shot '3-popover-with-dashboard'
           $wa = [System.Windows.Forms.Screen]::PrimaryScreen.WorkingArea
           [Mouse]::Click([int]($wa.Width / 4), [int]($wa.Height / 2))
           Start-Sleep 2
@@ -97,15 +117,12 @@ jobs:
           $root = [System.Windows.Automation.AutomationElement]::RootElement
           $any = [System.Windows.Automation.Condition]::TrueCondition
           $found = $null
-          foreach ($class in 'Shell_TrayWnd', 'NotifyIconOverflowWindow') {
-            $cond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ClassNameProperty, $class)
-            $bar = $root.FindFirst([System.Windows.Automation.TreeScope]::Children, $cond)
-            if (-not $bar) { Write-Output "$class not found"; continue }
-            foreach ($e in $bar.FindAll([System.Windows.Automation.TreeScope]::Descendants, $any)) {
-              $c = $e.Current
-              Write-Output "  $class > $($c.ClassName) '$($c.Name)' $($c.BoundingRectangle)"
-              if (-not $found -and $c.Name -like 'Tokentracky*') { $found = $e }
-            }
+          $cond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ClassNameProperty, 'Shell_TrayWnd')
+          $bar = $root.FindFirst([System.Windows.Automation.TreeScope]::Children, $cond)
+          foreach ($e in $bar.FindAll([System.Windows.Automation.TreeScope]::Descendants, $any)) {
+            $c = $e.Current
+            Write-Output "  tray > $($c.ClassName) '$($c.Name)' $($c.BoundingRectangle)"
+            if (-not $found -and $c.Name -like 'Tokentracky*') { $found = $e }
           }
           if ($found) {
             $r = $found.Current.BoundingRectangle
@@ -115,12 +132,13 @@ jobs:
             [Mouse]::Click($x, $y)
             WaitCount 'popover visible' ($before + 1) 30 | Out-Null
             Start-Sleep 3
-            Shot '3-popover-click'
+            Shot '4-popover-click'
             $shown = Count 'popover visible'; $gone = Count 'window destroyed'
             [Mouse]::Click($x, $y)
             Start-Sleep 4
             Write-Output "second click: popover visible $shown -> $(Count 'popover visible'), destroyed $gone -> $(Count 'window destroyed')"
-            Shot '4-after-second-click'
+            Shot '5-after-second-click'
+            Windows
           } else {
             Write-Output 'tray button not found'
           }
@@ -134,11 +152,13 @@ jobs:
           $app2 = Start-Process -FilePath $exe -ArgumentList '--open-dashboard' -NoNewWindow -PassThru -RedirectStandardError $log2
           WaitCount 'page-load finished path=/' 1 120 $log2 | Out-Null
           Start-Sleep 5
-          Shot '5-alert-and-dashboard'
+          Shot '6-alert-and-dashboard'
           Stop-Process -Id $app2.Id -Force -ErrorAction SilentlyContinue
 
           # The value launch at login wrote.
-          Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' | Format-List | Out-String | Write-Output
+          foreach ($hive in 'HKCU', 'HKLM') {
+            Write-Output "$hive Run:"; Get-ItemProperty "$($hive):\Software\Microsoft\Windows\CurrentVersion\Run" | Format-List | Out-String | Write-Output
+          }
           Get-ChildItem $out | Format-Table Name, Length | Out-String | Write-Output
           foreach ($f in Get-ChildItem $out -Filter *.log) { Write-Output "==== $($f.Name)"; LogText $f.FullName }
       - if: always()
