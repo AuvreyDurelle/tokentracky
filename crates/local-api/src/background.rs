@@ -48,10 +48,11 @@ pub fn remove() -> io::Result<()> {
     remove_copy(&folder("XDG_DATA_HOME", &[".local", "share"])?.join("tokentracky/bin/tokentracky"))
 }
 
-/// Whether the job is installed: its unit file is there.
+/// Whether the job, or what is left of it, is installed: its unit file or its copy is there.
 #[cfg(target_os = "linux")]
 pub fn installed() -> bool {
     unit_file().is_ok_and(|file| file.exists())
+        || folder("XDG_DATA_HOME", &[".local", "share"]).is_ok_and(|data| data.join("tokentracky/bin").exists())
 }
 
 #[cfg(target_os = "linux")]
@@ -118,10 +119,12 @@ pub fn remove() -> io::Result<()> {
     remove_copy(&folder("LOCALAPPDATA", &["AppData", "Local"])?.join(r"tokentracky\bin\tokentracky.exe"))
 }
 
-/// Whether the job is installed: the Run value starts its copy.
+/// Whether the job, or what is left of it, is installed: the Run value starts its copy, or the copy is there. The
+/// app's launch at login may have taken the Run value over already.
 #[cfg(windows)]
 pub fn installed() -> bool {
     run_value().is_some_and(|command| starts_the_copy(&command))
+        || folder("LOCALAPPDATA", &["AppData", "Local"]).is_ok_and(|local| local.join(r"tokentracky\bin").exists())
 }
 
 /// macOS has no background job: the app keeps uploading.

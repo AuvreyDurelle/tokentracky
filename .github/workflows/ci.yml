@@ -79,6 +79,7 @@ jobs:
       native-cli: ${{ github.event_name != 'pull_request' || steps.filter.outputs['native-cli'] == 'true' }}
       native-cli-targets: ${{ steps.cli.outputs.targets }}
       native-macos: ${{ github.event_name != 'pull_request' || steps.filter.outputs['native-macos'] == 'true' }}
+      native-desktop: ${{ github.event_name != 'pull_request' || steps.filter.outputs['native-desktop'] == 'true' }}
       mac-installer: ${{ github.event_name != 'pull_request' || steps.filter.outputs['mac-installer'] == 'true' }}
       workflows: ${{ github.event_name != 'pull_request' || steps.filter.outputs['workflows'] == 'true' }}
     steps:
@@ -121,9 +122,12 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: PYTHONDONTWRITEBYTECODE=1 python3 scripts/test_native_runtime.py
-      - run: node --test scripts/macos-release*.test.mjs scripts/cli-release*.test.mjs packaging/test/*.test.mjs
+      - run: node --test scripts/macos-release*.test.mjs scripts/cli-release*.test.mjs scripts/desktop-release*.test.mjs packaging/test/*.test.mjs
       - run: npm run test:harness --prefix packaging
-      - run: shellcheck scripts/prepare-macos-release.sh scripts/prepare-cli-release.sh scripts/check-native-package.sh
+      - run: >-
+          shellcheck scripts/prepare-macos-release.sh scripts/prepare-cli-release.sh scripts/prepare-desktop-release.sh
+          scripts/check-native-package.sh scripts/check-desktop-package.sh scripts/install-desktop-tools.sh
+          scripts/smoke-desktop-linux.sh
       - run: npm run build
 
   rust:
@@ -292,6 +296,47 @@ jobs:
           cargo tauri --version
       - run: bash scripts/check-native-package.sh
 
+  native-desktop:
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.result == 'success' && needs.changes.outputs['native-desktop'] == 'true' }}
+    permissions:
+      contents: read
+    env:
+      CARGO_INCREMENTAL: '0'
+    # The Windows and Linux app as released: the per-user NSIS installer, and the AppImage and .deb built on
+    # the oldest supported Ubuntu for its glibc and WebKitGTK. Each is installed and run (check-desktop-package.sh).
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2022, ubuntu-22.04]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev xvfb
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: '1.99.0'
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - run: npm ci
+      - run: npm run build --workspace=@tokentracky/web
+      - run: bash scripts/install-desktop-tools.sh
+      - run: bash scripts/check-desktop-package.sh
+
   mac-installer:
     needs: changes
     if: ${{ !cancelled() && needs.changes.result == 'success' && needs.changes.outputs['mac-installer'] == 'true' }}
@@ -326,7 +371,7 @@ jobs:
 
   ci-ok:
     if: always()
-    needs: [verified, changes, verify, rust, rust-windows, native-cli, native-macos, mac-installer, workflows]
+    needs: [verified, changes, verify, rust, rust-windows, native-cli, native-macos, native-desktop, mac-installer, workflows]
     runs-on: ubuntu-slim
     timeout-minutes: 2
     permissions: {}
@@ -340,7 +385,7 @@ jobs:
             exit 0
           fi
           [ "$(jq -r '.changes.result' <<< "$RESULTS")" = "success" ] || exit 1
-          for area in verify rust rust-windows native-cli native-macos mac-installer workflows; do
+          for area in verify rust rust-windows native-cli native-macos native-desktop mac-installer workflows; do
             selected=$(jq -r --arg area "$area" '.changes.outputs[$area]' <<< "$RESULTS")
             result=$(jq -r --arg area "$area" '.[$area].result' <<< "$RESULTS")
             if [ "$selected" = "true" ] && [ "$result" != "success" ]; then

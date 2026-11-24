@@ -1,0 +1,152 @@
+# TEMPORARY: the native-desktop job and a takeover proof, run before the PR exists. Removed before merge.
+name: tmp desktop proof
+on:
+  push:
+    branches: [tmp-desktop-integration, desktop-takeover-release]
+permissions: {}
+jobs:
+  linux:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    env:
+      CARGO_INCREMENTAL: '0'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev xvfb
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: '1.99.0'
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: false
+      - run: npm ci
+      - run: npm run build --workspace=@tokentracky/web
+      - run: bash scripts/install-desktop-tools.sh
+      - run: bash scripts/check-desktop-package.sh
+      - run: cargo build --locked -p tokentracky-cli
+      - name: The app takes over from a running systemd background job
+        run: |
+          set -euo pipefail
+          sudo loginctl enable-linger "$USER"
+          XDG_RUNTIME_DIR="/run/user/$(id -u)"
+          export XDG_RUNTIME_DIR
+          for _ in $(seq 30); do [[ -S "$XDG_RUNTIME_DIR/bus" ]] && break; sleep 1; done
+          DATA="$RUNNER_TEMP/takeover-data"
+          mkdir -p "$DATA"
+          COPY="$HOME/.local/share/tokentracky/bin/tokentracky"
+          UNIT="$HOME/.config/systemd/user/tokentracky.service"
+          mkdir -p "$(dirname "$COPY")" "$(dirname "$UNIT")"
+          cp target/debug/tokentracky "$COPY"
+          # The unit `login` writes, with this test's data folder as the credential's folder too.
+          printf '%s\n' '[Unit]' "Description=Tokentracky: uploads this computer's AI coding token totals" '' '[Service]' \
+            "ExecStart=\"$COPY\" \"serve\" \"--background\" \"--data-dir\" \"$DATA\"" \
+            "Environment=\"TOKENTRACKY_HOME=$DATA\" \"TOKENTRACKY_PRICING_REFRESH=off\"" \
+            'StandardOutput=null' 'Restart=on-failure' 'RestartSec=60' '' '[Install]' 'WantedBy=default.target' >"$UNIT"
+          systemctl --user daemon-reload
+          systemctl --user enable --now tokentracky.service
+          for _ in $(seq 60); do [[ -f "$DATA/serve.json" ]] && break; sleep 1; done
+          systemctl --user is-active tokentracky.service
+          pgrep -a -x tokentracky
+          APPIMAGE=$(realpath target/release/bundle/appimage/*.AppImage)
+          Xvfb :99 &
+          export DISPLAY=:99 TOKENTRACKY_HOME="$DATA" TOKENTRACKY_PRICING_REFRESH=off APPIMAGE_EXTRACT_AND_RUN=1
+          # The script for the session bus is single-quoted on purpose.
+          # shellcheck disable=SC2016
+          dbus-run-session -- bash -euo pipefail -c '
+            "$0" --open-dashboard >"$RUNNER_TEMP/app.log" 2>&1 &
+            for _ in $(seq 120); do grep -F "page-load finished path=/" "$RUNNER_TEMP/app.log" >/dev/null && break; sleep 1; done
+            grep -F "[tokentracky]" "$RUNNER_TEMP/app.log"
+            grep -F "took over from the CLI: serve stopped=Ok(true) background job removed=Ok(Some(Ok(())))" "$RUNNER_TEMP/app.log"
+            grep -F "page-load finished path=/" "$RUNNER_TEMP/app.log"
+            echo "== the job is gone"
+            ! systemctl --user is-enabled tokentracky.service
+            ! systemctl --user is-active tokentracky.service
+            [[ ! -e "$HOME/.config/systemd/user/tokentracky.service" && ! -e "$HOME/.local/share/tokentracky/bin" ]]
+            ! pgrep -a -x tokentracky
+            echo "== the AppImage recorded where it is: $(cat "$TOKENTRACKY_HOME/app-path")"
+            [[ "$(cat "$TOKENTRACKY_HOME/app-path")" == "$0" ]]
+            echo "== the CLI opens the running app from there"
+            target/debug/tokentracky open
+            sleep 3
+            grep -F "[tokentracky]" "$RUNNER_TEMP/app.log" | tail -3
+          ' "$APPIMAGE"
+
+  windows:
+    runs-on: windows-2022
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    env:
+      CARGO_INCREMENTAL: '0'
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: '1.99.0'
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: false
+      - run: npm ci
+      - run: npm run build --workspace=@tokentracky/web
+      - run: bash scripts/install-desktop-tools.sh
+      - run: bash scripts/check-desktop-package.sh
+      - run: cargo build --locked -p tokentracky-cli
+      - name: The app takes over from a running Run-key background job
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:TOKENTRACKY_PRICING_REFRESH = 'off'
+          $cli = "$env:GITHUB_WORKSPACE\target\debug\tokentracky.exe"
+          $run = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
+          # The Run key cannot pass TOKENTRACKY_HOME, so the job and the app use the default data folder.
+          $data = Join-Path $env:USERPROFILE '.tokentracky'
+          $copy = Join-Path $env:LOCALAPPDATA 'tokentracky\bin\tokentracky.exe'
+          New-Item -ItemType Directory -Force (Split-Path $copy) | Out-Null
+          Copy-Item $cli $copy
+          $conhost = "$env:SystemRoot\System32\conhost.exe"
+          $arguments = "--headless `"$copy`" serve --background --data-dir `"$data`""
+          Set-ItemProperty -Path $run -Name Tokentracky -Value "`"$conhost`" $arguments"
+          Start-Process -FilePath $conhost -ArgumentList $arguments
+          for ($i = 0; $i -lt 60 -and -not (Test-Path "$data\serve.json"); $i++) { Start-Sleep 1 }
+          Get-Process tokentracky | Format-Table Id, Path
+          $setup = (Resolve-Path "target\release\bundle\nsis\*-setup.exe").Path
+          Start-Process -FilePath $setup -ArgumentList '/S' -Wait
+          $app = "$env:LOCALAPPDATA\Tokentracky\tokentracky-mac.exe"
+          $log = "$env:RUNNER_TEMP\app.log"
+          function Read-Log { try { $s = [IO.File]::Open($log, 'Open', 'Read', 'ReadWrite'); $r = New-Object IO.StreamReader $s; $t = $r.ReadToEnd(); $r.Close(); $t } catch { '' } }
+          $running = Start-Process -FilePath $app -ArgumentList '--open-dashboard' -PassThru -RedirectStandardError $log -RedirectStandardOutput "$env:RUNNER_TEMP\app.out"
+          for ($i = 0; $i -lt 120 -and -not (Read-Log).Contains('page-load finished path=/'); $i++) { Start-Sleep 1 }
+          (Read-Log) -split "`n" | Where-Object { $_ -like '[tokentracky]*' }
+          if (-not (Read-Log).Contains('took over from the CLI: serve stopped=Ok(true) background job removed=Ok(Some(Ok(())))')) { throw 'no takeover' }
+          if (-not (Read-Log).Contains('page-load finished path=/')) { throw 'no dashboard' }
+          Write-Host '== the job is gone'
+          if (Get-Process tokentracky -ErrorAction SilentlyContinue) { throw 'serve still runs' }
+          $value = (Get-ItemProperty -Path $run -Name Tokentracky -ErrorAction SilentlyContinue).Tokentracky
+          Write-Host "Run value now: $value"
+          if ($value -like '*\bin\tokentracky.exe*') { throw 'the job still starts at sign-in' }
+          if (Test-Path (Split-Path $copy)) { throw 'the copy is still there' }
+          Write-Host '== the CLI opens the running app'
+          & $cli open
+          if ($LASTEXITCODE -ne 0) { throw 'open failed' }
+          Start-Process -FilePath $app -ArgumentList '--quit' -Wait
+          $running.WaitForExit(30000) | Out-Null
+          Start-Process -FilePath "$env:LOCALAPPDATA\Tokentracky\uninstall.exe" -ArgumentList '/S' -Wait
