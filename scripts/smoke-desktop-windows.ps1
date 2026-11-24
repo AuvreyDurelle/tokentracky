@@ -17,14 +17,24 @@ if ($install.ExitCode -ne 0 -or -not (Test-Path $app)) { throw "the installer di
 
 Write-Host '== Start it and wait for the dashboard'
 $log = Join-Path $work 'stderr.txt'
+# The running app holds its stderr file open for writing, so read it with that shared.
+function Read-Log {
+  try {
+    $stream = [IO.File]::Open($log, 'Open', 'Read', 'ReadWrite')
+    $reader = New-Object IO.StreamReader $stream
+    $text = $reader.ReadToEnd()
+    $reader.Close()
+    $text
+  } catch { '' }
+}
 $running = Start-Process -FilePath $app -ArgumentList '--open-dashboard' -PassThru `
   -RedirectStandardError $log -RedirectStandardOutput (Join-Path $work 'stdout.txt')
 $loaded = $false
 for ($i = 0; $i -lt 120 -and -not $loaded; $i++) {
   Start-Sleep -Seconds 1
-  $loaded = (Test-Path $log) -and (Select-String -Path $log -SimpleMatch '[tokentracky] page-load finished path=/' -Quiet)
+  $loaded = (Read-Log).Contains('[tokentracky] page-load finished path=/')
 }
-if (Test-Path $log) { Get-Content $log | Where-Object { $_ -like '[tokentracky]*' } }
+(Read-Log) -split "`n" | Where-Object { $_ -like '[tokentracky]*' }
 if (-not $loaded) { throw 'the dashboard did not load' }
 
 Write-Host '== Quit it, then uninstall'
