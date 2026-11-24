@@ -32,7 +32,7 @@ case "$(uname -s)" in
       c107b49d84edbffc6ab226ed1007e0626a4f7aa2c3a36b7782bef62351d49e94 "$TOOLS/linuxdeploy-plugin-gstreamer.sh"
     fetch https://github.com/linuxdeploy/linuxdeploy-plugin-appimage/releases/download/1-alpha-20250213-1/linuxdeploy-plugin-appimage-x86_64.AppImage \
       992d502a248e14ab185448ddf6f6e7d25558cb84d4623c354c3af350c25fccb3 "$TOOLS/linuxdeploy-plugin-appimage.AppImage"
-    chmod 755 "$TOOLS"/*
+    chmod 755 "$TOOLS"/{AppRun-x86_64,linuxdeploy-x86_64.AppImage,linuxdeploy-plugin-{gtk,gstreamer}.sh,linuxdeploy-plugin-appimage.AppImage}
     ;;
   MINGW* | MSYS*)
     fetch "$TAURI/cargo-tauri-x86_64-pc-windows-msvc.zip" \
