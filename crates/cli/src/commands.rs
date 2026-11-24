@@ -3,19 +3,20 @@
 use crate::args::Flags;
 use crate::report::{report, text};
 use crate::serve::serve;
-use crate::{CliError, Context, IN_TRAY, control, create_directory, database_path, other, resolve};
+use crate::{CliError, Context, IN_TRAY, create_directory, database_path, other, resolve};
 use serde::Serialize;
 use std::path::Path;
 use std::sync::Arc;
 use std::sync::PoisonError;
-use std::time::Duration;
 use time::format_description::well_known::Rfc3339;
 use time::{OffsetDateTime, UtcOffset};
 use tokentracky_collector::detect::{DetectedTool, detect_tools};
 use tokentracky_collector::gemini_hook::{self, Outcome};
 use tokentracky_collector::limits::claude_config_file;
-use tokentracky_collector::store::{StoreError, UsageStore};
-use tokentracky_local_api::{ConnectStatus, DEFAULT_CLOUD_ORIGIN, LocalApp, LocalOptions, ReqwestClient, cloud_origin};
+use tokentracky_collector::store::UsageStore;
+use tokentracky_local_api::{
+    ConnectStatus, DEFAULT_CLOUD_ORIGIN, LocalApp, LocalOptions, ReqwestClient, cloud_origin, control,
+};
 use tokentracky_pricing::bundled_table;
 
 pub async fn status(directory: &Path, flags: &Flags, context: &mut Context) -> Result<i32, CliError> {
@@ -384,22 +385,7 @@ pub async fn uninstall(directory: &Path, flags: &Flags, context: &mut Context) -
         return Ok(1);
     }
     // A running `serve` (the background job among them) lets go of the data folder once asked, as its process ends.
-    let stopping = control::stop(directory).await;
-    if database_path(directory).exists() {
-        // Only the lock matters; any other failure to open is left to the removal below.
-        for waited in 0.. {
-            match UsageStore::open(database_path(directory)) {
-                Ok(store) => drop(store.close()),
-                Err(StoreError::CollectorDatabaseLocked(_)) if stopping && waited < 100 => {
-                    tokio::time::sleep(Duration::from_millis(100)).await;
-                    continue;
-                }
-                Err(error @ StoreError::CollectorDatabaseLocked(_)) => return Err(error.into()),
-                Err(_) => {}
-            }
-            break;
-        }
-    }
+    control::stop_and_wait(directory, &database_path(directory)).await?;
     if let Some(background) = context.background.clone() {
         tokio::task::spawn_blocking(move || background.remove())
             .await
