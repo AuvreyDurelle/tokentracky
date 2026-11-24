@@ -76,6 +76,11 @@ pub fn click_opens(closed: Option<Duration>) -> bool {
     closed.is_none_or(|closed| closed >= CLICK)
 }
 
+/// A popover of `size`, no taller than fits `screen` (a visible frame) with `MARGIN` above and below: its body scrolls.
+pub fn fit(size: (f64, f64), screen: Rect) -> (f64, f64) {
+    (size.0, size.1.min(screen.height - 2.0 * MARGIN))
+}
+
 /// The top left of a popover of `size` in the top right corner of `screen` (a visible frame), `MARGIN` inside it.
 pub fn corner_origin(size: (f64, f64), screen: Rect) -> (f64, f64) {
     (screen.x + screen.width - size.0 - MARGIN, screen.y + MARGIN)
@@ -156,6 +161,30 @@ mod tests {
         assert!(!click_opens(Some(Duration::from_millis(120))));
         assert!(click_opens(Some(Duration::from_millis(500))));
         assert!(click_opens(Some(Duration::from_secs(30))));
+    }
+
+    /// A 768 px screen at 125% with a bottom taskbar: 585.6 pt of work area. Fitted, the popover keeps its header on
+    /// screen.
+    #[test]
+    fn fits_the_popover_into_a_short_work_area() {
+        let work_area = Rect {
+            x: 0.0,
+            y: 0.0,
+            width: 1092.8,
+            height: 585.6,
+        };
+        let icon = Rect {
+            x: 1000.0,
+            y: 592.0,
+            width: 19.2,
+            height: 24.0,
+        };
+        assert_eq!(fit(SIZE, SCREEN), SIZE);
+        let size = fit(SIZE, work_area);
+        assert_eq!(size, (380.0, 569.6));
+        let (_, y) = popover_origin(icon, size, work_area);
+        assert!(y >= work_area.y && y + size.1 <= icon.y, "{y}");
+        assert_eq!(corner_origin(size, work_area).1 + size.1, work_area.height - MARGIN);
     }
 
     /// Linux: no icon to open at, so the top right of the work area, below a top panel.

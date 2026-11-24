@@ -884,12 +884,12 @@ fn open_popover(app: &AppHandle, tray: Option<tauri::Rect>) {
             "The menu bar popover could not be opened.",
         );
     }
-    let Some((x, y)) = popover_position(app, tray) else {
+    let Some(((x, y), (width, height))) = popover_position(app, tray) else {
         return log("popover has no screen");
     };
     let url = format!("{ORIGIN}/popover").parse().expect("a fixed app URL");
     let builder = WebviewWindowBuilder::new(app, POPOVER, WebviewUrl::CustomProtocol(url))
-        .inner_size(POPOVER_SIZE.0, POPOVER_SIZE.1)
+        .inner_size(width, height)
         .position(x, y)
         .decorations(false)
         .shadow(true)
@@ -933,8 +933,15 @@ fn show_popover(popover: &WebviewWindow) {
 /// The popover's top left in points, on the screen that holds the icon. The tray reports `tray` in pixels at that
 /// screen's scale, and each monitor its frame in pixels at its own, so the icon's scale comes from the icon itself.
 /// Without an icon (Linux), the top right of the primary screen's work area. A Wayland compositor places windows
-/// itself and ignores the position.
-fn popover_position(app: &AppHandle, tray: Option<tauri::Rect>) -> Option<(f64, f64)> {
+/// itself and ignores the position. With the top left, the size: off macOS no taller than the work area.
+fn popover_position(app: &AppHandle, tray: Option<tauri::Rect>) -> Option<((f64, f64), (f64, f64))> {
+    let fit = |screen| {
+        if cfg!(target_os = "macos") {
+            POPOVER_SIZE
+        } else {
+            popover::fit(POPOVER_SIZE, screen)
+        }
+    };
     let rect = |position: PhysicalPosition<f64>, size: PhysicalSize<f64>| popover::Rect {
         x: position.x,
         y: position.y,
@@ -945,7 +952,8 @@ fn popover_position(app: &AppHandle, tray: Option<tauri::Rect>) -> Option<(f64, 
         let primary = app.primary_monitor().ok()??;
         let visible = primary.work_area();
         let screen = rect(visible.position.cast(), visible.size.cast()).points(primary.scale_factor());
-        return Some(popover::corner_origin(POPOVER_SIZE, screen));
+        let size = fit(screen);
+        return Some((popover::corner_origin(size, screen), size));
     };
     let scale = native::tray_scale(&app.tray_by_id(TRAY)?)?;
     let icon = rect(tray.position.to_physical(scale), tray.size.to_physical(scale)).points(scale);
@@ -963,11 +971,9 @@ fn popover_position(app: &AppHandle, tray: Option<tauri::Rect>) -> Option<(f64, 
         })
         .collect();
     let screen = popover::tray_screen(icon, &screens)?;
-    Some(popover::popover_origin(
-        icon,
-        POPOVER_SIZE,
-        screen.visible.points(screen.scale),
-    ))
+    let visible = screen.visible.points(screen.scale);
+    let size = fit(visible);
+    Some((popover::popover_origin(icon, size, visible), size))
 }
 
 fn close_dashboard(app: &AppHandle) {
