@@ -119,7 +119,8 @@ mod tests {
         // The app's data folder follows TOKENTRACKY_HOME, as the app does.
         let custom = root.path().join("custom");
         std::fs::create_dir_all(&custom).unwrap();
-        std::fs::write(custom.join(APPIMAGE_RECORD), "/opt/Tokentracky.AppImage").unwrap();
+        let elsewhere = root.path().join("Tokentracky-x86_64.AppImage");
+        std::fs::write(custom.join(APPIMAGE_RECORD), elsewhere.as_os_str().as_encoded_bytes()).unwrap();
         let custom = custom.to_str().unwrap();
         assert_eq!(
             places(
@@ -127,10 +128,7 @@ mod tests {
                 env(&[("WAYLAND_DISPLAY", "wayland-0"), ("TOKENTRACKY_HOME", custom)]),
                 &home
             ),
-            [
-                PathBuf::from("/usr/bin/tokentracky-mac"),
-                PathBuf::from("/opt/Tokentracky.AppImage")
-            ]
+            [PathBuf::from("/usr/bin/tokentracky-mac"), elsewhere]
         );
     }
 
