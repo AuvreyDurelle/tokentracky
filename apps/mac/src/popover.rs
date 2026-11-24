@@ -50,8 +50,8 @@ const GAP: f64 = 6.0;
 const MARGIN: f64 = 8.0;
 
 /// The top left of a popover of `size` (width, height): centred on the `tray` icon, `GAP` below it, or above it when
-/// the icon sits in the lower half of `screen` (a taskbar at the bottom), and moved along to stay `MARGIN` inside the
-/// sides of `screen` (the visible frame of the icon's screen).
+/// the icon sits in the lower half of `screen` (a taskbar at the bottom) but no higher than `MARGIN` inside it, and
+/// moved along to stay `MARGIN` inside the sides of `screen` (the visible frame of the icon's screen).
 pub fn popover_origin(tray: Rect, size: (f64, f64), screen: Rect) -> (f64, f64) {
     let centred = tray.x + tray.width / 2.0 - size.0 / 2.0;
     let x = centred
@@ -59,7 +59,7 @@ pub fn popover_origin(tray: Rect, size: (f64, f64), screen: Rect) -> (f64, f64) 
         .max(screen.x + MARGIN);
     let low = tray.y + tray.height / 2.0 > screen.y + screen.height / 2.0;
     let y = if low {
-        tray.y - GAP - size.1
+        (tray.y - GAP - size.1).max(screen.y + MARGIN)
     } else {
         tray.y + tray.height + GAP
     };
@@ -185,6 +185,14 @@ mod tests {
         let (_, y) = popover_origin(icon, size, work_area);
         assert!(y >= work_area.y && y + size.1 <= icon.y, "{y}");
         assert_eq!(corner_origin(size, work_area).1 + size.1, work_area.height - MARGIN);
+        // An auto-hidden taskbar leaves the whole screen as the work area, the icon 36 pt above its bottom.
+        let screen = Rect {
+            height: 614.4,
+            ..work_area
+        };
+        let icon = Rect { y: 578.4, ..icon };
+        let size = fit(SIZE, screen);
+        assert_eq!(popover_origin(icon, size, screen).1, screen.y + MARGIN);
     }
 
     /// Linux: no icon to open at, so the top right of the work area, below a top panel.
