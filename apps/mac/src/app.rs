@@ -5,9 +5,10 @@
 //! (`activate`). A manual launch opens the dashboard once the collector is ready; the login item starts with
 //! `--hidden` and does not. Wake from sleep refreshes when the last cycle is stale.
 //!
-//! The window loads `app://localhost/`, and the scheme handler passes every request to the local API router
-//! in-process, which serves the React build and `/api/*` with its security headers; nothing listens on TCP.
-//! Closing the window destroys the web view, and the teardown workarounds release WebKit's processes.
+//! The window loads `app://localhost/` (`http://app.localhost/` on Windows), and the scheme handler passes every
+//! request to the local API router in-process, which serves the React build and `/api/*` with its security headers;
+//! nothing listens on TCP. Closing the window destroys the web view, and on macOS the teardown workarounds release
+//! WebKit's processes.
 //!
 //! Data lives where the CLI keeps it: `$TOKENTRACKY_HOME` when set, else `~/.tokentracky`,
 //! with the database in `usage.sqlite`, so `tokentracky status` reads what the app collects and the single-writer lock
