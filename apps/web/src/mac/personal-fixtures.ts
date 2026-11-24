@@ -116,7 +116,7 @@ export function personalFixtures(now = new Date()) {
     collecting: true, lastScanAt: iso(2), cloudLinked: true, syncError: null, lastSyncAt: iso(2), alias: 'example-builder', lastRefreshAt: iso(2), nextRefreshAt: iso(-58), refreshing: false, pricingVersion: 'litellm-2026-10-25', pricingUpdatedAt: iso(228),
   };
   const detected = status.sources.filter((item) => item.enabled).map((item) => ({ id: item.id, name: item.name, paths: item.paths }));
-  const shell: ShellState = { launchAtLogin: true, update: { state: 'idle', version: null }, version: '1.0.0' };
+  const shell: ShellState = { launchAtLogin: true, update: { state: 'idle', version: null }, version: '1.0.0', platform: 'macos' };
   // The popover's last 49 days, and this month so far.
   const recent: UsageSummary = { ...year, daily: yearDaily.slice(-49).filter((point) => point.tokens > 0), activity: { ...year.activity, currentStreak: 34 } };
   const month: UsageSummary = { ...summary, byTool: toolRows([{ tool: 'claude', tokens: 4.43e9, costMicrousd: 1_640e6 }, { tool: 'codex', tokens: 1.9e9, costMicrousd: 590e6 }, { tool: 'gemini', tokens: 283e6, costMicrousd: 56e6 }, { tool: 'opencode', tokens: 200e6, costMicrousd: 62e6 }, { tool: 'cline', tokens: 90e6, costMicrousd: 24e6 }]) };

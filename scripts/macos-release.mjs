@@ -148,13 +148,20 @@ export function updaterConfig(settings) {
   };
 }
 
+/**
+ * The updater targets one feed serves, as the Tauri updater looks them up: `{os}-{arch}-{installer}`, then
+ * `{os}-{arch}`. Linux names the AppImage, the bundle that updates itself; a .deb install finds no entry rather than an
+ * AppImage it could not install. Windows ships only the NSIS installer.
+ */
+export const FEED_TARGETS = ['darwin-aarch64', 'darwin-x86_64', 'windows-x86_64', 'linux-x86_64-appimage'];
+
 export function updaterFeed({ version, notes, pubDate, artifactUrl, signature, target = 'darwin-aarch64' }) {
   if (!/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(version)) throw new Error('Feed version must be SemVer');
   const url = releaseUrl(artifactUrl, 'artifact URL');
   if (!signature?.trim() || /placeholder|change.?me/i.test(signature)) {
     throw new Error('Feed requires a real updater artifact signature');
   }
-  if (!/^darwin-(aarch64|x86_64)$/.test(target)) throw new Error('Feed target must be a supported macOS architecture');
+  if (!FEED_TARGETS.includes(target)) throw new Error(`Feed target must be one of ${FEED_TARGETS.join(', ')}`);
   return {
     version,
     notes: notes ?? '',
@@ -172,15 +179,34 @@ export function validateUpdaterFeed(feed) {
   return feed;
 }
 
+/**
+ * One feed for every platform of a release, from the feed each platform's build wrote: the same version, each target
+ * once. The notes and date are the first feed's.
+ */
+export function mergeFeeds(feeds) {
+  if (!feeds.length) throw new Error('merge-feeds needs at least one feed');
+  const platforms = {};
+  for (const feed of feeds) {
+    validateUpdaterFeed(feed);
+    if (feed.version !== feeds[0].version) throw new Error(`Every feed must describe version ${feeds[0].version}`);
+    for (const [target, release] of Object.entries(feed.platforms)) {
+      if (Object.hasOwn(platforms, target)) throw new Error(`The feeds describe ${target} twice`);
+      platforms[target] = release;
+    }
+  }
+  return validateUpdaterFeed({ version: feeds[0].version, notes: feeds[0].notes, pub_date: feeds[0].pub_date, platforms });
+}
+
 export async function main(argv = process.argv.slice(2), env = process.env) {
   const [command, ...args] = argv;
-  if (command === 'merge') {
+  if (command === 'merge' || command === 'merge-feeds') {
     const [flag, output, ...files] = args;
     if (flag !== '--out' || !output || output.startsWith('--') || !files.length || files.some((file) => file.startsWith('--'))) {
-      throw new Error('merge requires --out PATH and the manifests to merge');
+      throw new Error(`${command} requires --out PATH and the ${command === 'merge' ? 'manifests' : 'feeds'} to merge`);
     }
-    const manifests = await Promise.all(files.map(async (file) => JSON.parse(await readFile(file, 'utf8'))));
-    await writeFile(output, `${JSON.stringify(mergeManifests(manifests), null, 2)}\n`);
+    const parts = await Promise.all(files.map(async (file) => JSON.parse(await readFile(file, 'utf8'))));
+    const merged = command === 'merge' ? mergeManifests(parts) : mergeFeeds(parts);
+    await writeFile(output, `${JSON.stringify(merged, null, 2)}\n`);
     return;
   }
   const options = new Map();

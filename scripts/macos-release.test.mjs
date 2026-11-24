@@ -6,7 +6,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import process from 'node:process';
-import { releaseSettings, updaterConfig, updaterFeed, validateUpdaterFeed, versions, validatePublicKey, mergeManifests, main } from './macos-release.mjs';
+import { releaseSettings, updaterConfig, updaterFeed, validateUpdaterFeed, versions, validatePublicKey, mergeManifests, mergeFeeds, main } from './macos-release.mjs';
 
 const packet = Buffer.concat([Buffer.from('Ed'), Buffer.alloc(40, 7)]).toString('base64');
 const publicKey = Buffer.from(`untrusted comment: minisign public key: TEST\n${packet}\n`).toString('base64');
@@ -93,6 +93,47 @@ test('generates and validates a real-shaped feed and rejects invalid/incomplete 
   assert.throws(() => updaterFeed({ version: '0.1.1', artifactUrl: 'http://example.invalid/a', signature }), /HTTPS/);
 });
 
+
+test('feeds the Windows installer and the Linux AppImage beside the Mac app, never a bare Linux target a .deb would take', () => {
+  const signature = Buffer.alloc(96, 9).toString('base64');
+  const feed = (target, file) => updaterFeed({ version: '0.4.0', artifactUrl: `https://downloads.example.invalid/${file}`, signature, target, pubDate: '2026-11-24T00:00:00.000Z' });
+  assert.deepEqual(feed('windows-x86_64', 'Tokentracky_0.4.0_x64-setup.exe').platforms, {
+    'windows-x86_64': { url: 'https://downloads.example.invalid/Tokentracky_0.4.0_x64-setup.exe', signature },
+  });
+  assert.deepEqual(Object.keys(feed('linux-x86_64-appimage', 'Tokentracky_0.4.0_amd64.AppImage').platforms), ['linux-x86_64-appimage']);
+  for (const target of ['linux-x86_64', 'linux-x86_64-deb', 'windows-aarch64', 'windows-x86_64-msi']) {
+    assert.throws(() => feed(target, 'x'), /Feed target must be one of/);
+  }
+});
+
+test('one feed holds every platform of the release, each once, at one version', async () => {
+  const signature = Buffer.alloc(96, 9).toString('base64');
+  const feed = (target, file, version = '0.4.0') => updaterFeed({ version, artifactUrl: `https://downloads.example.invalid/v${version}/${file}`, signature, target, notes: '', pubDate: '2026-11-24T00:00:00.000Z' });
+  const mac = feed('darwin-aarch64', 'tokentracky-0.4.0-macos-arm64.app.tar.gz');
+  const windows = feed('windows-x86_64', 'Tokentracky_0.4.0_x64-setup.exe');
+  const linux = feed('linux-x86_64-appimage', 'Tokentracky_0.4.0_amd64.AppImage');
+  const merged = mergeFeeds([mac, windows, linux]);
+  assert.deepEqual(merged, { version: '0.4.0', notes: '', pub_date: '2026-11-24T00:00:00.000Z',
+    platforms: { ...mac.platforms, ...windows.platforms, ...linux.platforms } });
+  // The Mac app reads its own entry exactly as before.
+  assert.deepEqual(merged.platforms['darwin-aarch64'], mac.platforms['darwin-aarch64']);
+  assert.throws(() => mergeFeeds([mac, feed('windows-x86_64', 'Tokentracky_0.4.1_x64-setup.exe', '0.4.1')]), /version 0.4.0/);
+  assert.throws(() => mergeFeeds([mac, windows, windows]), /windows-x86_64 twice/);
+  assert.throws(() => mergeFeeds([mac, { ...linux, platforms: { 'linux-x86_64-appimage': { url: 'http://insecure.invalid/a', signature } } }]), /HTTPS/);
+  assert.throws(() => mergeFeeds([]), /at least one/);
+
+  const dist = await mkdtemp(join(tmpdir(), 'tokentracky-feeds-'));
+  temporaryRoots.push(dist);
+  const files = await Promise.all([mac, windows, linux].map(async (part, index) => {
+    const file = join(dist, `${index}.json`);
+    await writeFile(file, JSON.stringify(part));
+    return file;
+  }));
+  const out = join(dist, 'stable.json');
+  await main(['merge-feeds', '--out', out, ...files]);
+  assert.deepEqual(JSON.parse(await readFile(out, 'utf8')), merged);
+  await assert.rejects(main(['merge-feeds', '--out', out]), /merge-feeds requires --out PATH and the feeds/);
+});
 
 test('validates public envelope structure without treating arbitrary base64 or private packets as public keys', () => {
   assert.equal(validatePublicKey(publicKey), publicKey);
