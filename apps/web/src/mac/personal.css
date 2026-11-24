@@ -294,7 +294,7 @@
 .mac .po-icon-btn:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
 .mac .po-icon-btn svg { width: 18px; height: 18px; }
 /* The mockup's content is taller than the 640px window: the middle scrolls between the header and the actions. */
-.mac .po-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.mac .po-body { flex: 1; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; }
 .mac .po-sep { height: 1px; background: rgba(255, 255, 255, 0.07); }
 .mac .po-error { margin: 10px 16px 0; font-size: 12px; color: var(--red); }
 .mac .po-share { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 10px 12px 12px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.06); }

@@ -5,9 +5,10 @@
 //! (`activate`). A manual launch opens the dashboard once the collector is ready; the login item starts with
 //! `--hidden` and does not. Wake from sleep refreshes when the last cycle is stale.
 //!
-//! The window loads `app://localhost/`, and the scheme handler passes every request to the local API router
-//! in-process, which serves the React build and `/api/*` with its security headers; nothing listens on TCP.
-//! Closing the window destroys the web view, and the teardown workarounds release WebKit's processes.
+//! The window loads `app://localhost/` (`http://app.localhost/` on Windows), and the scheme handler passes every
+//! request to the local API router in-process, which serves the React build and `/api/*` with its security headers;
+//! nothing listens on TCP. Closing the window destroys the web view, and on macOS the teardown workarounds release
+//! WebKit's processes.
 //!
 //! Data lives where the CLI keeps it: `$TOKENTRACKY_HOME` when set, else `~/.tokentracky`,
 //! with the database in `usage.sqlite`, so `tokentracky status` reads what the app collects and the single-writer lock
@@ -30,14 +31,17 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard, OnceLock, PoisonError};
 use std::time::{Duration, Instant, SystemTime};
+#[cfg(target_os = "macos")]
+use tauri::ActivationPolicy;
 use tauri::http::{Request, Response, StatusCode};
 use tauri::menu::{CheckMenuItem, Menu, MenuEvent, MenuItem, PredefinedMenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::webview::{DownloadEvent, NewWindowResponse, PageLoadEvent};
+#[cfg(target_os = "macos")]
 use tauri::window::{Effect, EffectState, EffectsBuilder};
 use tauri::{
-    ActivationPolicy, AppHandle, Manager, PhysicalPosition, PhysicalSize, RunEvent, UriSchemeContext,
-    UriSchemeResponder, WebviewUrl, WebviewWindow, WebviewWindowBuilder, WindowEvent, Wry,
+    AppHandle, Manager, PhysicalPosition, PhysicalSize, RunEvent, UriSchemeContext, UriSchemeResponder, WebviewUrl,
+    WebviewWindow, WebviewWindowBuilder, WindowEvent, Wry,
 };
 use tauri_plugin_autostart::ManagerExt as _;
 use tauri_plugin_opener::OpenerExt as _;
@@ -57,6 +61,14 @@ const TRAY: &str = "main";
 /// Start in the menu bar without opening the dashboard: the login item's argument.
 const HIDDEN: &str = "--hidden";
 const CLOSE_DASHBOARD: &str = "--close-dashboard";
+/// Ephemeral web views, but not on Linux: there each gets a WebKit context of its own, and Tauri registers the `app`
+/// scheme in the first only, so a second window open at the same time could not load.
+const INCOGNITO: bool = cfg!(not(target_os = "linux"));
+/// Set while the dashboard's web view is built. On Windows, WebView2 reports the popover's focus loss meanwhile, and
+/// never finishes building the dashboard if the popover is destroyed before it has.
+static BUILDING_DASHBOARD: AtomicBool = AtomicBool::new(false);
+/// When the popover last closed for losing focus (see `popover::click_opens`).
+static POPOVER_BLURRED: Mutex<Option<Instant>> = Mutex::new(None);
 
 /// Fixed local actions only: no script evaluation, arbitrary URL, or navigation allowlist bypass.
 fn control(app: &AppHandle, args: &[String]) {
@@ -87,8 +99,9 @@ fn control(app: &AppHandle, args: &[String]) {
     } else if args.iter().any(|arg| arg == "--open-you" || arg == "--open-dashboard") {
         open_page(app, start_page(args.iter()));
     } else if args.iter().any(|arg| arg == "--open-popover") {
-        // What a click on the icon opens, at the icon's current place.
-        if let Some(tray) = app.tray_by_id(TRAY).and_then(|tray| tray.rect().ok().flatten()) {
+        // What a click on the icon opens, at the icon's current place. Linux reports none: the menu's corner.
+        let tray = app.tray_by_id(TRAY).and_then(|tray| tray.rect().ok().flatten());
+        if tray.is_some() || !cfg!(target_os = "macos") {
             open_popover(app, tray);
         }
     } else {
@@ -153,10 +166,20 @@ pub fn run() {
         .manage(Shown::default())
         .manage(UpdateShown(Mutex::new(Updates::new(UPDATER_ENABLED))))
         .on_window_event(|window, event| match event {
-            // The popover is transient: it closes once anything else takes focus.
-            WindowEvent::Focused(false) if window.label() == POPOVER => drop(window.close()),
+            // The popover is transient: it closes once anything else takes focus. Only once shown: on Windows,
+            // WebView2 takes focus from a hidden window and gives it back while it is created. Nor while the dashboard
+            // is built (Windows): `open_page` closes it after.
+            WindowEvent::Focused(false)
+                if window.label() == POPOVER
+                    && window.is_visible().unwrap_or(false)
+                    && !(cfg!(windows) && BUILDING_DASHBOARD.load(Ordering::SeqCst)) =>
+            {
+                *lock(&POPOVER_BLURRED) = Some(Instant::now());
+                drop(window.close())
+            }
             WindowEvent::Destroyed => {
                 log("window destroyed");
+                #[cfg(target_os = "macos")]
                 release_webkit(window.app_handle().clone());
             }
             _ => {}
@@ -177,6 +200,7 @@ pub fn run() {
                 app.handle().exit(0);
                 return Ok(());
             }
+            #[cfg(target_os = "macos")]
             app.set_activation_policy(ActivationPolicy::Accessory);
             let handle = app.handle();
             // Launch at login starts on, once per Mac account; turning it off afterwards sticks.
@@ -190,8 +214,13 @@ pub fn run() {
                         updates::Reminder::read(&config.join(updates::REMINDER_FILE));
                 }
             }
+            // The black template glyph would vanish on a dark taskbar or panel: the app's icon there.
+            #[cfg(target_os = "macos")]
+            let icon = tauri::include_image!("icons/tray.png");
+            #[cfg(not(target_os = "macos"))]
+            let icon = app.default_window_icon().cloned().ok_or("the app has no icon")?;
             let tray = TrayIconBuilder::with_id(TRAY)
-                .icon(tauri::include_image!("icons/tray.png"))
+                .icon(icon)
                 .icon_as_template(true)
                 .tooltip(menu::tooltip(None))
                 // A left click toggles the popover; the menu stays on a right click.
@@ -226,6 +255,7 @@ pub fn run() {
         .run(|app, event| match event {
             // The menu bar keeps running with no window open; only Quit exits.
             RunEvent::ExitRequested { code: None, api, .. } => api.prevent_exit(),
+            #[cfg(target_os = "macos")]
             RunEvent::Reopen { .. } => open_dashboard(app),
             RunEvent::Exit => shutdown(app),
             _ => {}
@@ -372,7 +402,14 @@ fn build_menu(app: &AppHandle, overview: Option<&LocalOverview>) -> tauri::Resul
     let update = lock(&app.state::<UpdateShown>().0).state.clone();
     native_menu(
         app,
-        menu::entries(overview, launch_at_login, &update, native::local_time),
+        // Linux trays report no clicks, so the menu opens the popover.
+        menu::entries(
+            overview,
+            launch_at_login,
+            &update,
+            cfg!(target_os = "linux"),
+            native::local_time,
+        ),
     )
 }
 
@@ -419,6 +456,7 @@ fn on_menu(app: &AppHandle, event: MenuEvent) {
             }
         }),
         menu::OPEN => open_dashboard(app),
+        menu::POPOVER => open_popover(app, None),
         menu::PAUSE => {
             // The item does what it says: "Pause collection" unless the menu shows collection paused.
             let paused = lock(&app.state::<Shown>().0).as_ref().is_some_and(|shown| shown.paused);
@@ -723,6 +761,9 @@ fn open_external(app: &AppHandle, url: &str) {
 fn open_dashboard(app: &AppHandle) {
     // Finder activation should preserve the route the user is viewing.
     if let Some(window) = app.get_webview_window(DASHBOARD) {
+        // tao focuses no minimized window on Windows and Linux.
+        #[cfg(not(target_os = "macos"))]
+        let _ = window.unminimize();
         let _ = window.show();
         let _ = window.set_focus();
     } else {
@@ -744,6 +785,8 @@ fn open_page(app: &AppHandle, page: &str) {
     let url = format!("{ORIGIN}{page}").parse().expect("a fixed app URL");
     if let Some(window) = app.get_webview_window(DASHBOARD) {
         let _ = window.navigate(url);
+        #[cfg(not(target_os = "macos"))]
+        let _ = window.unminimize();
         let _ = window.show();
         let _ = window.set_focus();
         return;
@@ -760,9 +803,19 @@ fn open_page(app: &AppHandle, page: &str) {
         .min_inner_size(960.0, 640.0)
         // An ephemeral data store is released with the web view, so WebKit's Networking process can exit too. The
         // local UI keeps no web storage that must survive a window close; anything it persists goes through the API.
-        .incognito(true);
-    match secure_webview(app, builder, |_| {}).build() {
-        Ok(window) => drop(window.set_focus()),
+        .incognito(INCOGNITO);
+    BUILDING_DASHBOARD.store(true, Ordering::SeqCst);
+    let built = secure_webview(app, builder, |_| {}).build();
+    BUILDING_DASHBOARD.store(false, Ordering::SeqCst);
+    match built {
+        Ok(window) => {
+            // Windows: the popover lost focus to the dashboard while it was built, and closes now.
+            #[cfg(windows)]
+            if let Some(popover) = app.get_webview_window(POPOVER) {
+                let _ = popover.close();
+            }
+            drop(window.set_focus())
+        }
         Err(_) => native::alert(
             "Tokentracky dashboard unavailable",
             "The local dashboard could not be opened.",
@@ -806,15 +859,18 @@ fn secure_webview<'a>(
 }
 
 fn toggle_popover(app: &AppHandle, tray: tauri::Rect) {
+    let closed = lock(&POPOVER_BLURRED).map(|at| at.elapsed());
     match app.get_webview_window(POPOVER) {
         Some(popover) => drop(popover.close()),
-        None => open_popover(app, tray),
+        // Windows: the press that closed the popover for losing focus must not open it again on release.
+        None if cfg!(windows) && !popover::click_opens(closed) => {}
+        None => open_popover(app, Some(tray)),
     }
 }
 
-/// The popover under the icon at `tray`, unless it is open: a short-lived web view of `/popover`, destroyed when it
-/// closes so no WebKit runs while it is closed.
-fn open_popover(app: &AppHandle, tray: tauri::Rect) {
+/// The popover by the icon at `tray` (else in the screen's corner), unless it is open: a short-lived web view of
+/// `/popover`, destroyed when it closes so no WebKit runs while it is closed.
+fn open_popover(app: &AppHandle, tray: Option<tauri::Rect>) {
     if let Some(popover) = app.get_webview_window(POPOVER) {
         // Still loading, it logs "popover visible" once it is shown.
         if popover.is_visible().unwrap_or(false) {
@@ -828,28 +884,35 @@ fn open_popover(app: &AppHandle, tray: tauri::Rect) {
             "The menu bar popover could not be opened.",
         );
     }
-    let Some((x, y)) = popover_position(app, tray) else {
+    let Some(((x, y), (width, height))) = popover_position(app, tray) else {
         return log("popover has no screen");
     };
     let url = format!("{ORIGIN}/popover").parse().expect("a fixed app URL");
-    let effects = EffectsBuilder::new()
-        .effect(Effect::Popover)
-        .state(EffectState::Active)
-        .radius(14.0)
-        .build();
     let builder = WebviewWindowBuilder::new(app, POPOVER, WebviewUrl::CustomProtocol(url))
-        .inner_size(POPOVER_SIZE.0, POPOVER_SIZE.1)
+        .inner_size(width, height)
         .position(x, y)
         .decorations(false)
-        .transparent(true)
         .shadow(true)
         .resizable(false)
         .always_on_top(true)
         .skip_taskbar(true)
-        .visible(false)
+        // Hidden until its page has loaded. Not on Linux: there `set_focus` does nothing until the queued `show` has
+        // run, so the popover would never take focus, and never lose it to close.
+        .visible(cfg!(target_os = "linux"))
         .focused(true)
-        .effects(effects)
-        .incognito(true);
+        .incognito(INCOGNITO);
+    // The page is transparent, so the vibrancy shows through.
+    #[cfg(target_os = "macos")]
+    let builder = builder.transparent(true).effects(
+        EffectsBuilder::new()
+            .effect(Effect::Popover)
+            .state(EffectState::Active)
+            .radius(14.0)
+            .build(),
+    );
+    // No vibrancy elsewhere: the web view shows the page's background colour (`--bg`) through it.
+    #[cfg(not(target_os = "macos"))]
+    let builder = builder.background_color(tauri::window::Color(8, 9, 10, 255));
     if secure_webview(app, builder, show_popover).build().is_err() {
         native::alert(
             "Tokentracky popover unavailable",
@@ -869,12 +932,28 @@ fn show_popover(popover: &WebviewWindow) {
 
 /// The popover's top left in points, on the screen that holds the icon. The tray reports `tray` in pixels at that
 /// screen's scale, and each monitor its frame in pixels at its own, so the icon's scale comes from the icon itself.
-fn popover_position(app: &AppHandle, tray: tauri::Rect) -> Option<(f64, f64)> {
+/// Without an icon (Linux), the top right of the primary screen's work area. A Wayland compositor places windows
+/// itself and ignores the position. With the top left, the size: off macOS no taller than the work area.
+fn popover_position(app: &AppHandle, tray: Option<tauri::Rect>) -> Option<((f64, f64), (f64, f64))> {
+    let fit = |screen| {
+        if cfg!(target_os = "macos") {
+            POPOVER_SIZE
+        } else {
+            popover::fit(POPOVER_SIZE, screen)
+        }
+    };
     let rect = |position: PhysicalPosition<f64>, size: PhysicalSize<f64>| popover::Rect {
         x: position.x,
         y: position.y,
         width: size.width,
         height: size.height,
+    };
+    let Some(tray) = tray else {
+        let primary = app.primary_monitor().ok()??;
+        let visible = primary.work_area();
+        let screen = rect(visible.position.cast(), visible.size.cast()).points(primary.scale_factor());
+        let size = fit(screen);
+        return Some((popover::corner_origin(size, screen), size));
     };
     let scale = native::tray_scale(&app.tray_by_id(TRAY)?)?;
     let icon = rect(tray.position.to_physical(scale), tray.size.to_physical(scale)).points(scale);
@@ -892,11 +971,9 @@ fn popover_position(app: &AppHandle, tray: tauri::Rect) -> Option<(f64, f64)> {
         })
         .collect();
     let screen = popover::tray_screen(icon, &screens)?;
-    Some(popover::popover_origin(
-        icon,
-        POPOVER_SIZE,
-        screen.visible.points(screen.scale),
-    ))
+    let visible = screen.visible.points(screen.scale);
+    let size = fit(visible);
+    Some((popover::popover_origin(icon, size, visible), size))
 }
 
 fn close_dashboard(app: &AppHandle) {
@@ -911,6 +988,7 @@ fn close_dashboard(app: &AppHandle) {
 /// it keeps its own WebContent process and the GPU process. After the last window, keep draining until WebContent has
 /// exited, then, if no window has reopened, end the GPU process WebKit would keep 30 to 70 s longer. A thread that
 /// lives at most 10 s, not a timer.
+#[cfg(target_os = "macos")]
 fn release_webkit(app: AppHandle) {
     std::thread::spawn(move || {
         let mut released = false;

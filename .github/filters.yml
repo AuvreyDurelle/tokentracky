@@ -49,6 +49,7 @@ rust-windows:
   - 'rust-toolchain.toml'
   - 'rustfmt.toml'
   - 'crates/**'
+  - 'apps/mac/**'
   - 'fixtures/**'
   - 'README.md'
   - 'deny.toml'

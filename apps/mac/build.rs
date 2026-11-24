@@ -1,6 +1,4 @@
 fn main() {
-    // The Tauri build step exists only where the app does (see Cargo.toml).
-    #[cfg(target_os = "macos")]
     tauri_build::build();
 
     // An updater is only linked into a release candidate that was built through the release

@@ -3,13 +3,24 @@
 use tokentracky_local_api::{DEFAULT_CLOUD_ORIGIN, LocalError, cloud_origin};
 use url::Url;
 
-/// The origin of the `app` scheme the window loads on macOS (Tauri serves it as `http://app.localhost` elsewhere).
+/// The origin of the `app` scheme the windows load: `app://localhost` on macOS and Linux. WebView2 serves custom
+/// schemes as `http://<scheme>.localhost`, and a page navigated there reports that origin.
+#[cfg(not(windows))]
 pub const ORIGIN: &str = "app://localhost";
+#[cfg(windows)]
+pub const ORIGIN: &str = "http://app.localhost";
 
 /// Only the app's own origin is rendered in the window (`isSameLoopbackOrigin`).
 pub fn is_app_url(value: &str) -> bool {
-    Url::parse(value)
-        .is_ok_and(|url| url.scheme() == "app" && url.host_str() == Some("localhost") && url.port().is_none())
+    is_at(value, ORIGIN)
+}
+
+/// Whether `value` is a URL at `origin`: the same scheme and host, and no other port.
+fn is_at(value: &str, origin: &str) -> bool {
+    let (Ok(url), Ok(origin)) = (Url::parse(value), Url::parse(origin)) else {
+        return false;
+    };
+    url.scheme() == origin.scheme() && url.host_str() == origin.host_str() && url.port() == origin.port()
 }
 
 /// Downloads come only from the page's own blobs (the CSV export) or origin.
@@ -47,17 +58,40 @@ mod tests {
 
     #[test]
     fn does_not_let_the_window_leave_its_own_origin() {
-        assert!(is_app_url("app://localhost/"));
-        assert!(is_app_url("app://localhost/leaderboard?period=week"));
-        assert!(!is_app_url("app://localhost:4123/"));
-        assert!(!is_app_url("app://localhost.example.test/"));
-        assert!(!is_app_url("http://app.localhost/"));
+        assert!(is_app_url(&format!("{ORIGIN}/")));
+        assert!(is_app_url(&format!("{ORIGIN}/leaderboard?period=week")));
+        assert!(is_app_download(&format!(
+            "blob:{ORIGIN}/5b8e4a0c-6f2d-4c1e-9a7b-3d2f1e0c9b8a"
+        )));
         assert!(!is_app_url("https://example.com"));
-        assert!(is_app_download(
-            "blob:app://localhost/5b8e4a0c-6f2d-4c1e-9a7b-3d2f1e0c9b8a"
-        ));
         assert!(!is_app_download("blob:https://example.com/5b8e4a0c"));
         assert!(!is_app_download("https://example.com/usage.csv"));
+    }
+
+    /// WKWebView and WebKitGTK: the scheme itself.
+    #[test]
+    fn accepts_only_app_localhost_at_the_app_scheme() {
+        let origin = "app://localhost";
+        assert!(is_at("app://localhost/", origin));
+        assert!(is_at("app://localhost/leaderboard?period=week", origin));
+        assert!(!is_at("app://localhost:4123/", origin));
+        assert!(!is_at("app://localhost.example.test/", origin));
+        assert!(!is_at("http://app.localhost/", origin));
+        assert!(!is_at("not a url", origin));
+    }
+
+    /// WebView2: the scheme as a host of plain HTTP.
+    #[test]
+    fn accepts_only_http_app_localhost_at_webview2_s_origin() {
+        let origin = "http://app.localhost";
+        assert!(is_at("http://app.localhost/", origin));
+        assert!(is_at("http://app.localhost/settings", origin));
+        assert!(is_at("http://app.localhost:80/", origin));
+        assert!(!is_at("http://app.localhost:8080/", origin));
+        assert!(!is_at("https://app.localhost/", origin));
+        assert!(!is_at("http://app.localhost.example.test/", origin));
+        assert!(!is_at("http://localhost/", origin));
+        assert!(!is_at("app://localhost/", origin));
     }
 
     #[test]
