@@ -26,7 +26,7 @@ else
   [[ "$(dpkg-deb --field "$DEB" Version)" == "$VERSION" ]] || { echo 'the .deb has another version' >&2; exit 1; }
   dpkg-deb --field "$DEB" Package Depends
   CONTENTS=$(dpkg-deb --contents "$DEB")
-  for pattern in ' \./usr/bin/tokentracky-mac$' '/web/index\.html$'; do
+  for pattern in ' (\./)?usr/bin/tokentracky-mac$' '/web/index\.html$'; do
     grep -E "$pattern" <<<"$CONTENTS" >/dev/null || { echo "$CONTENTS" >&2; echo "the .deb has no $pattern" >&2; exit 1; }
   done
   bash scripts/smoke-desktop-linux.sh "$APPIMAGE" "$DEB"
