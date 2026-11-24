@@ -135,7 +135,7 @@ jobs:
           function Read-Log { try { $s = [IO.File]::Open($log, 'Open', 'Read', 'ReadWrite'); $r = New-Object IO.StreamReader $s; $t = $r.ReadToEnd(); $r.Close(); $t } catch { '' } }
           $running = Start-Process -FilePath $app -ArgumentList '--open-dashboard' -PassThru -RedirectStandardError $log -RedirectStandardOutput "$env:RUNNER_TEMP\app.out"
           for ($i = 0; $i -lt 120 -and -not (Read-Log).Contains('page-load finished path=/'); $i++) { Start-Sleep 1 }
-          (Read-Log) -split "`n" | Where-Object { $_ -like '[tokentracky]*' }
+          (Read-Log) -split "`n" | Where-Object { $_.StartsWith('[tokentracky]') }
           if (-not (Read-Log).Contains('took over from the CLI: serve stopped=Ok(true) background job removed=Ok(Some(Ok(())))')) { throw 'no takeover' }
           if (-not (Read-Log).Contains('page-load finished path=/')) { throw 'no dashboard' }
           Write-Host '== the job is gone'

@@ -34,7 +34,7 @@ for ($i = 0; $i -lt 120 -and -not $loaded; $i++) {
   Start-Sleep -Seconds 1
   $loaded = (Read-Log).Contains('[tokentracky] page-load finished path=/')
 }
-(Read-Log) -split "`n" | Where-Object { $_ -like '[tokentracky]*' }
+(Read-Log) -split "`n" | Where-Object { $_.StartsWith('[tokentracky]') }
 if (-not $loaded) { throw 'the dashboard did not load' }
 
 Write-Host '== Quit it, then uninstall'
