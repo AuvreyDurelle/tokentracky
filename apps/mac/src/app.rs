@@ -61,6 +61,9 @@ const TRAY: &str = "main";
 /// Start in the menu bar without opening the dashboard: the login item's argument.
 const HIDDEN: &str = "--hidden";
 const CLOSE_DASHBOARD: &str = "--close-dashboard";
+/// Ephemeral web views, but not on Linux: there each gets a WebKit context of its own, and Tauri registers the `app`
+/// scheme in the first only, so a second window open at the same time could not load.
+const INCOGNITO: bool = cfg!(not(target_os = "linux"));
 
 /// Fixed local actions only: no script evaluation, arbitrary URL, or navigation allowlist bypass.
 fn control(app: &AppHandle, args: &[String]) {
@@ -91,8 +94,9 @@ fn control(app: &AppHandle, args: &[String]) {
     } else if args.iter().any(|arg| arg == "--open-you" || arg == "--open-dashboard") {
         open_page(app, start_page(args.iter()));
     } else if args.iter().any(|arg| arg == "--open-popover") {
-        // What a click on the icon opens, at the icon's current place.
-        if let Some(tray) = app.tray_by_id(TRAY).and_then(|tray| tray.rect().ok().flatten()) {
+        // What a click on the icon opens, at the icon's current place. Linux reports none: the menu's corner.
+        let tray = app.tray_by_id(TRAY).and_then(|tray| tray.rect().ok().flatten());
+        if tray.is_some() || !cfg!(target_os = "macos") {
             open_popover(app, tray);
         }
     } else {
@@ -196,8 +200,13 @@ pub fn run() {
                         updates::Reminder::read(&config.join(updates::REMINDER_FILE));
                 }
             }
+            // The black template glyph would vanish on a dark taskbar or panel: the app's icon there.
+            #[cfg(target_os = "macos")]
+            let icon = tauri::include_image!("icons/tray.png");
+            #[cfg(not(target_os = "macos"))]
+            let icon = app.default_window_icon().cloned().ok_or("the app has no icon")?;
             let tray = TrayIconBuilder::with_id(TRAY)
-                .icon(tauri::include_image!("icons/tray.png"))
+                .icon(icon)
                 .icon_as_template(true)
                 .tooltip(menu::tooltip(None))
                 // A left click toggles the popover; the menu stays on a right click.
@@ -379,7 +388,14 @@ fn build_menu(app: &AppHandle, overview: Option<&LocalOverview>) -> tauri::Resul
     let update = lock(&app.state::<UpdateShown>().0).state.clone();
     native_menu(
         app,
-        menu::entries(overview, launch_at_login, &update, native::local_time),
+        // Linux trays report no clicks, so the menu opens the popover.
+        menu::entries(
+            overview,
+            launch_at_login,
+            &update,
+            cfg!(target_os = "linux"),
+            native::local_time,
+        ),
     )
 }
 
@@ -426,6 +442,7 @@ fn on_menu(app: &AppHandle, event: MenuEvent) {
             }
         }),
         menu::OPEN => open_dashboard(app),
+        menu::POPOVER => open_popover(app, None),
         menu::PAUSE => {
             // The item does what it says: "Pause collection" unless the menu shows collection paused.
             let paused = lock(&app.state::<Shown>().0).as_ref().is_some_and(|shown| shown.paused);
@@ -767,7 +784,7 @@ fn open_page(app: &AppHandle, page: &str) {
         .min_inner_size(960.0, 640.0)
         // An ephemeral data store is released with the web view, so WebKit's Networking process can exit too. The
         // local UI keeps no web storage that must survive a window close; anything it persists goes through the API.
-        .incognito(true);
+        .incognito(INCOGNITO);
     match secure_webview(app, builder, |_| {}).build() {
         Ok(window) => drop(window.set_focus()),
         Err(_) => native::alert(
@@ -815,13 +832,13 @@ fn secure_webview<'a>(
 fn toggle_popover(app: &AppHandle, tray: tauri::Rect) {
     match app.get_webview_window(POPOVER) {
         Some(popover) => drop(popover.close()),
-        None => open_popover(app, tray),
+        None => open_popover(app, Some(tray)),
     }
 }
 
-/// The popover under the icon at `tray`, unless it is open: a short-lived web view of `/popover`, destroyed when it
-/// closes so no WebKit runs while it is closed.
-fn open_popover(app: &AppHandle, tray: tauri::Rect) {
+/// The popover by the icon at `tray` (else in the screen's corner), unless it is open: a short-lived web view of
+/// `/popover`, destroyed when it closes so no WebKit runs while it is closed.
+fn open_popover(app: &AppHandle, tray: Option<tauri::Rect>) {
     if let Some(popover) = app.get_webview_window(POPOVER) {
         // Still loading, it logs "popover visible" once it is shown.
         if popover.is_visible().unwrap_or(false) {
@@ -847,9 +864,11 @@ fn open_popover(app: &AppHandle, tray: tauri::Rect) {
         .resizable(false)
         .always_on_top(true)
         .skip_taskbar(true)
-        .visible(false)
+        // Hidden until its page has loaded. Not on Linux: there `set_focus` does nothing until the queued `show` has
+        // run, so the popover would never take focus, and never lose it to close.
+        .visible(cfg!(target_os = "linux"))
         .focused(true)
-        .incognito(true);
+        .incognito(INCOGNITO);
     // The page is transparent, so the vibrancy shows through.
     #[cfg(target_os = "macos")]
     let builder = builder.transparent(true).effects(
@@ -859,6 +878,9 @@ fn open_popover(app: &AppHandle, tray: tauri::Rect) {
             .radius(14.0)
             .build(),
     );
+    // No vibrancy elsewhere: the web view shows the page's background colour (`--bg`) through it.
+    #[cfg(not(target_os = "macos"))]
+    let builder = builder.background_color(tauri::window::Color(8, 9, 10, 255));
     if secure_webview(app, builder, show_popover).build().is_err() {
         native::alert(
             "Tokentracky popover unavailable",
@@ -878,12 +900,19 @@ fn show_popover(popover: &WebviewWindow) {
 
 /// The popover's top left in points, on the screen that holds the icon. The tray reports `tray` in pixels at that
 /// screen's scale, and each monitor its frame in pixels at its own, so the icon's scale comes from the icon itself.
-fn popover_position(app: &AppHandle, tray: tauri::Rect) -> Option<(f64, f64)> {
+/// Without an icon (Linux), the top right of the primary screen's work area.
+fn popover_position(app: &AppHandle, tray: Option<tauri::Rect>) -> Option<(f64, f64)> {
     let rect = |position: PhysicalPosition<f64>, size: PhysicalSize<f64>| popover::Rect {
         x: position.x,
         y: position.y,
         width: size.width,
         height: size.height,
+    };
+    let Some(tray) = tray else {
+        let primary = app.primary_monitor().ok()??;
+        let visible = primary.work_area();
+        let screen = rect(visible.position.cast(), visible.size.cast()).points(primary.scale_factor());
+        return Some(popover::corner_origin(POPOVER_SIZE, screen));
     };
     let scale = native::tray_scale(&app.tray_by_id(TRAY)?)?;
     let icon = rect(tray.position.to_physical(scale), tray.size.to_physical(scale)).points(scale);

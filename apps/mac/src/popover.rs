@@ -1,4 +1,5 @@
-//! Where the menu bar popover opens: under the tray icon, inside the screen. Pure, so the tests need no menu bar.
+//! Where the popover opens: by the tray icon, inside the screen, or in the screen's top right corner where there is no
+//! icon to open at. Pure, so the tests need no menu bar.
 
 /// A rectangle in logical points, from the top left of the desktop with y downward, as windows are placed.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -42,19 +43,31 @@ pub fn tray_screen(tray: Rect, screens: &[Screen]) -> Option<&Screen> {
         .or(screens.first())
 }
 
-/// Space between the popover and the menu bar.
+/// Space between the popover and the menu bar or taskbar.
 const GAP: f64 = 6.0;
 /// The least space between the popover and either side of the screen.
 const MARGIN: f64 = 8.0;
 
-/// The top left of a popover of `size` (width, height): centred under the `tray` icon, `GAP` below it, and moved
-/// along to stay `MARGIN` inside the sides of `screen` (the visible frame of the icon's screen).
+/// The top left of a popover of `size` (width, height): centred on the `tray` icon, `GAP` below it, or above it when
+/// the icon sits in the lower half of `screen` (a taskbar at the bottom), and moved along to stay `MARGIN` inside the
+/// sides of `screen` (the visible frame of the icon's screen).
 pub fn popover_origin(tray: Rect, size: (f64, f64), screen: Rect) -> (f64, f64) {
     let centred = tray.x + tray.width / 2.0 - size.0 / 2.0;
     let x = centred
         .min(screen.x + screen.width - size.0 - MARGIN)
         .max(screen.x + MARGIN);
-    (x, tray.y + tray.height + GAP)
+    let low = tray.y + tray.height / 2.0 > screen.y + screen.height / 2.0;
+    let y = if low {
+        tray.y - GAP - size.1
+    } else {
+        tray.y + tray.height + GAP
+    };
+    (x, y)
+}
+
+/// The top left of a popover of `size` in the top right corner of `screen` (a visible frame), `MARGIN` inside it.
+pub fn corner_origin(size: (f64, f64), screen: Rect) -> (f64, f64) {
+    (screen.x + screen.width - size.0 - MARGIN, screen.y + MARGIN)
 }
 
 #[cfg(test)]
@@ -99,6 +112,42 @@ mod tests {
     fn keeps_the_popover_inside_the_left_edge() {
         let second = Rect { x: -1920.0, ..SCREEN };
         assert_eq!(popover_origin(icon(-1900.0), SIZE, second), (-1912.0, 30.0));
+    }
+
+    /// Windows: a 1920 × 1080 pt screen with a 48 pt taskbar at the bottom, the icon in it.
+    #[test]
+    fn opens_above_an_icon_in_the_lower_half_of_the_screen() {
+        let work_area = Rect {
+            x: 0.0,
+            y: 0.0,
+            width: 1920.0,
+            height: 1032.0,
+        };
+        let icon = Rect {
+            x: 1700.0,
+            y: 1044.0,
+            width: 24.0,
+            height: 24.0,
+        };
+        assert_eq!(popover_origin(icon, SIZE, work_area), (1522.0, 398.0));
+        // At the right edge, it stays inside the screen as below the menu bar.
+        let corner = Rect { x: 1890.0, ..icon };
+        assert_eq!(popover_origin(corner, SIZE, work_area), (1532.0, 398.0));
+        // A taskbar at the top: below the icon.
+        let top = Rect { y: 12.0, ..icon };
+        assert_eq!(popover_origin(top, SIZE, Rect { y: 48.0, ..work_area }), (1522.0, 42.0));
+    }
+
+    /// Linux: no icon to open at, so the top right of the work area, below a top panel.
+    #[test]
+    fn opens_in_the_top_right_corner_without_an_icon() {
+        assert_eq!(corner_origin(SIZE, SCREEN), (1124.0, 32.0));
+        let second = Rect {
+            x: -1920.0,
+            y: 0.0,
+            ..SCREEN
+        };
+        assert_eq!(corner_origin(SIZE, second), (-796.0, 8.0));
     }
 
     fn pixels(x: f64, width: f64, height: f64, scale: f64) -> Screen {
