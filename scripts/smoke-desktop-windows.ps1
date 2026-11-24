@@ -14,6 +14,9 @@ $env:TOKENTRACKY_PRICING_REFRESH = 'off'
 Write-Host '== Install for this user, silently'
 $install = Start-Process -FilePath $Installer -ArgumentList '/S' -Wait -PassThru
 if ($install.ExitCode -ne 0 -or -not (Test-Path $app)) { throw "the installer did not put the app at $app ($($install.ExitCode))" }
+# The page loads even without the dashboard's files, so check they are there.
+$index = Join-Path $folder 'web\index.html'
+if (-not (Test-Path $index) -or (Get-Item $index).Length -eq 0) { throw 'the installer left out the dashboard' }
 
 Write-Host '== Start it and wait for the dashboard'
 $log = Join-Path $work 'stderr.txt'
