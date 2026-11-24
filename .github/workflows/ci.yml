@@ -146,6 +146,10 @@ jobs:
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
+      # The desktop app's Linux build: Tauri's WebKitGTK and the tray's AppIndicator.
+      - run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev
+      # tauri-build copies the web build into the app; clippy and the tests need only the folder.
+      - run: mkdir -p apps/web/dist
       - run: cargo fmt --all --check
       # Embedded CLI assets are checked in native-macos after the web build. Keep this job Rust-only.
       - run: cargo clippy --workspace --exclude tokentracky-cli --all-targets --all-features -- -D warnings
@@ -165,7 +169,7 @@ jobs:
       contents: read
     env:
       CARGO_INCREMENTAL: '0'
-    # The CLI's Windows build. The Mac app is macOS only.
+    # The CLI's and the desktop app's Windows build.
     runs-on: windows-2022
     timeout-minutes: 30
     steps:
@@ -179,8 +183,11 @@ jobs:
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
-      - run: cargo clippy --workspace --exclude tokentracky-mac --all-targets -- -D warnings
-      - run: cargo test --workspace --exclude tokentracky-mac --no-fail-fast
+      # tauri-build copies the web build into the app; clippy and the tests need only the folder.
+      - run: mkdir -p apps/web/dist
+        shell: bash
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+      - run: cargo test --workspace --no-fail-fast
         env:
           TOKENTRACKY_TS_OUT: ${{ runner.temp }}/generated-types
           TOKENTRACKY_CEILINGS_OUT: ${{ runner.temp }}/generated-ceilings

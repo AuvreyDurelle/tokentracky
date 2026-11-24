@@ -22,7 +22,7 @@ exceptions = [
     { allow = ["MPL-2.0"], crate = "dtoa-short" },
     { allow = ["MPL-2.0"], crate = "selectors" },
     { allow = ["MPL-2.0"], crate = "option-ext" },
-    # Build tooling of Tauri's Linux GTK dependencies, which this workspace never builds (the app is macOS only).
+    # Build tooling of Tauri's Linux GTK dependencies.
     { allow = ["Apache-2.0 WITH LLVM-exception"], crate = "target-lexicon" },
 ]
 
