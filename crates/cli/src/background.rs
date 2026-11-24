@@ -1,6 +1,8 @@
 //! `login`'s background job on Linux and Windows: a copy of this program that stays put, running `serve` from now on
 //! and at each sign-in. Linux runs it as a systemd user service. Windows starts it from the Run key through
 //! `conhost --headless`, which gives it no window; that flag is how Windows' console host behaves, not documented API.
+//! The Tokentracky app's launch at login uses the same Run value, so the job changes or deletes it only while it starts
+//! the job's copy.
 #![cfg_attr(not(any(target_os = "linux", windows)), allow(dead_code))]
 use std::ffi::OsStr;
 use std::io;
@@ -13,7 +15,7 @@ use tokentracky_cli::Background;
 const SERVICE: &str = "tokentracky.service";
 #[cfg(windows)]
 const RUN_KEY: &str = r"HKCU\Software\Microsoft\Windows\CurrentVersion\Run";
-#[cfg(windows)]
+#[cfg_attr(not(windows), allow(dead_code))]
 const RUN_VALUE: &str = "Tokentracky";
 
 /// This system's background job; `None` on macOS, where the Mac app keeps uploading.
@@ -75,6 +77,9 @@ impl Background for Job {
         if home.is_some() {
             return Err(io::Error::other("the Run key cannot pass TOKENTRACKY_HOME on to it"));
         }
+        if run_value().is_some_and(|command| !starts_the_copy(&command)) {
+            return Err(io::Error::other("the Tokentracky app starts at sign-in in its place"));
+        }
         let program = folder("LOCALAPPDATA", &["AppData", "Local"])?.join(r"tokentracky\bin\tokentracky.exe");
         copy_self(&program)?;
         let conhost = PathBuf::from(std::env::var_os("SystemRoot").unwrap_or_else(|| r"C:\Windows".into()))
@@ -108,11 +113,27 @@ impl Background for Job {
             .map(drop)
     }
     fn remove(&self) -> io::Result<()> {
-        if run("reg", ["query", RUN_KEY, "/v", RUN_VALUE]).is_ok() {
+        if run_value().is_some_and(|command| starts_the_copy(&command)) {
             run("reg", ["delete", RUN_KEY, "/v", RUN_VALUE, "/f"])?;
         }
         remove_copy(&folder("LOCALAPPDATA", &["AppData", "Local"])?.join(r"tokentracky\bin\tokentracky.exe"))
     }
+}
+
+/// The command in the Run value, `None` when there is none (`reg query` fails then).
+#[cfg(windows)]
+fn run_value() -> Option<String> {
+    let output = Command::new("reg")
+        .args(["query", RUN_KEY, "/v", RUN_VALUE])
+        .stdin(Stdio::null())
+        .stderr(Stdio::null())
+        .output()
+        .ok()?;
+    output.status.success().then(|| {
+        value_data(&String::from_utf8_lossy(&output.stdout))
+            .unwrap_or_default()
+            .to_owned()
+    })
 }
 
 /// `$variable` when it is an absolute folder, else `default` under the home folder.
@@ -244,6 +265,29 @@ fn run_command(conhost: &Path, program: &Path, data_dir: &Path) -> String {
     )
 }
 
+/// The Run value's data in `reg query`'s output: the text after its type on the value's line.
+#[cfg_attr(not(windows), allow(dead_code))]
+fn value_data(output: &str) -> Option<&str> {
+    output.lines().find_map(|line| {
+        let rest = line.trim_start().strip_prefix(RUN_VALUE)?;
+        let rest = rest.strip_prefix(char::is_whitespace)?.trim_start();
+        let data = rest
+            .strip_prefix("REG_SZ")
+            .or_else(|| rest.strip_prefix("REG_EXPAND_SZ"))?;
+        Some(data.trim())
+    })
+}
+
+/// Whether a Run value's command starts the job's copy (`%LOCALAPPDATA%\tokentracky\bin\tokentracky.exe`) rather than
+/// the app (`%LOCALAPPDATA%\Tokentracky\tokentracky-mac.exe`). Only the folder's ASCII tail is compared: `reg` prints
+/// in the console's code page, which may garble the user's name in the rest of the path.
+#[cfg_attr(not(windows), allow(dead_code))]
+fn starts_the_copy(command: &str) -> bool {
+    command
+        .to_ascii_lowercase()
+        .contains(r"\tokentracky\bin\tokentracky.exe")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -300,5 +344,40 @@ mod tests {
             r#""C:\Windows\System32\conhost.exe" --headless "C:\Users\Ada Lovelace\AppData\Local\tokentracky\bin\tokentracky.exe" serve --background --data-dir "C:\Users\Ada Lovelace\.tokentracky""#
         );
         assert!(run_command(Path::new("c"), Path::new("p"), Path::new(r"D:\")).ends_with(r#"--data-dir "D:\\""#));
+    }
+
+    #[test]
+    fn reads_the_run_value_from_reg_query() {
+        let output = "\r\nHKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\r\n    Tokentracky    REG_SZ    \"C:\\Users\\Ada\\AppData\\Local\\Tokentracky\\tokentracky-mac.exe\" --hidden\r\n\r\n";
+        assert_eq!(
+            value_data(output),
+            Some(r#""C:\Users\Ada\AppData\Local\Tokentracky\tokentracky-mac.exe" --hidden"#)
+        );
+        assert_eq!(
+            value_data("    Tokentracky    REG_EXPAND_SZ    %LOCALAPPDATA%\\x.exe\r\n"),
+            Some(r"%LOCALAPPDATA%\x.exe")
+        );
+        // Another value whose name starts the same is not it.
+        assert_eq!(value_data("    TokentrackyBeta    REG_SZ    beta.exe\r\n"), None);
+        assert_eq!(value_data(""), None);
+    }
+
+    #[test]
+    fn tells_the_jobs_run_value_from_the_apps() {
+        let job = run_command(
+            Path::new(r"C:\Windows\System32\conhost.exe"),
+            Path::new(r"C:\Users\Zoë\AppData\Local\tokentracky\bin\tokentracky.exe"),
+            Path::new(r"C:\Users\Zoë\.tokentracky"),
+        );
+        assert!(starts_the_copy(&job));
+        // As `reg` may print it, the name garbled and the case as Windows keeps it.
+        assert!(starts_the_copy(
+            r#""C:\Windows\System32\conhost.exe" --headless "C:\Users\Zo?\AppData\Local\Tokentracky\Bin\Tokentracky.exe" serve"#
+        ));
+        // The app's launch at login, from its per-user install.
+        assert!(!starts_the_copy(
+            r#""C:\Users\Ada\AppData\Local\Tokentracky\tokentracky-mac.exe" --hidden"#
+        ));
+        assert!(!starts_the_copy(""));
     }
 }
