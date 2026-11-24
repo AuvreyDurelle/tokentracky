@@ -91,41 +91,11 @@ jobs:
               if ($c.Name -like 'Tokentracky*') { $r = $c.BoundingRectangle; $script:icon = @([int]($r.X + $r.Width / 2), [int]($r.Y + $r.Height / 2)) }
             }
           }
-          function Session($label) {
-            $script:log = Join-Path $out "$label-app.log"
-            $env:TOKENTRACKY_HOME = (New-Item -ItemType Directory -Force (Join-Path $env:RUNNER_TEMP "home-$label")).FullName
-            $app = Start-Process -FilePath $exe -ArgumentList '--hidden' -NoNewWindow -PassThru -RedirectStandardError $script:log
-            WaitCount 'title-set' 1 120 | Out-Null
-            Start-Sleep 3
-            Second '--open-popover' "$label-second-popover" | Out-Null
-            WaitCount 'popover visible' 1 30 | Out-Null
-            Start-Sleep 2
-            Shot "$label-1-popover"
-            # The popover's own Open dashboard button takes this path too.
-            if (Second '--open-dashboard' "$label-second-dashboard") { Write-Output "$label second launch answered" }
-            WaitCount 'page-load finished path=/' 1 60 | Out-Null
-            Start-Sleep 3
-            Shot "$label-2-dashboard"
-            $script:icon = $null
-            TrayIcon
-            if ($script:icon) {
-              $x, $y = $script:icon
-              Write-Output "$label tray icon at $x,$y"
-              $before = Count 'popover visible'
-              [Mouse]::Click($x, $y)
-              WaitCount 'popover visible' ($before + 1) 30 | Out-Null
-              Start-Sleep 2
-              Shot "$label-3-popover-click"
-              $shown = Count 'popover visible'; $gone = Count 'window destroyed'
-              [Mouse]::Click($x, $y)
-              Start-Sleep 4
-              Write-Output "$label second click: popover visible $shown -> $(Count 'popover visible'), destroyed $gone -> $(Count 'window destroyed')"
-              Shot "$label-4-second-click"
-            } else { Write-Output "$label tray icon not found" }
-            Stop-Process -Id $app.Id -Force -ErrorAction SilentlyContinue
-            Get-Process tokentracky-mac -ErrorAction SilentlyContinue | Stop-Process -Force
-            Start-Sleep 3
-            Write-Output "==== $label log"; LogText
+          function Windows($id) {
+            $root = [System.Windows.Automation.AutomationElement]::RootElement
+            foreach ($w in $root.FindAll([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::TrueCondition)) {
+              $c = $w.Current; if ($c.ProcessId -eq $id) { $w }
+            }
           }
 
           # Every tray icon in the taskbar, none in the overflow, so a click can reach it.
@@ -133,10 +103,80 @@ jobs:
           Stop-Process -Name explorer -Force; Start-Sleep 6
           if (-not (Get-Process explorer -ErrorAction SilentlyContinue)) { Start-Process explorer; Start-Sleep 6 }
 
-          Session 'A-incognito'
-          $env:TOKENTRACKY_DIAG_NO_INCOGNITO = '1'
-          Session 'B-no-incognito'
-          Remove-Item Env:TOKENTRACKY_DIAG_NO_INCOGNITO
+          $env:TOKENTRACKY_HOME = (New-Item -ItemType Directory -Force (Join-Path $env:RUNNER_TEMP 'tt-home')).FullName
+          $app = Start-Process -FilePath $exe -ArgumentList '--hidden' -NoNewWindow -PassThru -RedirectStandardError $script:log
+          WaitCount 'title-set' 1 120 | Out-Null
+          Start-Sleep 3
+
+          # 1. The popover at the icon: above it, since the taskbar is at the bottom.
+          Second '--open-popover' 'second-popover' | Out-Null
+          WaitCount 'popover visible' 1 30 | Out-Null
+          Start-Sleep 2
+          Shot '1-popover-above-icon'
+
+          # 2. The dashboard opens while the popover is open, which closes.
+          if (Second '--open-dashboard' 'second-dashboard') { Write-Output 'second launch answered' }
+          WaitCount 'page-load finished path=/' 1 60 | Out-Null
+          Start-Sleep 3
+          Write-Output "after the dashboard: popovers shown=$(Count 'popover visible') windows destroyed=$(Count 'window destroyed')"
+          Shot '2-dashboard'
+
+          # 3. Two clicks on the tray icon: the first opens the popover, the second closes it.
+          $script:icon = $null
+          TrayIcon
+          if ($script:icon) {
+            $x, $y = $script:icon
+            Write-Output "tray icon at $x,$y"
+            [Mouse]::Click($x, $y)
+            WaitCount 'popover visible' 2 30 | Out-Null
+            Start-Sleep 2
+            Shot '3-popover-click'
+            $shown = Count 'popover visible'; $gone = Count 'window destroyed'
+            [Mouse]::Click($x, $y)
+            Start-Sleep 4
+            Write-Output "second click: popovers shown $shown -> $(Count 'popover visible'), windows destroyed $gone -> $(Count 'window destroyed')"
+            Shot '4-second-click'
+
+            # 4. With the dashboard closed, the popover's own Open dashboard button.
+            Second '--close-dashboard' 'second-close' | Out-Null
+            Start-Sleep 3
+            $before = Count 'popover visible'
+            [Mouse]::Click($x, $y)
+            WaitCount 'popover visible' ($before + 1) 30 | Out-Null
+            Start-Sleep 2
+            $pop = Windows $app.Id | Where-Object { $_.Current.ClassName -eq 'Tauri Window' } | Select-Object -First 1
+            if ($pop) {
+              $r = $pop.Current.BoundingRectangle
+              Write-Output "popover window $r"
+              $loads = Count 'page-load finished path=/'
+              [Mouse]::Click([int]($r.X + $r.Width / 6), [int]($r.Y + $r.Height - 28))
+              WaitCount 'page-load finished path=/' ($loads + 1) 60 | Out-Null
+              Start-Sleep 3
+              Write-Output "after Open dashboard: page loads $loads -> $(Count 'page-load finished path=/'), popovers open=$(@(Windows $app.Id | Where-Object { $_.Current.Name -ne 'Tokentracky' -and $_.Current.ClassName -eq 'Tauri Window' }).Count)"
+              Shot '5-open-dashboard-button'
+            } else { Write-Output 'popover window not found' }
+          } else { Write-Output 'tray icon not found' }
+
+          # 5. A startup alert does not hold the app up: an invalid leaderboard origin, and the dashboard still loads.
+          Second '--quit' 'second-quit' | Out-Null
+          $app.WaitForExit(30000) | Out-Null
+          Write-Output "first instance exited: $($app.HasExited)"
+          $env:TOKENTRACKY_CLOUD_URL = 'http://example.invalid'
+          $script:log = Join-Path $out 'app-alert.log'
+          $app2 = Start-Process -FilePath $exe -ArgumentList '--open-dashboard' -NoNewWindow -PassThru -RedirectStandardError $script:log
+          WaitCount 'page-load finished path=/' 1 120 | Out-Null
+          Start-Sleep 4
+          Shot '6-dashboard-with-alert-behind'
+          $dialog = Windows $app2.Id | Where-Object { $_.Current.ClassName -eq '#32770' } | Select-Object -First 1
+          if ($dialog) { Write-Output "alert window '$($dialog.Current.Name)'"; try { $dialog.SetFocus() } catch { Write-Output "focus: $_" }; Start-Sleep 2 } else { Write-Output 'alert window not found' }
+          Shot '7-alert'
+          Stop-Process -Id $app2.Id -Force -ErrorAction SilentlyContinue
+
+          # The value launch at login wrote.
+          foreach ($hive in 'HKCU', 'HKLM') {
+            Write-Output "$hive Run:"; Get-ItemProperty "$($hive):\Software\Microsoft\Windows\CurrentVersion\Run" | Format-List | Out-String | Write-Output
+          }
+          foreach ($f in Get-ChildItem $out -Filter *.log) { Write-Output "==== $($f.Name)"; LogText $f.FullName }
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:

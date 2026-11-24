@@ -64,10 +64,12 @@ const CLOSE_DASHBOARD: &str = "--close-dashboard";
 /// Ephemeral web views, but not on Linux: there each gets a WebKit context of its own, and Tauri registers the `app`
 /// scheme in the first only, so a second window open at the same time could not load.
 const INCOGNITO: bool = cfg!(not(target_os = "linux"));
+/// Set while the dashboard's web view is built. On Windows, WebView2 reports the popover's focus loss meanwhile, and
+/// never finishes building the dashboard if the popover is destroyed before it has.
+static BUILDING_DASHBOARD: AtomicBool = AtomicBool::new(false);
 
 /// Fixed local actions only: no script evaluation, arbitrary URL, or navigation allowlist bypass.
 fn control(app: &AppHandle, args: &[String]) {
-    log(&format!("DIAG control {args:?}"));
     if args.iter().any(|arg| arg == "--quit") {
         log("graceful quit requested");
         app.exit(0);
@@ -161,21 +163,23 @@ pub fn run() {
         .manage(Service::default())
         .manage(Shown::default())
         .manage(UpdateShown(Mutex::new(Updates::new(UPDATER_ENABLED))))
-        .on_window_event(|window, event| {
-            log(&format!("DIAG event label={} {event:?}", window.label()));
-            match event {
-                // The popover is transient: it closes once anything else takes focus. Only once shown: on Windows,
-                // WebView2 takes focus from a hidden window and gives it back while it is created.
-                WindowEvent::Focused(false) if window.label() == POPOVER && window.is_visible().unwrap_or(false) => {
-                    drop(window.close())
-                }
-                WindowEvent::Destroyed => {
-                    log("window destroyed");
-                    #[cfg(target_os = "macos")]
-                    release_webkit(window.app_handle().clone());
-                }
-                _ => {}
+        .on_window_event(|window, event| match event {
+            // The popover is transient: it closes once anything else takes focus. Only once shown: on Windows,
+            // WebView2 takes focus from a hidden window and gives it back while it is created. Nor while the dashboard
+            // is built (Windows): `open_page` closes it after.
+            WindowEvent::Focused(false)
+                if window.label() == POPOVER
+                    && window.is_visible().unwrap_or(false)
+                    && !(cfg!(windows) && BUILDING_DASHBOARD.load(Ordering::SeqCst)) =>
+            {
+                drop(window.close())
             }
+            WindowEvent::Destroyed => {
+                log("window destroyed");
+                #[cfg(target_os = "macos")]
+                release_webkit(window.app_handle().clone());
+            }
+            _ => {}
         });
     #[cfg(tokentracky_release_updater)]
     let builder = builder
@@ -791,14 +795,18 @@ fn open_page(app: &AppHandle, page: &str) {
         .min_inner_size(960.0, 640.0)
         // An ephemeral data store is released with the web view, so WebKit's Networking process can exit too. The
         // local UI keeps no web storage that must survive a window close; anything it persists goes through the API.
-        .incognito(INCOGNITO && std::env::var_os("TOKENTRACKY_DIAG_NO_INCOGNITO").is_none());
-    log("DIAG dashboard build start");
+        .incognito(INCOGNITO);
+    BUILDING_DASHBOARD.store(true, Ordering::SeqCst);
     let built = secure_webview(app, builder, |_| {}).build();
-    log(&format!("DIAG dashboard build end ok={}", built.is_ok()));
+    BUILDING_DASHBOARD.store(false, Ordering::SeqCst);
     match built {
         Ok(window) => {
-            drop(window.set_focus());
-            log("DIAG dashboard set_focus sent");
+            // Windows: the popover lost focus to the dashboard while it was built, and closes now.
+            #[cfg(windows)]
+            if let Some(popover) = app.get_webview_window(POPOVER) {
+                let _ = popover.close();
+            }
+            drop(window.set_focus())
         }
         Err(_) => native::alert(
             "Tokentracky dashboard unavailable",
@@ -835,7 +843,6 @@ fn secure_webview<'a>(
             _ => true,
         })
         .on_page_load(move |window, payload| {
-            log(&format!("DIAG page-load {:?} {}", payload.event(), payload.url()));
             if matches!(payload.event(), PageLoadEvent::Finished) {
                 log(&format!("page-load finished path={}", payload.url().path()));
                 on_loaded(&window);
@@ -866,10 +873,6 @@ fn open_popover(app: &AppHandle, tray: Option<tauri::Rect>) {
             "The menu bar popover could not be opened.",
         );
     }
-    log(&format!(
-        "DIAG open_popover tray={tray:?} position={:?}",
-        popover_position(app, tray)
-    ));
     let Some((x, y)) = popover_position(app, tray) else {
         return log("popover has no screen");
     };
@@ -886,7 +889,7 @@ fn open_popover(app: &AppHandle, tray: Option<tauri::Rect>) {
         // run, so the popover would never take focus, and never lose it to close.
         .visible(cfg!(target_os = "linux"))
         .focused(true)
-        .incognito(INCOGNITO && std::env::var_os("TOKENTRACKY_DIAG_NO_INCOGNITO").is_none());
+        .incognito(INCOGNITO);
     // The page is transparent, so the vibrancy shows through.
     #[cfg(target_os = "macos")]
     let builder = builder.transparent(true).effects(
