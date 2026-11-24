@@ -1,5 +1,6 @@
 //! Where the popover opens: by the tray icon, inside the screen, or in the screen's top right corner where there is no
 //! icon to open at. Pure, so the tests need no menu bar.
+use std::time::Duration;
 
 /// A rectangle in logical points, from the top left of the desktop with y downward, as windows are placed.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -63,6 +64,16 @@ pub fn popover_origin(tray: Rect, size: (f64, f64), screen: Rect) -> (f64, f64) 
         tray.y + tray.height + GAP
     };
     (x, y)
+}
+
+/// How soon after the popover closed for losing focus a click on the icon is the click that took the focus: Windows
+/// reports the focus loss on the press and the click on the release.
+const CLICK: Duration = Duration::from_millis(500);
+
+/// Whether a click on the icon opens the popover, which closed for losing focus `closed` ago (if it has): not when
+/// that click is what closed it.
+pub fn click_opens(closed: Option<Duration>) -> bool {
+    closed.is_none_or(|closed| closed >= CLICK)
 }
 
 /// The top left of a popover of `size` in the top right corner of `screen` (a visible frame), `MARGIN` inside it.
@@ -136,6 +147,15 @@ mod tests {
         // A taskbar at the top: below the icon.
         let top = Rect { y: 12.0, ..icon };
         assert_eq!(popover_origin(top, SIZE, Rect { y: 48.0, ..work_area }), (1522.0, 42.0));
+    }
+
+    /// Windows: the press on the icon closes the open popover (focus loss), and its release must not open it again.
+    #[test]
+    fn a_click_that_closed_the_popover_does_not_reopen_it() {
+        assert!(click_opens(None));
+        assert!(!click_opens(Some(Duration::from_millis(120))));
+        assert!(click_opens(Some(Duration::from_millis(500))));
+        assert!(click_opens(Some(Duration::from_secs(30))));
     }
 
     /// Linux: no icon to open at, so the top right of the work area, below a top panel.

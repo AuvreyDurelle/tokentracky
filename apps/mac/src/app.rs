@@ -67,6 +67,8 @@ const INCOGNITO: bool = cfg!(not(target_os = "linux"));
 /// Set while the dashboard's web view is built. On Windows, WebView2 reports the popover's focus loss meanwhile, and
 /// never finishes building the dashboard if the popover is destroyed before it has.
 static BUILDING_DASHBOARD: AtomicBool = AtomicBool::new(false);
+/// When the popover last closed for losing focus (see `popover::click_opens`).
+static POPOVER_BLURRED: Mutex<Option<Instant>> = Mutex::new(None);
 
 /// Fixed local actions only: no script evaluation, arbitrary URL, or navigation allowlist bypass.
 fn control(app: &AppHandle, args: &[String]) {
@@ -172,6 +174,7 @@ pub fn run() {
                     && window.is_visible().unwrap_or(false)
                     && !(cfg!(windows) && BUILDING_DASHBOARD.load(Ordering::SeqCst)) =>
             {
+                *lock(&POPOVER_BLURRED) = Some(Instant::now());
                 drop(window.close())
             }
             WindowEvent::Destroyed => {
@@ -851,8 +854,11 @@ fn secure_webview<'a>(
 }
 
 fn toggle_popover(app: &AppHandle, tray: tauri::Rect) {
+    let closed = lock(&POPOVER_BLURRED).map(|at| at.elapsed());
     match app.get_webview_window(POPOVER) {
         Some(popover) => drop(popover.close()),
+        // Windows: the press that closed the popover for losing focus must not open it again on release.
+        None if cfg!(windows) && !popover::click_opens(closed) => {}
         None => open_popover(app, Some(tray)),
     }
 }
