@@ -25,8 +25,10 @@ else
   [[ -x "$APPIMAGE" && -s "$DEB" ]] || { echo "missing $APPIMAGE or $DEB" >&2; exit 1; }
   [[ "$(dpkg-deb --field "$DEB" Version)" == "$VERSION" ]] || { echo 'the .deb has another version' >&2; exit 1; }
   dpkg-deb --field "$DEB" Package Depends
-  dpkg-deb --contents "$DEB" | grep -E ' \./usr/bin/tokentracky-mac$' >/dev/null
-  dpkg-deb --contents "$DEB" | grep -E '/web/index\.html$' >/dev/null
+  CONTENTS=$(dpkg-deb --contents "$DEB")
+  for pattern in ' \./usr/bin/tokentracky-mac$' '/web/index\.html$'; do
+    grep -E "$pattern" <<<"$CONTENTS" >/dev/null || { echo "$CONTENTS" >&2; echo "the .deb has no $pattern" >&2; exit 1; }
+  done
   bash scripts/smoke-desktop-linux.sh "$APPIMAGE" "$DEB"
 fi
 echo "The $BUNDLES bundle built and ran (unsigned, no updater)."
