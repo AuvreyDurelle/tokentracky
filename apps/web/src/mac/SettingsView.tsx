@@ -111,7 +111,9 @@ export function SettingsPage({ api, health, status, refresh, shell, onShell, det
   const linked = !!health.cloudUrl && !!status?.cloudLinked && !needsReconnect;
   // GitHub login and join date come from your public profile.
   const profile = useLoad(linked && status?.alias ? () => api.profileStats(status.alias!) : null, [api, linked, status?.alias]);
-  const sections = SECTIONS.filter((section) => (!('shell' in section) || shell) && (!('linked' in section) || linked));
+  // Windows shows no text beside a tray icon (its tooltip has today's tokens), so there is nothing to choose for it.
+  const iconText = shell?.platform !== 'windows';
+  const sections = SECTIONS.filter((section) => (!('shell' in section) || shell) && (!('linked' in section) || linked) && (section.id !== 'menubar' || iconText));
   // The first section is current until one is chosen; General appears once the shell answers.
   const current = chosen ?? sections[0]!.id;
   const sources = TOOLS.flatMap((tool) => status?.sources.filter((source) => source.id === tool.id) ?? []);
@@ -148,7 +150,7 @@ export function SettingsPage({ api, health, status, refresh, shell, onShell, det
         <Leaderboard api={api} health={health} status={status} profile={profile.value} refresh={refresh} busy={busy} act={act} />
       </Section>
       {linked && status?.alias && <Clubs api={api} me={status.alias} busy={busy} act={act} />}
-      {shell && settings && <MenuBar settings={settings} overview={overview} busy={busy} change={(next) => void act('menubar', async () => onSettings(await api.setLocalSettings(next)))} />}
+      {shell && settings && iconText && <MenuBar settings={settings} overview={overview} busy={busy} change={(next) => void act('menubar', async () => onSettings(await api.setLocalSettings(next)))} />}
       <Section id="pricing" title="Pricing & data" note="Costs are estimates from a public price table. Models without a known price show as unknown, never $0.">
         <div className="st-group">
           {settings && <Row label="Refresh price table daily" desc="Downloads LiteLLM’s public price table from GitHub once a day. Turn off to keep the snapshot that came with the app and make no downloads."

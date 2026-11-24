@@ -74,7 +74,7 @@ describe('SettingsPage', () => {
     const mac = text(page({ settings }));
     for (const words of ['Start Tokentracky in the menu bar when you sign in to your Mac.', 'The file is saved on this Mac.', 'Never leaves this Mac', 'Unlink this Mac', 'Stops uploads from this Mac.', 'Usage on this Mac is kept.', 'Show in the menu bar']) expect(mac).toContain(words);
     const pc = text(page({ settings }, 'windows'));
-    for (const words of ['Start Tokentracky in the tray when you sign in to your PC.', 'The file is saved on this PC.', 'Never leaves this PC', 'Unlink this PC', 'Stops uploads from this PC.', 'Usage on this PC is kept.', 'Show in the tray']) expect(pc).toContain(words);
+    for (const words of ['Start Tokentracky in the tray when you sign in to your PC.', 'The file is saved on this PC.', 'Never leaves this PC', 'Unlink this PC', 'Stops uploads from this PC.', 'Usage on this PC is kept.']) expect(pc).toContain(words);
     const linux = text(page({ settings }, 'linux'));
     for (const words of ['Start Tokentracky in the tray when you sign in to your computer.', 'Never leaves this computer', 'Unlink this computer', 'Show in the tray']) expect(linux).toContain(words);
     // The CLI's dashboard has no app shell: a computer, and none of the app's rows.
@@ -82,11 +82,14 @@ describe('SettingsPage', () => {
     for (const words of ['The file is saved on this computer.', 'Never leaves this computer', 'Unlink this computer']) expect(cli).toContain(words);
     for (const page of [pc, linux, cli]) expect(page).not.toMatch(/Mac|menu bar/);
   });
-  it('titles the icon’s section after the menu bar on a Mac and the tray elsewhere', () => {
-    const nav = (html: string) => [...html.matchAll(/<button type="button" class="st-nav-item[^"]*"[^>]*><svg[\s\S]*?<\/svg>([^<]+)/g)].map((match) => match[1]!);
+  it('titles the icon’s section after the menu bar on a Mac and the tray on Linux, and leaves it out on Windows, whose tray shows no text', () => {
+    const nav = (html: string) => [...html.matchAll(/<button type="button" class="st-nav-item[^"]*"[^>]*><svg[\s\S]*?<\/svg>([^<]+)/g)].map((match) => match[1]!.replaceAll('&amp;', '&'));
+    const settings = { menuBar: 'icon', menuBarPeriod: 'today', priceRefresh: true } as const;
     expect(nav(page())).toContain('Menu bar');
-    expect(nav(page({}, 'windows'))).toContain('Tray');
-    expect(page({ settings: { menuBar: 'icon', menuBarPeriod: 'today', priceRefresh: true } }, 'linux')).toContain('<h2 id="st-menubar-title">Tray</h2>');
+    expect(nav(page({}, 'linux'))).toContain('Tray');
+    expect(page({ settings }, 'linux')).toContain('<h2 id="st-menubar-title">Tray</h2>');
+    expect(nav(page({}, 'windows'))).toEqual(['General', 'Sources', 'Leaderboard & privacy', 'Clubs', 'Pricing & data', 'Updates', 'Account']);
+    expect(page({ settings }, 'windows')).not.toContain('st-menubar');
   });
   it('offers joining when this Mac is not linked, or no leaderboard when the build has none', () => {
     const unlinked: LocalStatus = { ...f.status, cloudLinked: false, alias: null };
