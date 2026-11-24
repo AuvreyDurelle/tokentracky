@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { BADGE_IDS, badgeProgress, type AchievementRarity, type BadgeId } from '@tokentracky/core';
 import { AchievementsBody } from './AchievementsView';
+import { MachineContext } from './machine';
 
 const markup = (element: ReactElement) => renderToStaticMarkup(element).replaceAll('<!-- -->', '');
 const VALUES = { 'token-titan': 18.4e9, 'big-day': 412e6, marathoner: 214, streak: 34, 'weekend-warrior': 41, momentum: 520, veteran: 301, podium: 42, multitool: 5, polyglot: 14, trendsetter: 1 } as Record<BadgeId, number>;
@@ -49,8 +50,12 @@ describe('AchievementsBody', () => {
     expect(html).toContain('42% of builders');
   });
   it('says before joining that the badges are worked out on this Mac, and which need the board', () => {
-    const html = markup(<AchievementsBody badges={badges.map((badge) => badge.id === 'podium' || badge.id === 'trendsetter' ? badgeProgress(badge.id, 0) : badge)} rarity={null} joined={false} />);
+    const body = <AchievementsBody badges={badges.map((badge) => badge.id === 'podium' || badge.id === 'trendsetter' ? badgeProgress(badge.id, 0) : badge)} rarity={null} joined={false} />;
+    const html = markup(<MachineContext.Provider value={{ name: 'Mac', bar: 'menu bar' }}>{body}</MachineContext.Provider>);
     expect(html).toContain('Worked out on this Mac');
+    expect(markup(<MachineContext.Provider value={{ name: 'PC', bar: 'tray' }}>{body}</MachineContext.Provider>)).toContain('Worked out on this PC');
+    // Without an app shell, as in the CLI's dashboard.
+    expect(markup(body)).toContain('Worked out on this computer');
     expect(html).toContain('only count once you join the leaderboard');
     expect(html.match(/Join the leaderboard to earn/g)).toHaveLength(2);
     expect(html).not.toContain('of builders');

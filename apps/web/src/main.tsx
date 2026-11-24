@@ -17,6 +17,7 @@ import { Popover } from './mac/Popover';
 import { TownView } from './mac/TownView';
 import { ClubView, ClubsView } from './mac/ClubsView';
 import { JoinPrompt, askToJoin } from './mac/JoinPrompt';
+import { MachineContext, machine, type Machine } from './mac/machine';
 import '@fontsource-variable/inter/opsz.css';
 import './styles.css';
 import './mac/mac.css';
@@ -31,6 +32,8 @@ function App() {
   const [route, navigate] = useRoute();
   const [palette, setPalette] = useState(false);
   const [joinPrompt, setJoinPrompt] = useState<boolean | null>(null);
+  // The words for this computer ("this Mac", "this PC"), known before the first page renders so they never change on it.
+  const [words, setWords] = useState<Machine | null>(null);
   const refreshLocal = async () => { setLocalStatus(await api.localStatus()); };
   useEffect(() => {
     let live = true;
@@ -40,6 +43,7 @@ function App() {
       try { const status = await api.localStatus(); if (live) setLocalStatus(status); }
       catch (error) { if (live) setHealthError(`Tracking status could not load: ${errorText(error)}`); }
     }).catch((error: unknown) => { if (live) setHealthError(errorText(error)); });
+    void api.shellState().catch(() => null).then((shell) => { if (live) setWords(machine(shell)); });
     return () => { live = false; };
   }, [api]);
   useEffect(() => {
@@ -60,7 +64,7 @@ function App() {
   useEffect(() => { if (health) setJoinPrompt((asked) => askToJoin(asked, health, localStatus)); }, [health, localStatus]);
 
   if (healthError && !health) return <main className="startup"><span className="brand-mark" /><h1>Tokentracky is unavailable</h1><Notice tone="error">Could not reach the server: {healthError}</Notice><p>Start the app or server, then reload this page.</p></main>;
-  if (!health) return <main className="startup"><span className="brand-mark" /><p>Connecting…</p></main>;
+  if (!health || !words) return <main className="startup"><span className="brand-mark" /><p>Connecting…</p></main>;
 
   const me = localStatus?.alias ?? null;
   const canJoin = !localStatus?.cloudLinked && !!health.cloudUrl;
@@ -99,8 +103,8 @@ function App() {
         { id: 'support', label: 'Support', hint: 'Page', run: () => { window.location.href = '/support'; } },
       ]} />;
   // The pages sit in the Mac app's frame; the popover has none.
-  return <>{page === 'popover' ? body : <MacShell api={api} status={localStatus} me={me} page={page} path={routePath(route)} go={navigate} onPalette={() => setPalette(true)}>{body}
-    {joinPrompt && <JoinPrompt api={api} refresh={async () => { await refreshLocal(); setJoinPrompt(false); }} onClose={() => setJoinPrompt(false)} />}</MacShell>}{commands}</>;
+  return <MachineContext.Provider value={words}>{page === 'popover' ? body : <MacShell api={api} status={localStatus} me={me} page={page} path={routePath(route)} go={navigate} onPalette={() => setPalette(true)}>{body}
+    {joinPrompt && <JoinPrompt api={api} refresh={async () => { await refreshLocal(); setJoinPrompt(false); }} onClose={() => setJoinPrompt(false)} />}</MacShell>}{commands}</MachineContext.Provider>;
 }
 
 const legalPage = legalPageAt(window.location.pathname);

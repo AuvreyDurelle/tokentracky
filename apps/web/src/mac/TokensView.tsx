@@ -9,6 +9,7 @@ import { Loading, Notice, ToolIcon } from '../ui';
 import { comparedWith } from '../usage-span';
 import { downloadCsv } from '../You';
 import { ActivityGrid } from './ActivityGrid';
+import { useMachine } from './machine';
 import { ICONS } from './icons';
 import { busiestHour, busiestWeekdayUtc, changeVsPrevious, dailyByModel, dailyByTool, favouriteModel, longestSession, mostExpensiveDay, trendingModel } from './insights';
 import { ToolbarActions } from './Shell';
@@ -157,6 +158,7 @@ export function TokensPage({ data: loaded, year, status, range, period, span, me
   onMetric: (metric: Metric) => void; onPeriod: (period: Period) => void; onStep: (delta: number) => void; onCustom: (range: { from: string; to: string } | null) => void; onTool: (tool: 'all' | ToolId) => void;
   onGrain: (grain: Grain) => void; onDrill: (day: string) => void; onExport: () => void;
 }) {
+  const { name } = useMachine();
   const [picking, setPicking] = useState(false);
   // A new range or tool takes seconds to load; until it has, the last one's totals would sit under the new labels.
   const data = loaded && rangeKey(loaded.range) === rangeKey(range) && loaded.tool === tool ? loaded : null;
@@ -193,7 +195,7 @@ export function TokensPage({ data: loaded, year, status, range, period, span, me
         <span className="tk-faint">Compared with {beforePhrase(range)}{status?.lastRefreshAt ? ` · updated ${timeAgo(status.lastRefreshAt)}` : ''}</span>
       </div>
       <ChartCard data={data} year={year} yearDays={yearDays} range={range} points={points} metric={metric} grain={grain} custom={custom} period={period} phrase={phrase} onMetric={onMetric} onGrain={onGrain} onDrill={onDrill} />
-      <SectionHead title="Breakdown" note="Where the tokens went · projects and sessions stay on this Mac" />
+      <SectionHead title="Breakdown" note={`Where the tokens went · projects and sessions stay on this ${name}`} />
       <Breakdown data={data} range={range} onExport={onExport} />
       <SectionHead title="When you work" note="Your hours, your days, and how long your sessions run" />
       <WhenYouWork data={data} />

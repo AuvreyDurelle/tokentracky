@@ -10,6 +10,7 @@ import { Avatar, Empty, Loading, Notice, SearchIcon, ToolIcon, avatarHue } from 
 import { Board, RivalStrip, ToolShare, TrendArea } from './LeaderboardView';
 import { cumulative, edge, isHot, leadByDay, slugOf, type Side } from './clubs-model';
 import { useLoad } from './load';
+import { useMachine } from './machine';
 import { Bars, CHALLENGE_ICON, CROWN, DAYS, DayPips, FLAME, LineRace, Meter, Podium, Rope, SWORDS, TROPHY, Verdict, WeekClock, hue, place, useWeekStart } from './ClubParts';
 import { ProfileDialog } from './ProfileModal';
 import { ToolbarActions, clubsChanged } from './Shell';
@@ -44,7 +45,8 @@ function Seg<T extends string>({ label, value, options, onChange }: { label: str
 }
 /** When the app isn't linked to the leaderboard, clubs wait for that. */
 function NotLinked({ error, onJoin }: { error: unknown; onJoin: () => void }) {
-  if (error instanceof ApiError && error.code === 'CLOUD_NOT_LINKED') return <section className="m-card"><Empty title="Join the leaderboard to use clubs" action={<button type="button" className="m-btn primary" onClick={onJoin}>Join the leaderboard</button>}>Clubs rank members by the totals they publish. Projects, prompts and code stay on this Mac.</Empty></section>;
+  const { name } = useMachine();
+  if (error instanceof ApiError && error.code === 'CLOUD_NOT_LINKED') return <section className="m-card"><Empty title="Join the leaderboard to use clubs" action={<button type="button" className="m-btn primary" onClick={onJoin}>Join the leaderboard</button>}>Clubs rank members by the totals they publish. Projects, prompts and code stay on this {name}.</Empty></section>;
   return <Notice tone="error">Clubs could not load: {errorText(error)}</Notice>;
 }
 
@@ -686,6 +688,7 @@ function NewClub({ api, me, go, onClose }: { api: ApiClient; me: string | null; 
 
 /** The Join with a code sheet: an invite link or code. */
 function JoinCode({ api, go, onClose }: { api: ApiClient; go: Go; onClose: () => void }) {
+  const { name } = useMachine();
   const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -700,7 +703,7 @@ function JoinCode({ api, go, onClose }: { api: ApiClient; go: Go; onClose: () =>
     <form className="mc-sheet" onSubmit={(event) => { event.preventDefault(); void join(); }}>
       <h2 id="mc-join-title">Join with a code</h2>
       <label className="mc-field">Invite link or code<input className="m-input" value={value} onChange={(event) => setValue(event.target.value)} placeholder="NIGHT-7K2Q" autoFocus /></label>
-      <small className="faint">{`Members see each other’s totals, tools and models, as on the public board. Projects, prompts and code stay on this Mac.`}</small>
+      <small className="faint">{`Members see each other’s totals, tools and models, as on the public board. Projects, prompts and code stay on this ${name}.`}</small>
       {error && <Notice tone="error">{error}</Notice>}
       <div className="mc-sheet-foot"><button type="button" className="m-btn" onClick={onClose}>Cancel</button><button type="submit" className="m-btn primary" disabled={busy}>{busy ? 'Joining…' : 'Join'}</button></div>
     </form>

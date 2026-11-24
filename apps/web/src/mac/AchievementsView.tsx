@@ -8,6 +8,7 @@ import { ACHIEVEMENT_COPY, TIER_NAMES, formatBadgeValue, rarityText } from './ac
 import { GROUPS, JOIN_TO_EARN, localBadges, nextRatio, progressOf, shortValue, tierCounts, toGo, upNext } from './achievements';
 import { Emblem } from './Emblem';
 import { useLoad } from './load';
+import { useMachine } from './machine';
 import { ToolbarActions } from './Shell';
 
 export type Filter = 'all' | 'earned' | 'locked';
@@ -40,6 +41,7 @@ export function AchievementsView({ api, me, revision }: { api: ApiClient; me: st
 
 /** The summary, "Up next" and every badge by group, or only the earned or locked ones. `joined` false means the badges were worked out locally and podium and trendsetter can't be earned yet. */
 export function AchievementsBody({ badges, rarity, joined, filter = 'all' }: { badges: BadgeProgress[]; rarity: AchievementRarity | null; joined: boolean; filter?: Filter }) {
+  const { name } = useMachine();
   const counts = tierCounts(badges);
   const earned = badges.length - counts[0]!;
   const next = upNext(badges, joined ? [] : JOIN_TO_EARN);
@@ -74,7 +76,7 @@ export function AchievementsBody({ badges, rarity, joined, filter = 'all' }: { b
       </div>
       <div className="hero-foot">{INFO}{joined
         ? 'Worked out on the leaderboard from the daily totals you publish, and updated as you sync.'
-        : 'Worked out on this Mac from your last 365 days. They only count once you join the leaderboard.'}</div>
+        : `Worked out on this ${name} from your last 365 days. They only count once you join the leaderboard.`}</div>
     </section>
 
     {next.length > 0 && <section className="ach-section">

@@ -81,8 +81,9 @@ pub fn parse(method: &str, path: &str, body: &[u8]) -> Option<Result<ShellReques
     })
 }
 
-/// `{launchAtLogin, update: {state, version}, version}`: `update.version` is the update's while one is available,
-/// downloading or ready, else `null`; `version` is the app's.
+/// `{launchAtLogin, update: {state, version}, version, platform}`: `update.version` is the update's while one is
+/// available, downloading or ready, else `null`; `version` is the app's; `platform` is `macos`, `windows` or `linux`,
+/// for the pages' words ("this Mac", "this PC").
 pub fn state(launch_at_login: bool, update: &UpdateState, version: &str) -> Value {
     let (state, update_version) = match update {
         UpdateState::Disabled => ("disabled", None),
@@ -96,6 +97,7 @@ pub fn state(launch_at_login: bool, update: &UpdateState, version: &str) -> Valu
         "launchAtLogin": launch_at_login,
         "update": {"state": state, "version": update_version},
         "version": version,
+        "platform": std::env::consts::OS,
     })
 }
 
@@ -221,7 +223,8 @@ mod tests {
     fn describes_launch_at_login_the_update_and_the_version() {
         assert_eq!(
             state(true, &UpdateState::Disabled, "0.1.0"),
-            json!({"launchAtLogin": true, "update": {"state": "disabled", "version": null}, "version": "0.1.0"})
+            json!({"launchAtLogin": true, "update": {"state": "disabled", "version": null}, "version": "0.1.0",
+                "platform": std::env::consts::OS})
         );
         assert_eq!(
             state(false, &UpdateState::Available("0.2.0".into()), "0.1.0")["update"],

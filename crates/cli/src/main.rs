@@ -10,6 +10,7 @@ use tokentracky_cli::{Context, OnServe, ServeHandle, run};
 use tokentracky_local_api::SecretStore;
 use tokio::sync::mpsc;
 
+mod app;
 mod background;
 mod web;
 
@@ -39,10 +40,10 @@ fn open_url(url: &str) {
 
 /// The menu-bar app: by path in the Applications folders, where the npm launcher and the DMG put it (a path needs no
 /// lookup, so a copy made moments ago opens too), else wherever macOS knows it is. A launch opens its window, and so
-/// does reopening it while it runs.
+/// does reopening it while it runs. Linux and Windows find it in `app.rs`.
 fn open_app() -> bool {
     if !cfg!(target_os = "macos") {
-        return false;
+        return app::open();
     }
     let open = |args: &[&OsStr]| {
         Command::new("open")
@@ -136,6 +137,7 @@ fn main() -> ExitCode {
         secret_store: secrets,
         open_url: Arc::new(open_url),
         open_app: Arc::new(open_app),
+        app_installed: Arc::new(app::installed),
         web_root: web.path().to_owned(),
         interactive,
         confirm: Box::new(confirm),

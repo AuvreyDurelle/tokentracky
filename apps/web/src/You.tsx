@@ -71,11 +71,11 @@ const supported = (status: LocalStatus | null) => status?.sources.filter((source
 
 const names = (items: SourceStatus[]) => items.length > 1 ? `${items.slice(0, -1).map((item) => item.name).join(', ')} and ${items.at(-1)!.name}` : items[0]?.name ?? '';
 
-/** The setup panel's heading. Once the first run has read the tools it turned on: their all-time total, or that they have no usage yet. */
-export function setupHeading(status: LocalStatus, detected: DetectedTool[] | null): string {
+/** The setup panel's heading. Once the first run has read the tools it turned on: their all-time total, or that they have no usage yet. `name` is the computer's (`Mac`, `PC`). */
+export function setupHeading(status: LocalStatus, detected: DetectedTool[] | null, name: string): string {
   const found = supported(status).filter((source) => detected?.some((tool) => tool.id === source.id));
   const tracked = found.filter((source) => source.enabled);
   if (detected === null || (status.firstRun && !status.lastRefreshAt)) return 'Looking for your AI coding tools…';
   if (status.firstRun && tracked.length) return status.firstRun.tokens ? `Found ${formatCompact(status.firstRun.tokens)} Tokens used` : `No usage yet in ${names(tracked)}`;
-  return found.length ? `Found ${names(found)} on this Mac` : 'No supported tools found in their usual folders';
+  return found.length ? `Found ${names(found)} on this ${name}` : 'No supported tools found in their usual folders';
 }
