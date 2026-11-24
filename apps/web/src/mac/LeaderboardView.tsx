@@ -6,6 +6,7 @@ import { Avatar, Empty, Loading, Notice, SearchIcon, ToolIcon } from '../ui';
 import { monotonePath } from './chart';
 import { MAIN_TOOLS, daysToPass, gapToNext, lastSeven, pagerItems, rankMove, resetText } from './leaderboard';
 import { useLoad } from './load';
+import { useMachine } from './machine';
 import { ToolbarActions } from './Shell';
 import {countRatio, countShare, cumulativeMonths, sharedCounts, sumCounts} from '../public-counts';
 
@@ -241,8 +242,9 @@ export function RivalStrip({ period, mine, rows, builders, ranks, site, onProfil
 const SWORDS = <svg className="ys-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14.5 17.5 3 6V3h3l11.5 11.5" /><path d="m13 19 6-6" /><path d="m16 16 4 4" /><path d="m19 21 2-2" /><path d="M14.5 6.5 18 3h3v3l-3.5 3.5" /><path d="m5 14 4 4" /><path d="m7 17-3 3" /><path d="m3 19 2 2" /></svg>;
 
 export function JoinStrip({ onJoin }: { onJoin: () => void }) {
+  const { name } = useMachine();
   return <section className="you-strip you-join" aria-label="Join the leaderboard">
-    <div className="you-id"><div className="lb-you-rank">You’re tracking privately</div><div className="you-sub">Join to put your tokens on the board. Projects, prompts and code stay on this Mac.</div></div>
+    <div className="you-id"><div className="lb-you-rank">You’re tracking privately</div><div className="you-sub">Join to put your tokens on the board. Projects, prompts and code stay on this {name}.</div></div>
     <button type="button" className="m-btn primary" onClick={onJoin}>Join the leaderboard</button>
   </section>;
 }

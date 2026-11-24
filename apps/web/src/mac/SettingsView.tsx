@@ -8,6 +8,7 @@ import { usageRevision } from '../refresh';
 import { Avatar, Loading, Notice, Spinner, ToolIcon } from '../ui';
 import { FolderModal, downloadCsv, setupHeading, useConnectFlow } from '../You';
 import { useLoad } from './load';
+import { useMachine } from './machine';
 import { GITHUB } from './ProfileModal';
 import { ICONS } from './icons';
 import { clubsChanged } from './Shell';
@@ -28,16 +29,16 @@ export function sourceLine(source: SourceStatus, detected: boolean, sessions?: n
   return { tone: source.enabled ? 'ok' : 'off', text: count ? `Detected · ${count}` : 'Detected', found: true, note };
 }
 
-/** The Mac app checks automatically; its native prompts and gear menu let the user update and restart. */
-export function updateLine(update: ShellState['update']): string {
+/** The app checks automatically; its native prompts and gear menu let the user update and restart. `bar` is where its icon sits (`menu bar`, `tray`). */
+export function updateLine(update: ShellState['update'], bar: string): string {
   const named = update.version ? `Version ${update.version}` : 'A new version';
   const v = update.version ? ` v${update.version}` : '';
   switch (update.state) {
     case 'disabled': return 'Updates are off in this build.';
     case 'checking': return 'Checking for updates…';
-    case 'available': return `${named} is available. Choose Download${v} from the gear menu in the menu bar.`;
+    case 'available': return `${named} is available. Choose Download${v} from the gear menu in the ${bar}.`;
     case 'downloading': return `Downloading${v}…`;
-    case 'ready': return `${named} is downloaded. Choose Restart to install${v} from the gear menu in the menu bar.`;
+    case 'ready': return `${named} is downloaded. Choose Restart to install${v} from the gear menu in the ${bar}.`;
     default: return 'Automatic checks on';
   }
 }
@@ -93,6 +94,8 @@ const SECTIONS = [
   { id: 'updates', label: 'Updates', icon: ICONS.refresh, shell: true },
   { id: 'account', label: 'Account', icon: ICONS.user, linked: true },
 ] as const;
+/** `menu bar` as a title: `Menu bar`. */
+const title = (words: string) => words[0]!.toUpperCase() + words.slice(1);
 const JOINED = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeZone: 'UTC' });
 
 export function SettingsPage({ api, health, status, refresh, shell, onShell, detected, paused, onPaused, sessions = null, overview = null, settings = null, onSettings = () => {} }: {
@@ -100,6 +103,7 @@ export function SettingsPage({ api, health, status, refresh, shell, onShell, det
   shell: ShellState | null; onShell: (shell: ShellState) => void; detected: DetectedTool[] | null; paused: boolean | null; onPaused: (paused: boolean) => void;
   sessions?: Map<ToolId, number> | null; overview?: MenuOverview | null; settings?: LocalSettings | null; onSettings?: (settings: LocalSettings) => void;
 }) {
+  const { name, bar } = useMachine();
   const [chosen, setCurrent] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -122,7 +126,7 @@ export function SettingsPage({ api, health, status, refresh, shell, onShell, det
     <nav className="st-nav" aria-label="Settings sections">
       <div className="st-nav-title">Settings</div>
       {sections.map((section) => <button key={section.id} type="button" className={`st-nav-item${current === section.id ? ' on' : ''}`} aria-current={current === section.id ? 'true' : undefined} onClick={() => jump(section.id)}>
-        {section.icon}{section.label}{section.id === 'sources' && sources.length > 0 && <span className="st-count">{on}/{sources.length}</span>}
+        {section.icon}{section.id === 'menubar' ? title(bar) : section.label}{section.id === 'sources' && sources.length > 0 && <span className="st-count">{on}/{sources.length}</span>}
       </button>)}
       <div className="st-nav-foot">Tokentracky {shell?.version ?? health.version}<br />Reads locally, ranks publicly.</div>
     </nav>
@@ -131,7 +135,7 @@ export function SettingsPage({ api, health, status, refresh, shell, onShell, det
       {error && <Notice tone="error">{error}</Notice>}
       {shell && <Section id="general" title="General">
         <div className="st-group">
-          <Row label="Launch at login" desc="Start Tokentracky in the menu bar when you sign in to your Mac.">
+          <Row label="Launch at login" desc={`Start Tokentracky in the ${bar} when you sign in to your ${name}.`}>
             <Toggle label="Launch at login" on={shell.launchAtLogin} disabled={busy === 'login'} onChange={() => void act('login', async () => onShell(await api.setLaunchAtLogin(!shell.launchAtLogin)))} />
           </Row>
           <Row label="Quit Tokentracky" desc="Stops reading your tools until you open the app again.">
@@ -152,20 +156,20 @@ export function SettingsPage({ api, health, status, refresh, shell, onShell, det
             <Toggle label="Refresh price table daily" on={settings.priceRefresh} disabled={busy === 'pricing'} onChange={() => void act('pricing', async () => { onSettings(await api.setLocalSettings({ ...settings, priceRefresh: !settings.priceRefresh })); await refresh(); })} />
           </Row>}
           {!settings && status?.pricingVersion && <Row label="Price table" desc="LiteLLM’s public table of API list prices, applied to every model it lists." meta={`Version ${status.pricingVersion.replace(/^litellm:/, '')}`} />}
-          <Row label="Export data" desc="Every usage record with its tool, model, project and token counts, for all your history. The file is saved on this Mac.">
+          <Row label="Export data" desc={`Every usage record with its tool, model, project and token counts, for all your history. The file is saved on this ${name}.`}>
             <button type="button" className="m-btn st-sm" disabled={busy === 'export'} onClick={() => void act('export', () => downloadCsv(api, { from: '2000-01-01', to: utcToday() }, 'all', `tokentracky-usage-${utcToday()}.csv`))}>{ICONS.download}Export CSV</button>
           </Row>
         </div>
       </Section>
       {shell && <Section id="updates" title="Updates">
         <div className="st-group">
-          <Row label={`Tokentracky ${shell.version}`} desc={shell.update.state === 'idle' ? 'Checks automatically after launch and every 6 hours. You choose when to update and restart.' : updateLine(shell.update)}>
+          <Row label={`Tokentracky ${shell.version}`} desc={shell.update.state === 'idle' ? 'Checks automatically after launch and every 6 hours. You choose when to update and restart.' : updateLine(shell.update, bar)}>
             {shell.update.state === 'idle' && <span className="st-ok">{ICONS.check}Automatic checks on</span>}
             <button type="button" className="m-btn st-sm" disabled={busy === 'update' || ['disabled', 'checking', 'downloading'].includes(shell.update.state)} onClick={() => void act('update', async () => onShell(await api.checkForUpdates()))}>{shell.update.state === 'checking' ? <><Spinner /> Checking…</> : 'Check now'}</button>
           </Row>
         </div>
       </Section>}
-      {linked && <Account health={health} status={status!} profile={profile.value} busy={busy} unlink={() => { if (window.confirm(UNLINK)) void act('unlink', async () => { await api.unlinkCloud(); await refresh(); }); }} />}
+      {linked && <Account health={health} status={status!} profile={profile.value} busy={busy} unlink={() => { if (window.confirm(unlinkQuestion(name))) void act('unlink', async () => { await api.unlinkCloud(); await refresh(); }); }} />}
     </div>
   </div>;
 }
@@ -228,8 +232,9 @@ function Sources({ api, status, sources, detected, sessions, paused, busy, act, 
   const found = sources.filter((source) => lines.get(source.id)!.found);
   const choosable = sources.filter((source) => source.state !== 'unsupported');
   const isPaused = paused ?? status.sources.some((source) => source.state === 'paused');
+  const { name } = useMachine();
   return <Section id="sources" title="Sources" note="The tools Tokentracky reads usage from.">
-    {status.firstRun && <div className="st-callout">{ICONS.check}<div><b>{setupHeading(status, detected)}</b></div></div>}
+    {status.firstRun && <div className="st-callout">{ICONS.check}<div><b>{setupHeading(status, detected, name)}</b></div></div>}
     <div className="st-callout">{ICONS.shieldCheck}<div><b>Read-only collection.</b> Tokentracky reads the records each tool already keeps, and only opens the folders listed here. The one file it changes is Gemini CLI’s settings, where it adds a hook that asks for a refresh as a session ends.</div></div>
     <div className="st-group">
       {sources.map((source) => {
@@ -267,23 +272,25 @@ const PRIVATE = ['Projects', 'Prompts', 'Code', 'File paths'];
 
 /** What the leaderboard gets, and what it never does. Joining publishes all of it; there are no sharing switches. */
 function Privacy({ joined }: { joined: boolean }) {
+  const { name } = useMachine();
   return <div className="st-shared">
     <div><h3><span className="st-hico yes">{ICONS.check}</span>{joined ? 'Shared with the leaderboard' : 'Shared once you join'}</h3>
       <ul className="st-yes">{SHARED.map((item) => <li key={item}>{ICONS.check}{item}</li>)}</ul></div>
-    <div><h3><span className="st-hico no">{ICONS.lock}</span>Never leaves this Mac</h3>
+    <div><h3><span className="st-hico no">{ICONS.lock}</span>Never leaves this {name}</h3>
       <ul className="st-no">{PRIVATE.map((item) => <li key={item}>{ICONS.lock}{item}</li>)}</ul></div>
   </div>;
 }
 
-const UNLINK = 'Unlink this Mac from the leaderboard? Uploads from this Mac stop. What is already published stays until you delete your account on the web.';
+const unlinkQuestion = (name: string) => `Unlink this ${name} from the leaderboard? Uploads from this ${name} stop. What is already published stays until you delete your account on the web.`;
 
 function Leaderboard({ api, health, status, profile, refresh, busy, act }: { api: ApiClient; health: Health; status: LocalStatus | null; profile: ProfileStats | null; refresh: () => Promise<void>; busy: string | null; act: (name: string, action: () => Promise<unknown>) => Promise<void> }) {
   const { flow, setFlow, error, start } = useConnectFlow(api, refresh);
+  const { name } = useMachine();
   const needsReconnect = status?.syncError === 'RELINK_REQUIRED' || status?.syncError === 'LOCAL_STATE_RESET';
   const linked = !!status?.cloudLinked && !needsReconnect;
-  if (!health.cloudUrl) return <div className="st-group"><Row label="Leaderboard" desc="This build isn’t connected to a leaderboard server. Your usage is still tracked on this Mac." /></div>;
+  if (!health.cloudUrl) return <div className="st-group"><Row label="Leaderboard" desc={`This build isn’t connected to a leaderboard server. Your usage is still tracked on this ${name}.`} /></div>;
   const unlink = () => {
-    if (!window.confirm(UNLINK)) return;
+    if (!window.confirm(unlinkQuestion(name))) return;
     void act('unlink', async () => { await api.unlinkCloud(); await refresh(); });
   };
   if (linked) return <div className="st-group">
@@ -302,32 +309,33 @@ function Leaderboard({ api, health, status, profile, refresh, busy, act }: { api
       </Row>
       : <Row label={needsReconnect ? 'Reconnect to keep syncing' : 'Join the leaderboard'}
         desc={needsReconnect
-          ? status?.syncError === 'LOCAL_STATE_RESET' ? 'Your local history was reset or restored. Reconnect to upload your totals again.' : 'Your link to the leaderboard needs approving again on this Mac.'
+          ? status?.syncError === 'LOCAL_STATE_RESET' ? 'Your local history was reset or restored. Reconnect to upload your totals again.' : `Your link to the leaderboard needs approving again on this ${name}.`
           : 'See how your usage stacks up. Sign in with GitHub or email in your browser; it takes about 30 seconds.'}
         meta={flow.step === 'expired' ? 'That code expired. Start again to get a new one.' : error ?? undefined}>
         <button type="button" className="m-btn primary st-sm" disabled={flow.step === 'starting'} onClick={() => void start()}>{flow.step === 'starting' ? <><Spinner /> Opening browser…</> : needsReconnect ? 'Reconnect' : 'Join…'}</button>
       </Row>}
     <Privacy joined={false} />
-    {needsReconnect && <Row label="Unlink this Mac" desc="Stops uploads from this Mac. What is already published stays on the leaderboard until you delete your account on the web.">
+    {needsReconnect && <Row label={`Unlink this ${name}`} desc={`Stops uploads from this ${name}. What is already published stays on the leaderboard until you delete your account on the web.`}>
       <button type="button" className="m-btn danger st-sm" disabled={busy === 'unlink'} onClick={unlink}>Unlink…</button>
     </Row>}
   </div>;
 }
 
-/** The linked account: who you are on the board, unlinking this Mac, and deleting the profile, which is done on the website. */
+/** The linked account: who you are on the board, unlinking this computer, and deleting the profile, which is done on the website. */
 export function Account({ health, status, profile, busy, unlink }: { health: Health; status: LocalStatus; profile: ProfileStats | null; busy: string | null; unlink: () => void }) {
+  const { name } = useMachine();
   const joined = profile ? `joined ${JOINED.format(new Date(`${profile.memberSince}T00:00:00Z`))}` : null;
   const how = profile?.githubLogin ? `Signed in with GitHub${joined ? ` · ${joined}` : ''}` : joined && joined[0]!.toUpperCase() + joined.slice(1);
   return <Section id="account" title="Account">
     <div className="st-group">
       <Row label={<span className="st-acct">{status.alias ? <Avatar alias={status.alias} /> : <span className="avatar" aria-hidden="true" />}<span><b>{status.alias ?? 'Linked'}</b><span>{[how, `synced ${timeAgo(status.lastSyncAt)}`].filter(Boolean).join(' · ')}</span></span></span>}
-        meta={status.syncError ? 'The last sync failed. Tracking continues on this Mac and sync retries on its own.' : undefined}>
+        meta={status.syncError ? `The last sync failed. Tracking continues on this ${name} and sync retries on its own.` : undefined}>
         <a className="m-btn st-sm" href={`${health.cloudUrl}/you`} target="_blank" rel="noopener noreferrer">Manage on the web{ICONS.external}</a>
       </Row>
-      <Row label="Unlink this Mac" desc="Stops uploads from this Mac. What is already published stays on the leaderboard until you delete your account on the web.">
+      <Row label={`Unlink this ${name}`} desc={`Stops uploads from this ${name}. What is already published stays on the leaderboard until you delete your account on the web.`}>
         <button type="button" className="m-btn st-sm" disabled={busy === 'unlink'} onClick={unlink}>Unlink…</button>
       </Row>
-      <Row label="Delete leaderboard profile" desc="Removes your public profile, rank and achievements from the website. Usage on this Mac is kept.">
+      <Row label="Delete leaderboard profile" desc={`Removes your public profile, rank and achievements from the website. Usage on this ${name} is kept.`}>
         <a className="m-btn danger st-sm" href={`${health.cloudUrl}/you#danger`} target="_blank" rel="noopener noreferrer">Delete on the web{ICONS.external}</a>
       </Row>
     </div>
@@ -344,11 +352,12 @@ function Choice<T extends string>({ label, value, options, disabled, onChange }:
 
 /** What the menu bar item shows, with the item as it looks now. */
 function MenuBar({ settings, overview, busy, change }: { settings: LocalSettings; overview: MenuOverview | null; busy: string | null; change: (settings: LocalSettings) => void }) {
+  const { bar } = useMachine();
   const shown = overview ? menuBarTitle(overview, settings) : '';
-  return <Section id="menubar" title="Menu bar">
+  return <Section id="menubar" title={title(bar)}>
     <div className="st-group">
-      <Row label="Show in the menu bar" desc="Beside the Tokentracky icon. Large numbers are shortened to K, M, B and T.">
-        <Choice label="Show in the menu bar" value={settings.menuBar} options={SHOWS} disabled={busy === 'menubar'} onChange={(menuBar) => change({ ...settings, menuBar })} />
+      <Row label={`Show in the ${bar}`} desc="Beside the Tokentracky icon. Large numbers are shortened to K, M, B and T.">
+        <Choice label={`Show in the ${bar}`} value={settings.menuBar} options={SHOWS} disabled={busy === 'menubar'} onChange={(menuBar) => change({ ...settings, menuBar })} />
       </Row>
       <Row label="Period" desc="Which total it shows, in your computer’s time zone.">
         <Choice label="Period" value={settings.menuBarPeriod} options={PERIODS} disabled={busy === 'menubar' || settings.menuBar === 'icon'} onChange={(menuBarPeriod) => change({ ...settings, menuBarPeriod })} />

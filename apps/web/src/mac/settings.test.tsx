@@ -1,14 +1,19 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import type { ProfileStats, SourceStatus } from '@tokentracky/core';
-import type { ApiClient, Health, LocalStatus } from '../api';
+import type { ApiClient, Health, LocalStatus, ShellState } from '../api';
+import { MachineContext, machine } from './machine';
 import { personalFixtures } from './personal-fixtures';
 import { Account, SettingsPage, menuBarTitle, sourceLine, updateLine } from './SettingsView';
 
 const f = personalFixtures();
 const health: Health = { mode: 'local', authConfigured: false, version: '1.0.0', cloudUrl: 'https://tokentracky.example', supabaseUrl: null, supabaseAnonKey: null };
-const page = (overrides: Partial<Parameters<typeof SettingsPage>[0]> = {}) => renderToStaticMarkup(<SettingsPage api={{} as ApiClient} health={health} status={f.status} refresh={async () => {}}
-  shell={f.shell} onShell={() => {}} detected={f.detected} paused={false} onPaused={() => {}} {...overrides} />);
+/** The page as the app on `platform` shows it (macOS by default), with the words the root gives every page. */
+const page = (overrides: Partial<Parameters<typeof SettingsPage>[0]> = {}, platform: ShellState['platform'] = 'macos') => {
+  const shell = overrides.shell === undefined ? { ...f.shell, platform } : overrides.shell;
+  return renderToStaticMarkup(<MachineContext.Provider value={machine(shell)}><SettingsPage api={{} as ApiClient} health={health} status={f.status} refresh={async () => {}}
+    onShell={() => {}} detected={f.detected} paused={false} onPaused={() => {}} {...overrides} shell={shell} /></MachineContext.Provider>);
+};
 const text = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 const items = (html: string, list: string) => [...(new RegExp(`<ul class="${list}">([\\s\\S]*?)</ul>`).exec(html)?.[1] ?? '').matchAll(/<li>([\s\S]*?)<\/li>/g)].map((match) => text(match[1]!));
 
@@ -64,6 +69,25 @@ describe('SettingsPage', () => {
     expect(account()).toMatch(/example-builder Joined Jan 12, 2026 · synced/);
     expect(renderToStaticMarkup(<Account health={health} status={f.status} profile={null} busy={null} unlink={() => {}} />)).toContain('href="https://tokentracky.example/you#danger"');
   });
+  it('names the computer and where the icon sits as the app’s system does, and stays as it was on a Mac', () => {
+    const settings = { menuBar: 'tokens', menuBarPeriod: 'today', priceRefresh: true } as const;
+    const mac = text(page({ settings }));
+    for (const words of ['Start Tokentracky in the menu bar when you sign in to your Mac.', 'The file is saved on this Mac.', 'Never leaves this Mac', 'Unlink this Mac', 'Stops uploads from this Mac.', 'Usage on this Mac is kept.', 'Show in the menu bar']) expect(mac).toContain(words);
+    const pc = text(page({ settings }, 'windows'));
+    for (const words of ['Start Tokentracky in the tray when you sign in to your PC.', 'The file is saved on this PC.', 'Never leaves this PC', 'Unlink this PC', 'Stops uploads from this PC.', 'Usage on this PC is kept.', 'Show in the tray']) expect(pc).toContain(words);
+    const linux = text(page({ settings }, 'linux'));
+    for (const words of ['Start Tokentracky in the tray when you sign in to your computer.', 'Never leaves this computer', 'Unlink this computer', 'Show in the tray']) expect(linux).toContain(words);
+    // The CLI's dashboard has no app shell: a computer, and none of the app's rows.
+    const cli = text(page({ shell: null }));
+    for (const words of ['The file is saved on this computer.', 'Never leaves this computer', 'Unlink this computer']) expect(cli).toContain(words);
+    for (const page of [pc, linux, cli]) expect(page).not.toMatch(/Mac|menu bar/);
+  });
+  it('titles the icon’s section after the menu bar on a Mac and the tray elsewhere', () => {
+    const nav = (html: string) => [...html.matchAll(/<button type="button" class="st-nav-item[^"]*"[^>]*><svg[\s\S]*?<\/svg>([^<]+)/g)].map((match) => match[1]!);
+    expect(nav(page())).toContain('Menu bar');
+    expect(nav(page({}, 'windows'))).toContain('Tray');
+    expect(page({ settings: { menuBar: 'icon', menuBarPeriod: 'today', priceRefresh: true } }, 'linux')).toContain('<h2 id="st-menubar-title">Tray</h2>');
+  });
   it('offers joining when this Mac is not linked, or no leaderboard when the build has none', () => {
     const unlinked: LocalStatus = { ...f.status, cloudLinked: false, alias: null };
     expect(text(page({ status: unlinked }))).toContain('Join the leaderboard');
@@ -94,11 +118,12 @@ describe('sourceLine', () => {
 
 describe('updateLine', () => {
   it('describes each update state', () => {
-    expect(updateLine({ state: 'idle', version: null })).toBe('Automatic checks on');
-    expect(updateLine({ state: 'available', version: '1.1.0' })).toBe('Version 1.1.0 is available. Choose Download v1.1.0 from the gear menu in the menu bar.');
-    expect(updateLine({ state: 'available', version: null })).toBe('A new version is available. Choose Download from the gear menu in the menu bar.');
-    expect(updateLine({ state: 'ready', version: '1.1.0' })).toBe('Version 1.1.0 is downloaded. Choose Restart to install v1.1.0 from the gear menu in the menu bar.');
-    expect(updateLine({ state: 'disabled', version: null })).toBe('Updates are off in this build.');
+    expect(updateLine({ state: 'idle', version: null }, 'menu bar')).toBe('Automatic checks on');
+    expect(updateLine({ state: 'available', version: '1.1.0' }, 'menu bar')).toBe('Version 1.1.0 is available. Choose Download v1.1.0 from the gear menu in the menu bar.');
+    expect(updateLine({ state: 'available', version: null }, 'menu bar')).toBe('A new version is available. Choose Download from the gear menu in the menu bar.');
+    expect(updateLine({ state: 'ready', version: '1.1.0' }, 'menu bar')).toBe('Version 1.1.0 is downloaded. Choose Restart to install v1.1.0 from the gear menu in the menu bar.');
+    expect(updateLine({ state: 'ready', version: '1.1.0' }, 'tray')).toBe('Version 1.1.0 is downloaded. Choose Restart to install v1.1.0 from the gear menu in the tray.');
+    expect(updateLine({ state: 'disabled', version: null }, 'menu bar')).toBe('Updates are off in this build.');
   });
 });
 

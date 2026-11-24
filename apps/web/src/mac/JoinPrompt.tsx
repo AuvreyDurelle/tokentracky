@@ -2,6 +2,7 @@ import { useId } from 'react';
 import type { ApiClient, Health, LocalStatus } from '../api';
 import { Spinner } from '../ui';
 import { useConnectFlow } from '../You';
+import { useMachine } from './machine';
 import { ProfileDialog } from './ProfileModal';
 import './personal.css';
 
@@ -12,12 +13,13 @@ export const askToJoin = (asked: boolean | null, health: Health, status: LocalSt
 export function JoinPrompt({ api, refresh, onClose }: { api: ApiClient; refresh: () => Promise<void>; onClose: () => void }) {
   const headingId = useId();
   const { flow, setFlow, error, start } = useConnectFlow(api, refresh);
+  const { name } = useMachine();
   return <ProfileDialog labelledBy={headingId} onClose={onClose}>
     <div className="pf-cover" />
     <div className="jp">
       <h2 className="jp-title" id={headingId}>See where you rank</h2>
       <p className="jp-sub">Join the leaderboard to put your tokens up against other builders. Sign in with GitHub or email in your browser; it takes about 30 seconds.</p>
-      <p className="jp-note">Projects, prompts and code never leave this Mac.</p>
+      <p className="jp-note">Projects, prompts and code never leave this {name}.</p>
       {flow.step === 'waiting'
         ? <div className="jp-wait">
           <span className="st-code" aria-label={`Connection code ${flow.start.userCode}`}>{flow.start.userCode}</span>

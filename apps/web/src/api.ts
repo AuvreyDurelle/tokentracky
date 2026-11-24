@@ -75,11 +75,12 @@ export type LeaderboardSort = 'tokens' | 'cost';
 export interface ConnectStart { userCode: string; verificationUrl: string; expiresAt: string }
 export type ConnectStatus = { status: 'pending' } | { status: 'expired' } | { status: 'connected'; alias: string };
 
-/** `GET /api/shell/state` of the Mac app (`apps/mac/src/shell.rs`); `update.version` is the update's while one is available, downloading or ready. */
+/** `GET /api/shell/state` of the app (`apps/mac/src/shell.rs`); `update.version` is the update's while one is available, downloading or ready; `platform` is the system it runs on. */
 export interface ShellState {
   launchAtLogin: boolean;
   update: { state: 'disabled' | 'idle' | 'checking' | 'available' | 'downloading' | 'ready'; version: string | null };
   version: string;
+  platform: 'macos' | 'windows' | 'linux';
 }
 
 export interface ApiErrorShape {
