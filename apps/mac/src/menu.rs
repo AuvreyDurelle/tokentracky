@@ -4,6 +4,8 @@ use tokentracky_local_api::{LocalOverview, MenuBarPeriod, MenuBarShows};
 
 pub const REFRESH: &str = "refresh";
 pub const OPEN: &str = "open";
+/// Opens the popover where a click on the icon cannot (Linux).
+pub const POPOVER: &str = "popover";
 pub const PAUSE: &str = "pause";
 pub const LOGIN: &str = "login";
 pub const CHECK_FOR_UPDATES: &str = "check-for-updates";
@@ -178,17 +180,22 @@ fn update_action(update: &UpdateState) -> Option<Entry> {
     })
 }
 
-/// The dropdown: the summary, collection actions, optional signed-update actions, About and Quit.
+/// The dropdown: the summary, collection actions (with one that opens the popover when `popover`, for a tray that
+/// reports no clicks), optional signed-update actions, About and Quit.
 pub fn entries(
     overview: Option<&LocalOverview>,
     launch_at_login: bool,
     update: &UpdateState,
+    popover: bool,
     time: impl Fn(&str) -> String,
 ) -> Vec<Entry> {
     let paused = overview.is_some_and(|overview| overview.paused);
     let mut entries: Vec<_> = summary_lines(overview, time).into_iter().map(Entry::Line).collect();
+    entries.push(Entry::Separator);
+    if popover {
+        entries.push(action(POPOVER, "Open summary", true));
+    }
     entries.extend([
-        Entry::Separator,
         action(REFRESH, "Refresh now", !paused),
         action(OPEN, "Open dashboard", true),
         pause(overview),
@@ -376,7 +383,7 @@ mod tests {
         assert_eq!(title(Some(&codex)), "1.2M");
         assert_eq!(tooltip(Some(&codex)), "Tokentracky: 1.2M tokens today");
         assert_eq!((title(None), tooltip(None)), (String::new(), "Tokentracky".to_owned()));
-        let entries = entries(Some(&codex), false, &UpdateState::Disabled, time);
+        let entries = entries(Some(&codex), false, &UpdateState::Disabled, false, time);
         let label = |entry: &Entry| match entry {
             Entry::Line(text) => text.clone(),
             Entry::Action { label, .. } => label.clone(),
@@ -413,7 +420,7 @@ mod tests {
             paused: true,
             ..overview()
         };
-        let entries = entries(Some(&paused), true, &UpdateState::Disabled, time);
+        let entries = entries(Some(&paused), true, &UpdateState::Disabled, false, time);
         let action = |id| {
             entries
                 .iter()
@@ -436,7 +443,7 @@ mod tests {
             })
         );
         // Before the first overview the actions are there, as in Electron, with refresh enabled.
-        let starting = super::entries(None, false, &UpdateState::Disabled, time);
+        let starting = super::entries(None, false, &UpdateState::Disabled, false, time);
         assert_eq!(starting[0], Entry::Line("Starting…".into()));
         assert!(starting.contains(&Entry::Action {
             id: REFRESH,
@@ -445,10 +452,28 @@ mod tests {
         }));
     }
 
+    /// Linux: the tray reports no clicks, so the menu opens the popover, first among the actions.
+    #[test]
+    fn offers_the_popover_only_where_asked() {
+        let open = Entry::Action {
+            id: POPOVER,
+            label: "Open summary".into(),
+            enabled: true,
+        };
+        let with = entries(Some(&overview()), false, &UpdateState::Disabled, true, time);
+        let without = entries(Some(&overview()), false, &UpdateState::Disabled, false, time);
+        let separator = with.iter().position(|entry| *entry == Entry::Separator).unwrap();
+        assert_eq!(with[separator + 1], open);
+        assert!(!without.contains(&open));
+        let mut rest = with.clone();
+        rest.remove(separator + 1);
+        assert_eq!(rest, without);
+    }
+
     #[test]
     fn release_candidates_keep_native_update_actions_and_development_builds_offer_none() {
         let labels = |state| {
-            entries(Some(&overview()), false, &state, time)
+            entries(Some(&overview()), false, &state, false, time)
                 .into_iter()
                 .filter_map(|entry| match entry {
                     Entry::Action { label, .. } => Some(label),
