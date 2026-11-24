@@ -163,8 +163,11 @@ pub fn run() {
         .on_window_event(|window, event| {
             log(&format!("DIAG event label={} {event:?}", window.label()));
             match event {
-                // The popover is transient: it closes once anything else takes focus.
-                WindowEvent::Focused(false) if window.label() == POPOVER => drop(window.close()),
+                // The popover is transient: it closes once anything else takes focus. Only once shown: on Windows,
+                // WebView2 takes focus from a hidden window and gives it back while it is created.
+                WindowEvent::Focused(false) if window.label() == POPOVER && window.is_visible().unwrap_or(false) => {
+                    drop(window.close())
+                }
                 WindowEvent::Destroyed => {
                     log("window destroyed");
                     #[cfg(target_os = "macos")]
