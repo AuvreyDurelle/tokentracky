@@ -64,7 +64,7 @@ fn show(title: &str, message: &str, yes: Option<&str>, done: impl FnOnce(bool) +
     std::thread::spawn(move || {
         // The button's label answers.
         let chosen = tauri::async_runtime::block_on(shown);
-        done(matches!(chosen, MessageDialogResult::Custom(label) if Some(label) == yes));
+        done(matches!(&chosen, MessageDialogResult::Custom(label) if Some(label) == yes.as_ref()));
     });
 }
 
