@@ -21,6 +21,13 @@ use tokentracky_collector::{IngestionOptions, IngestionService};
 use tokentracky_core::ToolId;
 use tokentracky_local_api::{CloudLink, HttpClient, HttpRequest, MemorySecretStore, ReqwestClient, SecretStore};
 
+/// Where the CLI says the app sits.
+const IN_TRAY: &str = if cfg!(target_os = "macos") {
+    "in your menu bar"
+} else {
+    "in the tray"
+};
+
 /// A writer the test can read back while the context owns another handle on it.
 #[derive(Clone, Default)]
 struct Output(Arc<Mutex<Vec<u8>>>);
@@ -628,13 +635,32 @@ async fn login_hands_the_computer_to_the_mac_app_once_approved() {
     let result = f.run(&["login", "--cloud-url", &origin]).await;
     assert_eq!(result.code, 0, "{}", result.stderr);
     assert!(
-        result.stdout.ends_with(
-            "Connected as cli-builder.\nTokentracky is open in your menu bar and uploads this computer's daily totals every 5 minutes.\n"
-        ),
+        result.stdout.ends_with(&format!(
+            "Connected as cli-builder.\nTokentracky is open {IN_TRAY} and uploads this computer's daily totals every 5 minutes.\n"
+        )),
         "{}",
         result.stdout
     );
     assert_eq!(*openings.lock().unwrap(), [true]);
+}
+
+/// On Linux and Windows, with the app installed, `login` leaves the uploading to it as on macOS: it installs no
+/// background job, and removes one an earlier `login` installed.
+#[tokio::test(flavor = "multi_thread")]
+async fn login_hands_the_computer_to_the_app_in_place_of_the_background_job() {
+    let (origin, _) = hosted(200).await;
+    let mut f = Fixture::new();
+    let background = FakeBackground::new(false);
+    f.context.background = Some(background.clone());
+    let openings = f.install_mac_app();
+    let result = f.run(&["login", "--cloud-url", &origin]).await;
+    assert_eq!(result.code, 0, "{}", result.stderr);
+    assert_eq!(result.stderr, "");
+    let (_, after) = result.stdout.split_once("Connected as cli-builder.\n").unwrap();
+    assert!(after.starts_with(&format!("Tokentracky is open {IN_TRAY}")), "{after}");
+    assert_eq!(*openings.lock().unwrap(), [true]);
+    assert!(background.installs.lock().unwrap().is_empty());
+    assert_eq!(background.removals.load(Ordering::SeqCst), 1);
 }
 
 /// The Mac app opens with the system's environment, so it would read the default credential, not a `TOKENTRACKY_HOME`
@@ -883,7 +909,7 @@ async fn login_opens_the_running_mac_app_instead_of_refusing() {
     assert_eq!(result.code, 0, "{}", result.stderr);
     assert_eq!(
         result.stdout,
-        "Tokentracky is already running in your menu bar; its window is open now.\n"
+        format!("Tokentracky is already running {IN_TRAY}; its window is open now.\n")
     );
     assert_eq!(openings.lock().unwrap().len(), 1);
     assert!(f.opened.lock().unwrap().is_empty());

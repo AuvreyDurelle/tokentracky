@@ -3,7 +3,7 @@
 use crate::args::Flags;
 use crate::report::{report, text};
 use crate::serve::serve;
-use crate::{CliError, Context, control, create_directory, database_path, other, resolve};
+use crate::{CliError, Context, IN_TRAY, control, create_directory, database_path, other, resolve};
 use serde::Serialize;
 use std::path::Path;
 use std::sync::Arc;
@@ -230,12 +230,14 @@ pub async fn login(directory: &Path, flags: &Flags, context: &mut Context) -> Re
             context.out("Tokentracky is already running; its dashboard is open in the browser.\n");
             return Ok(0);
         }
-        // The Mac app holds it, and its window is where to join.
+        // The app holds it, and its window is where to join.
         Err(CliError::Locked) => {
             if !open_app(context).await {
                 return Err(CliError::Locked);
             }
-            context.out("Tokentracky is already running in your menu bar; its window is open now.\n");
+            context.out(&format!(
+                "Tokentracky is already running {IN_TRAY}; its window is open now.\n"
+            ));
             return Ok(0);
         }
         Err(error) => return Err(error),
@@ -247,11 +249,22 @@ pub async fn login(directory: &Path, flags: &Flags, context: &mut Context) -> Re
         return Ok(1);
     };
     context.out(&format!("Connected as {alias}.\n"));
-    // Closing the app above let go of the data folder, so the Mac app can take it. The app opens with the system's
-    // environment, so it reads this credential only where it is kept by default.
+    // Closing the app above let go of the data folder, so the Tokentracky app can take it. The app opens with the
+    // system's environment, so it reads this credential only where it is kept by default.
     let custom_home = context.var("TOKENTRACKY_HOME").is_some_and(|home| !home.is_empty());
     if !custom_home && open_app(context).await {
-        context.out("Tokentracky is open in your menu bar and uploads this computer's daily totals every 5 minutes.\n");
+        // The app uploads from now on; a background job left from an earlier `login` would fight it for the folder.
+        if let Some(background) = context.background.clone() {
+            let removed = tokio::task::spawn_blocking(move || background.remove())
+                .await
+                .unwrap_or_else(|error| Err(std::io::Error::other(error)));
+            if let Err(error) = removed {
+                context.err(&format!("Tokentracky could not remove its background job: {error}.\n"));
+            }
+        }
+        context.out(&format!(
+            "Tokentracky is open {IN_TRAY} and uploads this computer's daily totals every 5 minutes.\n"
+        ));
         return Ok(0);
     }
     if let Some(background) = context.background.clone() {
@@ -290,7 +303,7 @@ async fn open_started_dashboard(directory: &Path, context: &mut Context) -> Resu
     Ok(0)
 }
 
-/// `open`: a fresh link to the running dashboard, else the Mac app's window.
+/// `open`: a fresh link to the running dashboard, else the app's window.
 pub async fn open_dashboard(directory: &Path, context: &mut Context) -> Result<i32, CliError> {
     if let Some(url) = control::launch_url(directory).await {
         open_page(context, url).await;
@@ -298,7 +311,7 @@ pub async fn open_dashboard(directory: &Path, context: &mut Context) -> Result<i
         return Ok(0);
     }
     if open_app(context).await {
-        context.out("Tokentracky is open in your menu bar.\n");
+        context.out(&format!("Tokentracky is open {IN_TRAY}.\n"));
         return Ok(0);
     }
     context.err("Tokentracky is not running. `tokentracky login` joins the leaderboard and keeps it running; `tokentracky serve` runs it in this terminal.\n");

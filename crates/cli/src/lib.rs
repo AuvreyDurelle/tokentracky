@@ -44,20 +44,27 @@ Options:
   -v, --version       Show the version
 ";
 
+/// Where the Tokentracky app sits: the menu bar on macOS, the tray (notification area) on Linux and Windows.
+const IN_TRAY: &str = if cfg!(target_os = "macos") {
+    "in your menu bar"
+} else {
+    "in the tray"
+};
+
 /// Looks up an environment variable by name.
 pub type Env = Box<dyn Fn(&str) -> Option<String> + Send + Sync>;
 
 /// Called once `serve` is listening; the server runs until the returned future finishes, then closes.
 pub type OnServe = Box<dyn Fn(ServeHandle) -> Pin<Box<dyn Future<Output = ()> + Send>> + Send + Sync>;
 
-/// What `login` leaves running on Linux and Windows, where no Mac app keeps uploading: `serve` on the data folder, from
-/// a copy of this program that stays put, now and at each sign-in.
+/// What `login` leaves running on Linux and Windows when the Tokentracky app is not installed to keep uploading: `serve`
+/// on the data folder, from a copy of this program that stays put, now and at each sign-in.
 pub trait Background: Send + Sync {
     /// Copies this program into place and starts `serve --background --data-dir <data_dir>` from it, with
     /// `TOKENTRACKY_HOME` set to `home` (the credential's folder) when given.
     fn install(&self, data_dir: &Path, home: Option<&Path>) -> std::io::Result<()>;
     /// Stops it starting again and deletes the copy; with nothing installed, there is nothing to do. `uninstall` has
-    /// already stopped a running `serve`.
+    /// already stopped a running `serve`; `login` calls it once the app has taken over.
     fn remove(&self) -> std::io::Result<()>;
 }
 
@@ -75,7 +82,7 @@ pub struct Context {
     pub secret_store: Option<Arc<dyn SecretStore>>,
     /// Opens a page in the browser; failures are the caller's to ignore.
     pub open_url: Arc<dyn Fn(&str) + Send + Sync>,
-    /// Opens the Tokentracky menu-bar app's window; false when the app is not installed, and on other systems.
+    /// Opens the Tokentracky app's window; false when the app is not installed.
     pub open_app: Arc<dyn Fn() -> bool + Send + Sync>,
     /// The dashboard build `serve` serves.
     pub web_root: PathBuf,
