@@ -119,9 +119,11 @@ jobs:
           $found = $null
           $cond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ClassNameProperty, 'Shell_TrayWnd')
           $bar = $root.FindFirst([System.Windows.Automation.TreeScope]::Children, $cond)
-          foreach ($e in $bar.FindAll([System.Windows.Automation.TreeScope]::Descendants, $any)) {
+          $areaCond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, 'User Promoted Notification Area')
+          $area = $bar.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $areaCond)
+          foreach ($e in $area.FindAll([System.Windows.Automation.TreeScope]::Children, $any)) {
             $c = $e.Current
-            Write-Output "  tray > $($c.ClassName) '$($c.Name)' $($c.BoundingRectangle)"
+            Write-Output "  notification area > '$($c.Name)' $($c.BoundingRectangle)"
             if (-not $found -and $c.Name -like 'Tokentracky*') { $found = $e }
           }
           if ($found) {
