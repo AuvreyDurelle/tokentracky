@@ -5,9 +5,7 @@
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
-
-/// The file in the app's data folder where the app, run as an AppImage, records the AppImage's path.
-pub const APPIMAGE_RECORD: &str = "app-path";
+use tokentracky_local_api::appimage;
 
 /// Starts the installed app; false when it is not installed, or cannot open a window here.
 pub fn open() -> bool {
@@ -40,22 +38,11 @@ fn places(os: &str, var: impl Fn(&str) -> Option<OsString>, home: &Path) -> Vec<
         "linux" if var("DISPLAY").is_some() || var("WAYLAND_DISPLAY").is_some() => {
             let data = var("TOKENTRACKY_HOME").map_or_else(|| home.join(".tokentracky"), PathBuf::from);
             std::iter::once(PathBuf::from("/usr/bin/tokentracky-mac"))
-                .chain(recorded_appimage(&data))
+                .chain(appimage::recorded(&data))
                 .collect()
         }
         _ => Vec::new(),
     }
-}
-
-/// The AppImage path the app recorded in `data`: one absolute path, a trailing line break allowed.
-fn recorded_appimage(data: &Path) -> Option<PathBuf> {
-    let bytes = std::fs::read(data.join(APPIMAGE_RECORD)).ok()?;
-    let bytes = bytes.strip_suffix(b"\n").unwrap_or(&bytes);
-    #[cfg(unix)]
-    let path = PathBuf::from(<std::ffi::OsStr as std::os::unix::ffi::OsStrExt>::from_bytes(bytes));
-    #[cfg(not(unix))]
-    let path = PathBuf::from(String::from_utf8(bytes.to_vec()).ok()?);
-    path.is_absolute().then_some(path)
 }
 
 /// Starts `program` on its own, so it outlives this terminal: on Windows detached from the console, on Linux in its own
@@ -116,7 +103,7 @@ mod tests {
         let appimage = root.path().join("Apps/Tokentracky.AppImage");
         std::fs::create_dir_all(home.join(".tokentracky")).unwrap();
         std::fs::write(
-            home.join(".tokentracky").join(APPIMAGE_RECORD),
+            home.join(".tokentracky").join(appimage::RECORD),
             format!("{}\n", appimage.display()),
         )
         .unwrap();
@@ -128,7 +115,7 @@ mod tests {
         let custom = root.path().join("custom");
         std::fs::create_dir_all(&custom).unwrap();
         let elsewhere = root.path().join("Tokentracky-x86_64.AppImage");
-        std::fs::write(custom.join(APPIMAGE_RECORD), elsewhere.as_os_str().as_encoded_bytes()).unwrap();
+        std::fs::write(custom.join(appimage::RECORD), elsewhere.as_os_str().as_encoded_bytes()).unwrap();
         let custom = custom.to_str().unwrap();
         assert_eq!(
             places(
@@ -145,13 +132,5 @@ mod tests {
         let home = Path::new("/home/ada");
         assert!(places("linux", env(&[]), home).is_empty());
         assert!(places("macos", env(&[("DISPLAY", ":0")]), home).is_empty());
-    }
-
-    #[test]
-    fn ignores_a_missing_or_relative_appimage_record() {
-        let data = tempfile::tempdir().unwrap();
-        assert_eq!(recorded_appimage(data.path()), None);
-        std::fs::write(data.path().join(APPIMAGE_RECORD), "Tokentracky.AppImage\n").unwrap();
-        assert_eq!(recorded_appimage(data.path()), None);
     }
 }

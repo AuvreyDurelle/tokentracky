@@ -1,6 +1,8 @@
-//! How other commands reach a running `serve`, which may have no terminal (the background job of `login`): it listens
-//! on a second loopback port for a fresh dashboard link and for a request to stop, and leaves that port's address and
-//! a random token in `serve.json` in the data folder, readable only by the user. `open`, `login` and `uninstall` use it.
+//! How other processes reach a running CLI `serve`, which may have no terminal (the background job of `login`): it
+//! listens on a second loopback port for a fresh dashboard link and for a request to stop, and leaves that port's
+//! address and a random token in `serve.json` in the data folder, readable only by the user. The CLI's `open`, `login`
+//! and `uninstall` use it, and the app stops `serve` through it to take the data folder over.
+use crate::{HttpClient, HttpRequest, LocalSession, ReqwestClient};
 use axum::Router;
 use axum::extract::State;
 use axum::http::{HeaderMap, Method, StatusCode, header};
@@ -12,7 +14,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
 use subtle::ConstantTimeEq;
-use tokentracky_local_api::{HttpClient, HttpRequest, LocalSession, ReqwestClient};
+use tokentracky_collector::store::{StoreError, UsageStore};
 use tokio::net::TcpListener;
 use tokio::sync::Notify;
 use tokio::task::JoinHandle;
@@ -133,4 +135,27 @@ pub async fn launch_url(directory: &Path) -> Option<String> {
 /// the data next. False when none answers.
 pub async fn stop(directory: &Path) -> bool {
     ask(directory, "stop").await.is_some()
+}
+
+/// [`stop`], then waits, up to ten seconds, until that `serve` has let go of `database`: for `uninstall`, which deletes
+/// the data folder next, and for the app, which takes the folder over. The lock error while another process still
+/// holds it; any other failure to open the database is left to the caller.
+pub async fn stop_and_wait(directory: &Path, database: &Path) -> Result<(), StoreError> {
+    let stopping = stop(directory).await;
+    if !database.exists() {
+        return Ok(());
+    }
+    for waited in 0.. {
+        match UsageStore::open(database) {
+            Ok(store) => drop(store.close()),
+            Err(StoreError::CollectorDatabaseLocked(_)) if stopping && waited < 100 => {
+                tokio::time::sleep(Duration::from_millis(100)).await;
+                continue;
+            }
+            Err(error @ StoreError::CollectorDatabaseLocked(_)) => return Err(error),
+            Err(_) => {}
+        }
+        break;
+    }
+    Ok(())
 }
