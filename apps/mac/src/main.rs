@@ -1,25 +1,22 @@
-//! The Tokentracky Mac app: a menu-bar-only Tauri app around the Rust collector and local API.
-//! See `app.rs`. macOS only; elsewhere the crate builds portable modules and their tests.
-#![cfg_attr(not(target_os = "macos"), allow(dead_code))]
+//! The Tokentracky desktop app: a tray-only Tauri app around the Rust collector and local API, on macOS, Windows and
+//! Linux. See `app.rs`.
+// Windows: a release build opens no console window.
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-#[cfg(target_os = "macos")]
 mod app;
 mod backend;
 mod menu;
 #[cfg(target_os = "macos")]
+mod native;
+/// `native.rs`'s functions off macOS.
+#[cfg(not(target_os = "macos"))]
+#[path = "native_other.rs"]
 mod native;
 mod popover;
 mod security;
 mod shell;
 mod updates;
 
-#[cfg(target_os = "macos")]
 fn main() {
     app::run();
-}
-
-#[cfg(not(target_os = "macos"))]
-fn main() {
-    eprintln!("The Tokentracky app runs on macOS only.");
-    std::process::exit(1);
 }

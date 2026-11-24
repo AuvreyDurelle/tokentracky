@@ -30,14 +30,17 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard, OnceLock, PoisonError};
 use std::time::{Duration, Instant, SystemTime};
+#[cfg(target_os = "macos")]
+use tauri::ActivationPolicy;
 use tauri::http::{Request, Response, StatusCode};
 use tauri::menu::{CheckMenuItem, Menu, MenuEvent, MenuItem, PredefinedMenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::webview::{DownloadEvent, NewWindowResponse, PageLoadEvent};
+#[cfg(target_os = "macos")]
 use tauri::window::{Effect, EffectState, EffectsBuilder};
 use tauri::{
-    ActivationPolicy, AppHandle, Manager, PhysicalPosition, PhysicalSize, RunEvent, UriSchemeContext,
-    UriSchemeResponder, WebviewUrl, WebviewWindow, WebviewWindowBuilder, WindowEvent, Wry,
+    AppHandle, Manager, PhysicalPosition, PhysicalSize, RunEvent, UriSchemeContext, UriSchemeResponder, WebviewUrl,
+    WebviewWindow, WebviewWindowBuilder, WindowEvent, Wry,
 };
 use tauri_plugin_autostart::ManagerExt as _;
 use tauri_plugin_opener::OpenerExt as _;
@@ -157,6 +160,7 @@ pub fn run() {
             WindowEvent::Focused(false) if window.label() == POPOVER => drop(window.close()),
             WindowEvent::Destroyed => {
                 log("window destroyed");
+                #[cfg(target_os = "macos")]
                 release_webkit(window.app_handle().clone());
             }
             _ => {}
@@ -177,6 +181,7 @@ pub fn run() {
                 app.handle().exit(0);
                 return Ok(());
             }
+            #[cfg(target_os = "macos")]
             app.set_activation_policy(ActivationPolicy::Accessory);
             let handle = app.handle();
             // Launch at login starts on, once per Mac account; turning it off afterwards sticks.
@@ -226,6 +231,7 @@ pub fn run() {
         .run(|app, event| match event {
             // The menu bar keeps running with no window open; only Quit exits.
             RunEvent::ExitRequested { code: None, api, .. } => api.prevent_exit(),
+            #[cfg(target_os = "macos")]
             RunEvent::Reopen { .. } => open_dashboard(app),
             RunEvent::Exit => shutdown(app),
             _ => {}
@@ -832,24 +838,26 @@ fn open_popover(app: &AppHandle, tray: tauri::Rect) {
         return log("popover has no screen");
     };
     let url = format!("{ORIGIN}/popover").parse().expect("a fixed app URL");
-    let effects = EffectsBuilder::new()
-        .effect(Effect::Popover)
-        .state(EffectState::Active)
-        .radius(14.0)
-        .build();
     let builder = WebviewWindowBuilder::new(app, POPOVER, WebviewUrl::CustomProtocol(url))
         .inner_size(POPOVER_SIZE.0, POPOVER_SIZE.1)
         .position(x, y)
         .decorations(false)
-        .transparent(true)
         .shadow(true)
         .resizable(false)
         .always_on_top(true)
         .skip_taskbar(true)
         .visible(false)
         .focused(true)
-        .effects(effects)
         .incognito(true);
+    // The page is transparent, so the vibrancy shows through.
+    #[cfg(target_os = "macos")]
+    let builder = builder.transparent(true).effects(
+        EffectsBuilder::new()
+            .effect(Effect::Popover)
+            .state(EffectState::Active)
+            .radius(14.0)
+            .build(),
+    );
     if secure_webview(app, builder, show_popover).build().is_err() {
         native::alert(
             "Tokentracky popover unavailable",
@@ -911,6 +919,7 @@ fn close_dashboard(app: &AppHandle) {
 /// it keeps its own WebContent process and the GPU process. After the last window, keep draining until WebContent has
 /// exited, then, if no window has reopened, end the GPU process WebKit would keep 30 to 70 s longer. A thread that
 /// lives at most 10 s, not a timer.
+#[cfg(target_os = "macos")]
 fn release_webkit(app: AppHandle) {
     std::thread::spawn(move || {
         let mut released = false;
