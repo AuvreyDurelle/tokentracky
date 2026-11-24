@@ -1,8 +1,12 @@
-//! What `native.rs` does with AppKit, on Windows and Linux: alerts, the update prompts and About as native message
-//! dialogs (rfd), local times through jiff, the icon's scale from its monitor. Monospaced digits, wake notifications,
-//! activation and the process start time have no counterpart and do nothing: the five-minute cycle covers a wake.
+//! What `native.rs` does with AppKit, on Windows and Linux: alerts, the update prompts and About as message dialogs
+//! (rfd on Windows, GTK on Linux), local times through jiff, the icon's scale from its monitor. Monospaced digits, wake
+//! notifications, activation and the process start time have no counterpart and do nothing: the five-minute cycle
+//! covers a wake.
+#[cfg(target_os = "linux")]
+use gtk::prelude::*;
 use jiff::Timestamp;
 use jiff::tz::TimeZone;
+#[cfg(windows)]
 use rfd::{AsyncMessageDialog, MessageButtons, MessageDialogResult, MessageLevel};
 #[cfg(tokentracky_release_updater)]
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -42,21 +46,63 @@ fn short_time(iso: &str, zone: &TimeZone) -> String {
 
 pub fn activate_app() {}
 
-/// A message dialog that holds nothing up, as tauri-plugin-dialog shows one: rfd runs it (on its own GTK thread on
-/// Linux, a thread of its own on Windows) and a thread waits for the button chosen, then calls `done` with it.
-fn show(title: &str, message: &str, buttons: MessageButtons, done: impl FnOnce(MessageDialogResult) + Send + 'static) {
+/// A message dialog with OK, or with `yes` and Later, then `done` with whether `yes` was chosen. Not modal, as on
+/// macOS: collection, the menu and the windows keep working while it is open. rfd runs it on a thread of its own and
+/// another waits for the answer.
+#[cfg(windows)]
+fn show(title: &str, message: &str, yes: Option<&str>, done: impl FnOnce(bool) + Send + 'static) {
+    let buttons = yes.map_or(MessageButtons::Ok, |yes| {
+        MessageButtons::OkCancelCustom(yes.into(), "Later".into())
+    });
+    let yes = yes.map(str::to_owned);
     let shown = AsyncMessageDialog::new()
         .set_level(MessageLevel::Info)
         .set_title(title)
         .set_description(message)
         .set_buttons(buttons)
         .show();
-    std::thread::spawn(move || done(tauri::async_runtime::block_on(shown)));
+    std::thread::spawn(move || {
+        // The button's label answers.
+        let chosen = tauri::async_runtime::block_on(shown);
+        done(matches!(chosen, MessageDialogResult::Custom(label) if Some(label) == yes));
+    });
+}
+
+/// As on Windows, with GTK, on the main thread where every caller is. GTK runs the dialog with the app's own loop.
+#[cfg(target_os = "linux")]
+fn show(title: &str, message: &str, yes: Option<&str>, done: impl FnOnce(bool) + 'static) {
+    let dialog = gtk::MessageDialog::new(
+        None::<&gtk::Window>,
+        gtk::DialogFlags::empty(),
+        gtk::MessageType::Info,
+        gtk::ButtonsType::None,
+        title,
+    );
+    dialog.set_title(title);
+    dialog.set_secondary_text(Some(message));
+    // Over the windows, as the macOS alerts float.
+    dialog.set_keep_above(true);
+    match yes {
+        Some(yes) => {
+            dialog.add_button("Later", gtk::ResponseType::Cancel);
+            dialog.add_button(yes, gtk::ResponseType::Accept);
+        }
+        None => drop(dialog.add_button("OK", gtk::ResponseType::Ok)),
+    }
+    let done = std::cell::Cell::new(Some(done));
+    dialog.connect_response(move |dialog, response| {
+        // SAFETY: the dialog is this function's own and nothing uses it after its answer.
+        unsafe { dialog.destroy() };
+        if let Some(done) = done.take() {
+            done(response == gtk::ResponseType::Accept);
+        }
+    });
+    dialog.show_all();
 }
 
 /// A failure the user should see. Not modal, as on macOS: collection and the menu keep working while it is open.
 pub fn alert(title: &str, message: &str) {
-    show(title, message, MessageButtons::Ok, drop);
+    show(title, message, None, drop);
 }
 
 /// A nonmodal choice between `yes` and Later; `response` learns whether `yes` was chosen. Shows nothing and returns
@@ -67,15 +113,9 @@ pub fn confirm(title: &str, message: &str, yes: &str, response: impl FnOnce(bool
     if OPEN.swap(true, Ordering::SeqCst) {
         return false;
     }
-    let buttons = MessageButtons::OkCancelCustom(yes.into(), "Later".into());
-    let yes = yes.to_owned();
-    show(title, message, buttons, move |chosen| {
+    show(title, message, Some(yes), move |accepted| {
         OPEN.store(false, Ordering::SeqCst);
-        // Windows answers with the button's label, GTK with OK.
-        response(match chosen {
-            MessageDialogResult::Custom(label) => label == yes,
-            other => other == MessageDialogResult::Ok,
-        });
+        response(accepted);
     });
     true
 }
@@ -86,7 +126,7 @@ pub fn about(credits: &str) {
     show(
         "About Tokentracky",
         &format!("Tokentracky {version}\n\n{credits}"),
-        MessageButtons::Ok,
+        None,
         drop,
     );
 }

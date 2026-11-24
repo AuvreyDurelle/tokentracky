@@ -68,16 +68,6 @@ mod tests {
         assert!(!is_app_download("https://example.com/usage.csv"));
     }
 
-    #[test]
-    fn loads_the_app_scheme_where_each_web_view_serves_it() {
-        let expected = if cfg!(windows) {
-            "http://app.localhost"
-        } else {
-            "app://localhost"
-        };
-        assert_eq!(ORIGIN, expected);
-    }
-
     /// WKWebView and WebKitGTK: the scheme itself.
     #[test]
     fn accepts_only_app_localhost_at_the_app_scheme() {

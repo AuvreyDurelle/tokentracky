@@ -29,11 +29,16 @@ tauri-plugin-single-instance = "2"
 # macOS uses the mandatory tar.gz reader; do not enable the Windows/Linux ZIP compatibility feature.
 tauri-plugin-updater = { version = "=2.14.0", default-features = false, features = ["rustls-tls", "system-proxy"] }
 
-# Alerts, the update prompts and About: what tauri-plugin-dialog uses, without the plugin's script, which would swap
-# the pages' synchronous `window.confirm` for one that asks the app over IPC.
 [target.'cfg(not(target_os = "macos"))'.dependencies]
-rfd = { version = "0.17", default-features = false, features = ["gtk3", "common-controls-v6"] }
 jiff = { workspace = true }
+
+# Alerts, the update prompts and About, as message dialogs that block nothing. Not tauri-plugin-dialog: its script
+# would swap the pages' synchronous `window.confirm` for one that asks the app over IPC, and its GTK dialogs are modal.
+[target.'cfg(windows)'.dependencies]
+rfd = { version = "0.17", default-features = false, features = ["common-controls-v6"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+gtk = "0.18"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 time = { workspace = true, features = ["parsing"] }

@@ -761,6 +761,9 @@ fn open_external(app: &AppHandle, url: &str) {
 fn open_dashboard(app: &AppHandle) {
     // Finder activation should preserve the route the user is viewing.
     if let Some(window) = app.get_webview_window(DASHBOARD) {
+        // tao focuses no minimized window on Windows and Linux.
+        #[cfg(not(target_os = "macos"))]
+        let _ = window.unminimize();
         let _ = window.show();
         let _ = window.set_focus();
     } else {
@@ -782,6 +785,8 @@ fn open_page(app: &AppHandle, page: &str) {
     let url = format!("{ORIGIN}{page}").parse().expect("a fixed app URL");
     if let Some(window) = app.get_webview_window(DASHBOARD) {
         let _ = window.navigate(url);
+        #[cfg(not(target_os = "macos"))]
+        let _ = window.unminimize();
         let _ = window.show();
         let _ = window.set_focus();
         return;
@@ -927,7 +932,8 @@ fn show_popover(popover: &WebviewWindow) {
 
 /// The popover's top left in points, on the screen that holds the icon. The tray reports `tray` in pixels at that
 /// screen's scale, and each monitor its frame in pixels at its own, so the icon's scale comes from the icon itself.
-/// Without an icon (Linux), the top right of the primary screen's work area.
+/// Without an icon (Linux), the top right of the primary screen's work area. A Wayland compositor places windows
+/// itself and ignores the position.
 fn popover_position(app: &AppHandle, tray: Option<tauri::Rect>) -> Option<(f64, f64)> {
     let rect = |position: PhysicalPosition<f64>, size: PhysicalSize<f64>| popover::Rect {
         x: position.x,
