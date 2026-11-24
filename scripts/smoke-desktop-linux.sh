@@ -7,8 +7,13 @@ APPIMAGE=$(realpath "$1")
 DEB=$(realpath "$2")
 TMP_DIR=$(mktemp -d "${TMPDIR:-/tmp}/tokentracky-smoke.XXXXXX")
 APP_PID=
+# The app runs in a process group of its own, with its session bus and X server, so stopping it stops them all.
+stop_app() {
+  [[ -z "$APP_PID" ]] || kill -- "-$APP_PID" 2>/dev/null || true
+  APP_PID=
+}
 cleanup() {
-  [[ -z "$APP_PID" ]] || kill "$APP_PID" 2>/dev/null || true
+  stop_app
   rm -rf "$TMP_DIR"
 }
 trap cleanup EXIT
@@ -26,14 +31,12 @@ echo '== AppImage under Xvfb'
 mkdir "$TMP_DIR/data"
 # No FUSE on the runner: the AppImage runtime extracts itself instead, and still sets $APPIMAGE.
 TOKENTRACKY_HOME="$TMP_DIR/data" TOKENTRACKY_PRICING_REFRESH=off APPIMAGE_EXTRACT_AND_RUN=1 \
-  dbus-run-session -- xvfb-run --auto-servernum "$APPIMAGE" --open-dashboard >"$TMP_DIR/appimage.log" 2>&1 &
+  setsid dbus-run-session -- xvfb-run --auto-servernum "$APPIMAGE" --open-dashboard >"$TMP_DIR/appimage.log" 2>&1 &
 APP_PID=$!
 loaded "$TMP_DIR/appimage.log"
 grep -F '[tokentracky]' "$TMP_DIR/appimage.log"
 [[ "$(cat "$TMP_DIR/data/app-path")" == "$APPIMAGE" ]] || { echo 'the AppImage did not record its path' >&2; exit 1; }
-kill "$APP_PID"
-wait "$APP_PID" 2>/dev/null || true
-APP_PID=
+stop_app
 
 echo '== .deb in a clean Ubuntu 22.04'
 docker run --rm -v "$DEB:/tmp/tokentracky.deb:ro" ubuntu:22.04 bash -euo pipefail -c '
