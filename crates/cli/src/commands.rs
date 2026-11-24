@@ -252,9 +252,14 @@ pub async fn login(directory: &Path, flags: &Flags, context: &mut Context) -> Re
     // Closing the app above let go of the data folder, so the Tokentracky app can take it. The app opens with the
     // system's environment, so it reads this credential only where it is kept by default.
     let custom_home = context.var("TOKENTRACKY_HOME").is_some_and(|home| !home.is_empty());
-    if !custom_home && open_app(context).await {
-        // The app uploads from now on; a background job left from an earlier `login` would fight it for the folder.
-        if let Some(background) = context.background.clone() {
+    if !custom_home {
+        // The app uploads from now on; a background job left from an earlier `login` would fight it for the folder. It
+        // goes before the app starts, which may then put its own launch at login in the Run value the job shares. Should
+        // the app not start, the job is installed again below.
+        let installed = context.app_installed.clone();
+        if let Some(background) = context.background.clone()
+            && tokio::task::spawn_blocking(move || installed()).await.unwrap_or(false)
+        {
             let removed = tokio::task::spawn_blocking(move || background.remove())
                 .await
                 .unwrap_or_else(|error| Err(std::io::Error::other(error)));
@@ -262,10 +267,12 @@ pub async fn login(directory: &Path, flags: &Flags, context: &mut Context) -> Re
                 context.err(&format!("Tokentracky could not remove its background job: {error}.\n"));
             }
         }
-        context.out(&format!(
-            "Tokentracky is open {IN_TRAY} and uploads this computer's daily totals every 5 minutes.\n"
-        ));
-        return Ok(0);
+        if open_app(context).await {
+            context.out(&format!(
+                "Tokentracky is open {IN_TRAY} and uploads this computer's daily totals every 5 minutes.\n"
+            ));
+            return Ok(0);
+        }
     }
     if let Some(background) = context.background.clone() {
         let data_dir = directory.to_owned();

@@ -91,6 +91,7 @@ impl Fixture {
                 Arc::new(move |url| opened.lock().unwrap().push(url.to_owned()))
             },
             open_app: Arc::new(|| false),
+            app_installed: Arc::new(|| false),
             web_root,
             interactive: false,
             confirm: {
@@ -139,6 +140,7 @@ impl Fixture {
 
     /// An installed Mac app: each opening records whether the data folder's lock was free for the app to take.
     fn install_mac_app(&mut self) -> Arc<Mutex<Vec<bool>>> {
+        self.context.app_installed = Arc::new(|| true);
         let (openings, database) = (Arc::new(Mutex::new(Vec::new())), self.data_dir.join("usage.sqlite"));
         let seen = openings.clone();
         self.context.open_app = Arc::new(move || {
@@ -645,20 +647,27 @@ async fn login_hands_the_computer_to_the_mac_app_once_approved() {
 }
 
 /// On Linux and Windows, with the app installed, `login` leaves the uploading to it as on macOS: it installs no
-/// background job, and removes one an earlier `login` installed.
+/// background job, and removes one an earlier `login` installed before the app starts (which may then take the Run
+/// value the job shares on Windows).
 #[tokio::test(flavor = "multi_thread")]
 async fn login_hands_the_computer_to_the_app_in_place_of_the_background_job() {
     let (origin, _) = hosted(200).await;
     let mut f = Fixture::new();
     let background = FakeBackground::new(false);
     f.context.background = Some(background.clone());
-    let openings = f.install_mac_app();
+    f.install_mac_app();
+    let (seen, removed_before) = (background.clone(), Arc::new(Mutex::new(Vec::new())));
+    let opened = removed_before.clone();
+    f.context.open_app = Arc::new(move || {
+        opened.lock().unwrap().push(seen.removals.load(Ordering::SeqCst));
+        true
+    });
     let result = f.run(&["login", "--cloud-url", &origin]).await;
     assert_eq!(result.code, 0, "{}", result.stderr);
     assert_eq!(result.stderr, "");
     let (_, after) = result.stdout.split_once("Connected as cli-builder.\n").unwrap();
     assert!(after.starts_with(&format!("Tokentracky is open {IN_TRAY}")), "{after}");
-    assert_eq!(*openings.lock().unwrap(), [true]);
+    assert_eq!(*removed_before.lock().unwrap(), [1]);
     assert!(background.installs.lock().unwrap().is_empty());
     assert_eq!(background.removals.load(Ordering::SeqCst), 1);
 }

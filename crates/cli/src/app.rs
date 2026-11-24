@@ -11,12 +11,20 @@ pub const APPIMAGE_RECORD: &str = "app-path";
 
 /// Starts the installed app; false when it is not installed, or cannot open a window here.
 pub fn open() -> bool {
+    installed_program().is_some_and(|program| launch(&program))
+}
+
+/// Whether [`open`] finds the app, without starting it.
+pub fn installed() -> bool {
+    installed_program().is_some()
+}
+
+fn installed_program() -> Option<PathBuf> {
     let var = |name: &str| std::env::var_os(name).filter(|value| !value.is_empty());
     let home = std::env::home_dir().unwrap_or_default();
     places(std::env::consts::OS, var, &home)
         .into_iter()
         .find(|program| program.is_file())
-        .is_some_and(|program| launch(&program))
 }
 
 /// Where the app may be, in the order to try: the per-user installer's folder on Windows (`%LOCALAPPDATA%\Tokentracky`,

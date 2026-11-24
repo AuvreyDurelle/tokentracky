@@ -84,6 +84,8 @@ pub struct Context {
     pub open_url: Arc<dyn Fn(&str) + Send + Sync>,
     /// Opens the Tokentracky app's window; false when the app is not installed.
     pub open_app: Arc<dyn Fn() -> bool + Send + Sync>,
+    /// Whether `open_app` finds the app on Linux and Windows, without starting it.
+    pub app_installed: Arc<dyn Fn() -> bool + Send + Sync>,
     /// The dashboard build `serve` serves.
     pub web_root: PathBuf,
     pub interactive: bool,

@@ -137,6 +137,7 @@ fn main() -> ExitCode {
         secret_store: secrets,
         open_url: Arc::new(open_url),
         open_app: Arc::new(open_app),
+        app_installed: Arc::new(app::installed),
         web_root: web.path().to_owned(),
         interactive,
         confirm: Box::new(confirm),
