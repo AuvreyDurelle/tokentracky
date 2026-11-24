@@ -160,15 +160,18 @@ pub fn run() {
         .manage(Service::default())
         .manage(Shown::default())
         .manage(UpdateShown(Mutex::new(Updates::new(UPDATER_ENABLED))))
-        .on_window_event(|window, event| match event {
-            // The popover is transient: it closes once anything else takes focus.
-            WindowEvent::Focused(false) if window.label() == POPOVER => drop(window.close()),
-            WindowEvent::Destroyed => {
-                log("window destroyed");
-                #[cfg(target_os = "macos")]
-                release_webkit(window.app_handle().clone());
+        .on_window_event(|window, event| {
+            log(&format!("DIAG event label={} {event:?}", window.label()));
+            match event {
+                // The popover is transient: it closes once anything else takes focus.
+                WindowEvent::Focused(false) if window.label() == POPOVER => drop(window.close()),
+                WindowEvent::Destroyed => {
+                    log("window destroyed");
+                    #[cfg(target_os = "macos")]
+                    release_webkit(window.app_handle().clone());
+                }
+                _ => {}
             }
-            _ => {}
         });
     #[cfg(tokentracky_release_updater)]
     let builder = builder
@@ -822,6 +825,7 @@ fn secure_webview<'a>(
             _ => true,
         })
         .on_page_load(move |window, payload| {
+            log(&format!("DIAG page-load {:?} {}", payload.event(), payload.url()));
             if matches!(payload.event(), PageLoadEvent::Finished) {
                 log(&format!("page-load finished path={}", payload.url().path()));
                 on_loaded(&window);
@@ -852,6 +856,10 @@ fn open_popover(app: &AppHandle, tray: Option<tauri::Rect>) {
             "The menu bar popover could not be opened.",
         );
     }
+    log(&format!(
+        "DIAG open_popover tray={tray:?} position={:?}",
+        popover_position(app, tray)
+    ));
     let Some((x, y)) = popover_position(app, tray) else {
         return log("popover has no screen");
     };
