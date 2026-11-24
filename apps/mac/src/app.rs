@@ -67,6 +67,7 @@ const INCOGNITO: bool = cfg!(not(target_os = "linux"));
 
 /// Fixed local actions only: no script evaluation, arbitrary URL, or navigation allowlist bypass.
 fn control(app: &AppHandle, args: &[String]) {
+    log(&format!("DIAG control {args:?}"));
     if args.iter().any(|arg| arg == "--quit") {
         log("graceful quit requested");
         app.exit(0);
@@ -790,9 +791,15 @@ fn open_page(app: &AppHandle, page: &str) {
         .min_inner_size(960.0, 640.0)
         // An ephemeral data store is released with the web view, so WebKit's Networking process can exit too. The
         // local UI keeps no web storage that must survive a window close; anything it persists goes through the API.
-        .incognito(INCOGNITO);
-    match secure_webview(app, builder, |_| {}).build() {
-        Ok(window) => drop(window.set_focus()),
+        .incognito(INCOGNITO && std::env::var_os("TOKENTRACKY_DIAG_NO_INCOGNITO").is_none());
+    log("DIAG dashboard build start");
+    let built = secure_webview(app, builder, |_| {}).build();
+    log(&format!("DIAG dashboard build end ok={}", built.is_ok()));
+    match built {
+        Ok(window) => {
+            drop(window.set_focus());
+            log("DIAG dashboard set_focus sent");
+        }
         Err(_) => native::alert(
             "Tokentracky dashboard unavailable",
             "The local dashboard could not be opened.",
@@ -879,7 +886,7 @@ fn open_popover(app: &AppHandle, tray: Option<tauri::Rect>) {
         // run, so the popover would never take focus, and never lose it to close.
         .visible(cfg!(target_os = "linux"))
         .focused(true)
-        .incognito(INCOGNITO);
+        .incognito(INCOGNITO && std::env::var_os("TOKENTRACKY_DIAG_NO_INCOGNITO").is_none());
     // The page is transparent, so the vibrancy shows through.
     #[cfg(target_os = "macos")]
     let builder = builder.transparent(true).effects(

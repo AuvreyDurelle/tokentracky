@@ -53,15 +53,15 @@ jobs:
           $env:TOKENTRACKY_HOME = (New-Item -ItemType Directory -Force (Join-Path $env:RUNNER_TEMP 'tt-home')).FullName
           $env:TOKENTRACKY_PRICING_REFRESH = '0'
           $exe = (Resolve-Path 'target\debug\tokentracky-mac.exe').Path
-          $log = Join-Path $out 'app.log'
-          function LogText($path = $log) {
+          $script:log = Join-Path $out 'app.log'
+          function LogText($path = $script:log) {
             try {
               $fs = [System.IO.File]::Open($path, 'Open', 'Read', 'ReadWrite')
               $sr = New-Object System.IO.StreamReader $fs; $t = $sr.ReadToEnd(); $sr.Close(); $t
             } catch { '' }
           }
-          function Count($pattern, $path = $log) { ([regex]::Matches((LogText $path), [regex]::Escape($pattern))).Count }
-          function WaitCount($pattern, $n, $seconds, $path = $log) {
+          function Count($pattern, $path = $script:log) { ([regex]::Matches((LogText $path), [regex]::Escape($pattern))).Count }
+          function WaitCount($pattern, $n, $seconds, $path = $script:log) {
             for ($i = 0; $i -lt $seconds * 4; $i++) { if ((Count $pattern $path) -ge $n) { return $true }; Start-Sleep -Milliseconds 250 }
             Write-Output "timeout waiting for $n x '$pattern'"; return $false
           }
@@ -71,98 +71,72 @@ jobs:
             $g = [System.Drawing.Graphics]::FromImage($bmp)
             $g.CopyFromScreen($b.Left, $b.Top, 0, 0, $bmp.Size)
             $bmp.Save((Join-Path $out "$name.png")); $g.Dispose(); $bmp.Dispose()
-            Write-Output "screenshot $name ($($b.Width)x$($b.Height))"
+            Write-Output "screenshot $name"
           }
           function Second($arg, $name) {
-            Start-Process -FilePath $exe -ArgumentList $arg -NoNewWindow -Wait -RedirectStandardError (Join-Path $out "$name.log")
+            $p = Start-Process -FilePath $exe -ArgumentList $arg -NoNewWindow -PassThru -RedirectStandardError (Join-Path $out "$name.log")
+            if (-not $p.WaitForExit(20000)) { Write-Output "SECOND INSTANCE HUNG: $arg (the running app does not answer)"; $p.Kill(); return $false }
+            return $true
+          }
+          function TrayIcon() {
+            $root = [System.Windows.Automation.AutomationElement]::RootElement
+            $any = [System.Windows.Automation.Condition]::TrueCondition
+            $cond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ClassNameProperty, 'Shell_TrayWnd')
+            $bar = $root.FindFirst([System.Windows.Automation.TreeScope]::Children, $cond)
+            $areaCond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, 'User Promoted Notification Area')
+            $area = $bar.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $areaCond)
+            foreach ($e in $area.FindAll([System.Windows.Automation.TreeScope]::Children, $any)) {
+              $c = $e.Current
+              Write-Output "  notification area > '$($c.Name)' $($c.BoundingRectangle)"
+              if ($c.Name -like 'Tokentracky*') { $r = $c.BoundingRectangle; $script:icon = @([int]($r.X + $r.Width / 2), [int]($r.Y + $r.Height / 2)) }
+            }
+          }
+          function Session($label) {
+            $script:log = Join-Path $out "$label-app.log"
+            $env:TOKENTRACKY_HOME = (New-Item -ItemType Directory -Force (Join-Path $env:RUNNER_TEMP "home-$label")).FullName
+            $app = Start-Process -FilePath $exe -ArgumentList '--hidden' -NoNewWindow -PassThru -RedirectStandardError $script:log
+            WaitCount 'title-set' 1 120 | Out-Null
+            Start-Sleep 3
+            Second '--open-popover' "$label-second-popover" | Out-Null
+            WaitCount 'popover visible' 1 30 | Out-Null
+            Start-Sleep 2
+            Shot "$label-1-popover"
+            # The popover's own Open dashboard button takes this path too.
+            if (Second '--open-dashboard' "$label-second-dashboard") { Write-Output "$label second launch answered" }
+            WaitCount 'page-load finished path=/' 1 60 | Out-Null
+            Start-Sleep 3
+            Shot "$label-2-dashboard"
+            $script:icon = $null
+            TrayIcon
+            if ($script:icon) {
+              $x, $y = $script:icon
+              Write-Output "$label tray icon at $x,$y"
+              $before = Count 'popover visible'
+              [Mouse]::Click($x, $y)
+              WaitCount 'popover visible' ($before + 1) 30 | Out-Null
+              Start-Sleep 2
+              Shot "$label-3-popover-click"
+              $shown = Count 'popover visible'; $gone = Count 'window destroyed'
+              [Mouse]::Click($x, $y)
+              Start-Sleep 4
+              Write-Output "$label second click: popover visible $shown -> $(Count 'popover visible'), destroyed $gone -> $(Count 'window destroyed')"
+              Shot "$label-4-second-click"
+            } else { Write-Output "$label tray icon not found" }
+            Stop-Process -Id $app.Id -Force -ErrorAction SilentlyContinue
+            Get-Process tokentracky-mac -ErrorAction SilentlyContinue | Stop-Process -Force
+            Start-Sleep 3
+            Write-Output "==== $label log"; LogText
           }
 
           # Every tray icon in the taskbar, none in the overflow, so a click can reach it.
           Set-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer' -Name EnableAutoTray -Value 0
           Stop-Process -Name explorer -Force; Start-Sleep 6
           if (-not (Get-Process explorer -ErrorAction SilentlyContinue)) { Start-Process explorer; Start-Sleep 6 }
-          function Windows() {
-            $root = [System.Windows.Automation.AutomationElement]::RootElement
-            foreach ($w in $root.FindAll([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::TrueCondition)) {
-              $c = $w.Current; if ($c.ProcessId -eq $app.Id) { Write-Output "  window '$($c.Name)' class=$($c.ClassName) $($c.BoundingRectangle) offscreen=$($c.IsOffscreen)" }
-            }
-          }
 
-          # 1. Hidden start, then the popover as the only web view.
-          $app = Start-Process -FilePath $exe -ArgumentList '--hidden' -NoNewWindow -PassThru -RedirectStandardError $log -RedirectStandardOutput (Join-Path $out 'stdout.log')
-          WaitCount 'title-set' 1 120 | Out-Null
-          Start-Sleep 3
-          Second '--open-popover' 'second-popover-1'
-          WaitCount 'popover visible' 1 30 | Out-Null
-          Start-Sleep 3
-          Windows
-          Shot '1-popover-alone'
-
-          # 2. The dashboard, then the popover beside it.
-          Second '--open-dashboard' 'second-dashboard'
-          WaitCount 'page-load finished path=/' 1 120 | Out-Null
-          Start-Sleep 4
-          Shot '2-dashboard'
-          Second '--open-popover' 'second-popover-2'
-          WaitCount 'popover visible' 2 30 | Out-Null
-          Start-Sleep 3
-          Windows
-          Shot '3-popover-with-dashboard'
-          $wa = [System.Windows.Forms.Screen]::PrimaryScreen.WorkingArea
-          [Mouse]::Click([int]($wa.Width / 4), [int]($wa.Height / 2))
-          Start-Sleep 2
-          Write-Output "after a click on the dashboard: destroyed=$(Count 'window destroyed')"
-
-          # 3. Real clicks on the tray icon (UI Automation finds its button by the tooltip).
-          $root = [System.Windows.Automation.AutomationElement]::RootElement
-          $any = [System.Windows.Automation.Condition]::TrueCondition
-          $found = $null
-          $cond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ClassNameProperty, 'Shell_TrayWnd')
-          $bar = $root.FindFirst([System.Windows.Automation.TreeScope]::Children, $cond)
-          $areaCond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, 'User Promoted Notification Area')
-          $area = $bar.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $areaCond)
-          foreach ($e in $area.FindAll([System.Windows.Automation.TreeScope]::Children, $any)) {
-            $c = $e.Current
-            Write-Output "  notification area > '$($c.Name)' $($c.BoundingRectangle)"
-            if (-not $found -and $c.Name -like 'Tokentracky*') { $found = $e }
-          }
-          if ($found) {
-            $r = $found.Current.BoundingRectangle
-            $x = [int]($r.X + $r.Width / 2); $y = [int]($r.Y + $r.Height / 2)
-            Write-Output "tray button '$($found.Current.Name)' at $x,$y"
-            $before = Count 'popover visible'
-            [Mouse]::Click($x, $y)
-            WaitCount 'popover visible' ($before + 1) 30 | Out-Null
-            Start-Sleep 3
-            Shot '4-popover-click'
-            $shown = Count 'popover visible'; $gone = Count 'window destroyed'
-            [Mouse]::Click($x, $y)
-            Start-Sleep 4
-            Write-Output "second click: popover visible $shown -> $(Count 'popover visible'), destroyed $gone -> $(Count 'window destroyed')"
-            Shot '5-after-second-click'
-            Windows
-          } else {
-            Write-Output 'tray button not found'
-          }
-
-          # 4. A startup alert does not hold the app up: an invalid leaderboard origin, and the dashboard still loads.
-          Second '--quit' 'second-quit'
-          $app.WaitForExit(30000) | Out-Null
-          Write-Output "first instance exited: $($app.HasExited)"
-          $env:TOKENTRACKY_CLOUD_URL = 'http://example.invalid'
-          $log2 = Join-Path $out 'app-alert.log'
-          $app2 = Start-Process -FilePath $exe -ArgumentList '--open-dashboard' -NoNewWindow -PassThru -RedirectStandardError $log2
-          WaitCount 'page-load finished path=/' 1 120 $log2 | Out-Null
-          Start-Sleep 5
-          Shot '6-alert-and-dashboard'
-          Stop-Process -Id $app2.Id -Force -ErrorAction SilentlyContinue
-
-          # The value launch at login wrote.
-          foreach ($hive in 'HKCU', 'HKLM') {
-            Write-Output "$hive Run:"; Get-ItemProperty "$($hive):\Software\Microsoft\Windows\CurrentVersion\Run" | Format-List | Out-String | Write-Output
-          }
-          Get-ChildItem $out | Format-Table Name, Length | Out-String | Write-Output
-          foreach ($f in Get-ChildItem $out -Filter *.log) { Write-Output "==== $($f.Name)"; LogText $f.FullName }
+          Session 'A-incognito'
+          $env:TOKENTRACKY_DIAG_NO_INCOGNITO = '1'
+          Session 'B-no-incognito'
+          Remove-Item Env:TOKENTRACKY_DIAG_NO_INCOGNITO
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
