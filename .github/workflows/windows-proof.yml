@@ -181,15 +181,13 @@ jobs:
           Shot '7-alert'
           # The alert blocks nothing: the dashboard still answers a click while it is open.
           $dash2 = Windows $app2.Id | Where-Object { $_.Current.Name -eq 'Tokentracky' } | Select-Object -First 1
-          $cond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, 'Tokens')
-          $tokens = $dash2.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $cond)
-          if ($tokens) {
-            $r = $tokens.Current.BoundingRectangle
-            [Mouse]::Click([int]($r.X + $r.Width / 2), [int]($r.Y + $r.Height / 2))
-            Start-Sleep 3
-            Write-Output "alert still open after the click: $(@(Windows $app2.Id | Where-Object { $_.Current.ClassName -eq '#32770' }).Count)"
-            Shot '8-dashboard-clicked-with-alert-open'
-          } else { Write-Output 'Tokens link not found' }
+          # The sidebar's Tokens link, 69,157 from the window's top left at this size.
+          $r = $dash2.Current.BoundingRectangle
+          Write-Output "dashboard window $r"
+          [Mouse]::Click([int]($r.X + 69), [int]($r.Y + 157))
+          Start-Sleep 3
+          Write-Output "alert still open after the click: $(@(Windows $app2.Id | Where-Object { $_.Current.ClassName -eq '#32770' }).Count)"
+          Shot '8-dashboard-clicked-with-alert-open'
           Stop-Process -Id $app2.Id -Force -ErrorAction SilentlyContinue
 
           # The value launch at login wrote.
