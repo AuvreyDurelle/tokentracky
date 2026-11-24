@@ -138,12 +138,12 @@ pub async fn stop(directory: &Path) -> bool {
 }
 
 /// [`stop`], then waits, up to ten seconds, until that `serve` has let go of `database`: for `uninstall`, which deletes
-/// the data folder next, and for the app, which takes the folder over. The lock error while another process still
-/// holds it; any other failure to open the database is left to the caller.
-pub async fn stop_and_wait(directory: &Path, database: &Path) -> Result<(), StoreError> {
+/// the data folder next, and for the app, which takes the folder over. Whether a `serve` was asked to stop; the lock
+/// error while another process still holds the database; any other failure to open it is left to the caller.
+pub async fn stop_and_wait(directory: &Path, database: &Path) -> Result<bool, StoreError> {
     let stopping = stop(directory).await;
     if !database.exists() {
-        return Ok(());
+        return Ok(stopping);
     }
     for waited in 0.. {
         match UsageStore::open(database) {
@@ -157,5 +157,5 @@ pub async fn stop_and_wait(directory: &Path, database: &Path) -> Result<(), Stor
         }
         break;
     }
-    Ok(())
+    Ok(stopping)
 }
