@@ -44,6 +44,8 @@ The copy does not update itself: run `login` again with a newer version to repla
 
 ## The app
 
+The app takes the data folder over when it starts: it stops a running `serve` through `serve.json`, as `uninstall` does, removes the background job (on Windows only while the Run value starts the CLI's copy), and then opens the folder itself. So the app and a background job never fight over the folder, whichever was set up first.
+
 `login` and `open` start the Tokentracky app where its installers put it: on macOS from the Applications folders, else wherever macOS knows it is; on Windows from `%LOCALAPPDATA%\Tokentracky\tokentracky-mac.exe`, the per-user installer's default folder; on Linux from `/usr/bin/tokentracky-mac` (the .deb), else the AppImage the app last ran from, whose path the app keeps in `app-path` in its data folder. On Linux only a session with a display (`DISPLAY` or `WAYLAND_DISPLAY`) starts it. Starting it while it runs opens its window.
 
 ## How it is built
