@@ -1,0 +1,178 @@
+# TEMPORARY: proves build-desktop and publish's app steps on real runners with a throwaway updater key. Drop before merge.
+name: TEMPORARY desktop release proof
+
+on:
+  push:
+    branches: [release-windows-linux-apps]
+
+permissions: {}
+
+jobs:
+  build:
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-pc-windows-msvc
+            os: windows-2022
+            tauri: cargo-tauri-x86_64-pc-windows-msvc.zip
+            tauri-sha256: 0768231574a4bea9229fd151c17dbe0118c95955630910a507c3b7f098b09531
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-22.04
+            tauri: cargo-tauri-x86_64-unknown-linux-gnu.tgz
+            tauri-sha256: e75e2a1e8d3bceba327a10640a08b0bfef6d7559e8e13274629189001f2fce08
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf minisign
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: '1.99.0'
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      - run: npm ci
+      - name: Install the pinned prebuilt Tauri CLI
+        env:
+          ARCHIVE: ${{ matrix.tauri }}
+          SHA256: ${{ matrix.tauri-sha256 }}
+        run: |
+          # Relative names: the checksum line would misread a Windows path's backslashes.
+          cd "$RUNNER_TEMP"
+          curl --fail --location --silent --show-error --retry 3 \
+            "https://github.com/tauri-apps/tauri/releases/download/tauri-cli-v2.11.5/$ARCHIVE" --output "$ARCHIVE"
+          echo "$SHA256  $ARCHIVE" | sha256sum --check
+          mkdir -p tauri-cli "$HOME/.cargo/bin"
+          if [[ "$ARCHIVE" == *.zip ]]; then
+            unzip -q "$ARCHIVE" -d tauri-cli
+            cp tauri-cli/cargo-tauri.exe "$HOME/.cargo/bin/"
+          else
+            tar -xzf "$ARCHIVE" -C tauri-cli
+            install -m 755 tauri-cli/cargo-tauri "$HOME/.cargo/bin/"
+          fi
+          cargo tauri --version
+      - if: runner.os == 'Windows'
+        name: Install minisign
+        run: |
+          cd "$RUNNER_TEMP"
+          curl --fail --location --silent --show-error --retry 3 \
+            https://github.com/jedisct1/minisign/releases/download/0.12/minisign-0.12-win64.zip --output minisign.zip
+          echo "37b600344e20c19314b2e82813db2bfdcc408b77b876f7727889dbd46d539479  minisign.zip" | sha256sum --check
+          unzip -q minisign.zip -d minisign
+          echo "$RUNNER_TEMP/minisign/minisign-win64/x86_64" >>"$GITHUB_PATH"
+      - name: Build, sign and check the candidate with a throwaway key and a local tag
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          cargo tauri signer generate --ci -p '' -w "$RUNNER_TEMP/proof.key"
+          version=$(node -p "require('./package.json').version")
+          git tag "v$version"
+          TAURI_SIGNING_PRIVATE_KEY=$(cat "$RUNNER_TEMP/proof.key") \
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD='' \
+          TOKENTRACKY_UPDATER_PUBLIC_KEY=$(cat "$RUNNER_TEMP/proof.key.pub") \
+          TOKENTRACKY_UPDATER_ENDPOINT=https://updates.invalid/stable.json \
+          TOKENTRACKY_UPDATER_CHANNEL=stable \
+          TOKENTRACKY_RELEASE_BASE_URL="https://github.com/AuvreyDurelle/tokentracky/releases/download/v$version" \
+          GITHUB_REF_NAME="v$version" \
+            bash scripts/prepare-desktop-release.sh "$TARGET"
+          ls -la "dist/desktop-release/$TARGET"
+          cat "dist/desktop-release/$TARGET/stable.json" "dist/desktop-release/$TARGET/source-provenance.txt"
+      - if: runner.os == 'Windows'
+        name: Install with the NSIS installer and start the app where the CLI looks for it
+        shell: pwsh
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          $installer = Get-ChildItem "dist/desktop-release/$env:TARGET/*-setup.exe"
+          Start-Process -Wait -FilePath $installer.FullName -ArgumentList '/S'
+          $dir = Join-Path $env:LOCALAPPDATA 'Tokentracky'
+          Get-ChildItem -Recurse $dir | Select-Object FullName, Length | Format-Table -AutoSize | Out-String -Width 300
+          $app = Join-Path $dir 'tokentracky-mac.exe'
+          if (-not (Test-Path $app)) { throw "no app at $app" }
+          if (-not (Test-Path (Join-Path $dir 'web/index.html'))) { throw 'no dashboard in the install' }
+          $p = Start-Process -FilePath $app -ArgumentList '--hidden' -PassThru
+          Start-Sleep 20
+          if ($p.HasExited) { throw "the app exited with $($p.ExitCode)" }
+          Get-Process tokentracky-mac | Format-Table Id, ProcessName, WorkingSet64
+          Stop-Process -Id $p.Id
+      - if: runner.os == 'Linux'
+        name: Install the .deb, then start it and the AppImage
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          dist="dist/desktop-release/$TARGET"
+          sudo apt-get install -y libfuse2 xvfb
+          dpkg-deb --info "$dist"/*.deb
+          dpkg-deb -c "$dist"/*.deb
+          dpkg-deb -c "$dist"/*.deb | grep -E 'usr/bin/tokentracky-mac$'
+          dpkg-deb -c "$dist"/*.deb | grep -E '/web/index\.html$'
+          sudo apt-get install -y "./$(ls "$dist"/*.deb)"
+          test -x /usr/bin/tokentracky-mac
+          status=0; xvfb-run -a timeout 20 /usr/bin/tokentracky-mac --hidden || status=$?
+          [[ "$status" == 124 ]] || { echo "the .deb app exited with $status" >&2; exit 1; }
+          chmod +x "$dist"/*.AppImage
+          status=0; xvfb-run -a timeout 20 "$(ls "$dist"/*.AppImage)" --hidden || status=$?
+          [[ "$status" == 124 ]] || { echo "the AppImage exited with $status" >&2; exit 1; }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: desktop-release-${{ matrix.target }}
+          path: dist/desktop-release/${{ matrix.target }}
+          if-no-files-found: error
+          retention-days: 2
+
+  publish-steps:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: desktop-release-*
+          path: dist/desktop-release
+      - name: publish's app lines, with a stand-in macOS feed
+        run: |
+          set -euo pipefail
+          version=$(node -p "require('./package.json').version")
+          CHANNEL=stable
+          mkdir -p dist/macos-release dist/public
+          printf 'synthetic-mac-signature' >"$RUNNER_TEMP/mac.sig"
+          node scripts/macos-release.mjs feed --out dist/macos-release/stable.json --version "$version" \
+            --artifact-url "https://github.com/AuvreyDurelle/tokentracky/releases/download/v$version/Tokentracky.app.tar.gz" \
+            --signature-file "$RUNNER_TEMP/mac.sig"
+          cp dist/macos-release/stable.json dist/public/
+          cp dist/desktop-release/*/"tokentracky-${version}-"* dist/public/
+          for app in windows-x86_64-setup.exe windows-x86_64-setup.exe.sig linux-x86_64.AppImage \
+            linux-x86_64.AppImage.sig linux-x86_64.deb; do
+            [[ -f "dist/public/tokentracky-${version}-${app}" ]] || { echo "missing the ${app} app" >&2; exit 1; }
+          done
+          cp "dist/public/tokentracky-${version}-windows-x86_64-setup.exe" dist/public/Tokentracky-setup.exe
+          cp "dist/public/tokentracky-${version}-linux-x86_64.AppImage" dist/public/Tokentracky.AppImage
+          cp "dist/public/tokentracky-${version}-linux-x86_64.deb" dist/public/Tokentracky.deb
+          node scripts/macos-release.mjs merge-feeds --out "dist/public/${CHANNEL}.json" \
+            "dist/macos-release/${CHANNEL}.json" dist/desktop-release/*/"${CHANNEL}.json"
+          jq -e '.platforms | keys == ["darwin-aarch64", "linux-x86_64-appimage", "windows-x86_64"]' \
+            "dist/public/${CHANNEL}.json" >/dev/null || { echo "the ${CHANNEL} feed does not hold every app" >&2; exit 1; }
+          ls -la dist/public
+          cat "dist/public/${CHANNEL}.json"
