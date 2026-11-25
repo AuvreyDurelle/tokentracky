@@ -32,7 +32,7 @@ The public leaderboard for AI coding tokens. A native macOS menu-bar app and a R
 
 ## Quick start
 
-The Mac app runs on Apple Silicon Macs with macOS 13 or later. The CLI also runs on Linux (x64 and arm64) and Windows (x64).
+The app runs on Apple Silicon Macs with macOS 13 or later, Windows (x64) and Linux (x64). The CLI also runs on Linux (x64 and arm64) and Windows (x64).
 
 **Ask your AI.** Tell a coding agent that can run commands on your computer, such as Claude Code, Codex or Cursor:
 
@@ -47,6 +47,13 @@ It picks the install that suits your computer. You approve the sign-in in your b
 ```sh
 brew install --cask auvreydurelle/tokentracky/tokentracky
 ```
+
+**The Windows and Linux apps.** They sit in the tray and keep uploading, like the Mac app in the menu bar.
+
+- **Windows:** [download `Tokentracky-setup.exe`](https://github.com/AuvreyDurelle/tokentracky/releases/latest/download/Tokentracky-setup.exe) and run it. It installs for your user, without admin rights. It is not signed yet, so SmartScreen may say Windows protected your PC: choose **More info → Run anyway**.
+- **Linux:** on Debian or Ubuntu, [download `Tokentracky.deb`](https://github.com/AuvreyDurelle/tokentracky/releases/latest/download/Tokentracky.deb) and run `sudo apt install ./Tokentracky.deb`. Elsewhere, [download `Tokentracky.AppImage`](https://github.com/AuvreyDurelle/tokentracky/releases/latest/download/Tokentracky.AppImage), run `chmod +x` on it and open it.
+
+The Windows app and the AppImage update themselves; a .deb is updated by installing the next one.
 
 **The CLI**, for the terminal, Linux, Windows or a Mac without the app. One command joins the leaderboard:
 
@@ -75,7 +82,7 @@ Both read the usual folders of the tools they find as soon as they open, and any
 - **Linux:** `tokentracky-<version>-linux-x86_64` or `tokentracky-<version>-linux-aarch64`, one static binary that runs on every distribution. Run `chmod +x` on it and put it on your `PATH` as `tokentracky`.
 - **Windows:** `tokentracky-<version>-windows-x86_64.exe`. It is not signed yet, so SmartScreen may say Windows protected your PC: choose **More info → Run anyway**. The npm install shows no warning.
 
-There is no menu bar app outside macOS, so on Linux and Windows `tokentracky login` keeps uploading in the background instead: a systemd user service on Linux, a sign-in item on Windows ([background job](crates/cli/README.md#background-job)).
+On Linux and Windows without the app, `tokentracky login` keeps uploading in the background instead: a systemd user service on Linux, a sign-in item on Windows ([background job](crates/cli/README.md#background-job)).
 
 <details>
 <summary><b>"Tokentracky Not Opened": macOS can't check the app</b></summary>
@@ -295,7 +302,7 @@ Badges and cards show "private" until the name is published, so an embed never b
 
 ## Native release status
 
-The Mac app targets Apple Silicon on macOS 13+. It is ad-hoc signed, not notarized, until a Developer ID certificate exists; see [Mac releases](docs/MAC_RELEASE.md) and [release prerequisites](docs/RELEASE_PREREQUISITES.md). The CLI is also released for Linux (static x86_64 and aarch64) and Windows (x86_64), unsigned with SHA-256 checksums. The website and its hosted API are developed in a separate, private repository. The collector, local API, CLI and Mac shell run in Rust; their old TypeScript and Electron implementations have been removed. Linux and Windows menu bar apps, widgets, Cursor and the Limits page are later work.
+The Mac app targets Apple Silicon on macOS 13+. It is ad-hoc signed, not notarized, until a Developer ID certificate exists; see [Mac releases](docs/MAC_RELEASE.md) and [release prerequisites](docs/RELEASE_PREREQUISITES.md). The app is also released for Windows (x86_64) and Linux (x86_64), and the CLI for Linux (static x86_64 and aarch64) and Windows (x86_64), unsigned with SHA-256 checksums. The website and its hosted API are developed in a separate, private repository. The collector, local API, CLI and Mac shell run in Rust; their old TypeScript and Electron implementations have been removed. A Linux app on Arm, widgets, Cursor and the Limits page are later work.
 
 ## Development
 
