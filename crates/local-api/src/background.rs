@@ -52,7 +52,8 @@ pub fn remove() -> io::Result<()> {
 #[cfg(target_os = "linux")]
 pub fn installed() -> bool {
     unit_file().is_ok_and(|file| file.exists())
-        || folder("XDG_DATA_HOME", &[".local", "share"]).is_ok_and(|data| data.join("tokentracky/bin").exists())
+        || folder("XDG_DATA_HOME", &[".local", "share"])
+            .is_ok_and(|data| data.join("tokentracky/bin/tokentracky").exists())
 }
 
 #[cfg(target_os = "linux")]
@@ -124,7 +125,8 @@ pub fn remove() -> io::Result<()> {
 #[cfg(windows)]
 pub fn installed() -> bool {
     run_value().is_some_and(|command| starts_the_copy(&command))
-        || folder("LOCALAPPDATA", &["AppData", "Local"]).is_ok_and(|local| local.join(r"tokentracky\bin").exists())
+        || folder("LOCALAPPDATA", &["AppData", "Local"])
+            .is_ok_and(|local| local.join(r"tokentracky\bin\tokentracky.exe").exists())
 }
 
 /// macOS has no background job: the app keeps uploading.
@@ -144,7 +146,7 @@ pub fn installed() -> bool {
 /// The command in the Run value, `None` when there is none (`reg query` fails then).
 #[cfg(windows)]
 fn run_value() -> Option<String> {
-    let output = Command::new("reg")
+    let output = hidden("reg")
         .args(["query", RUN_KEY, "/v", RUN_VALUE])
         .stdin(Stdio::null())
         .stderr(Stdio::null())
@@ -204,6 +206,19 @@ fn remove_copy(program: &Path) -> io::Result<()> {
     Ok(())
 }
 
+/// `program` without a console window of its own: the app has no console, so Windows would open one for each command.
+fn hidden(program: &str) -> Command {
+    #[cfg_attr(not(windows), allow(unused_mut))]
+    let mut command = Command::new(program);
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        command.creation_flags(CREATE_NO_WINDOW);
+    }
+    command
+}
+
 /// Runs `program` to the end with its output discarded; an error unless it succeeds.
 fn run<A: AsRef<OsStr>>(program: &str, args: impl IntoIterator<Item = A>) -> io::Result<()> {
     let args: Vec<A> = args.into_iter().collect();
@@ -214,7 +229,7 @@ fn run<A: AsRef<OsStr>>(program: &str, args: impl IntoIterator<Item = A>) -> io:
             .collect::<Vec<_>>()
             .join(" ")
     };
-    let status = Command::new(program)
+    let status = hidden(program)
         .args(&args)
         .stdin(Stdio::null())
         .stdout(Stdio::null())
