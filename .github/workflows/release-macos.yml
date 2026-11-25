@@ -157,11 +157,17 @@ jobs:
             os: windows-2022
             tauri: cargo-tauri-x86_64-pc-windows-msvc.zip
             tauri-sha256: 0768231574a4bea9229fd151c17dbe0118c95955630910a507c3b7f098b09531
+            minisign: minisign-0.12-win64.zip
+            minisign-sha256: 37b600344e20c19314b2e82813db2bfdcc408b77b876f7727889dbd46d539479
+            minisign-dir: minisign-win64/x86_64
           # The oldest supported Ubuntu, so the AppImage's system libraries are old enough for newer systems too.
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-22.04
             tauri: cargo-tauri-x86_64-unknown-linux-gnu.tgz
             tauri-sha256: e75e2a1e8d3bceba327a10640a08b0bfef6d7559e8e13274629189001f2fce08
+            minisign: minisign-0.12-linux.tar.gz
+            minisign-sha256: 9a599b48ba6eb7b1e80f12f36b94ceca7c00b7a5173c95c3efc88d9822957e73
+            minisign-dir: minisign-linux/x86_64
     runs-on: ${{ matrix.os }}
     environment: macos-release
     permissions:
@@ -179,7 +185,7 @@ jobs:
       - if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf minisign
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: '22'
@@ -208,15 +214,20 @@ jobs:
             install -m 755 tauri-cli/cargo-tauri "$HOME/.cargo/bin/"
           fi
           cargo tauri --version
-      - if: runner.os == 'Windows'
-        name: Install minisign
+      # Ubuntu 22.04 has no minisign package.
+      - name: Install the pinned prebuilt minisign
+        env:
+          ARCHIVE: ${{ matrix.minisign }}
+          SHA256: ${{ matrix.minisign-sha256 }}
+          DIR: ${{ matrix.minisign-dir }}
         run: |
           cd "$RUNNER_TEMP"
           curl --fail --location --silent --show-error --retry 3 \
-            https://github.com/jedisct1/minisign/releases/download/0.12/minisign-0.12-win64.zip --output minisign.zip
-          echo "37b600344e20c19314b2e82813db2bfdcc408b77b876f7727889dbd46d539479  minisign.zip" | sha256sum --check
-          unzip -q minisign.zip -d minisign
-          echo "$RUNNER_TEMP/minisign/minisign-win64/x86_64" >>"$GITHUB_PATH"
+            "https://github.com/jedisct1/minisign/releases/download/0.12/$ARCHIVE" --output "$ARCHIVE"
+          echo "$SHA256  $ARCHIVE" | sha256sum --check
+          mkdir minisign
+          if [[ "$ARCHIVE" == *.zip ]]; then unzip -q "$ARCHIVE" -d minisign; else tar -xzf "$ARCHIVE" -C minisign; fi
+          echo "$RUNNER_TEMP/minisign/$DIR" >>"$GITHUB_PATH"
       - name: Build, sign and check the candidate
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
