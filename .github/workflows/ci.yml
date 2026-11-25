@@ -121,9 +121,11 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: PYTHONDONTWRITEBYTECODE=1 python3 scripts/test_native_runtime.py
-      - run: node --test scripts/macos-release*.test.mjs scripts/cli-release*.test.mjs packaging/test/*.test.mjs
+      - run: node --test scripts/macos-release*.test.mjs scripts/cli-release*.test.mjs scripts/desktop-release*.test.mjs packaging/test/*.test.mjs
       - run: npm run test:harness --prefix packaging
-      - run: shellcheck scripts/prepare-macos-release.sh scripts/prepare-cli-release.sh scripts/check-native-package.sh
+      - run: >-
+          shellcheck scripts/prepare-macos-release.sh scripts/prepare-cli-release.sh scripts/prepare-desktop-release.sh
+          scripts/check-native-package.sh
       - run: npm run build
 
   rust:
