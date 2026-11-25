@@ -98,7 +98,6 @@ const FAILURES = {
   exists: /must not already exist/,
   setting: /TAURI_SIGNING_PRIVATE_KEY/,
   'tauri-version': /Tauri CLI 2\.11\.5/,
-  'key-mismatch': /does not match TOKENTRACKY_UPDATER_PUBLIC_KEY/,
   'missing-bundle': /No such file/,
   signature: /Signature verification failed/,
   'signed-version': /not for 0\.1\.0/,

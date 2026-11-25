@@ -46,16 +46,12 @@ SOURCE_DATE_EPOCH=$(git show -s --format=%ct HEAD)
 export CARGO_TARGET_DIR="$TMP_DIR/target"
 node "$ROOT/scripts/macos-release.mjs" config --root "$ROOT" --out "$CONFIG"
 npm run build --workspace=@tokentracky/web
-BUNDLE_LOG="$TMP_DIR/tauri-bundle.log"
 # tauri.windows.conf.json or tauri.linux.conf.json picks the bundles: NSIS, or AppImage and .deb.
 (
   cd "$ROOT/apps/mac"
   export TOKENTRACKY_RELEASE_UPDATER=1
   cargo tauri build --target "$TARGET" --config "$CONFIG" -- --locked
-) 2>&1 | tee "$BUNDLE_LOG"
-if grep -F 'does not match the public key' "$BUNDLE_LOG" >/dev/null; then
-  echo 'Tauri signing key does not match TOKENTRACKY_UPDATER_PUBLIC_KEY' >&2; exit 1
-fi
+)
 BUNDLE="$CARGO_TARGET_DIR/$TARGET/release/bundle"
 mkdir -p "$DIST_DIR"
 OUTPUT_CREATED=1

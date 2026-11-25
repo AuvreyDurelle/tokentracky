@@ -34,8 +34,6 @@ elif name == 'cargo':
         for file in files:
             (bundle / file).parent.mkdir(parents=True, exist_ok=True)
             (bundle / file).write_text(f'{file} built with the updater')
-        if fail == 'key-mismatch':
-            print('private key does not match the public key')
     elif args[:3] == ['tauri', 'signer', 'sign']:
         assert args[3:5] == ['--app-version', '0.1.0']
         assert Path(args[-1]).is_file()
