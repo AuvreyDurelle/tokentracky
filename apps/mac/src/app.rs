@@ -27,7 +27,7 @@ use crate::shell::{self, ShellRequest};
 use crate::updates;
 use crate::updates::Updates;
 use axum::body::Body;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard, OnceLock, PoisonError};
 use std::time::{Duration, Instant, SystemTime};
@@ -48,7 +48,8 @@ use tauri_plugin_opener::OpenerExt as _;
 #[cfg(tokentracky_release_updater)]
 use tauri_plugin_updater::UpdaterExt as _;
 use tokentracky_local_api::{
-    LocalOptions, LocalOverview, ReqwestClient, SecretStore, claude_config_file, detect_tools, gemini_hook,
+    LocalOptions, LocalOverview, ReqwestClient, SecretStore, appimage, background, claude_config_file, control,
+    detect_tools, gemini_hook,
 };
 use tokentracky_secrets::FileSecretStore;
 use tower::ServiceExt as _;
@@ -286,6 +287,9 @@ fn start(app: AppHandle, hidden: bool) {
                 None
             }
         };
+        if let Some(data_dir) = data_dir(&app) {
+            take_over(&data_dir).await;
+        }
         let opening = app.clone();
         let opened = tauri::async_runtime::spawn_blocking(move || open_backend(&opening, cloud_url, secrets)).await;
         let Ok(Some(backend)) = opened else {
@@ -295,6 +299,10 @@ fn start(app: AppHandle, hidden: bool) {
                 "The local collection service is unavailable.",
             );
         };
+        // Where this AppImage is, for the CLI's `login` and `open`: an AppImage can live anywhere.
+        if let (Some(appimage), Some(data_dir)) = (std::env::var_os("APPIMAGE"), data_dir(&app)) {
+            let _ = appimage::record(&data_dir, Path::new(&appimage));
+        }
         let backend = Arc::new(backend);
         *lock(&app.state::<Service>().0) = Some(backend.clone());
         backend.publish().await;
@@ -308,14 +316,33 @@ fn start(app: AppHandle, hidden: bool) {
     });
 }
 
+/// The data folder, the CLI's: `$TOKENTRACKY_HOME` when set, else `~/.tokentracky`.
+fn data_dir(app: &AppHandle) -> Option<PathBuf> {
+    match std::env::var("TOKENTRACKY_HOME").ok().filter(|value| !value.is_empty()) {
+        Some(home) => Some(PathBuf::from(home)),
+        None => app.path().home_dir().ok().map(|home| home.join(".tokentracky")),
+    }
+}
+
+/// The app keeps uploading from now on, so it takes the data folder over from the CLI: it stops a `serve` holding it,
+/// as `tokentracky uninstall` does, and removes `tokentracky login`'s background job (Linux and Windows), which would
+/// start `serve` again at the next sign-in and fight the app for the folder.
+async fn take_over(data_dir: &Path) {
+    let stopped = control::stop_and_wait(data_dir, &data_dir.join(backend::DATABASE)).await;
+    let removed = tauri::async_runtime::spawn_blocking(|| background::installed().then(background::remove)).await;
+    match (stopped, removed) {
+        (Ok(false), Ok(None)) => {}
+        (stopped, removed) => log(&format!(
+            "took over from the CLI: serve stopped={stopped:?} background job removed={removed:?}"
+        )),
+    }
+}
+
 /// `None` when the data directory, the web build or the collector cannot be opened (for example while `tokentracky
 /// serve` owns the same data directory).
 fn open_backend(app: &AppHandle, cloud_url: Option<String>, secrets: Arc<dyn SecretStore>) -> Option<Backend> {
     let env = |name| std::env::var(name).ok().filter(|value| !value.is_empty());
-    let data_dir = match env("TOKENTRACKY_HOME") {
-        Some(home) => PathBuf::from(home),
-        None => app.path().home_dir().ok()?.join(".tokentracky"),
-    };
+    let data_dir = data_dir(app)?;
     let home = std::env::home_dir().unwrap_or_default();
     let options = LocalOptions {
         database_path: data_dir.join(backend::DATABASE),

@@ -2,7 +2,7 @@
 //! `LocalApp`, put on loopback behind the launch-link session by its `serve_tcp`; other commands reach it through
 //! [`control`].
 use crate::args::Flags;
-use crate::{CliError, Context, control, create_directory, database_path, other};
+use crate::{CliError, Context, create_directory, database_path, other};
 use std::path::Path;
 use std::sync::Arc;
 use tokentracky_collector::detect::detect_tools;
@@ -10,7 +10,8 @@ use tokentracky_collector::gemini_hook;
 use tokentracky_collector::limits::claude_config_file;
 use tokentracky_collector::scheduler::refresh_interval;
 use tokentracky_local_api::{
-    DEFAULT_CLOUD_ORIGIN, LocalApp, LocalError, LocalOptions, LocalSession, ReqwestClient, cloud_origin, serve_tcp,
+    DEFAULT_CLOUD_ORIGIN, LocalApp, LocalError, LocalOptions, LocalSession, ReqwestClient, cloud_origin, control,
+    serve_tcp,
 };
 use tokio::sync::Notify;
 

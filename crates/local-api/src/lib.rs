@@ -53,8 +53,11 @@
 //!    `Content-Type` and `Content-Disposition` on success only.
 //! 3. `POST /api/local/sync` with nothing linked: still 409 `CLOUD_NOT_LINKED`, but it records no `syncError`.
 mod app;
+pub mod appimage;
+pub mod background;
 mod body;
 mod connect;
+pub mod control;
 mod error;
 mod http;
 mod limits;
