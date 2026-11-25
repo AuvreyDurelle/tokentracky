@@ -193,14 +193,16 @@ fn copy_self(target: &Path) -> io::Result<()> {
     copied
 }
 
-/// Deletes the copy's folder, and its parent when that is left empty; a copy already gone is fine.
+/// Deletes the copy, then its folder and that folder's parent when they are left empty; a copy already gone is fine.
 fn remove_copy(program: &Path) -> io::Result<()> {
-    let folder = program.parent().expect("the copy has a folder");
-    match std::fs::remove_dir_all(folder) {
+    match std::fs::remove_file(program) {
         Err(error) if error.kind() != io::ErrorKind::NotFound => return Err(error),
         _ => {}
     }
-    if let Some(parent) = folder.parent() {
+    let folder = program.parent().expect("the copy has a folder");
+    if std::fs::remove_dir(folder).is_ok()
+        && let Some(parent) = folder.parent()
+    {
         let _ = std::fs::remove_dir(parent);
     }
     Ok(())
@@ -327,6 +329,24 @@ fn starts_the_copy(command: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn removing_the_copy_deletes_only_the_program_and_the_folders_it_leaves_empty() {
+        let root = tempfile::tempdir().unwrap();
+        let bin = root.path().join("tokentracky/bin");
+        std::fs::create_dir_all(&bin).unwrap();
+        std::fs::write(bin.join("tokentracky"), "copy").unwrap();
+        std::fs::write(bin.join("notes.txt"), "not the CLI's").unwrap();
+        remove_copy(&bin.join("tokentracky")).unwrap();
+        assert!(!bin.join("tokentracky").exists());
+        assert!(bin.join("notes.txt").exists());
+        std::fs::remove_file(bin.join("notes.txt")).unwrap();
+        std::fs::write(bin.join("tokentracky"), "copy").unwrap();
+        remove_copy(&bin.join("tokentracky")).unwrap();
+        assert!(!root.path().join("tokentracky").exists());
+        // Already gone is fine.
+        remove_copy(&bin.join("tokentracky")).unwrap();
+    }
 
     #[test]
     fn writes_a_systemd_unit_that_survives_odd_paths() {
